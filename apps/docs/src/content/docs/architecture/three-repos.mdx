@@ -1,0 +1,160 @@
+---
+title: Repository layout
+description: How the BoringStack monorepo is organized — apps, infra, docs, and cross-app contracts.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import DocFileTree from "../../../components/DocFileTree";
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import SignalGrid from "../../../components/docs-kit/SignalGrid";
+import FaqGroup from "../../../components/FaqGroup.tsx";
+import FaqItem from "../../../components/FaqItem.tsx";
+
+<PageIntro
+  eyebrow="Repository contract"
+  actions={[
+    { label: "Quickstart", href: "/quickstart/#step-1-clone-the-monorepo" },
+    { label: "Separation of concerns", href: "/architecture/separation-of-concerns/" },
+  ]}
+  facts={[
+    { value: "apps/", label: "api · ui · docs" },
+    { value: "infra/", label: "compose · bootstrap" },
+    { value: "1", label: "git clone" },
+  ]}
+>
+  BoringStack ships as a single monorepo. API, UI, docs site, and Compose infra
+  live in one tree with path-filtered CI and root-level `pnpm regen` /
+  `pnpm check` for cross-app contracts.
+</PageIntro>
+
+The runtime is composed from `apps/api`, `apps/ui`, and `infra/compose`. Optional VPS provisioning lives in `infra/bootstrap`. The docs site source is `apps/docs` (deployed to boringstack.xyz).
+
+<DocFileTree
+  root="boringstack/"
+  title="Monorepo layout"
+  caption="one clone, explicit join points"
+  nodes={[
+    { name: "apps/api/", detail: "Bun + Elysia + Drizzle API" },
+    { name: "apps/ui/", detail: "Vite + React SPA" },
+    { name: "apps/docs/", detail: "Astro Starlight (boringstack.xyz)" },
+    { name: "infra/compose/", detail: "Docker Compose runtime" },
+    { name: "infra/bootstrap/", detail: "optional OpenTofu bootstrap" },
+  ]}
+/>
+
+Each app keeps its own `package.json`, lockfile, and lint config. CI workflows live at the repo root (`.github/workflows/`) with path filters such as `apps/api/**` and `infra/compose/**`.
+
+<SignalGrid
+  columns={3}
+  items={[
+    {
+      label: "context",
+      title: "Agents work in smaller trees",
+      body: "Open `apps/ui` for UI work without loading the whole API schema graph unnecessarily.",
+    },
+    {
+      label: "release",
+      title: "Images ship independently",
+      body: "API and UI each publish their own GHCR image. Compose pins versions via env.",
+    },
+    {
+      label: "contract",
+      title: "Join points are explicit",
+      body: "OpenAPI, ACL types, lint-meta RULES, and docs JSON catalogs are regenerated from root.",
+    },
+  ]}
+/>
+
+## Compose wiring
+
+<DocFileTree
+  root="boringstack/"
+  title="Compose build contexts"
+  caption="paths are relative to infra/compose/compose/"
+  nodes={[
+    {
+      name: "infra/compose/compose/",
+      children: [
+        {
+          name: "docker-compose.yml",
+          detail: "build.context → ../../../apps/api and ../../../apps/ui",
+        },
+        { name: "api.dev.env.example", detail: "api-dev / api-migrate env" },
+        { name: "dev.sh", detail: "dev profile entrypoint" },
+      ],
+    },
+  ]}
+/>
+
+<Aside type="note" title="Forking">
+  Fork the whole monorepo on GitHub. You do not need separate api/ui/infra
+  repositories. On a VPS, clone the monorepo and run Compose from
+  `infra/compose/compose`.
+</Aside>
+
+## What lives where
+
+<FaqGroup>
+  <FaqItem title="apps/api" open>
+    - HTTP routes, auth, OAuth, password hashing
+    - Email send and provider abstraction
+    - BullMQ jobs and queue workers
+    - Audit log writes
+    - Drizzle schema and migrations
+  </FaqItem>
+  <FaqItem title="apps/ui">
+    - Pages, components, queries, stores, routes
+    - OpenAPI client (from `/swagger/json`)
+    - i18n (en, de), shadcn/ui primitives
+    - Storybook, Playwright e2e
+  </FaqItem>
+  <FaqItem title="infra/compose">
+    - docker-compose YAMLs and profile overlays
+    - Prometheus, Grafana, Loki, Promtail configs
+    - Traefik labels, ACME, security middlewares
+    - Backup scripts and runbooks
+  </FaqItem>
+  <FaqItem title="apps/docs">
+    - boringstack.xyz Starlight site
+    - Generated lint-meta and scripts tooling catalogs
+  </FaqItem>
+  <FaqItem title="infra/bootstrap (optional)">
+    - Hetzner provisioning, Cloudflare DNS, cloud-init
+  </FaqItem>
+</FaqGroup>
+
+## Cross-app contracts
+
+From the **repo root**:
+
+```bash
+pnpm regen   # ACL types → OpenAPI schema → RULES.md → docs JSON
+pnpm check   # drift checks (api on :3000 required for OpenAPI check)
+```
+
+| Contract | Producer | Consumer | Generated artifact |
+|----------|----------|----------|-------------------|
+| ACL types | `apps/api` | `apps/ui` | `apps/ui/src/lib/acl/acl.types.generated.ts` |
+| OpenAPI | `apps/api` `/swagger/json` | `apps/ui` | `apps/ui/src/lib/api/schema.d.ts` |
+| lint-meta | each app `scripts/lint-meta/` | committed `RULES.md` | per app |
+| Docs catalogs | api + ui scripts/README | `apps/docs` | `src/data/*.json` |
+
+CI runs the same checks in one checkout — no sibling-repo clone on GitHub `main`.
+
+## The contract between API and UI
+
+The API exposes its OpenAPI document at `/swagger/json`. The UI ships `pnpm generate:api` that reads that document and rewrites `src/lib/api/schema.d.ts`. When the API changes routes, the UI either fails typecheck or you run `pnpm regen` at the repo root.
+
+See [OpenAPI client](/ui/openapi-client/) for the full flow.
+
+## The contract between infra and the apps
+
+`infra/compose/compose/docker-compose.yml` defines `api-dev` / `api` / `ui-dev` / `ui` services whose build context is `apps/api` and `apps/ui`. Env vars are documented in `compose/api.dev.env.example` and `compose/api.prod.env.example`.
+
+In prod the default `image:` reference pulls a pre-built image from GHCR, published by the release workflows. See [Deployment](/topics/deployment/).
+
+## Related
+
+- [Separation of concerns](/architecture/separation-of-concerns/)
+- [Why BoringStack](/architecture/why-boringstack/)
+- [Commands cheatsheet](/reference/commands/)

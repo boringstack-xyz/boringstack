@@ -1,0 +1,164 @@
+---
+title: Email
+description: One pluggable interface, five providers (Cloudflare default, Resend, SendGrid, SMTP, noop). Templates precompiled to JSON at build time; dispatch is queue-aware.
+---
+
+import CommandRun from "../../../components/docs-kit/CommandRun";
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import SignalGrid from "../../../components/docs-kit/SignalGrid";
+
+<PageIntro
+  eyebrow="Provider-swappable email"
+  actions={[
+    { label: "Queues", href: "/api/queues/" },
+    { label: "Mailpit", href: "/topics/email-in-dev/" },
+  ]}
+  facts={[
+    { value: "5", label: "providers shipped" },
+    { value: "JSON", label: "precompiled templates" },
+    { value: "queue", label: "or inline dispatch" },
+  ]}
+>
+  Email has a delivery spine without forcing one vendor. Providers, templates,
+  and dispatch are independently swappable, while request handlers keep calling
+  the same function.
+</PageIntro>
+
+Three layers:
+
+1. Provider: the wire to whoever actually delivers the mail.
+2. Templates: Handlebars `.hbs` files precompiled to JSON at build time.
+3. Dispatch: `sendTemplate(...)` chooses queue or inline based on env, so the call site doesn't care which.
+
+The default is [Cloudflare Email Service](/topics/cloudflare-email/) because it's the cheapest at scale. Resend, SendGrid, and a plain SMTP provider ship alongside; swapping is a one-env-var change. SMTP is what you use locally against [Mailpit](/topics/email-in-dev/).
+
+## How a send flows
+
+```mermaid
+flowchart LR
+  caller["caller<br/>sendTemplate(...)"] --> dispatch{QUEUES_ENABLED?}
+  dispatch -- yes --> queue["enqueue<br/>email-delivery"]
+  queue --> worker["worker<br/>processJob"]
+  worker --> render["render template<br/>(precompiled JSON)"]
+  dispatch -- no --> render
+  render --> provider["provider.send()<br/>retryWithBackoff"]
+  provider -- cloudflare/resend/sendgrid/smtp --> sent[(provider)]
+  provider -- noop / missing key --> log["log only"]
+```
+
+Two retry layers stack when queues are on: the inner `retryWithBackoff` handles flickery HTTP responses, the outer BullMQ retry handles the case where the whole provider is down for minutes.
+
+## Design choices
+
+<SignalGrid
+  columns={3}
+  items={[
+    {
+      label: "provider",
+      title: "Single IEmailService interface",
+      body: "Adding Postmark or SES later is one file plus one selector branch.",
+    },
+    {
+      label: "dev",
+      title: "noop provider fallback",
+      body: "Dev boots without credentials; tests stay deterministic.",
+    },
+    {
+      label: "templates",
+      title: "Precompiled to JSON",
+      body: "No Handlebars parser in the hot path and no template injection from user data.",
+    },
+    {
+      label: "dispatch",
+      title: "sendTemplate is queue-aware",
+      body: "Workers skip the queue; request handlers go through it when queues are enabled.",
+    },
+    {
+      label: "privacy",
+      title: "Address masking in logs",
+      body: "Email addresses never reach the log pipeline raw.",
+    },
+    {
+      label: "default",
+      title: "Cloudflare first",
+      body: "The default provider is cheap at scale, but the app contract stays provider-agnostic.",
+    },
+  ]}
+/>
+
+## The provider contract
+
+Every concrete provider implements one shape:
+
+```ts
+interface IEmailService {
+  send: (msg: { to; subject; html; text? }) => Promise<{ id; provider }>;
+  readonly providerName: "cloudflare" | "resend" | "sendgrid" | "smtp" | "noop";
+}
+```
+
+The selector reads `EMAIL_PROVIDER`. If the matching key is empty, it returns the noop provider; dev never crashes, prod boot fails earlier at the env validator.
+
+## Templates
+
+Authors write `.hbs` files in `src/templates/email/templates/{auth,notifications}/`. The build script (`bun run build:templates`) compiles them to JSON. At runtime the template service reads the JSON and invokes the precompiled function. Net effect: zero parse cost per send, no template-injection surface.
+
+Shared layout partials live in `components/`. `baseTemplateVariables()` injects common context (product name, support URL, current year) so templates don't repeat it.
+
+## Using it
+
+```ts
+import { sendTemplate } from "../lib/email";
+
+await sendTemplate({
+  to: user.email,
+  subject: "Verify your email",
+  templatePath: "auth/verify-email",
+  variables: { token, confirmationUrl },
+});
+```
+
+<CommandRun
+  title="Provider switch"
+  caption="same application code, different delivery wire"
+  command={[
+    "EMAIL_PROVIDER=cloudflare bun run dev",
+    "EMAIL_PROVIDER=smtp WITH_MAILPIT=1 ./dev.sh up -d",
+  ]}
+  output={[
+    {
+      text: "cloudflare: production default when API token and account id exist",
+    },
+    { text: "smtp: local Mailpit loop with no external credentials" },
+  ]}
+/>
+
+Do not branch on queue vs inline in the handler; that decision lives in env config and `sendTemplate` / `sendTemplateNow`.
+
+## Adding a provider
+
+1. Create `src/lib/email/providers/<name>.ts` implementing `IEmailService`.
+2. Add it to the `EmailProviderName` union and the switch in `buildEmailService()`.
+3. Add the API-key env var to the schema with the matching cross-field invariant.
+
+The HTTP call should be wrapped in `retryWithBackoff` so transient 5xx responses get retried inside the call, not just at the queue level.
+
+## Adding a template
+
+1. Drop a `.hbs` file in the right subfolder.
+2. Run `bun run build:templates` (or the watcher in dev).
+3. Reference it: `templatePath: "<subfolder>/<name>"`.
+
+## Lint coverage
+
+[`@boring-stack-pkg/eslint-plugin-structured-logging`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-structured-logging) fails the build on unmasked email addresses in log calls or `console.log`-style leaks.
+
+## Source
+
+[`src/lib/email/`](https://github.com/boringstack-xyz/api-template/tree/main/src/lib/email); providers, dispatch, template service. [`src/templates/email/`](https://github.com/boringstack-xyz/api-template/tree/main/src/templates/email); the `.hbs` sources and build pipeline.
+
+## Related
+
+- [Cloudflare Email Service](/topics/cloudflare-email/); why it's the default.
+- [Setup runbook](/runbooks/cloudflare-email-setup/); domain + token wire-up.
+- [Queues](/api/queues/); the `email-delivery` queue on the worker side.

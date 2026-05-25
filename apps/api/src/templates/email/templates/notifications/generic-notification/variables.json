@@ -1,0 +1,16 @@
+{
+    "subject": "You have a new notification",
+    "preHeader": "Check out your latest notification",
+    "appName": "{{appName}}",
+    "actionText": "performed an action",
+    "ctaText": "View Notification",
+    "initiator": {
+        "name": "{{initiator.name}}",
+        "url": "{{initiator.url}}",
+        "avatarUrl": "{{initiator.avatarUrl}}"
+    },
+    "target": {
+        "type": "{{target.type}}",
+        "url": "{{target.url}}"
+    }
+}

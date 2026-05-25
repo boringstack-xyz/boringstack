@@ -1,0 +1,107 @@
+---
+title: Architecture rules
+description: "The UI-specific lint rules that hold the component anatomy in place: hook placement, className discipline, file-naming, prop ordering."
+---
+
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
+import FaqGroup from "../../../components/FaqGroup.tsx";
+import FaqItem from "../../../components/FaqItem.tsx";
+
+<PageIntro
+  eyebrow="UI Lint Contract"
+  actions={[
+    { label: "What it enforces", href: "#what-it-enforces" },
+    { label: "Benefits", href: "#component-anatomy-benefits" },
+  ]}
+  facts={[
+    { value: "ESLint", label: "enforcement layer" },
+    { value: "7", label: "rule categories" },
+    { value: "Compile-time", label: "not vibes" },
+  ]}
+>
+  The ui-template enforces its architecture through ESLint, not vibes. The
+  UI-specific work is
+  [`@boring-stack-pkg/eslint-plugin-react-component-architecture`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-react-component-architecture).
+  It composes with the shared plugins (resource-architecture, module-boundaries,
+  structured-logging, env-access, test-conventions, code-flow) that both repos
+  use.
+</PageIntro>
+
+## What it enforces
+
+<FaqGroup>
+  <FaqItem title="Component anatomy" open>
+    No hooks in `.tsx`; logic belongs in `.hooks.ts`.
+  </FaqItem>
+  <FaqItem title="Single semantic module">
+    Constants, utils, and types each get their own file (`.constants.ts`,
+    `.utils.ts`, `.types.ts`).
+  </FaqItem>
+  <FaqItem title="className discipline">
+    Use `cn(...)`; pull long class strings out for readable conditionals.
+  </FaqItem>
+  <FaqItem title="File naming">
+    PascalCase components; kebab-case otherwise; suffix matches role
+    (`.hooks.ts`, `.queries.ts`, `.store.ts`).
+  </FaqItem>
+  <FaqItem title="Prop ordering">
+    Required props, optional props, then handlers.
+  </FaqItem>
+  <FaqItem title="View object boundary">
+    Components read the hook's view object; no direct TanStack Query, Zustand,
+    or `import.meta.env`.
+  </FaqItem>
+  <FaqItem title="Queries layer">
+    `useQuery` only in `*.queries.ts`; component hooks call those query hooks.
+  </FaqItem>
+</FaqGroup>
+
+Each rule has a fix-it suggestion where mechanical; the rest fail the lint gate and need a real edit.
+
+## Component anatomy benefits
+
+<FeatureGrid
+  items={[
+    {
+      icon: "🧪",
+      title: "no-hooks-in-tsx",
+      body: "Pure .tsx files are snapshot-friendly: one render assertion, no hook setup.",
+    },
+    {
+      icon: "🪝",
+      title: "view object in .hooks.ts",
+      body: "Hooks return a typed view object; test with renderHook, no DOM.",
+    },
+    {
+      icon: "🔒",
+      title: "no-mixed-concern-modules",
+      body: "module-boundaries keeps logic out of .tsx so deadline edits do not collapse into one file.",
+    },
+    {
+      icon: "📐",
+      title: "consistent file suffixes",
+      body: "`.hooks.ts`, `.queries.ts`, `.store.ts`: same layout in every feature folder.",
+    },
+  ]}
+/>
+
+## Suppressing a rule
+
+`// eslint-disable-next-line <rule>` works, but every suppression is reviewed. Common valid cases:
+
+- Third-party render-prop APIs that force a hook-like pattern in `.tsx`.
+- Sub-components that have no state but are too small to split into their own folder. Inline them; the lint rule has a size threshold.
+
+If you find yourself suppressing the same rule across many files, that's a signal to update the rule, not to keep suppressing.
+
+## Source
+
+Plugin source + per-rule docs: [`@boring-stack-pkg/eslint-plugin-react-component-architecture`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-react-component-architecture). ui-template ESLint config: [`eslint.config.mjs`](https://github.com/boringstack-xyz/ui-template/blob/main/eslint.config.mjs).
+
+## Related
+
+- [Lint as the contract](/architecture/lint-as-contract/): the full family across both repos.
+- [lint:meta rules](/architecture/lint-meta/): static guardrails under `scripts/lint-meta/`.
+- [Scripts & tooling](/reference/scripts-tooling/): command → script map for ui-template.
+- [UI template overview](/ui/overview/): the component anatomy these rules enforce.

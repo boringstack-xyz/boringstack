@@ -1,0 +1,56 @@
+[
+  {
+    "name": "Initial route (cold start: index + react + router + i18n + query)",
+    "path": [
+      "dist/assets/index-*.js",
+      "dist/assets/react-*.js",
+      "dist/assets/router-*.js",
+      "dist/assets/i18n-*.js",
+      "dist/assets/query-*.js"
+    ],
+    "limit": "245 KB",
+    "gzip": true
+  },
+  {
+    "name": "Modulepreload runtime + shared shell",
+    "path": [
+      "dist/assets/rolldown-runtime-*.js",
+      "dist/assets/logger-*.js",
+      "dist/assets/client-*.js",
+      "dist/assets/button-*.js",
+      "dist/assets/index.esm-*.js",
+      "dist/assets/createLucideIcon-*.js",
+      "dist/assets/dist-*.js"
+    ],
+    "limit": "165 KB",
+    "gzip": true
+  },
+  {
+    "name": "Modulepreload feature constants",
+    "path": [
+      "dist/assets/Auth.constants-*.js",
+      "dist/assets/Notifications.constants-*.js",
+      "dist/assets/capabilities.constants-*.js"
+    ],
+    "limit": "5 KB",
+    "gzip": true
+  },
+  {
+    "name": "Login page chunk",
+    "path": "dist/assets/LoginPage-*.js",
+    "limit": "20 KB",
+    "gzip": true
+  },
+  {
+    "name": "Dashboard page chunk",
+    "path": "dist/assets/DashboardPage-*.js",
+    "limit": "5 KB",
+    "gzip": true
+  },
+  {
+    "name": "CSS (Tailwind compiled)",
+    "path": "dist/assets/*.css",
+    "limit": "12 KB",
+    "gzip": true
+  }
+]

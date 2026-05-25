@@ -1,0 +1,102 @@
+name: docs-linkcheck
+
+# Builds the BoringStack docs site and runs lychee against the built output.
+# Internal broken links fail the job; external 4xx/5xx are warnings only
+# (rate-limited APIs and intermittent third-party 503s are not the docs'
+# problem to solve at PR-review time).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/docs/src/**"
+      - "apps/docs/scripts/**"
+      - "apps/docs/astro.config.mjs"
+      - "apps/docs/package.json"
+      - "apps/docs/pnpm-lock.yaml"
+      - ".github/workflows/apps-docs-linkcheck.yml"
+  pull_request:
+    paths:
+      - "apps/docs/src/**"
+      - "apps/docs/scripts/**"
+      - "apps/docs/astro.config.mjs"
+      - "apps/docs/package.json"
+      - "apps/docs/pnpm-lock.yaml"
+      - ".github/workflows/apps-docs-linkcheck.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apps-docs-linkcheck-docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linkcheck:
+    defaults:
+      run:
+        working-directory: apps/docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/docs/pnpm-lock.yaml
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+
+      - name: Install docs deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install ui-template deps for lint-meta export
+        working-directory: apps/ui
+        run: pnpm install --frozen-lockfile
+
+      - name: Install api-template deps for lint-meta export
+        working-directory: apps/api
+        run: bun install --frozen-lockfile
+
+      - name: Verify generated docs data
+        env:
+          BORINGSTACK_UI_DIR: ${{ github.workspace }}/apps/ui
+          BORINGSTACK_API_DIR: ${{ github.workspace }}/apps/api
+        run: pnpm check:docs-data
+
+      - name: Build docs site
+        env:
+          BORINGSTACK_UI_DIR: ${{ github.workspace }}/apps/ui
+          BORINGSTACK_API_DIR: ${{ github.workspace }}/apps/api
+        run: pnpm build:ci
+
+      - name: Internal link check (fail on broken)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress
+            --offline
+            --root-dir ${{ github.workspace }}/apps/docs/dist
+            './dist/**/*.html'
+          fail: true
+
+      - name: External link check (warning only)
+        uses: lycheeverse/lychee-action@v2
+        continue-on-error: true
+        with:
+          args: >-
+            --no-progress
+            --exclude-path './dist/llms-full.txt'
+            --exclude-path './dist/llms-small.txt'
+            --exclude '^https?://(localhost|127\.0\.0\.1|.*\.localhost)'
+            --exclude 'github\.com/boringstack-xyz/.*/(blob|tree)/'
+            './dist/**/*.html'
+          fail: false

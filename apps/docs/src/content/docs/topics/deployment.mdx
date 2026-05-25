@@ -1,0 +1,244 @@
+---
+title: Deployment
+description: Boring deployment. Single-host VPS, Docker, the templates forked, GHCR images, one prod profile. HTTPS via ACME, perimeter locked by Cloudflare.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import CommandRun from "../../../components/docs-kit/CommandRun";
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import SignalGrid from "../../../components/docs-kit/SignalGrid";
+import FaqGroup from "../../../components/FaqGroup.tsx";
+import FaqItem from "../../../components/FaqItem.tsx";
+
+<PageIntro
+  eyebrow="Production deploy"
+  actions={[
+    { label: "Provision with OpenTofu", href: "/topics/provisioning-with-tofu/" },
+    { label: "Firewall runbook", href: "/runbooks/firewall-and-tls/" },
+  ]}
+  facts={[
+    { value: "GHCR", label: "immutable app images" },
+    { value: "Traefik", label: "same-origin TLS routing" },
+    { value: "Cloudflare", label: "edge + origin perimeter" },
+  ]}
+>
+  BoringStack runs on a VPS you control: Docker Compose, GHCR images, Traefik
+  TLS, and Cloudflare at the edge. Fork the templates, fill compose/.env, then
+  boot the production profile manually or let OpenTofu do first provisioning.
+</PageIntro>
+
+## The mental model
+
+Push to `main` on `api-template` or `ui-template`. The release workflow builds a Docker image and pushes it to `ghcr.io/<your-owner>/<repo>:latest`. WUD on the VPS detects the new tag and auto-deploys app containers (`api`, `ui`). Base images remain notify-only and operator-applied. Traefik handles TLS via Let's Encrypt; Cloudflare proxies all traffic to your single apex domain via same-origin path routing.
+
+<SignalGrid
+  columns={3}
+  items={[
+    {
+      label: "build",
+      title: "GitHub builds the app images",
+      body: "API and UI repos publish GHCR images from release workflows instead of building on the VPS.",
+    },
+    {
+      label: "wud",
+      title: "WUD runs hybrid updates",
+      body: "App images auto-roll on new tags; Postgres/Valkey/Traefik stay notify-only for manual review.",
+    },
+    {
+      label: "route",
+      title: "Traefik keeps one origin",
+      body: "The SPA lives on / and the API on /api/* behind one apex, one cert, and one browser security model.",
+    },
+  ]}
+/>
+
+## Design choices
+
+<FaqGroup>
+  <FaqItem title="Single-host first" open>
+    One VPS carries real traffic for years; scale out when you need it.
+  </FaqItem>
+  <FaqItem title="Pre-built images from GHCR">
+    Reproducible deploys; the VPS pulls images instead of running `npm install` on box.
+  </FaqItem>
+  <FaqItem title="WUD hybrid policy">
+    `api`/`ui` auto-deploy from GHCR tags; base services stay notify-only and
+    human-reviewed.
+  </FaqItem>
+  <FaqItem title="Traefik + ACME">
+    TLS on the origin without a separate load-balancer bill.
+  </FaqItem>
+  <FaqItem title="Same-origin path routing on the apex">
+    One cert for `/` and `/api/*`; no `api.` subdomain.
+  </FaqItem>
+  <FaqItem title="Cloudflare-only ingress on 80/443">
+    Only Cloudflare reaches the origin; port scans hit a closed firewall.
+  </FaqItem>
+  <FaqItem title="Multi-stage non-root `Dockerfile.prod`">
+    Small runtime image without a shell in prod.
+  </FaqItem>
+</FaqGroup>
+
+## First-time wiring
+
+Three things need configuring before the first deploy. The release workflows handle everything else from your renamed fork URLs.
+
+### 1. Publish images to GHCR
+
+The `release.yml` workflows on `api-template` and `ui-template` run on push to `main` and on `v*.*.*` tags. They use `${{ github.event.repository.name }}`, so they publish to `ghcr.io/<your-owner>/<your-renamed-repo>:latest` automatically. The default `GITHUB_TOKEN` has `packages: write` via the workflow grant, so the first push from a freshly-forked repo works without secret setup.
+
+After the first publish, **make the GHCR package public** so the VPS can pull without credentials:
+
+1. Go to `https://github.com/<your-owner>/<your-renamed-repo>/pkgs/container/<your-renamed-repo>`.
+2. Package settings → Change visibility → Public.
+
+Without this, downstream consumers (your VPS) need a pull credential.
+
+### 2. Point the prod compose stack at your images
+
+In your `infra-docker-compose-template` fork's `compose/.env`:
+
+```bash
+IMAGE_OWNER=acme
+API_IMAGE_NAME=acme-api    # only if you renamed the api repo
+UI_IMAGE_NAME=acme-ui      # only if you renamed the ui repo
+```
+
+Kept canonical names? Only `IMAGE_OWNER` needs to change.
+
+### 3. (Optional) Wire OpenTofu bootstrap
+
+If using the OpenTofu path, `terraform.tfvars` in your `infra-bootstrap-tofu-template` fork:
+
+```hcl
+api_repo   = "https://github.com/acme/acme-api"
+ui_repo    = "https://github.com/acme/acme-ui"
+infra_repo = "https://github.com/acme/acme-infra"
+domain     = "acme.com"
+# ... other vars per terraform.tfvars.example
+```
+
+The module derives `IMAGE_OWNER`, `API_IMAGE_NAME`, and `UI_IMAGE_NAME` from those URLs and renders them into `compose/.env` on the VPS. You don't set them twice.
+
+## First-deploy checklist
+
+Use this once, after Quickstart and before the first production boot:
+
+- [ ] API, UI, and infra template repos forked under your org/user.
+- [ ] First API and UI images published to GHCR (push to `main`, then watch each Actions tab).
+- [ ] GHCR packages set to **Public**, or the VPS has a pull credential.
+- [ ] `compose/.env` has `IMAGE_OWNER` and any renamed `API_IMAGE_NAME` / `UI_IMAGE_NAME`.
+- [ ] `JWT_SECRET` regenerated for production (`openssl rand -base64 48`).
+- [ ] `FRONTEND_URL`, `PUBLIC_API_URL`, `PUBLIC_UI_HOST`, and `ACME_EMAIL` match the production origin.
+- [ ] `SUPERUSER_PASSWORD` rotated through the password-reset flow after first login.
+- [ ] [Firewall & TLS](/runbooks/firewall-and-tls/) verified: Cloudflare can reach the origin, direct requests cannot.
+- [ ] [Backups](/runbooks/backups/) configured and at least one restore drill run.
+- [ ] [Cloudflare Email setup](/runbooks/cloudflare-email-setup/) completed if Cloudflare is your outbound mail provider.
+- [ ] Optional OpenTofu path: `terraform.tfvars` has fork URLs, real `domain`, and production secrets.
+
+## First-time deploy
+
+The preferred path is [Provisioning with OpenTofu](/topics/provisioning-with-tofu/): one `tofu apply` provisions the VPS, configures Cloudflare DNS + zone settings, and runs cloud-init which clones the infra repo, drops a rendered `compose/.env`, and pulls the GHCR images.
+
+Manual path if you'd rather:
+
+1. Provision a Ubuntu VPS with Docker installed.
+2. Clone your `infra-docker-compose-template` fork onto the VPS.
+3. Write `compose/.env` with `PUBLIC_UI_HOST`, `ACME_EMAIL`, `IMAGE_OWNER`, and the rest from `.env.example`.
+4. `STACK=prod ./scripts/compose-up.sh pull && STACK=prod ./scripts/compose-up.sh up -d`.
+5. Run the [Firewall & TLS runbook](/runbooks/firewall-and-tls/) to verify Cloudflare-only ingress.
+
+You do **not** clone `api-template` or `ui-template` on the VPS. Their built images come from GHCR.
+
+## Subsequent deploys
+
+For changes to the api or the ui, you don't touch the VPS:
+
+<CommandRun
+  title="Publish an app image"
+  caption="your laptop"
+  command="git push origin main"
+  output={[
+    { tone: "ok", text: "release.yml builds ghcr.io/.../...:latest" },
+    { tone: "ok", text: "release.yml also publishes :sha-<7> and semver tags when present" },
+  ]}
+/>
+
+WUD watches `latest`. App containers (`api`, `ui`) are updated automatically. For base-image updates and infra changes, apply manually:
+
+<CommandRun
+  title="Apply on the VPS"
+  caption="manual production restart"
+  command={[
+    "ssh <vps>",
+    "cd /opt/boringstack/infra",
+    "docker compose pull",
+    "docker compose up -d",
+  ]}
+/>
+
+For changes to the infra YAML or env vars, `git pull` the infra repo on the VPS then re-run `compose up -d`.
+
+## Image update strategy
+
+<FaqGroup>
+  <FaqItem title="WUD hybrid mode (default)" open>
+  `WITH_WUD=1` in prod: app images auto-pull + auto-recreate; base images send notifications only.
+  </FaqItem>
+  <FaqItem title="Notify-only for everything">
+  Disable app auto-deploy labels if you want full manual rollouts.
+  </FaqItem>
+  <FaqItem title="Pin to a specific tag">
+  Set `API_IMAGE_TAG=sha-abc1234` or `:0.3.0` in `compose/.env` and update deliberately.
+  </FaqItem>
+</FaqGroup>
+
+The default is hybrid because app-image rollouts are low-risk and frequent, while base-image rollouts carry higher migration risk. See [Image updates](/runbooks/image-updates/).
+
+## Rollback
+
+```bash
+# On the VPS:
+echo "API_IMAGE_TAG=sha-<previous-7>" >> compose/.env  # or a previous :<semver>
+docker compose pull
+docker compose up -d
+```
+
+Postgres schema is the only thing this doesn't roll back. Destructive migrations are forward-only by convention. The api-template's discipline is "additive changes are normal, destructive changes are deliberate," so most rollbacks just work.
+
+For high-stakes deploys, snapshot Postgres before applying a destructive migration. See [Backups](/runbooks/backups/).
+
+## Where to scale up
+
+When single-host runs out of room, Postgres is almost always the bottleneck. In rough order:
+
+1. Vertical: bigger VPS, bump `POSTGRES_LIMITS_*`.
+2. Managed Postgres: Neon, Supabase, Crunchy, RDS. App stays on the VPS.
+3. Replicate the API horizontally behind a real load balancer.
+4. Kubernetes. Separate template planned; not in this repo because mixing Compose + cluster YAML is exactly the confusion BoringStack avoids.
+
+## Provider notes
+
+<FaqGroup>
+  <FaqItem title="Hetzner Cloud" open>
+    EU-friendly pricing and network. New accounts may sit in fraud review for a day or two.
+  </FaqItem>
+  <FaqItem title="OVH">
+    Low cost with IPv4 included. Prefer the API over the web console for automation.
+  </FaqItem>
+  <FaqItem title="DigitalOcean">
+    Polished UX and docs. Compare specs against Hetzner/OVH for your workload.
+  </FaqItem>
+  <FaqItem title="Your own metal">
+    Lowest cost at scale; you operate the hardware and networking.
+  </FaqItem>
+</FaqGroup>
+
+Cloudflare in front is standard regardless of provider; that's what makes the firewall + IP allowlist work.
+
+## Related runbooks
+
+- [Firewall & TLS](/runbooks/firewall-and-tls/). Cloudflare-only ingress, HTTPS via Traefik.
+- [Backups](/runbooks/backups/). Postgres + rclone.
+- [Image updates](/runbooks/image-updates/). WUD hybrid defaults.
+- [Cloudflare Email setup](/runbooks/cloudflare-email-setup/). Outbound mail.

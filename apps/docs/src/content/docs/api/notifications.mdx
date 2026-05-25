@@ -1,0 +1,292 @@
+---
+title: Notifications
+description: Async per-user notification dispatch over BullMQ. In-app, email, and SSE channels. Event-typed, deduplicated, preference-aware, framework only. Fork users author their own events.
+---
+
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import CommandRun from "../../../components/docs-kit/CommandRun";
+import SignalGrid from "../../../components/docs-kit/SignalGrid";
+import FaqGroup from "../../../components/FaqGroup.tsx";
+import FaqItem from "../../../components/FaqItem.tsx";
+
+<PageIntro
+  eyebrow="Notifications"
+  actions={[
+    { label: "Author an event", href: "#authoring-an-event" },
+    { label: "HTTP surface", href: "#http-surface" },
+    { label: "SSE + Valkey", href: "#realtime-sse--valkey-pubsub" },
+  ]}
+  facts={[
+    { value: "BullMQ", label: "async dispatch" },
+    { value: "3 channels", label: "in-app, email, SSE" },
+    { value: "Framework only", label: "no example events" },
+  ]}
+>
+  A `notifications.send(event, args)` call validates the payload, enqueues a BullMQ job, and returns. A worker resolves the event definition, runs dedup + self-action guards, checks per-user preferences, persists the notification row + per-channel delivery rows, then fans out to channel handlers.
+</PageIntro>
+
+## How a notification flows
+
+```mermaid
+sequenceDiagram
+  participant Caller as Service / route
+  participant Dispatcher as notifications.send
+  participant Queue as notification-dispatch queue
+  participant Worker as Dispatch worker
+  participant DB as Postgres
+  participant Email as email-delivery queue
+  participant SSE as Valkey pub/sub
+  Caller->>Dispatcher: send(event, { recipientUserId, payload })
+  Dispatcher->>Dispatcher: Value.Check(schema, payload)
+  Dispatcher->>Queue: enqueue (QUEUES_ENABLED) or run inline
+  Queue-->>Worker: next job
+  Worker->>Worker: lookup event, self-action guard, dedup
+  Worker->>Worker: resolve user preferences
+  Worker->>DB: INSERT notification + per-channel delivery rows
+  par in-app
+    Worker->>DB: UPDATE delivery SET status=sent (row IS the in-app)
+  and email
+    Worker->>Email: enqueue email job (settles delivery on completion)
+  and sse
+    Worker->>SSE: PUBLISH notifications:user:<id>
+  end
+```
+
+## Design choices
+
+<SignalGrid
+  columns={3}
+  items={[
+    {
+      label: "Call site",
+      title: "Fire-and-forget",
+      body: "Uses the audit-log pattern: void notifications.send(...). Delivery never blocks the originating request.",
+    },
+    {
+      label: "Dev ergonomics",
+      title: "Inline when queues off",
+      body: "runNotificationDispatch runs identically in the worker and inline fallback, so dev needs no worker process.",
+    },
+    {
+      label: "Extensibility",
+      title: "Pluggable channels",
+      body: "In-app and email ship by default. SSE is opt-in. New channels implement INotificationChannel and register at boot.",
+    },
+  ]}
+/>
+
+<FaqGroup>
+  <FaqItem title="Fire-and-forget at the call site" open>
+    Uses the audit-log pattern already in the codebase: `void notifications.send(...)`. Delivery never blocks the originating request.
+  </FaqItem>
+  <FaqItem title="Async via BullMQ; same core inline when queues are off">
+    `runNotificationDispatch` runs identically in the worker and the inline fallback, so dev and tests don't need a worker process.
+  </FaqItem>
+  <FaqItem title="Channels are pluggable">
+    In-app and email ship by default. SSE is opt-in with `NOTIFICATIONS_SSE_ENABLED=true`. New channels (web-push, SMS, custom) implement `INotificationChannel` and register at boot via `channelRegistry.register(channel)`.
+  </FaqItem>
+  <FaqItem title="Events are typed via TypeBox">
+    Author handlers receive a `payload` typed by the event's schema. The dispatcher validates with `Value.Check` before enqueuing; the worker re-validates before any handler runs.
+  </FaqItem>
+  <FaqItem title="Dedup is opt-in per event">
+    Events declare `dedup: { key, windowSeconds }`. A unique index on `notification_dedup.dedup_key` short-circuits duplicate dispatches inside the window. Cleanup runs hourly via a repeatable maintenance job.
+  </FaqItem>
+  <FaqItem title="Preferences apply per (user, eventType, channel)">
+    Disabled channels still record a `notification_delivery` row with `status: suppressed`, easier to debug "why didn't I get an email?" with a row to point at.
+  </FaqItem>
+  <FaqItem title="Framework ships zero example events">
+    Forks define their own. Removing example product code on adoption is friction; the scaffolder makes adding the first one a one-liner.
+  </FaqItem>
+</FaqGroup>
+
+## Authoring an event
+
+<CommandRun
+  title="Scaffold a notification event"
+  caption="generates the event file and appends to the registry barrel"
+  command={["bun run new:notification-event -- comment.replied"]}
+  output={[
+    { tone: "ok", text: "Created src/api/notifications/events/comment-replied.event.ts" },
+    { tone: "ok", text: "Updated src/api/notifications/events/index.ts" },
+  ]}
+/>
+
+Generates `src/api/notifications/events/comment-replied.event.ts` and appends to the registry barrel. Edit the schema + render functions to match the domain:
+
+```ts
+import { t } from "elysia";
+import { defineNotificationEvent } from "../../../lib/notifications";
+
+export const commentRepliedEvent = defineNotificationEvent({
+  type: "comment.replied",
+  schema: t.Object({
+    actorId: t.String({ format: "uuid" }),
+    actorName: t.String(),
+    parentCommentId: t.String({ format: "uuid" }),
+    excerpt: t.String({ maxLength: 200 }),
+  }),
+  defaultChannels: ["in-app", "email"],
+  dedup: {
+    key: ({ recipientUserId, payload }) =>
+      `comment.replied:${recipientUserId}:${payload.parentCommentId}`,
+    windowSeconds: 3_600,
+  },
+  selfActionGuard: ({ recipientUserId, payload }) =>
+    recipientUserId === payload.actorId,
+  render: {
+    inApp: ({ payload }) => ({
+      title: `${payload.actorName} replied to your comment`,
+      body: payload.excerpt,
+      ctaUrl: `/comments/${payload.parentCommentId}`,
+      ctaLabel: "View reply",
+    }),
+    email: {
+      subject: ({ payload }) => `${payload.actorName} replied to your comment`,
+      templatePath: "notifications/comment-replied",
+      variables: ({ payload }) => ({
+        actor: payload.actorName,
+        excerpt: payload.excerpt,
+      }),
+    },
+  },
+});
+```
+
+## Sending one
+
+```ts
+import { notifications } from "@/lib/notifications";
+import { commentRepliedEvent } from "@/api/notifications/events/comment-replied.event";
+
+void notifications.send(commentRepliedEvent, {
+  recipientUserId: parentComment.userId,
+  payload: {
+    actorId: currentUser.id,
+    actorName: currentUser.displayName,
+    parentCommentId: parentComment.id,
+    excerpt: reply.body.slice(0, 200),
+  },
+});
+```
+
+The `payload` is TypeScript-checked at the call site against `commentRepliedEvent.schema`. A bad shape fails to compile.
+
+## HTTP surface
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/v1/notifications` | List the current user's notifications with stable cursor pagination and an optional `status` filter. |
+| `PATCH /api/v1/notifications/:id` | Mark read / archived. |
+| `POST /api/v1/notifications/mark-all-read` | Bulk mark every unread row read. |
+| `GET /api/v1/notifications/preferences` | List per-event-type, per-channel toggles. |
+| `PUT /api/v1/notifications/preferences` | Bulk upsert preferences (UI submits the full settings page at once). |
+| `GET /api/v1/notifications/stream` | Server-Sent Events stream for the current user. |
+
+## Realtime: SSE + Valkey pub/sub
+
+SSE is disabled unless `NOTIFICATIONS_SSE_ENABLED=true`. When enabled, the SSE endpoint subscribes to `notifications:user:<userId>` on Valkey. When the SSE channel implementation publishes after persistence, the message is forwarded to every connected client of that user, including clients on different API instances.
+
+```mermaid
+flowchart LR
+  apiA["API instance A<br/>worker publishes"] -->|PUBLISH| valkey[(Valkey)]
+  valkey -->|message| apiB["API instance B<br/>SSE client holds this connection"]
+  apiB -->|data:| browser["Browser EventSource"]
+```
+
+The SSE handler hooks the request's `AbortSignal`: when the tab closes, the generator's `finally` block disconnects the Valkey subscriber. No connection leak. If SSE is disabled, the endpoint returns 404 so the feature cannot accidentally look half-on.
+
+Messages use a stable JSON envelope:
+
+```json
+{
+  "type": "notification.created",
+  "notification": {
+    "id": "...",
+    "eventType": "comment.replied",
+    "title": "Someone replied",
+    "body": "...",
+    "ctaUrl": "/comments/...",
+    "ctaLabel": "View reply",
+    "status": "unread",
+    "readAt": null,
+    "createdAt": "2026-05-15T12:00:00.000Z"
+  }
+}
+```
+
+## Web Push channel (v1.1)
+
+Browser push notifications via the W3C Push API + VAPID. Plugged into the
+existing dispatcher without touching the fan-out logic. The channel
+registers itself conditionally when the VAPID env triplet is configured.
+
+<FaqGroup>
+  <FaqItem title="Setup" open>
+    Generate a fresh VAPID keypair: `bun run vapid:generate`. Paste the
+    three lines it prints into `.env.local` (server) and put the public
+    key into the UI's `VITE_VAPID_PUBLIC_KEY`. All three server vars must
+    be set together: `validate.ts` rejects partial configuration.
+  </FaqItem>
+  <FaqItem title="Endpoints">
+    `POST /api/v1/notifications/push/subscribe` upserts a row keyed on
+    `(userId, endpoint)`. `DELETE /api/v1/notifications/push/subscribe`
+    removes by endpoint. `GET /api/v1/notifications/push/subscriptions`
+    lists the user's own devices for a "Devices" panel. All three require
+    the standard auth cookie.
+  </FaqItem>
+  <FaqItem title="Storage">
+    One Drizzle table, `notifications.push_subscription`:
+    `(userId, endpoint, p256dhKey, authKey, userAgent?, expiresAt?,
+    createdAt, lastUsedAt)`. Unique on `(userId, endpoint)` so the same
+    browser re-subscribing rotates keys instead of creating duplicates.
+  </FaqItem>
+  <FaqItem title="Delivery semantics">
+    The channel resolves all live subscriptions for the recipient at
+    delivery time and enqueues one `web-push-delivery` job. The worker
+    fans out per-subscription POSTs in parallel and settles the
+    `notification_delivery` row: `sent` if any subscription accepted the
+    payload, `failed` if every attempt errored, `suppressed` if the user
+    had no live subscriptions.
+  </FaqItem>
+  <FaqItem title="410 cleanup">
+    A 410 Gone (or 404) from the push service means the browser has
+    invalidated the subscription. The worker deletes the row eagerly and
+    logs `notifications.web_push.subscription_expired`, so no orphan rows
+    accumulate.
+  </FaqItem>
+  <FaqItem title="Conditional registration">
+    `setup-notifications.ts` only calls `channelRegistry.register(webPushChannel)`
+    when all three `WEB_PUSH_VAPID_*` env vars are set. A fork that doesn't
+    ship Web Push never sees the channel in the registry.
+  </FaqItem>
+</FaqGroup>
+
+## Out of scope (v1)
+
+<FaqGroup>
+  <FaqItem title="Migrating auth transactional emails" open>
+    Email verification, password reset, etc. stay on the direct `sendTemplate(...)` path. Transactional ≠ subscription; preferences shouldn't be able to silence them.
+  </FaqItem>
+  <FaqItem title="Notification digest emails">
+    A "you have 5 new" rollup is future work; the persistence model has the data ready.
+  </FaqItem>
+  <FaqItem title="Per-user throttling beyond dedup">
+    Future. Dedup catches obvious duplicates; a separate rate-limit middleware would catch "100 different events in a minute."
+  </FaqItem>
+</FaqGroup>
+
+## Source
+
+- `src/api/notifications/`: HTTP routes, schemas, service, SSE handler, scaffolded events, push subscription endpoints (`notifications.push.*`).
+- `src/lib/notifications/`: channels (in-app, email, sse, web-push), dispatch pipeline, event + channel registries, preferences, dedup, Valkey pub/sub.
+- `src/queues/notification-dispatch/`: BullMQ queue + worker.
+- `src/queues/notification-maintenance/`: repeatable dedup cleanup job.
+- `src/queues/web-push-delivery/`: BullMQ queue + worker for per-subscription HTTP fan-out to push services.
+- `src/clients/postgres/schema/notifications.schema.ts`: five tables in the `notifications` Postgres schema (notification, notification_dedup, notification_delivery, notification_preference, push_subscription).
+- `scripts/vapid-generate.ts`: VAPID keypair generator (`bun run vapid:generate`).
+
+## Related
+
+- [Queues](/api/queues/): the BullMQ shape this builds on.
+- [Email](/api/email/): the email channel uses the same dispatch.
+- [Audit log](/api/audit-log/): the ergonomic pattern this notification dispatcher mirrors.

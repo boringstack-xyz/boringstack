@@ -1,0 +1,286 @@
+{
+  "ui": {
+    "template": "ui",
+    "runner": "pnpm",
+    "folders": [
+      {
+        "folder": "[`ci/`](ci/)",
+        "purpose": "Pre-push gate, CI manifest, GitHub settings audit"
+      },
+      {
+        "folder": "[`dev/`](dev/)",
+        "purpose": "Local developer workflow guards"
+      },
+      {
+        "folder": "[`codegen/`](codegen/)",
+        "purpose": "Scaffolding and OpenAPI contract generation"
+      },
+      {
+        "folder": "[`quality/`](quality/)",
+        "purpose": "Test and bundle adjunct checks outside ESLint"
+      },
+      {
+        "folder": "[`lint-meta/`](lint-meta/)",
+        "purpose": "Static meta-lint rules ([RULES.md](lint-meta/RULES.md))"
+      }
+    ],
+    "commands": [
+      {
+        "command": "dev",
+        "script": "dev/preflight-host-dev.sh`",
+        "description": "",
+        "invocation": "./scripts/dev/preflight-host-dev.sh && vite"
+      },
+      {
+        "command": "size:check:modulepreload",
+        "script": "quality/check-modulepreload-size-coverage.ts",
+        "description": "After `pnpm build`, every `<link rel=\"modulepreload\">` in dist/index.html",
+        "invocation": "tsx scripts/quality/check-modulepreload-size-coverage.ts"
+      },
+      {
+        "command": "lint:meta",
+        "script": "lint-meta/cli.ts",
+        "description": "Static checks for files ESLint can't parse as JavaScript:",
+        "invocation": "tsx scripts/lint-meta/cli.ts"
+      },
+      {
+        "command": "lint:meta:verify",
+        "script": "lint-meta/cli.ts",
+        "description": "Static checks for files ESLint can't parse as JavaScript:",
+        "invocation": "tsx scripts/lint-meta/cli.ts --verify"
+      },
+      {
+        "command": "generate:lint-meta-docs",
+        "script": "lint-meta/generate-rules-md.ts",
+        "description": "",
+        "invocation": "tsx scripts/lint-meta/generate-rules-md.ts"
+      },
+      {
+        "command": "check:lint-meta-docs",
+        "script": "lint-meta/generate-rules-md.ts",
+        "description": "",
+        "invocation": "tsx scripts/lint-meta/generate-rules-md.ts --check"
+      },
+      {
+        "command": "check:scripts-docs",
+        "script": "check-scripts-docs.ts",
+        "description": "",
+        "invocation": "tsx scripts/check-scripts-docs.ts"
+      },
+      {
+        "command": "test:ci",
+        "script": "quality/run-tests-clean.ts",
+        "description": "Runs vitest and fails when the suite prints warning noise to stdout/stderr.",
+        "invocation": "tsx scripts/quality/run-tests-clean.ts run --coverage"
+      },
+      {
+        "command": "new:component",
+        "script": "codegen/new-component.ts",
+        "description": "Scaffold a new component folder with the 8-file anatomy.",
+        "invocation": "tsx scripts/codegen/new-component.ts"
+      },
+      {
+        "command": "new:feature",
+        "script": "codegen/new-feature.ts",
+        "description": "Scaffold a new feature folder.",
+        "invocation": "tsx scripts/codegen/new-feature.ts"
+      },
+      {
+        "command": "generate:api",
+        "script": "codegen/generate-api.ts",
+        "description": "Regenerate src/lib/api/schema.d.ts from the api-template's OpenAPI document.",
+        "invocation": "tsx scripts/codegen/generate-api.ts"
+      },
+      {
+        "command": "generate:api:check",
+        "script": "codegen/generate-api.ts",
+        "description": "Regenerate src/lib/api/schema.d.ts from the api-template's OpenAPI document.",
+        "invocation": "tsx scripts/codegen/generate-api.ts --check"
+      },
+      {
+        "command": "pre-push",
+        "script": "ci/pre-push.sh",
+        "description": "Local mirror of ui-template's CI gate. Runs everything CI runs so that a",
+        "invocation": "./scripts/ci/pre-push.sh"
+      }
+    ],
+    "manual": [
+      {
+        "task": "Audit GitHub repo settings drift",
+        "script": "ci/audit-repo-settings.sh",
+        "description": "Diff this repo's GitHub settings against the desired-state file. Prints"
+      }
+    ],
+    "prePushStages": [
+      "1/${TOTAL} Fast checks (lint, lint:meta, format, typecheck, knip)",
+      "2/${TOTAL} Dependency vulnerability scan",
+      "3/${TOTAL} Tests",
+      "4/${TOTAL} Production build",
+      "5/${TOTAL} Bundle size budgets",
+      "6/${TOTAL} OpenAPI schema drift"
+    ]
+  },
+  "api": {
+    "template": "api",
+    "runner": "bun run",
+    "folders": [
+      {
+        "folder": "[`ci/`](ci/)",
+        "purpose": "Pre-push gate, CI manifest, GitHub settings audit"
+      },
+      {
+        "folder": "[`dev/`](dev/)",
+        "purpose": "Local developer workflow guards"
+      },
+      {
+        "folder": "[`codegen/`](codegen/)",
+        "purpose": "Scaffolding, ACL type sync, VAPID key generation"
+      },
+      {
+        "folder": "[`db/`](db/)",
+        "purpose": "Database seed utilities"
+      },
+      {
+        "folder": "[`quality/`](quality/)",
+        "purpose": "Test and coverage adjunct checks outside ESLint"
+      },
+      {
+        "folder": "[`lint-meta/`](lint-meta/)",
+        "purpose": "Static meta-lint rules ([RULES.md](lint-meta/RULES.md))"
+      }
+    ],
+    "commands": [
+      {
+        "command": "test",
+        "script": "quality/run-tests-clean.ts",
+        "description": "Runs bun test and fails when the suite prints warning noise to stdout/stderr.",
+        "invocation": "NODE_ENV=test bun run scripts/quality/run-tests-clean.ts"
+      },
+      {
+        "command": "test:coverage",
+        "script": "quality/check-coverage.ts",
+        "description": "",
+        "invocation": "NODE_ENV=test bun run scripts/quality/check-coverage.ts"
+      },
+      {
+        "command": "dev",
+        "script": "dev/preflight-host-dev.sh`",
+        "description": "",
+        "invocation": "./scripts/dev/preflight-host-dev.sh && bun run --watch src/index.ts"
+      },
+      {
+        "command": "db:seed",
+        "script": "db/seed-superuser.ts",
+        "description": "Optional first-boot superuser bootstrap. Reads SUPERUSER_EMAIL and",
+        "invocation": "bun run scripts/db/seed-superuser.ts"
+      },
+      {
+        "command": "lint:meta",
+        "script": "lint-meta/cli.ts",
+        "description": "Static checks for files ESLint can't parse as JavaScript:",
+        "invocation": "bun run scripts/lint-meta/cli.ts"
+      },
+      {
+        "command": "lint:meta:verify",
+        "script": "lint-meta/cli.ts",
+        "description": "Static checks for files ESLint can't parse as JavaScript:",
+        "invocation": "bun run scripts/lint-meta/cli.ts --verify"
+      },
+      {
+        "command": "generate:lint-meta-docs",
+        "script": "lint-meta/generate-rules-md.ts",
+        "description": "",
+        "invocation": "bun run scripts/lint-meta/generate-rules-md.ts"
+      },
+      {
+        "command": "check:lint-meta-docs",
+        "script": "lint-meta/generate-rules-md.ts",
+        "description": "",
+        "invocation": "bun run scripts/lint-meta/generate-rules-md.ts --check"
+      },
+      {
+        "command": "check:scripts-docs",
+        "script": "check-scripts-docs.ts",
+        "description": "",
+        "invocation": "bun run scripts/check-scripts-docs.ts"
+      },
+      {
+        "command": "new:resource",
+        "script": "codegen/new-resource.ts",
+        "description": "Scaffolds a new API resource:",
+        "invocation": "bun run scripts/codegen/new-resource.ts"
+      },
+      {
+        "command": "vapid:generate",
+        "script": "codegen/vapid-generate.ts",
+        "description": "Generate a fresh VAPID keypair for the Web Push notification channel.",
+        "invocation": "bun run scripts/codegen/vapid-generate.ts"
+      },
+      {
+        "command": "new:notification-event",
+        "script": "codegen/new-notification-event.ts",
+        "description": "Scaffolds a new notification event:",
+        "invocation": "bun run scripts/codegen/new-notification-event.ts"
+      },
+      {
+        "command": "new:action",
+        "script": "codegen/new-action.ts",
+        "description": "",
+        "invocation": "bun run scripts/codegen/new-action.ts"
+      },
+      {
+        "command": "new:role",
+        "script": "codegen/new-role.ts",
+        "description": "",
+        "invocation": "bun run scripts/codegen/new-role.ts"
+      },
+      {
+        "command": "new:subject",
+        "script": "codegen/new-subject.ts",
+        "description": "",
+        "invocation": "bun run scripts/codegen/new-subject.ts"
+      },
+      {
+        "command": "new:feature",
+        "script": "codegen/new-feature.ts",
+        "description": "",
+        "invocation": "bun run scripts/codegen/new-feature.ts"
+      },
+      {
+        "command": "generate:acl-types",
+        "script": "codegen/generate-acl-types.ts",
+        "description": "Copies the canonical ACL type spine from apps/api to",
+        "invocation": "bun run scripts/codegen/generate-acl-types.ts"
+      },
+      {
+        "command": "generate:acl-types:check",
+        "script": "codegen/generate-acl-types.ts",
+        "description": "Copies the canonical ACL type spine from apps/api to",
+        "invocation": "bun run scripts/codegen/generate-acl-types.ts --check"
+      },
+      {
+        "command": "pre-push",
+        "script": "ci/pre-push.sh",
+        "description": "Local mirror of apps/api CI gate. Runs everything CI runs so that a",
+        "invocation": "./scripts/ci/pre-push.sh"
+      }
+    ],
+    "manual": [
+      {
+        "task": "Audit GitHub repo settings drift",
+        "script": "ci/audit-repo-settings.sh",
+        "description": "Diff this repo's GitHub settings against the desired-state file. Prints"
+      }
+    ],
+    "prePushStages": [
+      "1/${TOTAL} Fast checks (typecheck, lint, lint:meta, knip)",
+      "2/${TOTAL} Dependency vulnerability scan",
+      "3/${TOTAL} Ensure Postgres + Valkey are running",
+      "4/${TOTAL} Test suite (integration)",
+      "5/${TOTAL} Test coverage",
+      "6/${TOTAL} Production build",
+      "7/${TOTAL} OpenAPI schema drift",
+      "8/${TOTAL} ACL types drift"
+    ]
+  }
+}

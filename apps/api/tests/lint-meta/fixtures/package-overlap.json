@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "react-hot-toast": "2.0.0",
+    "sonner": "1.0.0"
+  }
+}

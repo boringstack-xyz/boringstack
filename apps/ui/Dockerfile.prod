@@ -1,0 +1,50 @@
+# Plain `docker build` works — no BuildKit syntax features required.
+# (If you're on BuildKit, you can add `# syntax=docker/dockerfile:1.7` at
+# the top + cache mounts for `pnpm install`; we keep the portable version.)
+
+# ---- Builder ---------------------------------------------------------------
+FROM node:24-alpine@sha256:d1b3b4da11eefd5941e7f0b9cf17783fc99d9c6fc34884a665f40a06dbdfc94f AS builder
+
+RUN npm install -g pnpm@11.1.2
+
+WORKDIR /app
+
+# pnpm 11 reads `allowBuilds` for git-hosted deps from `pnpm-workspace.yaml`
+# only; copying it before install matches CI and avoids ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED.
+# `.npmrc` keeps minimum-release-age / excludes aligned with local and Actions installs.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+RUN pnpm install --frozen-lockfile
+
+# Vite bakes import.meta.env.VITE_* into the bundle at build time. Compose
+# passes the API URL via build.args; an empty default keeps `docker build .`
+# (no args) working for local prod smoke tests behind a same-origin reverse
+# proxy. Override per environment via --build-arg VITE_API_URL=...
+ARG VITE_API_URL=""
+ENV VITE_API_URL=$VITE_API_URL
+
+COPY . .
+RUN pnpm build
+
+# ---- Runner ---------------------------------------------------------------
+FROM nginx:1.31-alpine@sha256:dc48b7a872a79fb541ba5081d320b11b549231bc63ba465a7495afaa7d2ebcb8 AS runner
+
+# Non-root user (Kubernetes / OpenShift friendly).
+# nginx writes its pid to /run/nginx.pid by default; that path needs to be
+# writable by the non-root user. Same for the cache, log, and tmp dirs.
+RUN addgroup -g 1001 -S app \
+ && adduser -S app -u 1001 -G app \
+ && mkdir -p /var/cache/nginx /var/log/nginx /var/run /run /tmp/nginx \
+ && chown -R app:app /var/cache/nginx /var/log/nginx /var/run /run /tmp/nginx /usr/share/nginx/html
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+COPY --from=builder --chown=app:app /app/dist /usr/share/nginx/html
+
+USER app
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD wget --quiet --spider http://127.0.0.1:8080/index.html || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

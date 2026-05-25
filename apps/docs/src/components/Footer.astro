@@ -1,0 +1,31 @@
+---
+import EditLink from "virtual:starlight/components/EditLink";
+import LastUpdated from "virtual:starlight/components/LastUpdated";
+import Pagination from "virtual:starlight/components/Pagination";
+import config from "virtual:starlight/user-config";
+import { Icon } from "@astrojs/starlight/components";
+---
+
+<footer
+  class="not-content mt-[3.4rem] flex flex-col gap-[1.35rem] border-t border-[var(--sl-color-gray-6)] pt-[1.1rem]"
+>
+  <div
+    class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 text-sm text-[var(--sl-color-gray-3)] [&_a]:inline-flex [&_a]:min-h-8 [&_a]:items-center [&_a]:gap-2 [&_a]:rounded-full [&_a]:border [&_a]:border-transparent [&_a]:px-2.5 [&_a]:py-1 [&_a]:text-[var(--sl-color-gray-3)] [&_a]:no-underline [&_a]:transition-colors [&_a:hover]:border-[color-mix(in_srgb,var(--sl-color-accent)_34%,transparent)] [&_a:hover]:bg-[color-mix(in_srgb,var(--sl-color-accent)_10%,transparent)] [&_a:hover]:text-[var(--sl-color-white)] [&_p]:m-0 [&_p]:text-[var(--sl-color-gray-3)] [&_time]:text-[var(--sl-color-gray-2)]"
+  >
+    <EditLink />
+    <LastUpdated />
+  </div>
+
+  <Pagination />
+
+  {
+    config.credits && (
+      <a
+        class="mx-auto my-5 inline-flex w-fit items-center gap-2 text-xs text-[var(--sl-color-gray-3)] no-underline hover:text-[var(--sl-color-white)] [&_svg]:text-[var(--sl-color-orange)]"
+        href="https://starlight.astro.build"
+      >
+        <Icon name="starlight" /> {Astro.locals.t("builtWithStarlight.label")}
+      </a>
+    )
+  }
+</footer>

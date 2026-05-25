@@ -1,0 +1,88 @@
+# GlitchTip overlay — self-hosted error tracking (Sentry alternative).
+# Merged in by dev.sh when WITH_GLITCHTIP=1.
+#
+# Architecture:
+#   - Reuses the base stack's `postgres` (separate `glitchtip` DB) and
+#     `valkey` (logical DB 1, kept separate from the API's queue traffic).
+#   - `glitchtip-web` (Django + uWSGI) handles the UI + ingest API.
+#   - `glitchtip-worker` (Celery + Beat) processes ingest, alerts, jobs.
+#   - In dev (`STACK=dev`): auto-creates a superuser + default org + projects
+#     so first boot lands ready-to-use. See docs/glitchtip.md.
+#   - In prod (`STACK=prod`): expects GLITCHTIP_BASIC_AUTH_USERS for the
+#     web UI router (the /api router stays open for SDK ingest + CORS).
+
+x-glitchtip-env: &glitchtip-env
+  DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app_dev_password}@postgres:5432/glitchtip
+  REDIS_URL: redis://valkey:6379/1
+  SECRET_KEY: "${GLITCHTIP_SECRET_KEY:?GLITCHTIP_SECRET_KEY is required - generate with openssl rand -base64 50}"
+  PORT: "8000"
+  EMAIL_URL: ${GLITCHTIP_EMAIL_URL:-consolemail://}
+  GLITCHTIP_DOMAIN: ${GLITCHTIP_DOMAIN:-http://glitchtip.localhost}
+  DEFAULT_FROM_EMAIL: ${GLITCHTIP_DEFAULT_FROM_EMAIL:-noreply@example.com}
+  CELERY_WORKER_AUTOSCALE: "1,3"
+  CELERY_WORKER_MAX_TASKS_PER_CHILD: "10000"
+  # Dev auto-setup (env vars only effective when the DB is empty).
+  GLITCHTIP_SUPERUSER_EMAIL: ${GLITCHTIP_SUPERUSER_EMAIL:-admin@localhost}
+  GLITCHTIP_SUPERUSER_PASSWORD: ${GLITCHTIP_SUPERUSER_PASSWORD:-admin123456}
+  GLITCHTIP_DEFAULT_ORG_NAME: ${GLITCHTIP_DEFAULT_ORG_NAME:-Local}
+  GLITCHTIP_DEFAULT_PROJECTS: ${GLITCHTIP_DEFAULT_PROJECTS:-API,Frontend}
+
+services:
+  postgres:
+    # Drop the init-db SQL in so the `glitchtip` database exists when
+    # GlitchTip first connects. No-op if the postgres volume is already
+    # populated (init scripts only run on a fresh data dir).
+    volumes:
+      - ./glitchtip/init-db.sql:/docker-entrypoint-initdb.d/10-glitchtip-init-db.sql:ro
+
+  glitchtip-web:
+    image: glitchtip/glitchtip:latest@sha256:f45485d296697531464b4484ee9bb40a51a774df820f74128a2b2ae0c5a0b00f
+    profiles: [glitchtip-dev, glitchtip-prod]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_started
+    environment: *glitchtip-env
+    networks:
+      - backend
+      - frontend
+    deploy:
+      resources:
+        limits:
+          cpus: "${GLITCHTIP_WEB_LIMITS_CPUS:-1.0}"
+          memory: "${GLITCHTIP_WEB_LIMITS_MEMORY:-512M}"
+        reservations:
+          cpus: "${GLITCHTIP_WEB_RESERVATIONS_CPUS:-0.1}"
+          memory: "${GLITCHTIP_WEB_RESERVATIONS_MEMORY:-128M}"
+    labels:
+      # Dev-time labels only. Prod adds two more routers (one for /api SDK
+      # ingest, one Basic-Auth-protected for the UI) via the
+      # docker-compose.glitchtip-prod-labels.yml overlay.
+      - "traefik.enable=true"
+      - "traefik.docker.network=backend"
+      - "traefik.http.routers.glitchtip-web-dev.rule=Host(`glitchtip.localhost`)"
+      - "traefik.http.routers.glitchtip-web-dev.entrypoints=web"
+      - "traefik.http.routers.glitchtip-web-dev.service=glitchtip-web"
+      - "traefik.http.services.glitchtip-web.loadbalancer.server.port=8000"
+
+  glitchtip-worker:
+    image: glitchtip/glitchtip:latest@sha256:f45485d296697531464b4484ee9bb40a51a774df820f74128a2b2ae0c5a0b00f
+    profiles: [glitchtip-dev, glitchtip-prod]
+    restart: unless-stopped
+    command: ["./bin/run-celery-with-beat.sh"]
+    depends_on:
+      glitchtip-web:
+        condition: service_started
+    environment: *glitchtip-env
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "${GLITCHTIP_WORKER_LIMITS_CPUS:-1.0}"
+          memory: "${GLITCHTIP_WORKER_LIMITS_MEMORY:-512M}"
+        reservations:
+          cpus: "${GLITCHTIP_WORKER_RESERVATIONS_CPUS:-0.1}"
+          memory: "${GLITCHTIP_WORKER_RESERVATIONS_MEMORY:-128M}"

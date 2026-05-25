@@ -1,0 +1,228 @@
+---
+title: ACL & feature resolution
+description: CASL ability model, role rules, feature resolution order (override > plan > catalog default), and how account-scoping is enforced end-to-end.
+---
+
+import DocCallout from "../../../components/DocCallout.tsx";
+import DataMatrix from "../../../components/docs-kit/DataMatrix";
+import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
+import FaqGroup from "../../../components/FaqGroup.tsx";
+import FaqItem from "../../../components/FaqItem.tsx";
+import PageIntro from "../../../components/docs-kit/PageIntro";
+
+<PageIntro
+  eyebrow="Authorization and feature gates"
+  actions={[
+    { label: "Multi-tenant model", href: "/api/multi-tenant/" },
+    { label: "Billing", href: "/api/billing/" },
+  ]}
+  facts={[
+    { value: "role", label: "what the user can do" },
+    { value: "plan", label: "what the account paid for" },
+    { value: "CASL", label: "server-side ability builder" },
+  ]}
+>
+  ACL is multi-tenant from day one. Solo-user products are the degenerate case:
+  every signup creates a personal account, owner membership, and Free plan row
+  in one transaction. The team UI appears only when memberships make it real.
+</PageIntro>
+
+## The three axes that feed every authorization check
+
+<DataMatrix
+  caption="Authorization inputs"
+  columns={["Axis", "Question", "Changes", "Source"]}
+  rows={[
+    {
+      cells: [
+        "Role",
+        "What does this user play in this account?",
+        "Rarely",
+        "auth.account_memberships.role",
+      ],
+    },
+    {
+      cells: [
+        "Entitlement",
+        "What did this account pay for?",
+        "Per Stripe webhook",
+        "billing.account_plans + app.account_feature_overrides",
+      ],
+    },
+    {
+      cells: [
+        "Resource ownership",
+        "Does this row belong to this account?",
+        "Per request",
+        "CASL condition { accountId } on role rules",
+      ],
+    },
+  ]}
+/>
+
+Stripe never knows about feature keys or roles. The app never queries Stripe at request time. The two systems touch only at the webhook boundary.
+
+## The critical invariant
+
+<DocCallout
+  variant="danger"
+  title="Server authorization MUST NEVER depend on serialized client rules"
+  eyebrow="Critical invariant"
+>
+  `/me.rules` is a UI-rendering hint only. Every privileged API handler rebuilds
+  the ability server-side from trusted DB state (`account_memberships` +
+  resolved features), or wraps the DB call in `requireAbility(...)`. A modified
+  client cannot escalate by sending crafted rules.
+</DocCallout>
+
+## Resolution order
+
+For every feature key at request time, resolved **per account**:
+
+1. Active override in `account_feature_overrides` (not expired, not revoked).
+2. `plan_features` row for the account's current `account_plans` row.
+3. Catalog default from `src/lib/acl/acl.constants.ts` (`FEATURES[key].default`).
+
+First match wins. The CASL ability is built from the resolved feature set after that pass. The resolver (`resolveFeatures()` in `src/lib/acl/feature-resolution.ts`) is pure: feed it the plan rows and override rows, get back a typed `ResolvedFeatures` object. Tested in isolation.
+
+## Roles
+
+Four roles ship by default, **per-membership** (a user is `owner` of Account A, `viewer` of Account B):
+
+<FeatureGrid
+  columns={4}
+  items={[
+    {
+      eyebrow: "owner",
+      title: "Account creator",
+      body: "Manages billing, deletes the account, transfers ownership. Exactly one active owner per account.",
+    },
+    {
+      eyebrow: "admin",
+      title: "Account admin",
+      body: "Manages members and settings, but does not bypass plan checks.",
+    },
+    {
+      eyebrow: "member",
+      title: "Product user",
+      body: "Default authenticated role. Reads and writes account-scoped resources they own.",
+    },
+    {
+      eyebrow: "viewer",
+      title: "Read-only access",
+      body: "Guest, support, and demo role. Never writes.",
+    },
+  ]}
+/>
+
+Role rules carry CASL conditions (`{ accountId: membership.accountId }`) so resource ownership is encoded right at the rule, not duplicated in every handler.
+
+## Feature gates
+
+`FEATURE_KEYS` is a code const tuple. Adding a feature is a TypeScript edit + a `pnpm generate:acl-types` round-trip:
+
+```ts
+// src/lib/acl/acl.constants.ts
+export const FEATURE_KEYS = [
+  "can_export",
+  "can_invite_team",
+  "max_seats",
+  "max_widgets",
+] as const;
+
+export const FEATURES = {
+  can_export: { kind: "boolean", default: false },
+  max_seats: { kind: "limit", default: 1 },
+  // ...
+} as const;
+```
+
+Feature gates compose with role rules via CASL's `cannot(...)` rules: a missing feature forbids the action _regardless of role_. Owner is not special here.
+
+## Account-scoping enforcement
+
+Every account-scoped Drizzle table carries a `// @account-scoped accountId` comment above its `pgTable` declaration. The companion ESLint rule (`drizzle-conventions/account-scoped-tables-require-where`, defense-in-depth, deferred from the main ACL pass) refuses to merge any `db.query.<table>.findX` that doesn't include the scope column in `WHERE`.
+
+The cross-account isolation matrix in `tests/api/widgets/widgets.routes.test.ts` is the proof: same user with two accounts, resource IDs unique across accounts, every method (`GET`, `PATCH`, `DELETE`) returns 404 when the resource belongs to the other account.
+
+## Runtime helpers
+
+<FaqGroup>
+  <FaqItem title="resolveActiveMembership(userId, accountId)" open>
+    Per-request DB lookup with a 30s in-process TTL cache. Confirms
+    the JWT-claimed `(user, account)` still maps to an active
+    membership and that the parent account is not soft-deleted.
+  </FaqItem>
+  <FaqItem title="resolveFreshMembership(userId, accountId)">
+    Cache-bypassing variant for the highest-stakes calls: account
+    deletion, ownership transfer, billing-portal creation, member
+    removal, role changes. Always refetches.
+  </FaqItem>
+  <FaqItem title="scopedTo(membership)">
+    Returns `{ accountId }` so account-scoped queries pull their
+    `WHERE` argument from one place.
+  </FaqItem>
+  <FaqItem title="requireAbility(ability, action, subject)">
+    Throws `ApiErrors.forbidden()` with the action+subject in the
+    message when the ability denies. Wraps every privileged DB call.
+  </FaqItem>
+  <FaqItem title="enforceLimit(feature, current, limit)">
+    Throws `ApiErrors.limitExceeded` (status 402) with
+    `{ feature, current, limit }` so the UI can render an inline
+    upgrade CTA. Wrap inside a transaction for race safety.
+  </FaqItem>
+</FaqGroup>
+
+## /me response shape
+
+```json
+{
+  "user": {
+    "id": "...",
+    "email": "...",
+    "firstName": "...",
+    "lastName": "...",
+    "emailVerified": true
+  },
+  "account": { "id": "...", "name": "..." },
+  "role": "owner",
+  "memberships": [
+    { "accountId": "...", "accountName": "...", "role": "owner" }
+  ],
+  "features": {
+    "can_export": false,
+    "can_invite_team": false,
+    "max_seats": 1,
+    "max_widgets": 5
+  }
+}
+```
+
+Single endpoint, every piece the UI needs to render the right buttons. The `features` block is the _resolved_ set; overrides have already been applied.
+
+<DocCallout
+  variant="contract"
+  title="`isPlatformAdmin` is NOT in the payload"
+  eyebrow="Response contract"
+>
+  Platform-admin status is a server-side flag (`users.is_platform_admin`) gating
+  the separate `/admin/*` route mount and `requirePlatformAdmin` middleware. It
+  never ships to the SPA. The product UI has no concept of "this user is also an
+  admin," and `requireAbility` checks rebuild from DB state on every privileged
+  call. If a fork wants admin tooling, build it as a separate app behind its own
+  auth gate.
+</DocCallout>
+
+## Source
+
+- [`src/lib/acl/`](https://github.com/boringstack-xyz/api-template/tree/main/src/lib/acl): types, constants, feature-resolution, ability builder, `scopedTo`, `enforceLimit`.
+- [`src/api/accounts/`](https://github.com/boringstack-xyz/api-template/tree/main/src/api/accounts): `accountsService`, `invitationsService`, routes.
+- [`src/api/admin/`](https://github.com/boringstack-xyz/api-template/tree/main/src/api/admin): `adminBillingService` (grantFeature / revokeFeature / grantPlan).
+- [`src/middleware/require-active-membership.ts`](https://github.com/boringstack-xyz/api-template/blob/main/src/middleware/require-active-membership.ts): runtime membership recheck.
+- [`src/queues/account-maintenance/`](https://github.com/boringstack-xyz/api-template/tree/main/src/queues/account-maintenance): five daily idempotent sweep jobs (expire overrides, expire admin plans, downgrade canceled Stripe plans, hard-delete soft-deleted accounts, clean expired invitations).
+
+## Related
+
+- [Multi-tenant model](/api/multi-tenant/): accounts, memberships, invitations, owner lifecycle.
+- [Authentication](/api/auth/): JWT carries `(user_id, account_id)`; account switch issues a fresh JWT.
+- [Billing](/api/billing/): Stripe webhook updates `account_plans`; plan status feeds effective-features mapping.

@@ -1,0 +1,51 @@
+#cloud-config
+#
+# BoringStack first-boot bootstrap.
+#
+# Strategy: install the bare minimum (Docker, git, a couple of utilities) and
+# then run a versioned bash script. Stack-specific wiring lives in
+# bootstrap.sh, which is far easier to read and debug than YAML interpolation.
+
+package_update: true
+package_upgrade: false  # don't surprise the operator with a kernel bump on first boot
+
+packages:
+  - ca-certificates
+  - curl
+  - git
+  - gnupg
+  - jq
+
+write_files:
+  - path: /opt/boringstack/compose.env
+    permissions: "0600"
+    owner: root:root
+    content: |
+      ${indent(6, env_file_contents)}
+
+  - path: /opt/boringstack/bootstrap.sh
+    permissions: "0755"
+    owner: root:root
+    content: |
+      ${indent(6, bootstrap_script)}
+
+  - path: /etc/boringstack/config.json
+    permissions: "0644"
+    owner: root:root
+    content: |
+      ${indent(6, bootstrap_config_json)}
+
+runcmd:
+  # Install Docker via the official convenience script. For a long-lived
+  # production host this would normally pin a version; cloud-init is one-shot
+  # so the date of the deploy pins the version implicitly.
+  - [bash, -o, pipefail, -c, "curl -fsSL https://get.docker.com | sh"]
+  - [systemctl, enable, --now, docker]
+  # Run the bootstrap script. Output goes to /var/log/boringstack-bootstrap.log.
+  - [bash, -o, pipefail, -c, "/opt/boringstack/bootstrap.sh 2>&1 | tee /var/log/boringstack-bootstrap.log"]
+
+final_message: |
+  Cloud-init finished. BoringStack bootstrap log:
+    /var/log/boringstack-bootstrap.log
+  Check service status with:
+    cd /opt/boringstack/infra && ./scripts/compose-up.sh ps

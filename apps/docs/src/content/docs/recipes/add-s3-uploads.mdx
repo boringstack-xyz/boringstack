@@ -1,0 +1,130 @@
+---
+title: "Recipe: Add S3-compatible uploads"
+description: Direct-to-bucket browser uploads via presigned URLs. Works with Cloudflare R2, AWS S3, Backblaze B2, MinIO. Goal, Prereqs, Steps, Verify, and what changes in code.
+verifiedOn: "2026-05"
+---
+
+import { Steps } from "@astrojs/starlight/components";
+import DocCallout from "../../../components/DocCallout.tsx";
+import HowToSchema from "../../../components/HowToSchema.astro";
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import CommandRun from "../../../components/docs-kit/CommandRun";
+import DocFileTree from "../../../components/DocFileTree";
+
+<HowToSchema
+  name="Add S3-compatible uploads to BoringStack"
+  description="Direct-to-bucket browser uploads via presigned URLs. Works with Cloudflare R2, AWS S3, Backblaze B2, MinIO."
+  totalTime="PT60M"
+  steps={[
+    "Add S3 credentials (endpoint, region, bucket, access key, secret) to compose/.env and to the API's env schema.",
+    "Install @aws-sdk/client-s3 and @aws-sdk/s3-request-presigner in api-template.",
+    "Scaffold an uploads feature folder with bun run new:resource uploads.",
+    "Implement uploads.service.ts to sign a 5-minute PUT URL keyed by accountId and uuid.",
+    "Add a media table with a Drizzle migration; finalize each upload via a transactional insert.",
+    "Wire the UI to POST /api/uploads/sign, PUT to the returned URL, then POST /api/uploads/finalize.",
+  ]}
+/>
+
+<PageIntro
+  eyebrow="Recipes"
+  actions={[
+    { label: "Steps", href: "#steps" },
+    { label: "Verification", href: "#verify" },
+  ]}
+  facts={[
+    { value: "60 min", label: "Estimated duration" },
+    { value: "S3 API", label: "Protocol" },
+    { value: "R2 / S3", label: "Backends" },
+  ]}
+>
+  Add direct-to-bucket file uploads from the browser with S3 presigned URLs. File bytes stay off your API servers.
+</PageIntro>
+
+## Goal
+
+Let an authenticated user upload a file straight from the browser into an S3-compatible bucket. The bytes never touch the API host; the API only signs a short-lived PUT URL and records the resulting object in Postgres.
+
+## Prereqs
+
+- A working local stack.
+- A bucket with S3-compatible credentials. Recommended: [Cloudflare R2](https://developers.cloudflare.com/r2/), which has zero egress fees and the same auth model as S3. AWS S3, Backblaze B2, and a local MinIO container also work.
+- The bucket configured with a CORS rule that allows your origin to PUT.
+
+## Steps
+
+<Steps>
+
+1. Add bucket credentials to `compose/.env`:
+
+   ```bash
+   S3_ENDPOINT=https://<accountid>.r2.cloudflarestorage.com   # or AWS region URL
+   S3_REGION=auto                                             # or us-east-1 etc.
+   S3_BUCKET=your-bucket-name
+   S3_ACCESS_KEY_ID=...
+   S3_SECRET_ACCESS_KEY=...
+   S3_PUBLIC_BASE_URL=https://files.example.com               # CDN-fronted public URL, optional
+   ```
+
+   Add them to `src/config/env.schema.ts` so the [env validator](/api/env-validator/) refuses to boot if they're missing in prod.
+
+2. Add the AWS SDK to the API:
+
+   ```bash
+   cd api-template && bun add @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+   ```
+
+3. Create a new feature folder. Use the scaffold so the layer split is correct from the start:
+
+   ```bash
+   cd api-template && bun run new:resource uploads
+   ```
+
+   That writes `uploads.routes.ts`, `uploads.service.ts`, `uploads.types.ts` and wires the routes into `config/routes.ts`.
+
+4. In `uploads.service.ts`, sign a PUT URL keyed by `accountId + uuid`. Return `{ uploadUrl, objectKey, publicUrl }`. Use `@aws-sdk/s3-request-presigner` `getSignedUrl(...)` with a 5-minute TTL.
+
+5. Add a `media` table to the schema. Minimum columns: `id`, `account_id`, `object_key`, `mime_type`, `size_bytes`, `created_at`. After a successful PUT, the UI POSTs a `finalize` request to the API which inserts the row inside a transaction.
+
+6. UI side. The ui-template's `lib/api` client already has the typed routes (regenerate with `pnpm generate:api`). A simple file picker:
+
+   ```ts
+   const { uploadUrl, objectKey, publicUrl } =
+     await apiClient.POST("/api/uploads/sign", { body: { mime, size } });
+   await fetch(uploadUrl, { method: "PUT", body: file });
+   await apiClient.POST("/api/uploads/finalize", { body: { objectKey } });
+   ```
+
+</Steps>
+
+## Verify
+
+- Browser DevTools network tab: the PUT goes straight to your bucket origin, not to your API host.
+- The bucket dashboard shows the new object under `<accountId>/<uuid>` (or whatever key pattern you chose).
+- A row appears in the `media` table:
+
+  ```sql
+  SELECT id, account_id, object_key, mime_type FROM media ORDER BY created_at DESC LIMIT 5;
+  ```
+
+- The audit log shows `media.upload_finalized`.
+
+## What changes in code
+
+- `api-template/src/config/env.schema.ts`: add the six S3 env vars to the [TypeBox env shape](/api/env-validator/).
+- `api-template/src/api/uploads/`: new feature folder, follows the [route/service/types split](/api/overview/).
+- `api-template/src/clients/postgres/schema/media.ts`: new Drizzle table.
+- `api-template/drizzle/0xxx_add_media_table.sql`: generated migration (`bun run db:generate`).
+- `ui-template/src/features/<wherever-you-need-uploads>/`: picker + progress UI calling the typed client.
+
+<DocCallout eyebrow="Safety" title="Don't return public URLs you can't revoke" variant="caution">
+  Make `S3_PUBLIC_BASE_URL` an authenticated reader (signed-URL GET) for
+  anything sensitive. R2's "public bucket" toggle is convenient but is
+  permanent until you flip it off. Easy to leak with.
+</DocCallout>
+
+## Related
+
+- [Env validator](/api/env-validator/); how to declare the bucket vars cleanly.
+- [API overview](/api/overview/); the per-feature folder shape this recipe follows.
+- [Multi-tenant model](/api/multi-tenant/); scoping uploads by `accountId`.
+- [Audit log](/api/audit-log/); recording upload lifecycle events.

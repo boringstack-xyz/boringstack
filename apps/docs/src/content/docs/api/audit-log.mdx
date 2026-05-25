@@ -1,0 +1,220 @@
+---
+title: Audit log
+description: Append-only, fire-and-forget log of security- and compliance-relevant events. Lives in its own Postgres schema.
+---
+
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import SignalGrid from "../../../components/docs-kit/SignalGrid";
+import FaqGroup from "../../../components/FaqGroup.tsx";
+import FaqItem from "../../../components/FaqItem.tsx";
+
+<PageIntro
+  eyebrow="Audit log"
+  actions={[
+    { label: "How writes work", href: "#how-a-write-happens" },
+    { label: "Operator queries", href: "#operator-queries" },
+  ]}
+  facts={[
+    { value: "audit schema", label: "isolated Postgres namespace" },
+    { value: "Fire-and-forget", label: "never blocks requests" },
+    { value: "Append-only", label: "by design" },
+  ]}
+>
+  The audit log is the answer to "who did what, when?" Auth events, OAuth
+  link/unlink, billing actions, and mutations on flagged resources all land in
+  `audit.audit_log`. The shape is deliberately boring: append-only table,
+  structured `metadata` blob, time-ordered.
+</PageIntro>
+
+## How a write happens
+
+```mermaid
+flowchart LR
+  caller["call site<br/>after action succeeds"] -->|record| service["AuditLogService"]
+  service -->|INSERT| db[(audit.audit_log)]
+  service -.->|on failure| log["structured log<br/>swallowed, never thrown"]
+```
+
+The `void` prefix at call sites is load-bearing: it tells the reader (and the linter) the caller is deliberately not awaiting. Audit can't be allowed to fail a real request.
+
+## Design choices
+
+<SignalGrid
+  columns={3}
+  items={[
+    {
+      label: "Isolation",
+      title: "Separate Postgres schema",
+      body: "Independent grants, retention, and archival; app migrations on public cannot touch audit rows.",
+    },
+    {
+      label: "Reliability",
+      title: "Fire-and-forget writes",
+      body: "Errors are logged and swallowed. A flaky audit table can never break a customer action.",
+    },
+    {
+      label: "Vocabulary",
+      title: "Centralized AUDIT_ACTIONS",
+      body: "Magic strings drift; admin queries depend on a stable action vocabulary.",
+    },
+  ]}
+/>
+
+<FaqGroup>
+  <FaqItem title="Separate Postgres schema (audit, not public)" open>
+    Independent grants, retention, and archival; app migrations on `public`
+    cannot touch audit rows.
+  </FaqItem>
+  <FaqItem title="Fire-and-forget writes (errors logged + swallowed)">
+    A flaky audit table can never break a customer action.
+  </FaqItem>
+  <FaqItem title="Nullable userId + ON DELETE SET NULL">
+    System events have no actor; "this account did X" history survives the user
+    being scrubbed.
+  </FaqItem>
+  <FaqItem title="jsonb metadata">
+    Add new fields without a migration; cost is no per-field index.
+  </FaqItem>
+  <FaqItem title="Centralized AUDIT_ACTIONS constant">
+    Magic strings drift; admin queries depend on a stable vocabulary.
+  </FaqItem>
+</FaqGroup>
+
+## The action vocabulary
+
+Convention: `<area>.<verb>`. Examples:
+
+- `auth.login_success`, `auth.session_created`, `auth.session_revoked`, `auth.password_reset_completed`
+- `billing.checkout_session_created`, `billing.portal_session_created`
+- `user.profile_updated`
+
+A `<area>.<verb>` shape means admin queries can group cleanly:
+
+```sql
+SELECT action, count(*) FROM audit.audit_log
+WHERE created_at > now() - interval '24 hours'
+GROUP BY 1 ORDER BY 2 DESC;
+```
+
+New event types add a constant before the first call site. Both code review and the lint plugin treat magic-string actions as a smell.
+
+## Using it
+
+```ts
+void auditLogService.record({
+  userId: actor.id, // null for system events
+  action: AUDIT_ACTIONS.USER_PROFILE_UPDATED,
+  resource: `user:${user.id}`, // optional
+  metadata: { fieldsChanged: ["firstName"] }, // optional, PII-free
+});
+```
+
+For the rare flow that must observe the write (e.g. a security event that has to be persisted before responding), drop `void` and check `success`.
+
+## What `metadata` is for
+
+Structured context the action name doesn't capture. Keep it small and PII-free.
+
+- Good: `{ planId: "pro_monthly", previousPlanId: "free" }`
+- Bad: `{ email: "...", lastFourCardDigits: "..." }`
+
+The lint plugin flags common leak patterns (keys named `password`, `token`, raw `email`).
+
+## What userId should be
+
+<FaqGroup>
+  <FaqItem title="Authenticated user action" open>
+    Actor's id.
+  </FaqItem>
+  <FaqItem title="System action (cron, webhook with no user context)">
+    `null`.
+  </FaqItem>
+  <FaqItem title="Admin impersonating a user">
+    Acting admin's id, with `metadata.actingAs` set to the target.
+  </FaqItem>
+</FaqGroup>
+
+Never quietly attribute an admin's actions to the impersonated user.
+
+## Adding a new event
+
+1. Add a constant to `AUDIT_ACTIONS`.
+2. After the action succeeds, `void auditLogService.record({...})`.
+3. That's it. `/admin/audit-log` and the dashboard activity feed pick it up automatically because they query by action and recency.
+
+## Retention
+
+The template ships no retention policy on purpose. Three reasonable shapes:
+
+- Cold storage: periodic `COPY ... TO` then `DELETE WHERE created_at < ...`.
+- Partitioning: `pg_partman` by month, drop old partitions.
+- None: for most B2B SaaS, an unbounded table is fine for years.
+
+Pick consciously. Don't let the table grow to "huge and slow" and then think about it.
+
+## Operator queries
+
+Practical psql one-liners for "who did what" investigations. All assume you're connected to the app database (`docker compose exec postgres psql -U app -d app`).
+
+```sql
+-- Last 50 events for a specific user, newest first.
+SELECT created_at, action, resource, metadata
+FROM audit.audit_log
+WHERE user_id = '<uuid>'
+ORDER BY created_at DESC
+LIMIT 50;
+```
+
+```sql
+-- Login + session activity in the last 24 hours, grouped by action.
+SELECT action, count(*)
+FROM audit.audit_log
+WHERE action LIKE 'auth.%'
+  AND created_at > now() - interval '24 hours'
+GROUP BY 1
+ORDER BY 2 DESC;
+```
+
+```sql
+-- Every billing event ever recorded for one account.
+SELECT created_at, user_id, action, metadata
+FROM audit.audit_log
+WHERE action LIKE 'billing.%'
+  AND resource LIKE 'account:<account-uuid>%'
+ORDER BY created_at DESC;
+```
+
+```sql
+-- Compliance export: every action this user took (for a GDPR data-subject request).
+SELECT created_at, action, resource, metadata
+FROM audit.audit_log
+WHERE user_id = '<uuid>'
+ORDER BY created_at;
+```
+
+```sql
+-- Rate-limiting candidates: actors with the most events in the last hour.
+SELECT user_id, count(*) AS events
+FROM audit.audit_log
+WHERE created_at > now() - interval '1 hour'
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 20;
+```
+
+## Lint coverage
+
+[`@boring-stack-pkg/eslint-plugin-audit-log`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-audit-log) flags:
+
+- Mutations on flagged tables that skip the audit write.
+- Magic-string `action` values that bypass `AUDIT_ACTIONS`.
+- Metadata payloads that look like a PII leak.
+
+## Source
+
+[`src/lib/audit-log/`](https://github.com/boringstack-xyz/api-template/tree/main/src/lib/audit-log); service, types, constants. [`src/clients/postgres/schema/audit.schema.ts`](https://github.com/boringstack-xyz/api-template/blob/main/src/clients/postgres/schema/audit.schema.ts); the table.
+
+## Related
+
+- [Authentication](/api/auth/); every auth event writes here.
+- [Lint as the contract](/architecture/lint-as-contract/); why the lint plugin matters.

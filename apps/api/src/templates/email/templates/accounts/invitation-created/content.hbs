@@ -1,0 +1,32 @@
+<p style="margin: 0 0 24px; color: #E8E8E8; font-size: 16px; line-height: 1.6;">
+  You've been invited to join
+  {{#if accountName}}<strong>{{accountName}}</strong>{{else}}an account{{/if}}
+  {{#if inviterName}}by <strong>{{inviterName}}</strong>{{/if}}
+  as a <strong>{{roleToAssign}}</strong>. Click the button below to accept.
+</p>
+
+<!-- CTA Button -->
+<table
+  role="presentation"
+  cellspacing="0"
+  cellpadding="0"
+  border="0"
+  width="100%"
+>
+  <tr>
+    <td align="center" style="padding: 8px 0 24px;">
+      <a
+        href="{{acceptUrl}}?token={{token}}"
+        style="display: inline-block; background-color: #4A90E2; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 15px; font-weight: 500; letter-spacing: 0.2px;"
+      >
+        Accept Invitation
+      </a>
+    </td>
+  </tr>
+</table>
+
+<p style="margin: 24px 0 0; color: #808080; font-size: 14px; line-height: 1.5;">
+  This invitation expires on {{expiresAt}}. If you weren't expecting it,
+  you can ignore this email — no action is required and nothing will be
+  shared.
+</p>

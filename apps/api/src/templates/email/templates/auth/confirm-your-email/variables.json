@@ -1,0 +1,7 @@
+{
+    "subject": "Confirm your email address",
+    "preHeader": "Click the button below to verify your email",
+    "appName": "{{appName}}",
+    "token": "{{token}}",
+    "confirmationUrl": "https://example.com/verify-email"
+}

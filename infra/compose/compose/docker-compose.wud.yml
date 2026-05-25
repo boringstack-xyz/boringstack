@@ -1,0 +1,41 @@
+# WUD (What's Up Docker) — watches running containers for newer image tags.
+# Merged by dev.sh when WITH_WUD=1 (default for STACK=prod).
+#
+# Prod behavior:
+# - api/ui: auto pull + recreate when GHCR publishes a new tag (DOCKER trigger)
+# - optional notify: Discord webhook and/or Slack bot (see compose/.env)
+#
+# Requires docker socket read-write for the auto-deploy trigger.
+
+services:
+  whatsupdocker:
+    image: getwud/wud:latest@sha256:2df7cafa0fc84cdd66ad976163abc5390fa5995e0b5788a90e6a5303706bc21a
+    profiles: [wud]
+    restart: unless-stopped
+    environment:
+      WUD_LOG_LEVEL: ${WUD_LOG_LEVEL:-info}
+      WUD_WATCHER_LOCAL_CRON: ${WUD_SCHEDULE:-0 */6 * * *}
+      WUD_TRIGGER_DISCORD_1_URL: ${WUD_DISCORD_WEBHOOK:-}
+      WUD_TRIGGER_SLACK_ALERTS_TOKEN: ${WUD_SLACK_BOT_TOKEN:-}
+      WUD_TRIGGER_SLACK_ALERTS_CHANNEL: ${WUD_SLACK_CHANNEL:-}
+      WUD_REGISTRY_GHCR_USERNAME: ${WUD_GHCR_USERNAME:-}
+      WUD_REGISTRY_GHCR_TOKEN: ${WUD_GHCR_TOKEN:-}
+      # Auto pull + recreate api/ui containers when GHCR tag moves.
+      WUD_TRIGGER_DOCKER_APP_AUTO: ${WUD_TRIGGER_DOCKER_APP_AUTO:-true}
+      WUD_TRIGGER_DOCKER_APP_PRUNE: ${WUD_TRIGGER_DOCKER_APP_PRUNE:-true}
+      WUD_TRIGGER_DOCKER_APP_MODE: batch
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - wud_data:/store
+    ports:
+      - "3033:3000"
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "${WUD_LIMITS_CPUS:-0.25}"
+          memory: "${WUD_LIMITS_MEMORY:-256M}"
+
+volumes:
+  wud_data:

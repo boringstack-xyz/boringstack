@@ -1,0 +1,43 @@
+# Bun config. The `[install]` section is the install-time settings;
+# everything else (test, runtime) lives in package.json scripts.
+
+[install]
+# Supply-chain protection. Refuses to install package versions younger than
+# the threshold below, on the theory that a compromised publish gets caught
+# and yanked within a few days. Matches the pnpm settings on ui-template
+# and the docs site. Value is in seconds: 604800 = 7 days.
+# https://bun.com/docs/install/lockfile#minimumreleaseage
+minimumReleaseAge = 604800
+# First-party packages we publish ourselves are exempt from the quarantine —
+# we control the release and don't need a 7-day window to catch a compromised
+# upstream.
+minimumReleaseAgeExcludes = [
+  "@boring-stack-pkg/eslint-plugin-audit-log",
+  "@boring-stack-pkg/eslint-plugin-bullmq",
+  "@boring-stack-pkg/eslint-plugin-cache-keys",
+  "@boring-stack-pkg/eslint-plugin-code-flow",
+  "@boring-stack-pkg/eslint-plugin-comment-hygiene",
+  "@boring-stack-pkg/eslint-plugin-db-transactions",
+  "@boring-stack-pkg/eslint-plugin-drizzle-conventions",
+  "@boring-stack-pkg/eslint-plugin-elysia",
+  "@boring-stack-pkg/eslint-plugin-env-access",
+  "@boring-stack-pkg/eslint-plugin-jwt-cookies",
+  "@boring-stack-pkg/eslint-plugin-module-boundaries",
+  "@boring-stack-pkg/eslint-plugin-oauth-security",
+  "@boring-stack-pkg/eslint-plugin-resource-architecture",
+  "@boring-stack-pkg/eslint-plugin-stripe-webhooks",
+  "@boring-stack-pkg/eslint-plugin-structured-logging",
+  "@boring-stack-pkg/eslint-plugin-test-conventions",
+]
+
+[test]
+# Preload runs before any test module imports `src/config/env`. The file
+# raises RATE_LIMIT caps so a long test suite doesn't hit production-level
+# rate limits on the shared (module-scope) auth router. See the file for
+# the full rationale.
+preload = ["./tests/setup-test-env.ts"]
+
+coverageReporter = ["text", "lcov"]
+coverageSkipTestFiles = true
+# Tooling under scripts/ is gated by lint-meta tests and pre-push, not unit coverage.
+coveragePathIgnorePatterns = ["scripts/**"]

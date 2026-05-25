@@ -1,0 +1,36 @@
+---
+// Emits Schema.org HowTo JSON-LD for a recipe page so Google can show rich
+// snippets ("How to add Stripe to BoringStack: 5 steps") in search results.
+// Pass `steps` as plain-text imperatives in order; ~80 chars per step is fine.
+
+interface Props {
+  name: string;
+  description: string;
+  steps: string[];
+  totalTime?: string;
+}
+
+const { name, description, steps, totalTime } = Astro.props as Props;
+
+const url =
+  typeof Astro.url === "object" && Astro.url ? Astro.url.toString() : undefined;
+
+const data = {
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  name,
+  description,
+  ...(url ? { url } : {}),
+  ...(totalTime ? { totalTime } : {}),
+  step: steps.map((text, index) => {
+    return {
+      "@type": "HowToStep",
+      position: index + 1,
+      name: text,
+      text,
+    };
+  }),
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(data)} />

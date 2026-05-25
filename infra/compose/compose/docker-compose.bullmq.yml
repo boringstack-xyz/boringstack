@@ -1,0 +1,40 @@
+# BullMQ dashboard overlay — merged when WITH_BULLMQ=1 and STACK=dev.
+# Visualizes Bull / BullMQ jobs in the api-template's Valkey. Reuses the
+# existing `valkey` service from the base stack.
+
+services:
+  bullmq-dashboard:
+    image: deadly0/bull-board:latest@sha256:afd615426192c7d43d6320aea7d8910835170c8b43e9b755b6c416d38946be93
+    profiles: [bullmq]
+    restart: unless-stopped
+    environment:
+      # bull-board's container reads REDIS_* (third-party naming). We
+      # populate them from the operator-facing VALKEY_* values.
+      REDIS_HOST: valkey
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${VALKEY_PASSWORD:-}
+      REDIS_USE_TLS: "false"
+      BULL_PREFIX: ${BULL_PREFIX:-bull}
+    depends_on:
+      valkey:
+        condition: service_started
+    networks:
+      - backend
+      - frontend
+    ports:
+      - "3030:3000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=backend"
+      - "traefik.http.routers.bullmq.rule=Host(`bullmq.localhost`)"
+      - "traefik.http.routers.bullmq.entrypoints=web"
+      - "traefik.http.routers.bullmq.service=bullmq"
+      - "traefik.http.services.bullmq.loadbalancer.server.port=3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "${BULLMQ_LIMITS_CPUS:-0.25}"
+          memory: "${BULLMQ_LIMITS_MEMORY:-256M}"
+        reservations:
+          cpus: "${BULLMQ_RESERVATIONS_CPUS:-0.05}"
+          memory: "${BULLMQ_RESERVATIONS_MEMORY:-64M}"

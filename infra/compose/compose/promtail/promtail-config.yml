@@ -1,0 +1,31 @@
+# Promtail config — scrapes docker container logs from the host's docker
+# log dir and ships them to Loki. Labels each stream with the compose
+# project + service so LogQL queries like `{compose_service="api-dev"}`
+# work out of the box.
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker-containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          # Only scrape containers from this compose project.
+          - name: label
+            values: ["com.docker.compose.project=ai-starter-infra"]
+    relabel_configs:
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        target_label: "compose_service"
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_project"]
+        target_label: "compose_project"
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: "container"

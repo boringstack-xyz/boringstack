@@ -1,0 +1,250 @@
+---
+title: Commands cheatsheet
+description: Every command you'll run during a normal day of working on BoringStack.
+---
+
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import CommandRun from "../../../components/docs-kit/CommandRun";
+import FaqGroup from "../../../components/FaqGroup.tsx";
+import FaqItem from "../../../components/FaqItem.tsx";
+
+<PageIntro
+  eyebrow="Commands"
+  actions={[
+    { label: "Infra Commands", href: "#infra-docker-compose-stack" },
+    { label: "API Commands", href: "#api-template" },
+    { label: "UI Commands", href: "#ui-template" },
+  ]}
+  facts={[
+    { value: "30+", label: "workflow commands" },
+    { value: "Unified", label: "infra control" },
+    { value: "1-flag", label: "composition" },
+  ]}
+>
+  CLI commands for day-to-day development, testing, and operations. For which
+  script file each command runs, see
+  [Scripts & tooling](/reference/scripts-tooling/).
+</PageIntro>
+
+## Monorepo root
+
+Run from the repository root (`boringstack/`):
+
+<FaqGroup>
+  <FaqItem title="Regenerate all cross-app artifacts" open>
+    `pnpm regen` — ACL types, OpenAPI schema (needs api on :3000), lint-meta
+    RULES.md, docs JSON catalogs.
+  </FaqItem>
+  <FaqItem title="Drift checks before push">
+    `pnpm check` — same gates as CI for contracts across apps/docs.
+  </FaqItem>
+  <FaqItem title="Full validate">
+    `pnpm check:full` — check plus `apps/api` validate, `apps/ui` validate, and
+    `apps/docs` `build:ci`.
+  </FaqItem>
+  <FaqItem title="First-time local setup">
+    `./setup.sh` or `./setup.sh --up` — seed compose `.env` and optionally boot
+    the dev stack.
+  </FaqItem>
+</FaqGroup>
+
+Paths in the sections below are relative to each app unless noted. Infra scripts
+live under `infra/compose/compose/scripts/` (or `infra/compose/scripts/` for
+some helpers).
+
+## Infra (docker-compose stack)
+
+<FaqGroup>
+  <FaqItem title="Start dev stack" open>
+    `./scripts/compose-up.sh`. Data: n/a.
+  </FaqItem>
+  <FaqItem title="Stop, keep data">
+    `./scripts/compose-down.sh`. Data preserved.
+  </FaqItem>
+  <FaqItem title="Stop and wipe data">
+    `./scripts/compose-down-clean.sh`. Data not preserved (prompts; `CONFIRM=yes` to skip confirmation).
+  </FaqItem>
+  <FaqItem title="Start prod">
+    `STACK=prod ./scripts/compose-up.sh`. Data: n/a.
+  </FaqItem>
+  <FaqItem title="With observability">
+    `WITH_OBSERVABILITY=1 ./scripts/compose-up.sh`. Data: n/a.
+  </FaqItem>
+  <FaqItem title="With error tracking">
+    `WITH_GLITCHTIP=1 ./scripts/compose-up.sh`. Data: n/a.
+  </FaqItem>
+  <FaqItem title="With queue dashboard">
+    `WITH_BULLMQ=1 ./scripts/compose-up.sh`. Data: n/a.
+  </FaqItem>
+  <FaqItem title="With image-update bot">
+    `WITH_WUD=1 ./scripts/compose-up.sh`. Data: n/a.
+  </FaqItem>
+  <FaqItem title="With local email catcher">
+    `WITH_MAILPIT=1 ./scripts/compose-up.sh` (dev only). Data: n/a.
+  </FaqItem>
+  <FaqItem title="Service status">
+    `docker compose -f compose/docker-compose.yml -f compose/docker-compose.development-labels.yml --profile dev ps`. Data: n/a.
+  </FaqItem>
+  <FaqItem title="Live logs">
+    `docker compose ... logs -f api-dev`. Data: n/a.
+  </FaqItem>
+  <FaqItem title="Live resource use">
+    `docker stats`. Data: n/a.
+  </FaqItem>
+  <FaqItem title="Backup db (offsite)">
+    `BACKUP_DRY_RUN=1 ./scripts/backup-wrapper.example.sh` then drop the flag. Data preserved.
+  </FaqItem>
+</FaqGroup>
+
+Flags compose: `WITH_OBSERVABILITY=1 WITH_GLITCHTIP=1 ./scripts/compose-up.sh`.
+
+## api-template
+
+<FaqGroup>
+  <FaqItem title="Run in watch mode" open>
+    `bun run dev`
+  </FaqItem>
+  <FaqItem title="Production bundle">
+    `bun run build`
+  </FaqItem>
+  <FaqItem title="Run production bundle">
+    `bun run start`
+  </FaqItem>
+  <FaqItem title="Typecheck + lint + knip">
+    `bun run check`
+  </FaqItem>
+  <FaqItem title="Lint only">
+    `bun run lint`
+  </FaqItem>
+  <FaqItem title="Auto-fix lint">
+    `bun run lint:fix`
+  </FaqItem>
+  <FaqItem title="Dead-code detection">
+    `bun run knip`
+  </FaqItem>
+  <FaqItem title="Unit + integration tests">
+    `bun run test`
+  </FaqItem>
+  <FaqItem title="Full merge gate">
+    `bun run validate`
+  </FaqItem>
+  <FaqItem title="Run the pre-push gate (same as `git push`)">
+    `bun run pre-push`
+  </FaqItem>
+  <FaqItem title="Generate migration">
+    `bun run db:generate`
+  </FaqItem>
+  <FaqItem title="Apply migrations">
+    `bun run db:migrate`
+  </FaqItem>
+  <FaqItem title="Push schema (dev)">
+    `bun run db:push --force`
+  </FaqItem>
+  <FaqItem title="Seed superuser (if SUPERUSER_EMAIL + _PASSWORD set)">
+    `bun run db:seed`
+  </FaqItem>
+  <FaqItem title="Drizzle studio">
+    `bun run db:studio`
+  </FaqItem>
+  <FaqItem title="Scaffold a new resource">
+    `bun run new:resource <name>`
+  </FaqItem>
+  <FaqItem title="Build email templates">
+    `bun run build:templates`
+  </FaqItem>
+  <FaqItem title="Watch email templates">
+    `bun run build:templates:watch`
+  </FaqItem>
+</FaqGroup>
+
+## ui-template
+
+<FaqGroup>
+  <FaqItem title="Dev server (port 3001)" open>
+    `pnpm dev`
+  </FaqItem>
+  <FaqItem title="Production build">
+    `pnpm build`
+  </FaqItem>
+  <FaqItem title="Production preview">
+    `pnpm preview`
+  </FaqItem>
+  <FaqItem title="Typecheck">
+    `pnpm typecheck`
+  </FaqItem>
+  <FaqItem title="Lint + format + typecheck + knip">
+    `pnpm check`
+  </FaqItem>
+  <FaqItem title="Auto-fix lint">
+    `pnpm lint:fix`
+  </FaqItem>
+  <FaqItem title="Dead-code detection">
+    `pnpm knip`
+  </FaqItem>
+  <FaqItem title="Unit + component tests">
+    `pnpm test`
+  </FaqItem>
+  <FaqItem title="Coverage">
+    `pnpm test:ci`
+  </FaqItem>
+  <FaqItem title="e2e (Playwright)">
+    `pnpm e2e`
+  </FaqItem>
+  <FaqItem title="e2e visual baselines">
+    `pnpm e2e:visual:update`
+  </FaqItem>
+  <FaqItem title="Bundle size budget">
+    `pnpm size:check`
+  </FaqItem>
+  <FaqItem title="Bundle analyzer">
+    `pnpm analyze`
+  </FaqItem>
+  <FaqItem title="Lighthouse">
+    `pnpm lighthouse`
+  </FaqItem>
+  <FaqItem title="Full merge gate">
+    `pnpm validate`
+  </FaqItem>
+  <FaqItem title="Run the pre-push gate (same as `git push`)">
+    `pnpm pre-push`
+  </FaqItem>
+  <FaqItem title="Regenerate API schema">
+    `pnpm generate:api`
+  </FaqItem>
+  <FaqItem title="Scaffold a component">
+    `pnpm new:component <Name>`
+  </FaqItem>
+  <FaqItem title="Scaffold a feature">
+    `pnpm new:feature <name>`
+  </FaqItem>
+  <FaqItem title="Storybook">
+    `pnpm storybook`
+  </FaqItem>
+</FaqGroup>
+
+## Inside the dev containers (rare)
+
+<CommandRun
+  title="Inside Dev Containers"
+  caption="running shell commands or database client sessions"
+  command={[
+    "docker compose exec api-dev sh",
+    "docker compose logs -f --tail=100 api-dev",
+    "docker compose exec postgres psql -U app -d app",
+    "docker compose exec valkey valkey-cli",
+  ]}
+  output={[
+    { tone: "ok", text: "api-dev container shell spawned" },
+    { tone: "info", text: "Streaming api-dev logs..." },
+    { tone: "ok", text: "psql (17.x) connection established on database 'app'" },
+    { tone: "ok", text: "valkey-cli connected to 127.0.0.1:6379" },
+  ]}
+/>
+
+## Related
+
+- [Quickstart](/quickstart/); the boot-from-clone path that produces this state.
+- [Environment variables](/reference/env-vars/); every knob you can flip alongside these commands.
+- [Profiles & overlays](/infra/profiles-and-overlays/); what the `WITH_*=1` flags actually toggle.
+- [Glossary](/reference/glossary/); the vocabulary (stack, overlay, profile, merge gate) the commands speak.
+- [Deployment](/topics/deployment/); the production sequence that wraps these locally-run commands.

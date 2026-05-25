@@ -1,0 +1,83 @@
+---
+title: Email in development
+description: Iterate on transactional email templates and flows locally without sending real mail. Capture every outbound message in Mailpit's web UI.
+---
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import CommandRun from "../../../components/docs-kit/CommandRun";
+import { Steps } from "@astrojs/starlight/components";
+
+<PageIntro
+  eyebrow="Local email"
+  actions={[
+    { label: "Boot Mailpit", href: "#boot-mailpit" },
+    { label: "Usage cases", href: "#use-this-for" },
+  ]}
+  facts={[
+    { value: "Mailpit", label: "SMTP Catcher" },
+    { value: "1025", label: "SMTP Port" },
+    { value: "8025", label: "Web Port" },
+  ]}
+>
+  Iterate on transactional email templates and signup flows locally without sending real mail. BoringStack includes Mailpit: SMTP on :1025, web UI on :8025.
+</PageIntro>
+
+Test verify-email, password-reset, welcome, and notification flows locally without sending through Cloudflare Email Service, Resend, or SendGrid.
+
+## Boot Mailpit
+
+<Steps>
+
+1. Start the dev stack with the Mailpit overlay:
+
+   ```bash
+   WITH_MAILPIT=1 ./dev.sh up -d
+   ```
+
+   Adds two host ports: `1025` (SMTP) and `8025` (web UI).
+
+2. Point the api at the catcher. In `infra-docker-compose-template/compose/api.dev.env` (create if it doesn't exist):
+
+   ```bash
+   EMAIL_PROVIDER=smtp
+   SMTP_HOST=mailpit
+   SMTP_PORT=1025
+   # SMTP_USER + SMTP_PASS are optional. Mailpit accepts any.
+   ```
+
+3. Restart the api so it picks up the new env:
+
+   ```bash
+   ./dev.sh restart api-dev
+   ```
+
+4. Trigger an email: sign up, hit forgot-password, anything that emits transactional mail.
+
+5. Open the web UI:
+
+   ```bash
+   open http://localhost:8025
+   ```
+
+   Full HTML, plain-text alt, headers, raw source.
+
+</Steps>
+
+## Use this for
+
+- Designing a new email template. Edit the Handlebars source under `api-template/src/templates/email/`, trigger a flow, refresh Mailpit.
+- Debugging delivery locally. Mailpit captures the full SMTP envelope, so you can verify From / Reply-To / List-Unsubscribe before going near a real provider.
+- E2E tests that exercise email. Point the api at Mailpit and assert against the API surface (`http://localhost:8025/api/v1/messages`). No mail leaves the host.
+
+## Don't use this for
+
+- Validating deliverability or spam scores. Mailpit doesn't send; you need a real provider in staging.
+- Load-testing the email pipeline. Mailpit defaults cap at 5,000 retained messages.
+
+## Production fallback
+
+The same `EMAIL_PROVIDER=smtp` provider works against any RFC-5321 server (Postfix sidecar, SES via SMTP, Postmark). Set `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` in `api.prod.env`.
+
+## Related
+
+- [Email templates](/api/email/). Handlebars partials, precompiled templates.
+- [Profiles & overlays](/infra/profiles-and-overlays/). Every `WITH_*` flag.

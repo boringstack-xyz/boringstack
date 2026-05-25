@@ -1,0 +1,99 @@
+# ============================================================================
+# Copy this file to `terraform.tfvars` and fill in real values.
+# `terraform.tfvars` is gitignored. Never commit it.
+#
+# Generate strong secrets with:
+#   openssl rand -base64 32
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Provider credentials  (required)
+# ----------------------------------------------------------------------------
+
+hetzner_api_token    = ""  # Hetzner Cloud → Security → API Tokens → Read & Write
+cloudflare_api_token = ""  # Cloudflare → My Profile → API Tokens → custom token
+                            # with: Zone:DNS:Edit, Zone:Zone Settings:Edit,
+                            #       Zone:Rulesets:Edit on the target zone
+cloudflare_zone_id   = ""  # Zone overview page, right sidebar
+
+# ----------------------------------------------------------------------------
+# Domain + access  (required)
+# ----------------------------------------------------------------------------
+
+domain          = "example.com"
+ssh_public_key  = ""  # paste full key including "ssh-ed25519 ..."
+# ssh_allowed_ips = ["0.0.0.0/0", "::/0"]  # uncomment to restrict SSH source
+
+# ----------------------------------------------------------------------------
+# VPS sizing (Hetzner-native names)
+# ----------------------------------------------------------------------------
+
+# vps_type     = "cx32"          # 4 vCPU / 8 GB (default sizing target)
+# vps_location = "fsn1"          # fsn1 | nbg1 | hel1 | ash | hil
+# vps_image    = "ubuntu-24.04"
+# vps_name     = "boringstack"
+
+# ----------------------------------------------------------------------------
+# Stack secrets  (required)
+# ----------------------------------------------------------------------------
+
+jwt_secret        = ""  # 32+ chars; openssl rand -base64 32
+postgres_password = ""  # openssl rand -base64 32
+valkey_password   = ""  # openssl rand -base64 32
+acme_email        = "ops@example.com"  # real address; Let's Encrypt rejects example.com
+
+# ----------------------------------------------------------------------------
+# Repos to clone on first boot (override for forks)
+# ----------------------------------------------------------------------------
+
+# api_repo   = "https://github.com/boringstack-xyz/api-template"
+# ui_repo    = "https://github.com/boringstack-xyz/ui-template"
+# infra_repo = "https://github.com/boringstack-xyz/infra-docker-compose-template"
+
+# ----------------------------------------------------------------------------
+# Email provider  (optional; leave empty to disable)
+#
+# Cloudflare Email Service is cheapest at scale (bundled into Workers Paid).
+# See https://boringstack.xyz/runbooks/cloudflare-email-setup/.
+# ----------------------------------------------------------------------------
+
+# email_provider             = ""  # "" disables email; or cloudflare | resend | sendgrid
+# email_from                 = "noreply@example.com"
+# cloudflare_account_id      = ""
+# cloudflare_email_api_token = ""
+# resend_api_key             = ""
+# sendgrid_api_key           = ""
+
+# ----------------------------------------------------------------------------
+# OAuth providers  (optional)
+# ----------------------------------------------------------------------------
+
+# google_oauth_client_id     = ""
+# google_oauth_client_secret = ""
+# github_oauth_client_id     = ""
+# github_oauth_client_secret = ""
+# linkedin_oauth_client_id     = ""
+# linkedin_oauth_client_secret = ""
+
+# ----------------------------------------------------------------------------
+# Billing  (optional)
+# ----------------------------------------------------------------------------
+
+# stripe_secret_key     = ""
+# stripe_webhook_secret = ""
+
+# ----------------------------------------------------------------------------
+# Error tracking  (optional)
+# ----------------------------------------------------------------------------
+
+# sentry_dsn      = ""
+# vite_sentry_dsn = ""
+
+# ----------------------------------------------------------------------------
+# Backups  (optional; requires rclone configured on the host post-apply)
+# ----------------------------------------------------------------------------
+
+# backups_enabled       = false
+# rclone_remote_name    = ""
+# rclone_remote_path    = ""
+# backup_retention_days = 30

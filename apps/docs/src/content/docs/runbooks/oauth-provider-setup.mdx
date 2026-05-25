@@ -1,0 +1,175 @@
+---
+title: OAuth provider setup
+description: Create Google, GitHub, and LinkedIn OAuth apps — redirect URIs, scopes, and env var mapping for api-template.
+---
+
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import CommandRun from "../../../components/docs-kit/CommandRun";
+import DocCallout from "../../../components/DocCallout.tsx";
+import { Steps } from "@astrojs/starlight/components";
+
+<PageIntro
+  eyebrow="Runbook"
+  actions={[
+    { label: "Google", href: "#google" },
+    { label: "GitHub", href: "#github" },
+    { label: "LinkedIn", href: "#linkedin" },
+  ]}
+  facts={[
+    { value: "3", label: "providers supported" },
+    { value: "PKCE", label: "OAuth flow" },
+    { value: "compose/.env", label: "credential store" },
+  ]}
+>
+  Step-by-step console walkthroughs for each OAuth provider BoringStack
+  supports. Credentials map to env vars consumed by
+  [`oauth.manifest.ts`](https://github.com/boringstack-xyz/api-template/blob/main/src/lib/oauth/oauth.manifest.ts).
+</PageIntro>
+
+Set these base URLs before creating apps (replace `example.com` with your domain):
+
+| Variable         | Example                   |
+| ---------------- | ------------------------- |
+| `FRONTEND_URL`   | `https://example.com`     |
+| `PUBLIC_API_URL` | `https://example.com/api` |
+
+OAuth callback URL pattern for all providers:
+
+```
+https://example.com/api/v1/auth/oauth/{provider}/callback
+```
+
+Where `{provider}` is `google`, `github`, or `linkedin`.
+
+---
+
+## Local development
+
+For the Docker Compose dev stack (`api-dev` on port 3000, Vite UI on 3001), register **additional** redirect URIs in each provider console:
+
+```
+http://localhost:3000/api/v1/auth/oauth/google/callback
+http://localhost:3000/api/v1/auth/oauth/github/callback
+http://localhost:3000/api/v1/auth/oauth/linkedin/callback
+```
+
+API secrets go in `infra-docker-compose-template/compose/.env` (same `GOOGLE_OAUTH_*` / `GITHUB_OAUTH_*` / `LINKEDIN_OAUTH_*` keys as production).
+
+OAuth login buttons render when the API has credentials for a provider — the UI reads `GET /api/v1/capabilities/` and shows buttons for each entry in `oauth.providers`. No UI-side OAuth client IDs are required. After changing env, restart `api-dev` and the Vite dev server.
+
+When `VITE_API_URL` is empty, the browser uses same-origin relative `/api` paths and Vite proxies to `VITE_API_PROXY_TARGET` (default `http://localhost:3000`). Callback URLs still hit the API on port 3000, not the Vite port.
+
+---
+
+## Google
+
+<Steps>
+
+1. Open [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **Credentials**.
+
+2. **Create OAuth client ID** → Application type: **Web application**.
+
+3. **Authorized redirect URIs** — add exactly:
+
+   ```
+   https://example.com/api/v1/auth/oauth/google/callback
+   ```
+
+4. **Scopes** (requested automatically by BoringStack): `openid`, `email`, `profile`.
+
+5. Copy **Client ID** and **Client secret** into `compose/.env`:
+
+   <CommandRun
+     title="Google OAuth env vars"
+     caption="append to compose/.env"
+     command={[
+       "echo 'GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com' >> compose/.env",
+       "echo 'GOOGLE_OAUTH_CLIENT_SECRET=your-client-secret' >> compose/.env",
+     ]}
+   />
+
+6. Restart the API container after updating env.
+
+</Steps>
+
+---
+
+## GitHub
+
+<Steps>
+
+1. GitHub → **Settings** → **Developer settings** → **OAuth Apps** → **New OAuth App**.
+
+2. **Homepage URL:** `https://example.com`
+
+3. **Authorization callback URL:**
+
+   ```
+   https://example.com/api/v1/auth/oauth/github/callback
+   ```
+
+4. **Scopes** (requested by BoringStack): `read:user`, `user:email`.
+
+5. Generate a **Client secret** and add to `compose/.env`:
+
+   <CommandRun
+     title="GitHub OAuth env vars"
+     command={[
+       "echo 'GITHUB_OAUTH_CLIENT_ID=your-github-client-id' >> compose/.env",
+       "echo 'GITHUB_OAUTH_CLIENT_SECRET=your-github-client-secret' >> compose/.env",
+     ]}
+   />
+
+</Steps>
+
+---
+
+## LinkedIn
+
+<Steps>
+
+1. [LinkedIn Developer Portal](https://www.linkedin.com/developers/) → **Create app**.
+
+2. Under **Auth** → **OAuth 2.0 settings** → **Authorized redirect URLs:**
+
+   ```
+   https://example.com/api/v1/auth/oauth/linkedin/callback
+   ```
+
+3. Request **Sign In with LinkedIn using OpenID Connect** product (required for `openid` scope).
+
+4. **Scopes:** `openid`, `profile`, `email`.
+
+5. Add credentials to `compose/.env`:
+
+   <CommandRun
+     title="LinkedIn OAuth env vars"
+     command={[
+       "echo 'LINKEDIN_OAUTH_CLIENT_ID=your-linkedin-client-id' >> compose/.env",
+       "echo 'LINKEDIN_OAUTH_CLIENT_SECRET=your-linkedin-client-secret' >> compose/.env",
+     ]}
+   />
+
+</Steps>
+
+---
+
+## Verify
+
+1. Ensure Valkey is running (OAuth state store requires it).
+2. Hit `GET /api/v1/capabilities/` — `oauth.providers` should list configured providers.
+3. Open the login page — OAuth buttons appear only for providers with valid env vars.
+4. Complete a login flow; you should land on `/oauth/success` then `/dashboard`.
+
+<DocCallout variant="tip">
+  For Tofu provisioning, add the same values to `terraform.tfvars` as
+  `google_oauth_client_id`, `github_oauth_client_id`, `linkedin_oauth_client_id`
+  (and matching secrets). See
+  [`terraform.tfvars.example`](https://github.com/boringstack-xyz/infra-bootstrap-tofu-template/blob/main/terraform.tfvars.example).
+</DocCallout>
+
+## Related
+
+- [Authentication](/api/auth/)
+- [Environment variables](/reference/env-vars/)
+- [Env backup and secrets](/runbooks/env-backup-and-secrets/)

@@ -1,0 +1,11 @@
+{
+    "subject": "You've been invited to join an account",
+    "preHeader": "Accept your invitation to join the team",
+    "appName": "{{appName}}",
+    "accountName": "Acme Inc.",
+    "inviterName": "Avery Owner",
+    "roleToAssign": "member",
+    "token": "{{token}}",
+    "acceptUrl": "https://example.com/invitations/accept",
+    "expiresAt": "2026-12-31"
+}

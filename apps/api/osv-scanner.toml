@@ -1,0 +1,39 @@
+# osv-scanner accepted-risk allowlist.
+#
+# Each entry must include the reasoning + a re-evaluation date. Re-run
+# `osv-scanner --lockfile=bun.lock` periodically to confirm each remains
+# accepted-risk (upstream patches eventually land and the entry can be
+# removed). pnpm-lock.yaml is .gitignored in this repo — bun.lock is
+# canonical.
+
+[[IgnoredVulns]]
+id = "GHSA-67mh-4wv8-2f99"
+ignoreUntil = "2026-11-18T00:00:00Z"
+reason = """
+esbuild dev-server-only RCE. Production builds (Dockerfile.prod) do not run
+the esbuild dev server; the bundled artifact has no exposed surface. Only
+exploitable against `bun run dev` / `vite` locally. Awaiting upstream patch
+in our transitive tree (pulled in via vite + tsx).
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-952p-6rrq-rcjv"
+ignoreUntil = "2026-11-18T00:00:00Z"
+reason = """
+micromatch ReDoS. Requires attacker-controlled glob patterns reaching
+micromatch; our usage is internal build-time tooling (vite, tsconfig
+resolution). No path from user input to micromatch in api source. Awaiting
+upstream patch via vite/jest transitive deps.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-w5hq-g745-h8pq"
+ignoreUntil = "2026-11-22T00:00:00Z"
+reason = """
+uuid@10.0.0 advisory pulled in transitively via resend → svix → uuid.
+We use resend's `emails.send` only; the svix webhook-verification path
+(which is what uses uuid) is never invoked from our code. svix@1.90.0
+pins uuid@^10, so we cannot lift to uuid@11 without an upstream svix
+bump. Re-evaluate once resend or svix ships a release that depends on
+uuid@>=11.1.1.
+"""

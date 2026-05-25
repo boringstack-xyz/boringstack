@@ -1,0 +1,295 @@
+import { beforeEach, describe, expect, it } from "bun:test";
+import {
+  nonEmpty,
+  toBool,
+  toCsv,
+  toFloat,
+  toInt,
+  validateEnv,
+} from "../../../src/config/env/validate";
+
+describe("toInt", () => {
+  it("returns the parsed integer when present", () => {
+    expect(toInt("42", 0)).toBe(42);
+  });
+
+  it("falls back when undefined", () => {
+    expect(toInt(undefined, 7)).toBe(7);
+  });
+
+  it("falls back when empty string", () => {
+    expect(toInt("", 7)).toBe(7);
+  });
+
+  it("falls back when not a number", () => {
+    expect(toInt("not-a-number", 7)).toBe(7);
+  });
+});
+
+describe("toFloat", () => {
+  it("returns the parsed float when present", () => {
+    expect(toFloat("0.25", 1)).toBe(0.25);
+  });
+
+  it("returns integers as floats", () => {
+    expect(toFloat("3", 0)).toBe(3);
+  });
+
+  it("falls back when undefined", () => {
+    expect(toFloat(undefined, 0.1)).toBe(0.1);
+  });
+
+  it("falls back when empty string", () => {
+    expect(toFloat("", 0.1)).toBe(0.1);
+  });
+
+  it("falls back when not a number", () => {
+    expect(toFloat("not-a-float", 0.1)).toBe(0.1);
+  });
+});
+
+describe("nonEmpty", () => {
+  it("returns the value when set", () => {
+    expect(nonEmpty("present", "fallback")).toBe("present");
+  });
+
+  it("returns the fallback when undefined", () => {
+    expect(nonEmpty(undefined, "fallback")).toBe("fallback");
+  });
+
+  it("returns the fallback when empty string", () => {
+    expect(nonEmpty("", "fallback")).toBe("fallback");
+  });
+
+  it("does not treat whitespace as empty", () => {
+    expect(nonEmpty("   ", "fallback")).toBe("   ");
+  });
+});
+
+describe("toBool", () => {
+  it("returns true only for the literal string 'true'", () => {
+    expect(toBool("true")).toBe(true);
+  });
+
+  it("returns false for everything else", () => {
+    expect(toBool("false")).toBe(false);
+    expect(toBool("1")).toBe(false);
+    expect(toBool("")).toBe(false);
+    expect(toBool(undefined)).toBe(false);
+    expect(toBool("True")).toBe(false);
+  });
+});
+
+describe("toCsv", () => {
+  it("splits on commas and trims whitespace", () => {
+    expect(toCsv("a, b ,c")).toEqual(["a", "b", "c"]);
+  });
+
+  it("drops empty entries", () => {
+    expect(toCsv("a,,b, ,c")).toEqual(["a", "b", "c"]);
+  });
+
+  it("returns an empty array for undefined / empty input", () => {
+    expect(toCsv(undefined)).toEqual([]);
+    expect(toCsv("")).toEqual([]);
+  });
+});
+
+type TestEnv = Record<string, string | undefined>;
+
+let testEnv: TestEnv;
+
+const seedValid = (): TestEnv => ({
+  NODE_ENV: "development",
+  DATABASE_URL: "postgresql://x:y@localhost:5432/db",
+  JWT_SECRET: "x".repeat(40),
+  FRONTEND_URL: "http://localhost:5173",
+  PUBLIC_API_URL: "http://localhost:3000",
+  ALLOWED_ORIGINS: "",
+  EMAIL_PROVIDER: "resend",
+  RESEND_API_KEY: "rk_test",
+});
+
+beforeEach(() => {
+  testEnv = seedValid();
+});
+
+describe("validateEnv", () => {
+  it("accepts a minimally-valid development config", () => {
+    expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
+  it("rejects a JWT_SECRET shorter than 32 chars", () => {
+    testEnv.JWT_SECRET = "too-short";
+    expect(() => validateEnv(testEnv)).toThrow(/JWT_SECRET/);
+  });
+
+  it("accepts production with empty ALLOWED_ORIGINS (same-origin deployment)", () => {
+    testEnv.NODE_ENV = "production";
+    testEnv.ALLOWED_ORIGINS = "";
+    testEnv.EMAIL_PROVIDER = "resend";
+    testEnv.RESEND_API_KEY = "rk_test";
+    expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
+  it("rejects production ALLOWED_ORIGINS that aren't HTTPS", () => {
+    testEnv.NODE_ENV = "production";
+    testEnv.ALLOWED_ORIGINS = "http://example.com";
+    testEnv.RESEND_API_KEY = "rk_test";
+    expect(() => validateEnv(testEnv)).toThrow(/HTTPS/);
+  });
+
+  it("rejects wildcard origins in production", () => {
+    testEnv.NODE_ENV = "production";
+    testEnv.ALLOWED_ORIGINS = "https://*.example.com";
+    testEnv.RESEND_API_KEY = "rk_test";
+    expect(() => validateEnv(testEnv)).toThrow(/HTTPS|wildcard/);
+  });
+
+  it("does not require the active provider's API key in development (email uses noop when empty)", () => {
+    testEnv.EMAIL_PROVIDER = "sendgrid";
+    testEnv.SENDGRID_API_KEY = "";
+    testEnv.RESEND_API_KEY = "";
+    expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
+  it("requires the active provider's API key in production", () => {
+    testEnv.NODE_ENV = "production";
+    testEnv.ALLOWED_ORIGINS = "https://example.com";
+    testEnv.EMAIL_PROVIDER = "sendgrid";
+    testEnv.SENDGRID_API_KEY = "";
+    testEnv.RESEND_API_KEY = "";
+    expect(() => validateEnv(testEnv)).toThrow(/Email provider/);
+  });
+
+  it("does not require email keys in test mode", () => {
+    testEnv.NODE_ENV = "test";
+    testEnv.EMAIL_PROVIDER = "resend";
+    testEnv.RESEND_API_KEY = "";
+    testEnv.DATABASE_URL = "";
+    testEnv.JWT_SECRET = "";
+    testEnv.FRONTEND_URL = "";
+    expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
+  it("requires OPENAI_API_KEY when AI_PROVIDER=openai", () => {
+    testEnv.AI_ENABLED = "true";
+    testEnv.AI_PROVIDER = "openai";
+    testEnv.OPENAI_API_KEY = "";
+    expect(() => validateEnv(testEnv)).toThrow(/OPENAI_API_KEY/);
+  });
+
+  it("requires ANTHROPIC_API_KEY when AI_PROVIDER=anthropic", () => {
+    testEnv.AI_ENABLED = "true";
+    testEnv.AI_PROVIDER = "anthropic";
+    testEnv.ANTHROPIC_API_KEY = "";
+    expect(() => validateEnv(testEnv)).toThrow(/ANTHROPIC_API_KEY/);
+  });
+
+  it("accepts AI_PROVIDER=openai with OpenAI key", () => {
+    testEnv.AI_ENABLED = "true";
+    testEnv.AI_PROVIDER = "openai";
+    testEnv.OPENAI_API_KEY = "sk-test";
+    expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
+  it("accepts AI_PROVIDER=openai pointed at OpenRouter", () => {
+    testEnv.AI_ENABLED = "true";
+    testEnv.AI_PROVIDER = "openai";
+    testEnv.OPENAI_API_KEY = "sk-or-test";
+    testEnv.OPENAI_BASE_URL = "https://openrouter.ai/api/v1";
+    expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
+  it("accepts AI_PROVIDER=openai pointed at local Ollama", () => {
+    testEnv.AI_ENABLED = "true";
+    testEnv.AI_PROVIDER = "openai";
+    testEnv.OPENAI_API_KEY = "ollama";
+    testEnv.OPENAI_BASE_URL = "http://localhost:11434/v1";
+    expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
+  it("accepts AI_PROVIDER=anthropic with key", () => {
+    testEnv.AI_ENABLED = "true";
+    testEnv.AI_PROVIDER = "anthropic";
+    testEnv.ANTHROPIC_API_KEY = "sk-ant-test";
+    expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
+  it("accepts AI_PROVIDER=noop without any keys", () => {
+    testEnv.AI_ENABLED = "true";
+    testEnv.AI_PROVIDER = "noop";
+    testEnv.OPENAI_API_KEY = "";
+    testEnv.ANTHROPIC_API_KEY = "";
+    expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
+  it("requires Stripe keys when BILLING_ENABLED=true (non-test)", () => {
+    testEnv.BILLING_ENABLED = "true";
+    testEnv.STRIPE_SECRET_KEY = "";
+    testEnv.RESEND_API_KEY = "rk_test";
+    expect(() => validateEnv(testEnv)).toThrow(/STRIPE_SECRET_KEY/);
+  });
+
+  it("requires VALKEY_PASSWORD in production with QUEUES_ENABLED=true", () => {
+    testEnv.NODE_ENV = "production";
+    testEnv.ALLOWED_ORIGINS = "https://example.com";
+    testEnv.RESEND_API_KEY = "rk_test";
+    testEnv.QUEUES_ENABLED = "true";
+    testEnv.VALKEY_PASSWORD = "";
+    expect(() => validateEnv(testEnv)).toThrow(/VALKEY_PASSWORD/);
+  });
+
+  it("coerces booleans from string env values", () => {
+    testEnv.RESEND_API_KEY = "rk_test";
+    testEnv.BILLING_ENABLED = "false";
+    testEnv.QUEUES_ENABLED = "true";
+    testEnv.VALKEY_PASSWORD = "secret";
+    const env = validateEnv(testEnv);
+
+    expect(env.BILLING_ENABLED).toBe(false);
+    expect(env.QUEUES_ENABLED).toBe(true);
+  });
+
+  it("requires SMTP_HOST when EMAIL_PROVIDER=smtp in production", () => {
+    testEnv.NODE_ENV = "production";
+    testEnv.ALLOWED_ORIGINS = "";
+    testEnv.EMAIL_PROVIDER = "smtp";
+    testEnv.SMTP_HOST = "";
+    testEnv.RESEND_API_KEY = "";
+    expect(() => validateEnv(testEnv)).toThrow(/SMTP_HOST/);
+  });
+
+  it("accepts EMAIL_PROVIDER=smtp with SMTP_HOST set (no auth — Mailpit)", () => {
+    testEnv.NODE_ENV = "production";
+    testEnv.ALLOWED_ORIGINS = "";
+    testEnv.EMAIL_PROVIDER = "smtp";
+    testEnv.SMTP_HOST = "mailpit";
+    testEnv.SMTP_PORT = "1025";
+    expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
+  it("parses ALLOWED_ORIGINS as a CSV", () => {
+    testEnv.RESEND_API_KEY = "rk_test";
+    testEnv.ALLOWED_ORIGINS = "http://a.com, http://b.com";
+    const env = validateEnv(testEnv);
+
+    expect(env.ALLOWED_ORIGINS).toEqual(["http://a.com", "http://b.com"]);
+  });
+
+  it("SUPERUSER_EMAIL and SUPERUSER_PASSWORD default to empty strings", () => {
+    delete testEnv.SUPERUSER_EMAIL;
+    delete testEnv.SUPERUSER_PASSWORD;
+    const env = validateEnv(testEnv);
+
+    expect(env.SUPERUSER_EMAIL).toBe("");
+    expect(env.SUPERUSER_PASSWORD).toBe("");
+  });
+
+  it("parses E2E_TEST_ENDPOINTS_ENABLED as an opt-in boolean", () => {
+    testEnv.E2E_TEST_ENDPOINTS_ENABLED = "true";
+    const env = validateEnv(testEnv);
+
+    expect(env.E2E_TEST_ENDPOINTS_ENABLED).toBe(true);
+  });
+});

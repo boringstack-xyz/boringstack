@@ -1,0 +1,23 @@
+# Not a multi-package workspace — single-package repo.
+# pnpm 11 reads `allowBuilds` from this file (the error message that points
+# to it on first install is hard-coded; package.json#pnpm.allowBuilds is
+# ignored, only this YAML is consulted).
+#
+# Two groups:
+#   1. agjs/* custom ESLint plugins installed via `github:` specs. pnpm 11
+#      quarantines build scripts on git-hosted packages by default.
+#   2. Native-binary packages whose postinstall compiles the platform binding.
+allowBuilds:
+  "@sentry/cli": true
+  esbuild: true
+  eslint-plugin-code-flow: true
+  eslint-plugin-comment-hygiene: true
+  eslint-plugin-env-access: true
+  eslint-plugin-i18n-keys: true
+  eslint-plugin-tanstack-query-cache: true
+  eslint-plugin-module-boundaries: true
+  eslint-plugin-react-component-architecture: true
+  eslint-plugin-resource-architecture: true
+  eslint-plugin-structured-logging: true
+  eslint-plugin-test-conventions: true
+  unrs-resolver: true

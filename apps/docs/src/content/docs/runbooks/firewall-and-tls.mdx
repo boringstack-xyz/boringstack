@@ -1,0 +1,143 @@
+---
+title: Firewall & TLS (single-host)
+description: UFW + Cloudflare IP allowlist + Traefik ACME for a single-VPS deployment.
+---
+
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import CommandRun from "../../../components/docs-kit/CommandRun";
+import DocCallout from "../../../components/DocCallout.tsx";
+import { Steps } from "@astrojs/starlight/components";
+
+<PageIntro
+  eyebrow="Firewall and TLS"
+  actions={[
+    { label: "Apply", href: "#apply" },
+    { label: "Verify", href: "#verify" },
+  ]}
+  facts={[
+    { value: "UFW", label: "host firewall" },
+    { value: "Cloudflare", label: "IP allowlist" },
+    { value: "ACME", label: "auto TLS" },
+  ]}
+>
+  Firewall + TLS for a single VPS sitting behind Cloudflare. Goal: only Cloudflare can reach port 80/443; SSH stays open from operator IPs; Traefik handles TLS termination via ACME HTTP-01.
+</PageIntro>
+
+If you're provisioning via the [OpenTofu template](/topics/provisioning-with-tofu/), the Hetzner cloud firewall already enforces the Cloudflare-only allowlist at the provider level. This UFW path is for manually-provisioned hosts, or as defense-in-depth on top of the cloud firewall.
+
+<DocCallout variant="caution" title="Read before running" eyebrow="Safety check">
+  The `scripts/ufw.example.sh` script in the infra repo **resets your UFW config**. Read it before pointing it at a real server. It refuses to run without `CONFIRM=yes`.
+</DocCallout>
+
+## Outcome
+
+- Inbound 22: SSH from anywhere (change `SSH_PORT` if you've moved it).
+- Inbound 80, 443: only from Cloudflare IP ranges (IPv4 + IPv6).
+- All other inbound: dropped.
+- Outbound: unrestricted.
+- Traefik on 80/443: HTTPS via Let's Encrypt ACME HTTP-01, cert renewal automatic, HTTP redirects to HTTPS.
+
+## Prerequisites
+
+- Your domain's DNS is managed by Cloudflare (orange-cloud / proxied mode for the host records).
+- The server has a static IPv4 address.
+- You have an ACME contact email (a real address; Let's Encrypt rejects `example.com`).
+
+## Apply
+
+<Steps>
+
+1. Edit `compose/.env`:
+
+   <CommandRun
+     title="Configure Public Host & ACME Email"
+     caption="set the public hostname and Let's Encrypt contact"
+     command={[
+       "echo 'PUBLIC_UI_HOST=example.com' >> compose/.env",
+       "echo 'ACME_EMAIL=ops@example.com' >> compose/.env",
+     ]}
+   />
+
+   The domain must resolve to this server (via a Cloudflare proxied A/AAAA record on the apex). BoringStack uses same-origin path routing: Traefik serves the SPA at `https://example.com/*` and the API at `https://example.com/api/*` + `https://example.com/health` on the same host and cert.
+
+2. Boot the prod stack:
+
+   <CommandRun
+     title="Boot Production Stack"
+     caption="Traefik requests ACME certs on first boot"
+     command={["STACK=prod ./scripts/compose-up.sh"]}
+     output={[
+       { tone: "ok", text: "traefik started; requesting ACME cert for example.com" },
+       { tone: "ok", text: "api started on internal network" },
+       { tone: "ok", text: "ui started on internal network" },
+     ]}
+   />
+
+   Traefik starts requesting ACME certs on first boot. Watch `docker compose logs traefik` for `obtain certificate` events.
+
+3. Run the firewall script:
+
+   <CommandRun
+     title="Apply UFW Firewall Rules"
+     caption="reset UFW, allow SSH, restrict 80/443 to Cloudflare IPs only"
+     command={["CONFIRM=yes ./scripts/ufw.example.sh"]}
+     output={[
+       { tone: "info", text: "Fetching Cloudflare IPv4 ranges..." },
+       { tone: "info", text: "Fetching Cloudflare IPv6 ranges..." },
+       { tone: "ok", text: "UFW reset and rules applied" },
+       { tone: "ok", text: "Port 22: ALLOW from anywhere" },
+       { tone: "ok", text: "Ports 80,443: ALLOW from Cloudflare ranges only" },
+     ]}
+   />
+
+</Steps>
+
+## Verify
+
+<CommandRun
+  title="Verify Firewall + TLS"
+  caption="three checks: local, proxied, and direct bypass (the important one)"
+  command={[
+    "curl -sI -H 'Host: example.com' https://localhost/health -k",
+    "curl -sI https://example.com/health",
+    "curl -sI --resolve example.com:443:<your-server-ip> https://example.com/health",
+  ]}
+  output={[
+    { tone: "ok", text: "HTTP/2 200  (local, self-signed accepted)" },
+    { tone: "ok", text: "HTTP/2 200  CF-Ray: abc123... (Cloudflare proxied)" },
+    { tone: "warn", text: "curl: (28) Connection timed out. Direct hit blocked by UFW ✓" },
+  ]}
+/>
+
+The third check is the proof: a direct hit to the server's IP, bypassing Cloudflare's edge, gets dropped by UFW.
+
+## Rotation: when Cloudflare publishes new IP ranges
+
+Cloudflare publishes [IPv4](https://www.cloudflare.com/ips-v4) and [IPv6](https://www.cloudflare.com/ips-v6) ranges and updates them rarely (semi-annual at most). When they change, re-run the script. It resets to a clean state, re-fetches the current ranges, and re-applies. Idempotent.
+
+<CommandRun
+  title="Rotate Cloudflare IP allowlist"
+  caption="idempotent; safe to re-run at any time"
+  command={["CONFIRM=yes ./scripts/ufw.example.sh"]}
+  output={[
+    { tone: "ok", text: "Cloudflare IP ranges updated and UFW rules re-applied" },
+  ]}
+/>
+
+## When the firewall is NOT enough
+
+UFW + Cloudflare-IP-allowlist protects you from random scans hitting your origin IP. It doesn't protect against:
+
+- Cloudflare-routed attacks (DDoS aimed at your hostname). Use Cloudflare's WAF + rate-limiting rules for that.
+- App-layer abuse (credential stuffing, scraping). Use Traefik's rate-limit middleware (already configured for the API router in prod) and per-account rate limits in the API.
+- Compromise via SSH. Move SSH to a non-standard port, disable password auth, use a hardware key.
+
+The infra repo's `docs/security-hardening.md` has a full checklist.
+
+## Related
+
+- [Deployment](/topics/deployment/); the production sequence this firewall sits inside.
+- [Provisioning with OpenTofu](/topics/provisioning-with-tofu/); cloud-firewall path that complements UFW.
+- [Security pipeline](/topics/security/); SAST and supply-chain scans alongside this network hardening.
+- [Backups](/runbooks/backups/); the other half of "ready for prod."
+- [Image updates](/runbooks/image-updates/); patching cadence for the stack you just hardened.

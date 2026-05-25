@@ -1,0 +1,111 @@
+---
+title: Supply-chain protection
+description: Every BoringStack repo refuses to install npm package versions younger than seven days. A short delay against rug-pull and account-hijack attacks on fresh publishes.
+---
+
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import SignalGrid from "../../../components/docs-kit/SignalGrid";
+import DocCallout from "../../../components/DocCallout.tsx";
+import FaqGroup from "../../../components/FaqGroup.tsx";
+import FaqItem from "../../../components/FaqItem.tsx";
+
+<PageIntro
+  eyebrow="Supply chain"
+  actions={[
+    { label: "How it works", href: "#how-it-works-per-package-manager" },
+    { label: "Overriding", href: "#overriding-for-a-specific-package" },
+  ]}
+  facts={[
+    { value: "7 days", label: "minimum release age" },
+    { value: "All repos", label: "enforced uniformly" },
+    { value: "Zero config", label: "to activate" },
+  ]}
+>
+  Supply-chain attacks follow a predictable timeline: a maintainer's account is compromised, a malicious version is published, the community detects and yanks it within hours to days. The undetected window is short but exploitable. Every BoringStack repo enforces a **seven-day minimum release age** to block installs inside that window.
+</PageIntro>
+
+<SignalGrid
+  columns={3}
+  items={[
+    {
+      label: "Attack window",
+      title: "Hours to days",
+      body: "Malicious versions typically get yanked within 24–72 hours of detection.",
+    },
+    {
+      label: "Our gate",
+      title: "7-day hold",
+      body: "Packages younger than 7 days won't install. The window closes before the gate opens.",
+    },
+    {
+      label: "Detection",
+      title: "Community signal",
+      body: "OSV scanner, npm audit, and human review all have time to flag the package before it lands.",
+    },
+  ]}
+/>
+
+## How it works per package manager
+
+<FaqGroup>
+  <FaqItem title="api-template (Bun)" open>
+    `bunfig.toml`: `[install] minimumReleaseAge = 604800` (seconds).
+  </FaqItem>
+  <FaqItem title="ui-template (pnpm)">
+    `.npmrc`: `minimum-release-age=10080` (minutes).
+  </FaqItem>
+  <FaqItem title=".github docs (pnpm)">
+    `.npmrc`: `minimum-release-age=10080`.
+  </FaqItem>
+  <FaqItem title="infra-docker-compose-template">
+    No JS deps; n/a.
+  </FaqItem>
+  <FaqItem title="infra-bootstrap-tofu-template">
+    No JS deps; n/a.
+  </FaqItem>
+</FaqGroup>
+
+## Trade-offs
+
+<FaqGroup>
+  <FaqItem title="First-time installs may fail when the range resolves to a brand-new release" open>
+    Pin to a specific older version or wait.
+  </FaqItem>
+  <FaqItem title="Critical security patches are delayed seven days">
+    Override per-package via `minimumReleaseAgeExclude` (pnpm) when a real CVE drops.
+  </FaqItem>
+  <FaqItem title="Slightly behind the bleeding edge">
+    This is the point.
+  </FaqItem>
+</FaqGroup>
+
+## Overriding for a specific package
+
+pnpm supports per-package overrides via `minimumReleaseAgeExclude` in `.npmrc`. The array syntax with `[]=` is required; a comma-separated list won't parse:
+
+```ini
+minimum-release-age-exclude[]=yaml
+minimum-release-age-exclude[]=msw
+minimum-release-age-exclude[]=@tailwindcss/oxide*
+```
+
+Glob patterns are supported, useful for platform-variant packages like `@tailwindcss/oxide-*`.
+
+<DocCallout variant="note" title="Use sparingly" eyebrow="Override discipline">
+  Each exclusion weakens the threat model slightly. The default `ui-template` `.npmrc` already excludes several high-churn packages whose latest versions fall within the seven-day window. Only add exclusions when a specific CVE or release justifies it. Document the reason in a comment.
+</DocCallout>
+
+## Why not just trust npm?
+
+npm's audit signal lags detection. By the time `npm audit` reports a malicious version, the attack window has closed. This rule does not replace audits. It is a low-cost, independent layer that extends the detection window for those tools.
+
+## References
+
+- [pnpm settings: minimumReleaseAge](https://pnpm.io/settings#minimum-release-age)
+- [Bun docs: install lockfile settings](https://bun.com/docs/install/lockfile)
+
+## Related
+
+- [Security pipeline](/topics/security/); CI scans, SAST, and dependency review that pair with the install delay.
+- [Lint as the contract](/architecture/lint-as-contract/); architecture-level guardrails the merge gate enforces.
+- [Commands cheatsheet](/reference/commands/); where `pnpm validate` and `bun run validate` live.

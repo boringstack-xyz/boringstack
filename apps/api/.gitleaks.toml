@@ -1,0 +1,21 @@
+# gitleaks configuration — extends the default rule set with a small allowlist
+# for fake credential values that live inside test files.
+#
+# Rationale: tests for the Web Push pipeline construct push subscription
+# objects with hand-rolled `p256dhKey` / `authKey` values like "secret-p256dh-key".
+# These aren't real keys (real ones are base64url-encoded P-256 EC public points
+# from the browser); the gitleaks `generic-api-key` rule misclassifies the
+# high-entropy literal strings as leaked secrets.
+#
+# Allowlist scope is intentionally narrow — only the two notification push
+# test files. Production code with the same pattern would still fail the scan.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Web Push test fixtures use placeholder p256dhKey / authKey strings; never real secrets."
+paths = [
+  '''tests/api/notifications/notifications\.push\.utils\.test\.ts''',
+  '''tests/api/notifications/notifications\.push\.service\.test\.ts''',
+]

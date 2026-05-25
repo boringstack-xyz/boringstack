@@ -1,0 +1,194 @@
+---
+title: Quickstart
+description: "Clone the BoringStack monorepo, run setup.sh, sign in at localhost:3001."
+---
+
+import CommandRun from "../../components/docs-kit/CommandRun";
+import DocCallout from "../../components/DocCallout.tsx";
+import DocFileTree from "../../components/DocFileTree";
+import PageIntro from "../../components/docs-kit/PageIntro";
+import SignalGrid from "../../components/docs-kit/SignalGrid";
+import FaqGroup from "../../components/FaqGroup.tsx";
+import FaqItem from "../../components/FaqItem.tsx";
+
+<PageIntro
+  eyebrow="Local boot"
+  actions={[
+    { label: "Boot Compose", href: "#step-2-boot-the-local-stack" },
+    { label: "What's running", href: "#whats-running" },
+  ]}
+  facts={[
+    { value: "1", label: "git clone" },
+    { value: "Docker", label: "only prerequisite" },
+    { value: "0", label: "local Node or Bun installs" },
+  ]}
+>
+  Clone the [BoringStack monorepo](https://github.com/boringstack-xyz/boringstack),
+  run `./setup.sh --up`, and Compose starts Postgres, Valkey, api-dev (migrations +
+  OpenAPI), and ui-dev (Vite on :3001 with generated client). Optional overlays:
+  Mailpit, Bull Board, observability, GlitchTip.
+</PageIntro>
+
+<DocCallout eyebrow="After boot" title="Local services" variant="tip">
+  - Dashboard at **`http://localhost:3001`** with register, login, and JWT
+  cookies. - API at `http://localhost:3000/api/*`; OpenAPI at `/swagger`. -
+  Postgres with migrations applied; Valkey for cache and BullMQ. - Generated
+  TypeScript client in `apps/ui`; compile fails when the API contract drifts. -
+  Overlays via env flags: Mailpit, Bull Board, observability, GlitchTip,
+  image-update notifications. - No local Node, Bun, or Postgres installs;
+  Compose runs every runtime.
+</DocCallout>
+
+## TL;DR
+
+<SignalGrid
+  columns={4}
+  items={[
+    {
+      label: "01",
+      title: "Clone the monorepo",
+      body: "One repo contains apps/api, apps/ui, infra/compose, and apps/docs.",
+    },
+    {
+      label: "02",
+      title: "Run setup",
+      body: "`./setup.sh --up` seeds compose/.env and boots the dev stack.",
+    },
+    {
+      label: "03",
+      title: "Sign in",
+      body: "Open http://localhost:3001; use SUPERUSER_* from compose/.env or register.",
+    },
+    {
+      label: "04",
+      title: "Ship changes",
+      body: "From repo root: `pnpm regen` then `pnpm check` before you push.",
+    },
+  ]}
+/>
+
+You now have Postgres, Valkey, the API, and the UI running locally with hot reload.
+
+## Prerequisites
+
+- Docker + Docker Compose v2 (`docker compose version` reports `v2.x` or newer).
+- About 4 GB of free RAM.
+- No local Node or Bun needed for the default path; everything runs in containers.
+
+## Step 1. Clone the monorepo
+
+```bash
+git clone https://github.com/boringstack-xyz/boringstack.git
+cd boringstack
+```
+
+Fork the repo on GitHub if you want your own copy under your org. You do **not** need separate api/ui/infra repos anymore.
+
+<DocFileTree
+  root="boringstack/"
+  title="Monorepo layout"
+  caption="compose build contexts point at apps/api and apps/ui"
+  nodes={[
+    { name: "apps/api/", detail: "Bun + Elysia + Drizzle API" },
+    { name: "apps/ui/", detail: "Vite + React SPA" },
+    { name: "apps/docs/", detail: "boringstack.xyz site source" },
+    {
+      name: "infra/compose/",
+      children: [
+        {
+          name: "compose/",
+          children: [
+            { name: "docker-compose.yml", detail: "build.context → ../../../apps/api | apps/ui" },
+            { name: "dev.sh", detail: "dev stack entrypoint" },
+          ],
+        },
+      ],
+    },
+    { name: "infra/bootstrap/", detail: "optional OpenTofu VPS bootstrap" },
+  ]}
+/>
+
+<DocCallout variant="tip" title="setup.sh" eyebrow="Fast path">
+  `./setup.sh` bootstraps `infra/compose/compose/.env`, generates a
+  `GLITCHTIP_SECRET_KEY`, chmods scripts, and with `--up` runs
+  `./dev.sh up -d --build`.
+</DocCallout>
+
+## Step 2. Boot the local stack
+
+<CommandRun
+  title="Boot locally"
+  caption="from repo root"
+  command={["./setup.sh --up"]}
+  output={[
+    { tone: "ok", text: "postgres ready on 5432" },
+    { tone: "ok", text: "valkey ready on 6379" },
+    { tone: "ok", text: "api-dev migrated and serving /openapi.json" },
+    { tone: "ok", text: "ui-dev generated client and started Vite" },
+  ]}
+/>
+
+Or manually:
+
+```bash
+cd infra/compose/compose
+cp .env.example .env
+chmod +x dev.sh ../scripts/*.sh
+./dev.sh up -d --build
+```
+
+First boot pulls base images, builds the api/ui dev images, and runs migrations. If you set `SUPERUSER_EMAIL` + `SUPERUSER_PASSWORD` in `compose/.env`, an admin user is also created. About 3 minutes on a fast laptop.
+
+## Step 3. Sign in
+
+Open **http://localhost:3001**.
+
+If you set `SUPERUSER_EMAIL` + `SUPERUSER_PASSWORD` in `compose/.env` before booting, sign in with those credentials. Otherwise hit "Sign up" on the form and register a new account; that user is the first user in the system. You land on the dashboard, which is minimal on purpose. Start building from here.
+
+## What's running
+
+<FaqGroup>
+  <FaqItem title="postgres (port 5432)" open>
+    App database; schemas `auth`, `billing`, `audit`, `app`, `notifications`.
+  </FaqItem>
+  <FaqItem title="valkey (port 6379)">Cache and BullMQ queues.</FaqItem>
+  <FaqItem title="api-migrate (one-shot)">
+    `db:push` and optional superuser seed, then exits.
+  </FaqItem>
+  <FaqItem title="api-dev (port 3000)">
+    Bun + Elysia API with hot reload via bind mount.
+  </FaqItem>
+  <FaqItem title="ui-dev (port 3001)">
+    Vite dev server; proxies `/api/*` to `api-dev`.
+  </FaqItem>
+</FaqGroup>
+
+Traefik runs only in the prod profile. In prod it terminates TLS and path-routes `/api/*` + `/health` to the api container, everything else to ui, on one domain.
+
+## Common next steps
+
+- Regenerate cross-app contracts: `pnpm regen` from repo root (api must be on :3000 for OpenAPI).
+- Observability: `WITH_OBSERVABILITY=1 ./scripts/compose-up.sh` from `infra/compose/compose`. [Details](/topics/observability/).
+- Self-hosted error tracking: `WITH_GLITCHTIP=1 ./scripts/compose-up.sh`. [Details](/topics/error-tracking/).
+- Local email testing: `WITH_MAILPIT=1 ./scripts/compose-up.sh`. [Details](/topics/email-in-dev/).
+- Production deploy: [Deployment](/topics/deployment/) when you are ready for GHCR images, TLS, firewall, and backups.
+
+## Stop the stack
+
+<FaqGroup>
+  <FaqItem title="Stop, keep data" open>
+    From `infra/compose/compose`: `./dev.sh down`. Volumes stay on disk.
+  </FaqItem>
+  <FaqItem title="Stop and wipe data">
+    `./scripts/compose-down-clean.sh` from `infra/compose`. Prompts before delete; `CONFIRM=yes` to
+    skip the prompt.
+  </FaqItem>
+</FaqGroup>
+
+## Related
+
+- [Why BoringStack](/architecture/why-boringstack/). What ships in the box.
+- [Repository layout](/architecture/three-repos/). Monorepo folders and contracts.
+- [Environment variables](/reference/env-vars/). Every var, what it does.
+- [Deployment](/topics/deployment/). Production runtime path.
+- [Provisioning with OpenTofu](/topics/provisioning-with-tofu/). `tofu apply` to a live VPS.

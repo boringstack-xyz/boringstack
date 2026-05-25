@@ -1,0 +1,51 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "infra/bootstrap/**"
+      - ".github/workflows/infra-bootstrap-validate.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-bootstrap-validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: tofu fmt + validate
+    defaults:
+      run:
+        working-directory: infra/bootstrap
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install OpenTofu
+        uses: opentofu/setup-opentofu@v2
+        with:
+          tofu_wrapper: false
+
+      - name: Check formatting
+        run: tofu fmt -check -recursive -diff
+
+      # `-backend=false` lets us run without configuring real cloud credentials.
+      # Validate parses + type-checks the whole graph (root + every module),
+      # so it catches "unexpected attribute" / wrong-provider-syntax / missing
+      # variable errors before they hit `apply`.
+      - name: Initialize (no backend)
+        run: tofu init -backend=false -input=false
+
+      - name: Validate root + every module
+        run: |
+          set -euo pipefail
+          tofu validate -no-color
+          for module in modules/*/; do
+            echo "::group::tofu validate $module"
+            (cd "$module" && tofu init -backend=false -input=false >/dev/null && tofu validate -no-color)
+            echo "::endgroup::"
+          done

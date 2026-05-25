@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report (private)
+    url: mailto:security@example.com
+    about: For active vulnerabilities, please email instead of filing a public issue.
+  - name: Stack / pattern question
+    url: https://github.com/orgs/boringstack-xyz/discussions
+    about: Use Discussions for "how do I do X" questions about the template.

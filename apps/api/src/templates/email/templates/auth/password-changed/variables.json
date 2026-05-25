@@ -1,0 +1,6 @@
+{
+    "subject": "Your password has been changed",
+    "preHeader": "Password change confirmation",
+    "appName": "{{appName}}",
+    "email": "user@example.com"
+}

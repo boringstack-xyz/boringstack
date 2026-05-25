@@ -1,0 +1,133 @@
+---
+title: Error tracking
+description: One Sentry-compatible wire protocol, two backends. Hosted Sentry or self-hosted GlitchTip; swap by changing the DSN.
+---
+
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import CommandRun from "../../../components/docs-kit/CommandRun";
+import DocCallout from "../../../components/DocCallout.tsx";
+import FaqGroup from "../../../components/FaqGroup.tsx";
+import FaqItem from "../../../components/FaqItem.tsx";
+
+<PageIntro
+  eyebrow="Error tracking"
+  actions={[
+    { label: "GlitchTip", href: "#self-hosting-with-glitchtip" },
+    { label: "Design choices", href: "#design-choices" },
+  ]}
+  facts={[
+    { value: "Sentry API", label: "Protocol" },
+    { value: "Self-host", label: "Opt-in" },
+    { value: "1", label: "unified SDK" },
+  ]}
+>
+  Both `api-template` and `ui-template` ship Sentry SDKs configured for zero
+  overhead. Swap between Hosted Sentry and self-hosted GlitchTip with a single
+  DSN key.
+</PageIntro>
+
+Both `api-template` and `ui-template` ship a Sentry SDK. The same SDK talks to:
+
+- **Hosted [Sentry](https://sentry.io)**; fastest setup, paid past the free tier.
+- **Self-hosted [GlitchTip](https://glitchtip.com)**; Sentry-API-compatible, runs as an overlay in the infra stack (`WITH_GLITCHTIP=1`). Zero per-event cost.
+
+The SDKs don't know which one they're talking to. Choosing is a one-env-var change.
+
+## Design choices
+
+<FaqGroup>
+  <FaqItem title="Sentry SDK on both sides (not a custom shim)" open>
+    Same SDK interface and error format across both services.
+  </FaqItem>
+  <FaqItem title="GlitchTip as the self-host option">
+    Wire-compatible with Sentry; runs on the same Postgres + Valkey the app
+    already uses.
+  </FaqItem>
+  <FaqItem title="Empty DSN: SDK is a no-op">
+    Dev stays clean; tests do not ship error reports.
+  </FaqItem>
+  <FaqItem title="Replay-on-error on, full-session replays off">
+    Captures the broken flow without storing healthy sessions.
+  </FaqItem>
+  <FaqItem title="Single env var per side: SENTRY_DSN (API), VITE_SENTRY_DSN (UI)">
+    Same protocol regardless of backend; swap is one redeploy.
+  </FaqItem>
+</FaqGroup>
+
+## How it's wired
+
+```mermaid
+flowchart LR
+  api["api-template<br/>@sentry/bun"] -- "events" --> backend{DSN points where?}
+  ui["ui-template<br/>@sentry/react"] -- "events + replays-on-error" --> backend
+  backend -- "https://...sentry.io/..." --> sentry["hosted Sentry"]
+  backend -- "https://...glitchtip.localhost/..." --> glitchtip["self-hosted GlitchTip"]
+```
+
+<p class="bs-diagram-caption">
+  Both api-template (@sentry/bun) and ui-template (@sentry/react) emit events to
+  the same Sentry-compatible wire protocol. The DSN env var picks the
+  destination: a <code>sentry.io</code> hostname for hosted Sentry, or a{" "}
+  <code>glitchtip.localhost</code> hostname for the self-hosted overlay. The
+  SDKs don't know which one they're talking to.
+</p>
+
+API side: Sentry initialises once at boot. If `SENTRY_DSN` is empty, init is a no-op. The shared `captureError` helper is wired into unhandled-rejection and uncaught-exception handlers, so anything that escapes the request loop reaches the backend.
+
+UI side: Sentry initialises once at app mount when `VITE_SENTRY_DSN` is set. Replays-on-error capture the error context; full-session replays are off to avoid capturing video of every session.
+
+## Self-hosting with GlitchTip
+
+GlitchTip is Apache-licensed and Sentry-API-compatible. The infra stack provides it as an overlay:
+
+```bash
+WITH_GLITCHTIP=1 ./dev.sh up -d
+```
+
+First boot bootstraps a superuser, a default org, and two projects (`API` and `Frontend`). Visit `http://glitchtip.localhost`, grab each project's DSN, and drop them into the matching env vars.
+
+The overlay reuses the base stack's Postgres (in a separate `glitchtip` database) and Valkey (DB 1). Adding GlitchTip costs two extra containers, not a separate database server.
+
+For production hardening (Basic Auth, HTTPS, real SMTP), see the [GlitchTip docs in the infra repo](https://github.com/boringstack-xyz/infra-docker-compose-template/blob/main/docs/glitchtip.md).
+
+## Switching backends
+
+Change only the DSN:
+
+<FaqGroup>
+  <FaqItem title="Sentry (hosted)" open>
+    API: `SENTRY_DSN=https://...@sentry.io/...`. UI:
+    `VITE_SENTRY_DSN=https://...@sentry.io/...`.
+  </FaqItem>
+  <FaqItem title="GlitchTip (self-hosted)">
+    API: `SENTRY_DSN=https://...@glitchtip.example.com/...`. UI:
+    `VITE_SENTRY_DSN=https://...@glitchtip.example.com/...`.
+  </FaqItem>
+</FaqGroup>
+
+No SDK changes. The infrastructure is the variable, not the code.
+
+<DocCallout
+  eyebrow="Decision matrix"
+  title="When to use Sentry vs GlitchTip"
+  variant="tip"
+>
+  **Hosted Sentry:** Best if you'd rather delegate the operations and pay a
+  monthly subscription fee past the free tier. **GlitchTip:** Best if you are
+  already running your own self-hosted stack and another container overhead is
+  essentially free. The developer experience is identical on both paths because
+  they use the same SDK.
+</DocCallout>
+
+## Source
+
+- API init: [`src/config/sentry.ts`](https://github.com/boringstack-xyz/api-template/blob/main/src/config/sentry.ts) + [`src/config/error-handlers.ts`](https://github.com/boringstack-xyz/api-template/blob/main/src/config/error-handlers.ts).
+- UI init: [`src/app/main.tsx`](https://github.com/boringstack-xyz/ui-template/blob/main/src/app/main.tsx).
+- GlitchTip overlay: [`compose/docker-compose.glitchtip.yml`](https://github.com/boringstack-xyz/infra-docker-compose-template/blob/main/compose/docker-compose.glitchtip.yml).
+
+## Related
+
+- [Observability](/topics/observability/); metrics and logs that sit alongside error events.
+- [Profiles & overlays](/infra/profiles-and-overlays/); how `WITH_GLITCHTIP=1` actually composes onto the stack.
+- [Security pipeline](/topics/security/); the broader telemetry surface this fits into.
+- [Notifications](/api/notifications/); how user-facing errors are surfaced back into the app.

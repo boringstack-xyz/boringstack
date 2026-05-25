@@ -1,0 +1,121 @@
+name: release
+
+# Two responsibilities in one workflow:
+#   1. changesets/action — opens a "Version Packages" PR or publishes when it
+#      merges, creating a GitHub Release with the changeset tag.
+#   2. Build + push the SPA's production image to GHCR.
+#
+# Image tags:
+#   - every push to main       → :latest + :sha-<7>
+#   - on a changesets publish  → also :<semver> (from the merged Version Packages PR)
+#
+# Downstream consumers (BoringStack's WUD service in the prod compose stack)
+# watch ghcr.io/<owner>/ui-template:latest and auto-redeploy when a new sha
+# is pushed.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/ui/**"
+      - ".github/workflows/apps-ui-release.yml"
+
+concurrency:
+  group: apps-ui-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+  # Reserved for future cosign keyless signing.
+  id-token: write
+
+jobs:
+  release:
+    defaults:
+      run:
+        working-directory: apps/ui
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+        with:
+          version: 11.1.2
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: apps/ui/.nvmrc
+          cache: pnpm
+          cache-dependency-path: apps/ui/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Opens or updates a "Version Packages" PR when changesets exist on main.
+      # On merge of that PR, this same step pushes the version bump + tag and
+      # creates the GitHub Release. The `published` output tells the image
+      # build below whether to add a :<semver> tag.
+      - name: Create Release Pull Request or publish
+        id: changesets
+        uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1.8.0
+        with:
+          version: pnpm exec changeset version
+          publish: pnpm exec changeset tag
+          createGithubReleases: true
+          commit: "chore: version packages"
+          title: "chore: version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image metadata
+        id: meta
+        uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
+        with:
+          # Tracks both the fork owner AND the repo name, so renaming after
+          # "Use this template" Just Works without touching the workflow.
+          images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          # Always produce :latest (on main) and :sha-<7>. Add the semver tag
+          # only when changesets actually published a new version on this run.
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short
+            type=raw,value=${{ fromJSON(steps.changesets.outputs.publishedPackages || '[{"version":""}]')[0].version }},enable=${{ steps.changesets.outputs.published == 'true' }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.title=BoringStack UI
+            org.opencontainers.image.description=Vite + React + TanStack Query SPA
+            wud.watch=true
+
+      - name: Build and push
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: apps/ui
+          file: apps/ui/Dockerfile.prod
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Default empty VITE_API_URL = same-origin path routing (the SPA hits
+          # /api/* on whatever host serves it). Cross-origin deployments
+          # override via a downstream build arg.
+          build-args: |
+            VITE_API_URL=
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

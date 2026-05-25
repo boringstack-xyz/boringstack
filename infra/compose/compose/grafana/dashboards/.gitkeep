@@ -1,0 +1,2 @@
+# Drop Grafana dashboard JSON files into this directory and they'll auto-load.
+# See ../provisioning/dashboards/dashboards.yml for setup details.

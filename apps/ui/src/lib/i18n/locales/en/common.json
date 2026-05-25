@@ -1,0 +1,431 @@
+{
+  "app": {
+    "name": "BoringStack",
+    "tagline": "Production-grade SPA starter"
+  },
+  "common": {
+    "loading": "Loading…",
+    "loadingAria": "Loading"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "forgotPassword": "Forgot password?",
+      "noAccount": "Don't have an account?",
+      "signUp": "Create one",
+      "resend": "Resend verification email",
+      "resendSending": "Sending…",
+      "errors": {
+        "invalidCredentials": "Email or password is incorrect.",
+        "emailNotVerified": "Your email isn't verified yet.",
+        "emailNotVerifiedDetail": "We need to confirm {{email}} before you can sign in. Check your inbox, or send another link.",
+        "resendSent": "If that email exists, a fresh verification link is on the way.",
+        "network": "Could not reach the server. Try again."
+      }
+    },
+    "signup": {
+      "title": "Create your account",
+      "email": "Email",
+      "password": "Password",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "optional": "optional",
+      "submit": "Create account",
+      "submitting": "Creating account…",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "errors": {
+        "network": "Could not reach the server. Try again.",
+        "emailTaken": "An account with this email already exists.",
+        "weakPassword": "Use a stronger password (mix of upper, lower, and a digit)."
+      }
+    },
+    "verifyEmail": {
+      "title": "Verifying your email",
+      "verifying": "Verifying your email…",
+      "missingToken": "The verification link is missing its token.",
+      "invalidToken": "This verification link is invalid or expired.",
+      "success": "Email verified — taking you in.",
+      "backToLogin": "Back to sign in"
+    },
+    "checkEmail": {
+      "title": "Check your email",
+      "body": "We just sent a verification link to {{email}}. Click it to finish creating your account.",
+      "resend": "Send another link",
+      "resendSending": "Sending…",
+      "back": "Back to sign in"
+    },
+    "forgotPassword": {
+      "title": "Forgot password",
+      "subtitle": "Enter your email and we'll send a reset link.",
+      "email": "Email",
+      "submit": "Send reset link",
+      "submitting": "Sending…",
+      "backToLogin": "Back to sign in",
+      "checkEmailTitle": "Check your email",
+      "checkEmailBody": "If an account exists for that address, a reset link is on the way.",
+      "errors": {
+        "network": "Could not reach the server. Try again."
+      }
+    },
+    "resetPassword": {
+      "title": "Reset password",
+      "subtitle": "Create a new password for your account.",
+      "password": "New password",
+      "submit": "Update password",
+      "submitting": "Updating…",
+      "successTitle": "Password updated",
+      "successBody": "Your password has been updated. You can now sign in with the new password.",
+      "invalidTokenTitle": "Reset link invalid",
+      "missingToken": "This password reset link is missing its token.",
+      "invalidToken": "This password reset link is invalid or expired.",
+      "backToLogin": "Back to sign in",
+      "errors": {
+        "network": "Could not reach the server. Try again."
+      }
+    },
+    "logout": {
+      "button": "Sign out",
+      "confirming": "Signing out…"
+    },
+    "oauth": {
+      "google": "Continue with Google",
+      "github": "Continue with GitHub",
+      "linkedin": "Continue with LinkedIn",
+      "divider": "or",
+      "exchanging": "Finishing sign in…",
+      "notConfigured": "This sign-in provider is not configured yet.",
+      "failed": {
+        "title": "Sign in didn't complete",
+        "back": "Back to sign in",
+        "errors": {
+          "access_denied": "You cancelled sign in or denied access.",
+          "invalid_request": "The sign-in request was invalid. Try again.",
+          "server_error": "The sign-in provider returned an error. Try again shortly.",
+          "temporarily_unavailable": "The sign-in provider is temporarily unavailable. Try again shortly.",
+          "unauthorized_client": "This app is not authorized for that sign-in provider.",
+          "unsupported_response_type": "That sign-in method is not supported.",
+          "unknown": "Sign in didn't complete. Try again or use another method."
+        }
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "empty": "Nothing to see yet.",
+    "stats": {
+      "events": "Your events"
+    },
+    "activity": {
+      "eyebrow": "Activity · Recent",
+      "title": "Recent activity",
+      "empty": "Nothing has happened yet. Once your users start moving, you'll see them here.",
+      "error": "Couldn't load recent activity.",
+      "loadMore": "Load more",
+      "loadingMore": "Loading…"
+    },
+    "welcome": {
+      "eyebrow": "Dashboard",
+      "title": "Welcome back, {{displayName}}.",
+      "subline": {
+        "setup": "Finish the steps below to complete setup and unlock team workflows.",
+        "ready": "Here's what's happening in your workspace."
+      },
+      "defaultName": "there"
+    },
+    "actions": {
+      "eyebrow": "Next steps",
+      "title": "Action items",
+      "completeProfile": {
+        "title": "Complete your profile",
+        "body": "Add your first and last name so teammates can identify you.",
+        "cta": "Open profile"
+      },
+      "verifyEmail": {
+        "title": "Verify your email",
+        "body": "Your sign-in email ({{email}}) is not verified yet.",
+        "cta": "Open profile"
+      },
+      "pendingInvitations": {
+        "title": "Review team invitations",
+        "body": "{{count}} pending invitation(s) need attention.",
+        "cta": "Open team"
+      },
+      "unreadNotifications": {
+        "title": "Catch up on notifications",
+        "body": "You have {{count}} unread notification(s).",
+        "cta": "Open notifications"
+      },
+      "billing": {
+        "title": "Review billing options",
+        "body": "You're on the default free tier. Review billing settings to unlock exports.",
+        "cta": "Open settings"
+      }
+    }
+  },
+  "widgets": {
+    "title": "Widgets",
+    "subtitle": "Create, edit, and delete the sample account-scoped resource shipped by the API starter.",
+    "empty": "No widgets yet.",
+    "form": {
+      "name": "Name",
+      "submit": "Create widget",
+      "submitting": "Creating…"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "columns": {
+      "name": "Name",
+      "created": "Created",
+      "actions": "Actions"
+    }
+  },
+  "nav": {
+    "ariaPrimary": "Primary navigation",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "menuTitle": "Menu",
+    "dashboard": "Dashboard",
+    "notifications": "Notifications",
+    "widgets": "Widgets",
+    "team": "Team",
+    "settings": "Settings",
+    "billing": "Billing",
+    "profile": "Profile"
+  },
+  "billing": {
+    "pageTitle": "Billing",
+    "pageSubtitle": "Manage your subscription and plan.",
+    "disabled": "Billing is not configured for this workspace. Contact your administrator if you need a paid plan.",
+    "notOwner": "Only the account owner can manage billing. Ask your owner to upgrade or change plans.",
+    "loading": "Loading plans…",
+    "loadError": "Could not load billing details. Refresh the page or try again in a moment.",
+    "currentPlan": {
+      "label": "Current plan",
+      "free": "Free",
+      "paid": "Paid"
+    },
+    "plansHeading": "Available plans",
+    "manage": "Manage subscription",
+    "managing": "Opening portal…",
+    "upgrade": "Upgrade",
+    "upgrading": "Redirecting to checkout…",
+    "checkoutError": "Could not start checkout. Try again in a moment.",
+    "portalError": "Could not open the billing portal. Try again in a moment.",
+    "badges": {
+      "default": "Default",
+      "current": "Current"
+    }
+  },
+  "theme": {
+    "toggleTo": {
+      "light": "Switch to light theme",
+      "dark": "Switch to dark theme"
+    }
+  },
+  "notifications": {
+    "bellAriaLabel": "Open notifications",
+    "bellAriaLabelWithCount": "Open notifications, {{count}} unread",
+    "title": "Notifications",
+    "empty": "You're all caught up.",
+    "loading": "Loading notifications…",
+    "loadError": "Couldn't load notifications.",
+    "loadMore": "Load more",
+    "seeAll": "See all",
+    "openCta": "Open",
+    "markAsRead": "Mark as read",
+    "archive": "Archive",
+    "markAllAsRead": "Mark all as read",
+    "tabs": {
+      "all": "All",
+      "unread": "Unread",
+      "archived": "Archived"
+    },
+    "preferences": {
+      "title": "Notification preferences",
+      "subtitle": "Choose which events reach you, and on which channels.",
+      "empty": "No preferences yet. They appear here as soon as you receive your first notification.",
+      "save": "Save preferences",
+      "saved": "Preferences saved",
+      "columns": {
+        "event": "Event",
+        "inApp": "In-app",
+        "email": "Email",
+        "webPush": "Web Push"
+      }
+    }
+  },
+  "languageSwitcher": {
+    "label": "Language",
+    "english": "English",
+    "german": "Deutsch"
+  },
+  "accounts": {
+    "settings": {
+      "pageTitle": "Settings",
+      "pageSubtitle": "Manage how your account works.",
+      "unavailable": "Not available",
+      "fields": {
+        "accountName": "Account",
+        "role": "Role",
+        "workspaceCount": "Workspaces",
+        "user": "User",
+        "email": "Email",
+        "emailStatus": "Email status"
+      },
+      "status": {
+        "emailVerified": "Verified",
+        "emailUnverified": "Not verified"
+      },
+      "roles": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "member": "Member",
+        "viewer": "Viewer"
+      },
+      "sections": {
+        "account": {
+          "title": "Account",
+          "body": "Active workspace and membership details."
+        },
+        "security": {
+          "title": "Security",
+          "body": "Identity details for the signed-in user."
+        },
+        "oauth": {
+          "title": "Connected sign-in providers",
+          "body": "Manage OAuth providers linked to your account."
+        },
+        "webPush": {
+          "title": "Browser notifications",
+          "body": "Receive push notifications in this browser even when the app tab isn't open.",
+          "stateSubscribed": "You're subscribed in this browser.",
+          "stateNotSubscribed": "Notifications are off in this browser.",
+          "stateBlocked": "Your browser is blocking notifications. Allow them in site settings to enable.",
+          "stateUnsupported": "This browser doesn't support Web Push.",
+          "stateNotConfigured": "Web Push is not configured for this deploy. Set VITE_VAPID_PUBLIC_KEY to enable.",
+          "subscribe": "Enable browser notifications",
+          "unsubscribe": "Disable browser notifications",
+          "pending": "Working…"
+        },
+        "danger": {
+          "title": "Danger zone",
+          "body": "Deleting this account starts the server-side soft-delete flow and clears the current session.",
+          "confirmLabel": "Type {{accountName}} to confirm.",
+          "delete": "Delete account",
+          "deleting": "Deleting…",
+          "ownerOnly": "Only the account owner can delete this account.",
+          "error": "Account deletion failed. Try again."
+        }
+      },
+      "account": {
+        "renameLabel": "Workspace name",
+        "renameSubmit": "Save name",
+        "renaming": "Saving…",
+        "renameSuccess": "Workspace renamed",
+        "renameError": "Couldn't rename workspace. Try again."
+      },
+      "security": {
+        "currentPassword": "Current password",
+        "newPassword": "New password",
+        "changePassword": "Change password",
+        "changingPassword": "Changing…",
+        "passwordChanged": "Password changed",
+        "passwordChangeError": "Couldn't change password. Try again.",
+        "passwordLoginDisabled": "Password login is disabled for this account. Use your linked OAuth provider to sign in."
+      },
+      "oauth": {
+        "connected": "Connected",
+        "notConnected": "Not connected",
+        "connect": "Connect",
+        "disconnect": "Disconnect",
+        "disconnecting": "Disconnecting…",
+        "disconnectSuccess": "Provider disconnected",
+        "disconnectError": "Couldn't disconnect provider. Try again.",
+        "noProviders": "No OAuth providers are configured."
+      }
+    },
+    "profile": {
+      "pageTitle": "Profile",
+      "pageSubtitle": "How you appear inside the app.",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "saveSuccess": "Profile updated",
+      "saveError": "Couldn't update your profile. Try again.",
+      "fields": {
+        "name": "Name",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "email": "Email",
+        "emailHint": "Linked email for sign-in. Change in Security.",
+        "avatar": "Avatar",
+        "avatarPlaceholder": "Avatar upload coming soon."
+      }
+    },
+    "switcher": {
+      "ariaLabel": "Switch active account",
+      "currentBadge": "Active",
+      "rolePrefix": "Role"
+    },
+    "invitations": {
+      "pageTitle": "Team",
+      "pageSubtitle": "Invite teammates and manage pending invitations.",
+      "inviteCta": "Invite a teammate",
+      "tableHeading": "Pending invitations",
+      "empty": "No pending invitations.",
+      "columns": {
+        "email": "Email",
+        "role": "Role",
+        "expiresAt": "Expires",
+        "actions": "Actions"
+      },
+      "resend": "Resend",
+      "revoke": "Revoke",
+      "form": {
+        "title": "Invite a teammate",
+        "description": "They'll get an email with a one-time link to join.",
+        "emailLabel": "Email",
+        "roleLabel": "Role",
+        "submit": "Send invitation",
+        "submitting": "Sending…",
+        "cancel": "Cancel",
+        "success": "Invitation sent",
+        "errorGeneric": "Couldn't send the invitation."
+      },
+      "roles": {
+        "admin": "Admin",
+        "member": "Member",
+        "viewer": "Viewer"
+      }
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "Page not found",
+      "back": "Take me home"
+    },
+    "boundary": {
+      "title": "Something went wrong",
+      "body": "Please reload the page. If the issue keeps happening, contact support.",
+      "retry": "Reload"
+    },
+    "route": {
+      "generic": "This page hit a snag",
+      "unauthorized": "You need to sign in to view this page",
+      "forbidden": "You don't have access to this page",
+      "rateLimited": "Too many requests — slow down and try again in a minute",
+      "server": "The server is having a moment",
+      "body": "We've logged the issue. You can try again, or head back to the home page.",
+      "retry": "Try again",
+      "home": "Take me home"
+    }
+  }
+}

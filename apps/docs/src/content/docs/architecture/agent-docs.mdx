@@ -1,0 +1,124 @@
+---
+title: Agent docs as a navigation index
+description: AGENTS.md is a one-page table of pointers. Each row links to one focused guide under docs/agents/. Agents read only what the task needs.
+---
+
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import SignalGrid from "../../../components/docs-kit/SignalGrid";
+import DocCallout from "../../../components/DocCallout.tsx";
+
+<PageIntro
+  eyebrow="Agent workflows"
+  actions={[
+    { label: "Lint as the contract", href: "/architecture/lint-as-contract/" },
+    { label: "Why BoringStack", href: "/architecture/why-boringstack/" },
+  ]}
+  facts={[
+    { value: "AGENTS.md", label: "navigation index" },
+    { value: "1", label: "single trigger per row" },
+    { value: "16", label: "focused guides" },
+  ]}
+>
+  `AGENTS.md` is the primary file Claude and other agentic coding AI assistants read upon session initialization. BoringStack ships it as a highly focused navigation index, preventing context bloat and keeping agent edits isolated.
+</PageIntro>
+
+`AGENTS.md` avoids the trap of the giant, thousand-line document that fights agents the same way a massive file fights humans: too much context to scan, too much irrelevant detail next to the bit you need, and rapid drift. Instead, it is a **navigation index** pointing to focused topic guides under `docs/agents/`.
+
+## Shape
+
+`AGENTS.md` is one table. One row per topic. One link per row. Nothing
+else.
+
+```md
+# Patterns: index
+
+`bun run check` is the oracle. If anything below disagrees with what
+`check` says, the lint config wins. Flag the drift.
+
+## Deep dives
+
+| When you're doing this                         | Read this                         |
+| ---------------------------------------------- | --------------------------------- |
+| Touching schema, writing service queries       | [drizzle](docs/agents/drizzle.md) |
+| Throwing in a service; wrapping a caught error | [errors](docs/agents/errors.md)   |
+| Writing a `logger.*` call; PII masking         | [logging](docs/agents/logging.md) |
+| Adding a BullMQ job; touching `src/queues/`    | [queues](docs/agents/queues.md)   |
+| Writing tests, fixing failures                 | [testing](docs/agents/testing.md) |
+```
+
+Each `docs/agents/<topic>.md` is single-concern: the one rule, the one
+idiom, the one example, the one anti-pattern. No "context" section, no
+glossary, no overview prose. The reader is already in the task; the
+file is the answer.
+
+## Why a table, not paragraphs
+
+A paragraph pointer ("Touching Drizzle? Read `docs/agents/drizzle.md`, which covers schema conventions, the `db.transaction(tx)` pattern, raw-SQL
+bans...") looks helpful and reads as noise. Every paragraph below the
+fold pushes the rule the agent actually needs further away.
+
+A two-column table reduces each entry to **trigger → file**. The agent
+scans, picks one, loads it. The index never grows beyond a screen, no
+matter how many topics live underneath.
+
+## Why split files at all
+
+<SignalGrid
+  columns={3}
+  items={[
+    {
+      label: "01",
+      title: "Context Efficiency",
+      body: "A single 500-line file injects 500 lines of context into every agent turn. Splitting keeps tokens clean and focused.",
+    },
+    {
+      label: "02",
+      title: "No Rotten Sections",
+      body: "Single-file documentation rots unevenly. Isolating topics prevents mixed-trust prose from polluting accurate guidelines.",
+    },
+    {
+      label: "03",
+      title: "Zero Git Collisions",
+      body: "Multiple agents modifying different parts of one file will hit git merge conflicts. Per-topic files isolate your changes cleanly.",
+    },
+  ]}
+/>
+
+Splitting also enforces a useful discipline: each guide answers _one_
+question. If a guide grows past a screen, the topic was actually two
+topics. Split it again.
+
+## Naming the file by the trigger, not the noun
+
+The "When you're doing this" column matters more than the topic
+name. Agents arrive with a task ("I need to add a webhook handler"),
+not a topic ("I want to learn billing"). The triggers in the table
+match the verbs an agent would write in their own plan.
+
+This is why the table works as a navigation index but a sidebar of
+topic names doesn't: a sidebar lists nouns, the agent needs verbs.
+
+## Where the rules actually live
+
+Even the focused guides don't _enforce_ anything. The lint config is
+the contract. See [Lint as the contract](/architecture/lint-as-contract/).
+The docs explain the _why_; the plugins block the _what_.
+
+So `AGENTS.md` answers "which page is the why?" and nothing else.
+
+## Where to look in this repo
+
+- `api-template/AGENTS.md`: 30 lines, one table, points at 16 guides
+  under `api-template/docs/agents/`.
+- `ui-template/AGENTS.md`: same shape, 16 guides under
+  `ui-template/docs/agents/`.
+
+If you fork BoringStack and add a new pattern, the cost is one row in
+the table plus one new file. Never edit prose-heavy sections in
+`AGENTS.md`; there are none to edit.
+
+## Related
+
+- [Lint as the contract](/architecture/lint-as-contract/)
+- [Separation of concerns](/architecture/separation-of-concerns/)
+- [Repository layout](/architecture/three-repos/)

@@ -1,0 +1,108 @@
+import {
+  type APIRequestContext,
+  test as base,
+  request
+} from "@playwright/test";
+
+import { DashboardPage } from "../pages/DashboardPage";
+import { LoginPage } from "../pages/LoginPage";
+
+interface ITestUser {
+  readonly email: string;
+  readonly password: string;
+}
+
+/**
+ * Shared Playwright fixtures:
+ *
+ *   - `testUser`: a freshly-registered user via the API. Worker-scoped so
+ *     every test in a worker shares one account, keeping the suite fast. The
+ *     email is randomized per worker so parallel workers + re-runs don't
+ *     collide on the unique-email index.
+ *   - `login` / `dashboard`: page objects on a clean unauthenticated session.
+ *   - `authedPage`: a logged-in page that has landed on /dashboard.
+ *
+ * Tests that explicitly assert against bad credentials should keep using
+ * the default `test` from "@playwright/test" or pass garbage strings; the
+ * fixture user is only for happy-path auth.
+ */
+export const test = base.extend<
+  {
+    login: LoginPage;
+    dashboard: DashboardPage;
+    authedPage: { login: LoginPage; dashboard: DashboardPage };
+  },
+  { testUser: ITestUser }
+>({
+  testUser: [
+    async ({}, use, workerInfo) => {
+      const baseURL = "http://localhost:3001";
+      const user: ITestUser = {
+        email: `e2e-${String(workerInfo.workerIndex)}-${String(Date.now())}-${String(Math.floor(Math.random() * 1_000_000))}@e2e.test`,
+        password: "E2EPassword123!"
+      };
+
+      const ctx: APIRequestContext = await request.newContext({ baseURL });
+
+      const registerRes = await ctx.post("/api/v1/auth/register", {
+        data: {
+          email: user.email,
+          password: user.password,
+          firstName: "E2E",
+          lastName: "User"
+        }
+      });
+
+      if (!registerRes.ok()) {
+        const body = await registerRes.text();
+
+        throw new Error(
+          `Failed to register e2e test user (HTTP ${String(registerRes.status())}): ${body}`
+        );
+      }
+
+      /*
+       * `/register` writes a pending user; the account is provisioned at
+       * verify-email time. `/__test/force-verify` hits that same
+       * provisioning convergence point, so the fixture stays
+       * deterministic without an email round-trip. The endpoint is gated
+       * to `NODE_ENV === "test"` OR `E2E_TEST_ENDPOINTS_ENABLED=true`;
+       * the docker-compose dev stack sets the latter so this works
+       * against a development-mode API.
+       */
+      const verifyRes = await ctx.post("/api/v1/auth/__test/force-verify", {
+        data: { email: user.email }
+      });
+
+      if (!verifyRes.ok()) {
+        const body = await verifyRes.text();
+
+        throw new Error(
+          `Failed to force-verify e2e test user (HTTP ${String(verifyRes.status())}): ${body}`
+        );
+      }
+
+      await ctx.dispose();
+
+      await use(user);
+    },
+    { scope: "worker" }
+  ],
+  login: async ({ page }, use) => {
+    await use(new LoginPage(page));
+  },
+  dashboard: async ({ page }, use) => {
+    await use(new DashboardPage(page));
+  },
+  authedPage: async ({ page, testUser }, use) => {
+    const login = new LoginPage(page);
+    const dashboard = new DashboardPage(page);
+
+    await login.goto();
+    await login.loginAs(testUser.email, testUser.password);
+    await page.waitForURL(/\/dashboard/);
+    await use({ login, dashboard });
+  }
+});
+
+export { expect } from "@playwright/test";

@@ -1,0 +1,44 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
+  "name": "ui-template",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+
+  "features": {
+    "ghcr.io/devcontainers-contrib/features/pnpm:2": {
+      "version": "10.33.0"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "forwardPorts": [3001, 6006, 4173],
+  "portsAttributes": {
+    "3001": { "label": "Vite dev server", "onAutoForward": "openPreview" },
+    "6006": { "label": "Storybook", "onAutoForward": "silent" },
+    "4173": { "label": "Vite preview", "onAutoForward": "silent" }
+  },
+
+  "postCreateCommand": "pnpm install --frozen-lockfile && pnpm exec playwright install --with-deps chromium",
+  "waitFor": "postCreateCommand",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "ms-playwright.playwright",
+        "yoavbls.pretty-ts-errors"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "eslint.useFlatConfig": true,
+        "files.eol": "\n"
+      }
+    }
+  }
+}

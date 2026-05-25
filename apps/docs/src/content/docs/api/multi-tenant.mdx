@@ -1,0 +1,315 @@
+---
+title: Multi-tenant model
+description: Accounts, memberships, invitations, ownership transfer, and soft-delete + hard-delete lifecycle. Multi-tenant from day one; solo users are the degenerate case.
+---
+
+import DocFileTree from "../../../components/DocFileTree";
+import FaqGroup from "../../../components/FaqGroup.tsx";
+import FaqItem from "../../../components/FaqItem.tsx";
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import SignalGrid from "../../../components/docs-kit/SignalGrid";
+
+<PageIntro
+  eyebrow="Tenant boundary from day one"
+  actions={[
+    { label: "ACL resolver", href: "/api/acl/" },
+    { label: "Authentication", href: "/api/auth/" },
+  ]}
+  facts={[
+    { value: "account", label: "tenant boundary" },
+    { value: "aid", label: "active account JWT claim" },
+    { value: "owner", label: "single active owner index" },
+  ]}
+>
+  Accounts, memberships, invitations, and billing plans ship as product
+  infrastructure. A solo user is just one user with one account, so the app can
+  grow into teams without a second data model.
+</PageIntro>
+
+## The shape
+
+<DocFileTree
+  root="tenant graph"
+  title="Multi-tenant data spine"
+  caption="user identity is separate from account ownership"
+  nodes={[
+    {
+      name: "auth.users",
+      detail: "identity and auth providers",
+      children: [
+        {
+          name: "auth.account_memberships",
+          detail: "user-account join with role and revocation state",
+          children: [
+            {
+              name: "app.accounts",
+              detail: "tenant boundary",
+              children: [
+                {
+                  name: "app.account_invitations",
+                  detail: "hashed one-time invite tokens",
+                },
+                {
+                  name: "app.account_feature_overrides",
+                  detail: "manual feature gates",
+                },
+                {
+                  name: "billing.account_plans",
+                  detail: "Stripe-backed plan state",
+                },
+                {
+                  name: "app.widgets",
+                  detail: "sample @account-scoped table pattern",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ]}
+/>
+
+Every account-scoped row carries `account_id`. Routes derive that ID from the JWT (the `aid` claim, populated at login / refresh / register / OAuth callback), never from URL params.
+
+<SignalGrid
+  columns={4}
+  items={[
+    {
+      label: "scope",
+      title: "account_id on scoped rows",
+      body: "Every product table that belongs to a tenant carries the tenant key explicitly.",
+    },
+    {
+      label: "jwt",
+      title: "aid comes from session",
+      body: "Handlers derive the active account from the cookie-backed JWT, not from request params.",
+    },
+    {
+      label: "owner",
+      title: "one active owner",
+      body: "A partial unique index keeps each account from ever having two active owners.",
+    },
+    {
+      label: "audit",
+      title: "soft deletes preserve history",
+      body: "Revoked memberships and deleted accounts keep enough state for audit trails and grace windows.",
+    },
+  ]}
+/>
+
+## Signup
+
+Account creation is deliberately deferred until the email is verified, so abandoned signups never leave orphan tenant rows. The flow splits across two endpoints, both converging on a single function (`accountsService.provisionAfterVerification`) that creates the `accounts` row + owner membership atomically.
+
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant API as API (Elysia)
+  participant DB as Postgres
+  participant Mail
+  B->>API: POST /auth/register
+  API->>DB: INSERT users (email_verified_at = NULL)
+  API->>DB: INSERT user_auth_providers (password hash)
+  API->>DB: INSERT email_verification_tokens
+  API->>Mail: send verification link
+  API-->>B: 200 message envelope (no cookies, account, or membership yet)
+  B->>B: user clicks link in email
+  B->>API: POST /auth/verify-email { token }
+  API->>DB: UPDATE users SET email_verified_at = now()
+  API->>DB: provisionAfterVerification then INSERT accounts + memberships
+  API-->>B: 200 + auth_token JWT (carries user_id + account_id)
+```
+
+`provisionAfterVerification` is idempotent: a doubled-up verify click or an OAuth-then-password collision can call it twice, and only one active owner membership per user exists. The `buildPersonalAccountName({ firstName, lastName, email })` util produces the account name; if both names are empty it falls back to the email.
+
+The OAuth callback uses the same provision function inline at the end of the callback transaction, so an OAuth user with a provider-verified email lands fully provisioned in one round-trip. OAuth refuses to issue a session when the IdP says the email is unverified; the transaction rolls back, and the caller has to verify through the password flow first. See [Authentication](/api/auth/#verify-before-account) for the full state machine.
+
+## Memberships
+
+`auth.account_memberships` is the (user, account, role) join. Two partial unique indexes lock down the invariants the application logic depends on:
+
+- `uniq_account_memberships_active_user`: `(account_id, user_id) WHERE revoked_at IS NULL`. At most one active membership per `(user, account)`.
+- `uniq_account_memberships_active_owner`: `(account_id) WHERE role = 'owner' AND revoked_at IS NULL`. At most one active owner per account.
+
+Revoked memberships keep their row (soft-delete via `revoked_at`) so the audit trail survives.
+
+## Invitations
+
+```ts
+POST   /api/v1/accounts/:id/invitations           // owner | admin
+POST   /api/v1/invitations/accept                 // any authenticated user holding the raw token
+POST   /api/v1/accounts/:id/invitations/:iid/resend
+DELETE /api/v1/accounts/:id/invitations/:iid
+```
+
+<FaqGroup>
+  <FaqItem title="Tokens are opaque, single-use, hashed at rest" open>
+    The route response carries the raw token exactly once (so the caller can
+    hand it to whatever email pipeline they want). The DB only stores
+    `sha256(token + pepper)`.
+  </FaqItem>
+  <FaqItem title="Resend rotates the token">
+    Rotating on resend invalidates any leaked old link. The caller re-emails the
+    new raw token. Old emails stop working immediately.
+  </FaqItem>
+  <FaqItem title="Revoke is a soft-delete (`revoked_at`)">
+    Subsequent accept attempts fail with `invitation_revoked`. The daily
+    `cleanExpiredInvitationsJob` background sweep also soft-revokes unaccepted
+    invitations past their TTL.
+  </FaqItem>
+  <FaqItem title="Seat-limit check fires twice">
+    At invitation creation AND at acceptance time. An admin could revoke a seat
+    between create + accept; the second check catches that.
+  </FaqItem>
+</FaqGroup>
+
+## Owner lifecycle
+
+<FaqGroup>
+  <FaqItem title="Transfer ownership" open>
+    `POST /api/v1/accounts/:id/transfer-ownership` (owner-only, cache-bypassing
+    `resolveFreshMembership`). Atomically demotes the current owner to `admin`,
+    promotes the target to `owner`. The partial unique index is never violated
+    mid-transaction. `accountsService.transferOwnership` demotes the outgoing
+    owner FIRST so the index never sees two owners simultaneously.
+  </FaqItem>
+  <FaqItem title="Cannot leave without transferring">
+    An owner cannot leave their account; they must transfer first or delete the
+    account. An owner cannot be removed by an admin.
+  </FaqItem>
+  <FaqItem title="Soft-delete with 30-day grace">
+    `DELETE /api/v1/accounts/:id` (owner-only) sets `accounts.deleted_at =
+    now()`. The `hardDeleteSoftDeletedAccountsJob` background sweep hard-deletes
+    rows past the grace window, cascading to memberships, invitations, feature
+    overrides, account_plans, and every `@account-scoped` application table.
+    `audit.audit_log` survives by design. GDPR redaction (hash the user id, keep
+    the row) is a separate path.
+  </FaqItem>
+</FaqGroup>
+
+## Domain claiming (optional, B2B mode)
+
+Off by default. Flip `ACCOUNT_DOMAIN_CLAIMING=true` and the first verified signup with a non-public email domain claims that domain on its personal account. Subsequent verified signups from the same domain fail with `DOMAIN_CLAIMED` (409) and the existing account's name in the error message + accountId in details. The blocked user can still be invited via the standard `account_invitations` flow.
+
+The flag is the right shape for a B2B product where one email domain maps to one workspace (think Linear, Vercel, or Dreamdata's signup). For consumer products, leave it off; the public-email allowlist would be moot anyway.
+
+<FaqGroup>
+  <FaqItem title="Email verification is the proof of ownership" open>
+    Clicking the verification link demonstrates control of an inbox at the
+    domain. That's enough for a starter template; harder evidence (DNS TXT
+    records, SAML/SCIM) is a follow-up an operator can layer on without changing
+    the claim mechanism.
+  </FaqItem>
+  <FaqItem title="Public domains never claim">
+    `src/lib/email-domain/public-domains.ts` ships a 51-entry allowlist
+    (gmail.com, outlook.com, proton.me, …). Signups from those addresses always
+    get a fresh personal account because no single company owns those domains.
+  </FaqItem>
+  <FaqItem title="Active-only partial unique index">
+    `uniq_accounts_claimed_domain_active` is the DB-level safety net.
+    Soft-deleted accounts (`deleted_at IS NOT NULL`) release their claim, so a
+    successor signup after a deletion gets the domain back. Two live accounts
+    can never share a claim.
+  </FaqItem>
+  <FaqItem title="Approve / deny scaffolded, not wired">
+    `app.account_join_requests` is in the schema with the partial unique index
+    `uniq_account_join_requests_pending`. The request / approve / deny endpoints
+    are intentionally not shipped. Operators flipping the flag on can wire that
+    surface to whatever notification model suits their product (Slack ping,
+    in-app inbox, email approval).
+  </FaqItem>
+</FaqGroup>
+
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant API as API
+  participant DB as Postgres
+  B->>API: POST /auth/verify-email { token }   (founder@acme.corp)
+  API->>DB: provisionAfterVerification then claims acme.corp
+  API-->>B: 200 + cookies, account exists
+  Note over API,DB: Some time later
+  B->>API: POST /auth/verify-email { token }   (intruder@acme.corp)
+  API->>DB: provisionAfterVerification then existing claim found
+  API-->>B: 409 DOMAIN_CLAIMED { message: "…Acme Corp…", details: { accountId, domain } }
+```
+
+The decision lives entirely inside `provisionAfterVerification`: read the flag, extract the domain via `extractDomain(email)`, bail if `isPublicEmailDomain(domain)`, otherwise look up an active claim and either reuse / claim / throw.
+
+## Account switch
+
+`POST /api/v1/accounts/switch` with a target `accountId` re-issues the JWT with the new active account in the `aid` claim. The client re-fetches `/me`. Old JWTs continue to work against the old account until their 15-minute access TTL expires; the refresh-time membership recheck blocks renewal if the user no longer has an active membership on that account.
+
+## Cross-account isolation tests
+
+`tests/api/widgets/widgets.routes.test.ts` is the proof point. Same user holds memberships in two accounts; resource IDs are unique across accounts; every method on Account B's widget returns 404 (not 403, not 200) when the request comes from Account A's JWT. The matrix is the canonical pattern to copy for any new account-scoped resource.
+
+## Source
+
+- [`src/api/accounts/`](https://github.com/boringstack-xyz/api-template/tree/main/src/api/accounts)
+- [`src/clients/postgres/schema/app.schema.ts`](https://github.com/boringstack-xyz/api-template/blob/main/src/clients/postgres/schema/app.schema.ts): `accounts`, `account_invitations`, `account_feature_overrides`, `widgets` (sample account-scoped resource).
+- [`src/clients/postgres/schema/memberships.schema.ts`](https://github.com/boringstack-xyz/api-template/blob/main/src/clients/postgres/schema/memberships.schema.ts): `account_memberships` with both partial unique indexes.
+
+## Operator queries
+
+Read-only psql snippets for tenant-shape questions. Run inside the app database (`docker compose exec postgres psql -U app -d app`).
+
+```sql
+-- All active memberships for one account.
+SELECT m.role, u.email, m.created_at
+FROM auth.account_memberships m
+JOIN auth.users u ON u.id = m.user_id
+WHERE m.account_id = '<account-uuid>'
+  AND m.revoked_at IS NULL
+ORDER BY m.role, m.created_at;
+```
+
+```sql
+-- Members per role per account (top 20 accounts by size).
+SELECT a.id AS account_id, a.name, m.role, count(*) AS members
+FROM auth.account_memberships m
+JOIN app.accounts a ON a.id = m.account_id
+WHERE m.revoked_at IS NULL
+GROUP BY 1, 2, 3
+ORDER BY members DESC
+LIMIT 20;
+```
+
+```sql
+-- Accounts with NO active owner. Should always return zero rows.
+-- If it doesn't, something bypassed the owner-transfer flow.
+SELECT a.id, a.name, a.created_at
+FROM app.accounts a
+WHERE NOT EXISTS (
+  SELECT 1 FROM auth.account_memberships m
+  WHERE m.account_id = a.id
+    AND m.role = 'owner'
+    AND m.revoked_at IS NULL
+);
+```
+
+```sql
+-- Users who belong to more than one active account (team members or operators).
+SELECT u.email, count(*) AS accounts
+FROM auth.users u
+JOIN auth.account_memberships m ON m.user_id = u.id AND m.revoked_at IS NULL
+GROUP BY 1
+HAVING count(*) > 1
+ORDER BY 2 DESC;
+```
+
+```sql
+-- Pending invitations older than 14 days, by account.
+SELECT i.account_id, i.email, i.created_at
+FROM app.account_invitations i
+WHERE i.accepted_at IS NULL
+  AND i.revoked_at IS NULL
+  AND i.created_at < now() - interval '14 days'
+ORDER BY i.created_at;
+```
+
+## Related
+
+- [ACL & feature resolution](/api/acl/): how role rules, feature gates, and the resolved feature set compose into a CASL ability.
+- [Authentication](/api/auth/): JWT issuance carries `aid` (active account); session refresh re-validates membership.

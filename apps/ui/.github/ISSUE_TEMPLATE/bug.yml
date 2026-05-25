@@ -1,0 +1,67 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Please include enough information that an
+        agent or maintainer can reproduce the issue locally.
+
+  - type: input
+    id: summary
+    attributes:
+      label: One-line summary
+      placeholder: "Login form submits twice on Safari when Enter is pressed in the password field"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Be specific — exact URL, exact inputs, browser version.
+      placeholder: |
+        1. `pnpm dev`
+        2. Open http://localhost:3001/login in Safari 17.4
+        3. Fill `demo@example.com` / `password123`
+        4. Press Enter in the password field
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected
+      placeholder: "Form submits once."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual
+      placeholder: "Form submits twice; second submit shows toast 'Invalid credentials'."
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "Chrome 138 / macOS 26.4 / pnpm 10.33"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / error output
+      description: Paste output from `pnpm dev`, browser console, or relevant CI run.
+      render: shell
+
+  - type: checkboxes
+    id: regression
+    attributes:
+      label: Regression check
+      options:
+        - label: I have run `pnpm validate` locally and confirmed it reproduces.
+        - label: I have searched existing issues for duplicates.

@@ -1,0 +1,431 @@
+{
+  "app": {
+    "name": "BoringStack",
+    "tagline": "Produktionsreifes SPA-Starter"
+  },
+  "common": {
+    "loading": "Wird geladen…",
+    "loadingAria": "Wird geladen"
+  },
+  "auth": {
+    "login": {
+      "title": "Anmelden",
+      "email": "E-Mail",
+      "password": "Passwort",
+      "submit": "Anmelden",
+      "submitting": "Anmeldung läuft…",
+      "forgotPassword": "Passwort vergessen?",
+      "noAccount": "Noch kein Konto?",
+      "signUp": "Konto erstellen",
+      "resend": "Bestätigungsmail erneut senden",
+      "resendSending": "Wird gesendet…",
+      "errors": {
+        "invalidCredentials": "E-Mail oder Passwort sind falsch.",
+        "emailNotVerified": "Deine E-Mail ist noch nicht bestätigt.",
+        "emailNotVerifiedDetail": "Wir müssen {{email}} bestätigen, bevor du dich anmelden kannst. Sieh in deinem Posteingang nach oder sende einen neuen Link.",
+        "resendSent": "Wenn die Adresse existiert, ist ein frischer Bestätigungslink unterwegs.",
+        "network": "Server nicht erreichbar. Bitte erneut versuchen."
+      }
+    },
+    "signup": {
+      "title": "Konto erstellen",
+      "email": "E-Mail",
+      "password": "Passwort",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "optional": "optional",
+      "submit": "Konto erstellen",
+      "submitting": "Konto wird erstellt…",
+      "haveAccount": "Bereits ein Konto?",
+      "signIn": "Anmelden",
+      "errors": {
+        "network": "Server nicht erreichbar. Bitte erneut versuchen.",
+        "emailTaken": "Mit dieser E-Mail-Adresse existiert bereits ein Konto.",
+        "weakPassword": "Verwende ein stärkeres Passwort (Groß-, Kleinbuchstaben und eine Ziffer)."
+      }
+    },
+    "verifyEmail": {
+      "title": "E-Mail wird bestätigt",
+      "verifying": "Bestätige deine E-Mail…",
+      "missingToken": "Der Bestätigungslink hat keinen Token.",
+      "invalidToken": "Dieser Bestätigungslink ist ungültig oder abgelaufen.",
+      "success": "E-Mail bestätigt — du wirst weitergeleitet.",
+      "backToLogin": "Zurück zur Anmeldung"
+    },
+    "checkEmail": {
+      "title": "Sieh in deinem Posteingang nach",
+      "body": "Wir haben einen Bestätigungslink an {{email}} gesendet. Klicke ihn an, um die Registrierung abzuschließen.",
+      "resend": "Erneut senden",
+      "resendSending": "Wird gesendet…",
+      "back": "Zurück zur Anmeldung"
+    },
+    "forgotPassword": {
+      "title": "Passwort vergessen",
+      "subtitle": "Gib deine E-Mail ein — wir senden dir einen Link zum Zurücksetzen.",
+      "email": "E-Mail",
+      "submit": "Link senden",
+      "submitting": "Wird gesendet…",
+      "backToLogin": "Zurück zur Anmeldung",
+      "checkEmailTitle": "Sieh in deinem Posteingang nach",
+      "checkEmailBody": "Wenn ein Konto mit dieser Adresse existiert, ist ein Reset-Link unterwegs.",
+      "errors": {
+        "network": "Server nicht erreichbar. Bitte erneut versuchen."
+      }
+    },
+    "resetPassword": {
+      "title": "Passwort zurücksetzen",
+      "subtitle": "Lege ein neues Passwort für dein Konto fest.",
+      "password": "Neues Passwort",
+      "submit": "Passwort aktualisieren",
+      "submitting": "Wird aktualisiert…",
+      "successTitle": "Passwort aktualisiert",
+      "successBody": "Dein Passwort wurde aktualisiert. Du kannst dich jetzt mit dem neuen Passwort anmelden.",
+      "invalidTokenTitle": "Reset-Link ungültig",
+      "missingToken": "In diesem Passwort-Reset-Link fehlt der Token.",
+      "invalidToken": "Dieser Passwort-Reset-Link ist ungültig oder abgelaufen.",
+      "backToLogin": "Zurück zur Anmeldung",
+      "errors": {
+        "network": "Server nicht erreichbar. Bitte erneut versuchen."
+      }
+    },
+    "logout": {
+      "button": "Abmelden",
+      "confirming": "Abmeldung läuft…"
+    },
+    "oauth": {
+      "google": "Mit Google fortfahren",
+      "github": "Mit GitHub fortfahren",
+      "linkedin": "Mit LinkedIn fortfahren",
+      "divider": "oder",
+      "exchanging": "Anmeldung wird abgeschlossen…",
+      "notConfigured": "Dieser Anmeldeanbieter ist noch nicht konfiguriert.",
+      "failed": {
+        "title": "Anmeldung konnte nicht abgeschlossen werden",
+        "back": "Zurück zur Anmeldung",
+        "errors": {
+          "access_denied": "Du hast die Anmeldung abgebrochen oder den Zugriff verweigert.",
+          "invalid_request": "Die Anmeldeanfrage war ungültig. Bitte erneut versuchen.",
+          "server_error": "Der Anmeldeanbieter hat einen Fehler gemeldet. Bitte später erneut versuchen.",
+          "temporarily_unavailable": "Der Anmeldeanbieter ist vorübergehend nicht erreichbar. Bitte später erneut versuchen.",
+          "unauthorized_client": "Diese App ist für diesen Anmeldeanbieter nicht autorisiert.",
+          "unsupported_response_type": "Diese Anmeldemethode wird nicht unterstützt.",
+          "unknown": "Die Anmeldung konnte nicht abgeschlossen werden. Bitte erneut versuchen oder eine andere Methode wählen."
+        }
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Übersicht",
+    "empty": "Noch nichts zu sehen.",
+    "stats": {
+      "events": "Deine Ereignisse"
+    },
+    "activity": {
+      "eyebrow": "Aktivität · Aktuell",
+      "title": "Letzte Aktivität",
+      "empty": "Hier ist noch nichts passiert. Sobald deine Nutzer aktiv werden, siehst du sie hier.",
+      "error": "Letzte Aktivität konnte nicht geladen werden.",
+      "loadMore": "Mehr laden",
+      "loadingMore": "Wird geladen…"
+    },
+    "welcome": {
+      "eyebrow": "Übersicht",
+      "title": "Willkommen zurück, {{displayName}}.",
+      "subline": {
+        "setup": "Schließe die Schritte unten ab, um Setup und Team-Workflows freizuschalten.",
+        "ready": "Das passiert gerade in deinem Workspace."
+      },
+      "defaultName": "da"
+    },
+    "actions": {
+      "eyebrow": "Nächste Schritte",
+      "title": "Aufgaben",
+      "completeProfile": {
+        "title": "Profil vervollständigen",
+        "body": "Ergänze Vor- und Nachname, damit dich dein Team eindeutig erkennt.",
+        "cta": "Profil öffnen"
+      },
+      "verifyEmail": {
+        "title": "E-Mail bestätigen",
+        "body": "Deine Anmelde-E-Mail ({{email}}) ist noch nicht bestätigt.",
+        "cta": "Profil öffnen"
+      },
+      "pendingInvitations": {
+        "title": "Teameinladungen prüfen",
+        "body": "{{count}} offene Einladung(en) brauchen Aufmerksamkeit.",
+        "cta": "Team öffnen"
+      },
+      "unreadNotifications": {
+        "title": "Benachrichtigungen prüfen",
+        "body": "Du hast {{count}} ungelesene Benachrichtigung(en).",
+        "cta": "Benachrichtigungen öffnen"
+      },
+      "billing": {
+        "title": "Billing-Optionen prüfen",
+        "body": "Du nutzt aktuell den Free-Tier-Plan. Prüfe die Einstellungen, um Exporte freizuschalten.",
+        "cta": "Einstellungen öffnen"
+      }
+    }
+  },
+  "widgets": {
+    "title": "Widgets",
+    "subtitle": "Erstelle, bearbeite und lösche die beispielhafte kontoabhängige Ressource aus dem API-Starter.",
+    "empty": "Noch keine Widgets.",
+    "form": {
+      "name": "Name",
+      "submit": "Widget erstellen",
+      "submitting": "Wird erstellt…"
+    },
+    "actions": {
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "save": "Speichern",
+      "cancel": "Abbrechen"
+    },
+    "columns": {
+      "name": "Name",
+      "created": "Erstellt",
+      "actions": "Aktionen"
+    }
+  },
+  "nav": {
+    "ariaPrimary": "Hauptnavigation",
+    "openMenu": "Menü öffnen",
+    "closeMenu": "Menü schließen",
+    "menuTitle": "Menü",
+    "dashboard": "Übersicht",
+    "notifications": "Benachrichtigungen",
+    "widgets": "Widgets",
+    "team": "Team",
+    "settings": "Einstellungen",
+    "billing": "Abrechnung",
+    "profile": "Profil"
+  },
+  "billing": {
+    "pageTitle": "Abrechnung",
+    "pageSubtitle": "Abonnement und Tarif verwalten.",
+    "disabled": "Abrechnung ist für diesen Workspace nicht konfiguriert. Wende dich an deinen Administrator, wenn du einen kostenpflichtigen Tarif brauchst.",
+    "notOwner": "Nur der Kontoinhaber kann die Abrechnung verwalten. Bitte den Inhaber um ein Upgrade oder einen Tarifwechsel.",
+    "loading": "Tarife werden geladen…",
+    "loadError": "Abrechnungsdetails konnten nicht geladen werden. Seite aktualisieren oder später erneut versuchen.",
+    "currentPlan": {
+      "label": "Aktueller Tarif",
+      "free": "Kostenlos",
+      "paid": "Bezahlt"
+    },
+    "plansHeading": "Verfügbare Tarife",
+    "manage": "Abonnement verwalten",
+    "managing": "Portal wird geöffnet…",
+    "upgrade": "Upgrade",
+    "upgrading": "Weiterleitung zur Kasse…",
+    "checkoutError": "Checkout konnte nicht gestartet werden. Bitte später erneut versuchen.",
+    "portalError": "Abrechnungsportal konnte nicht geöffnet werden. Bitte später erneut versuchen.",
+    "badges": {
+      "default": "Standard",
+      "current": "Aktuell"
+    }
+  },
+  "theme": {
+    "toggleTo": {
+      "light": "Zum hellen Design wechseln",
+      "dark": "Zum dunklen Design wechseln"
+    }
+  },
+  "errors": {
+    "notFound": {
+      "title": "Seite nicht gefunden",
+      "back": "Zurück zur Startseite"
+    },
+    "boundary": {
+      "title": "Etwas ist schiefgelaufen",
+      "body": "Bitte die Seite neu laden. Falls das Problem weiterhin auftritt, kontaktiere den Support.",
+      "retry": "Neu laden"
+    },
+    "route": {
+      "generic": "Diese Seite hat einen Aussetzer",
+      "unauthorized": "Du musst dich anmelden, um diese Seite zu sehen",
+      "forbidden": "Du hast keinen Zugriff auf diese Seite",
+      "rateLimited": "Zu viele Anfragen — bitte in einer Minute erneut versuchen",
+      "server": "Der Server hat gerade einen Moment",
+      "body": "Wir haben den Fehler protokolliert. Du kannst es erneut versuchen oder zur Startseite zurückkehren.",
+      "retry": "Erneut versuchen",
+      "home": "Zur Startseite"
+    }
+  },
+  "notifications": {
+    "bellAriaLabel": "Benachrichtigungen öffnen",
+    "bellAriaLabelWithCount": "Benachrichtigungen öffnen, {{count}} ungelesen",
+    "title": "Benachrichtigungen",
+    "empty": "Du bist auf dem Laufenden.",
+    "loading": "Benachrichtigungen werden geladen…",
+    "loadError": "Benachrichtigungen konnten nicht geladen werden.",
+    "loadMore": "Mehr laden",
+    "seeAll": "Alle ansehen",
+    "openCta": "Öffnen",
+    "markAsRead": "Als gelesen markieren",
+    "archive": "Archivieren",
+    "markAllAsRead": "Alle als gelesen markieren",
+    "tabs": {
+      "all": "Alle",
+      "unread": "Ungelesen",
+      "archived": "Archiviert"
+    },
+    "preferences": {
+      "title": "Benachrichtigungseinstellungen",
+      "subtitle": "Wähle, welche Ereignisse dich auf welchem Kanal erreichen.",
+      "empty": "Noch keine Einstellungen. Sie erscheinen hier, sobald du deine erste Benachrichtigung erhältst.",
+      "save": "Einstellungen speichern",
+      "saved": "Einstellungen gespeichert",
+      "columns": {
+        "event": "Ereignis",
+        "inApp": "In-App",
+        "email": "E-Mail",
+        "webPush": "Web Push"
+      }
+    }
+  },
+  "languageSwitcher": {
+    "label": "Sprache",
+    "english": "English",
+    "german": "Deutsch"
+  },
+  "accounts": {
+    "settings": {
+      "pageTitle": "Einstellungen",
+      "pageSubtitle": "Verwalte, wie dein Konto funktioniert.",
+      "unavailable": "Nicht verfügbar",
+      "fields": {
+        "accountName": "Konto",
+        "role": "Rolle",
+        "workspaceCount": "Workspaces",
+        "user": "Nutzer",
+        "email": "E-Mail",
+        "emailStatus": "E-Mail-Status"
+      },
+      "status": {
+        "emailVerified": "Bestätigt",
+        "emailUnverified": "Nicht bestätigt"
+      },
+      "roles": {
+        "owner": "Eigentümer",
+        "admin": "Admin",
+        "member": "Mitglied",
+        "viewer": "Betrachter"
+      },
+      "sections": {
+        "account": {
+          "title": "Konto",
+          "body": "Aktiver Workspace und Mitgliedschaftsdetails."
+        },
+        "security": {
+          "title": "Sicherheit",
+          "body": "Identitätsdetails für den angemeldeten Nutzer."
+        },
+        "oauth": {
+          "title": "Verknüpfte Anmeldeanbieter",
+          "body": "Verwalte OAuth-Anbieter, die mit deinem Konto verbunden sind."
+        },
+        "webPush": {
+          "title": "Browser-Benachrichtigungen",
+          "body": "Erhalte Push-Benachrichtigungen in diesem Browser, auch wenn der App-Tab nicht geöffnet ist.",
+          "stateSubscribed": "Du bist in diesem Browser abonniert.",
+          "stateNotSubscribed": "Benachrichtigungen sind in diesem Browser deaktiviert.",
+          "stateBlocked": "Dein Browser blockiert Benachrichtigungen. Erlaube sie in den Seiteneinstellungen, um sie zu aktivieren.",
+          "stateUnsupported": "Dieser Browser unterstützt Web Push nicht.",
+          "stateNotConfigured": "Web Push ist für dieses Deploy nicht konfiguriert. Setze VITE_VAPID_PUBLIC_KEY, um es zu aktivieren.",
+          "subscribe": "Browser-Benachrichtigungen aktivieren",
+          "unsubscribe": "Browser-Benachrichtigungen deaktivieren",
+          "pending": "Wird ausgeführt…"
+        },
+        "danger": {
+          "title": "Gefahrenzone",
+          "body": "Das Löschen dieses Kontos startet den serverseitigen Soft-Delete-Ablauf und leert die aktuelle Sitzung.",
+          "confirmLabel": "Gib {{accountName}} zur Bestätigung ein.",
+          "delete": "Konto löschen",
+          "deleting": "Wird gelöscht…",
+          "ownerOnly": "Nur der Kontoeigentümer kann dieses Konto löschen.",
+          "error": "Konto konnte nicht gelöscht werden. Bitte erneut versuchen."
+        }
+      },
+      "account": {
+        "renameLabel": "Workspace-Name",
+        "renameSubmit": "Name speichern",
+        "renaming": "Wird gespeichert…",
+        "renameSuccess": "Workspace umbenannt",
+        "renameError": "Workspace konnte nicht umbenannt werden. Bitte erneut versuchen."
+      },
+      "security": {
+        "currentPassword": "Aktuelles Passwort",
+        "newPassword": "Neues Passwort",
+        "changePassword": "Passwort ändern",
+        "changingPassword": "Wird geändert…",
+        "passwordChanged": "Passwort geändert",
+        "passwordChangeError": "Passwort konnte nicht geändert werden. Bitte erneut versuchen.",
+        "passwordLoginDisabled": "Passwort-Anmeldung ist für dieses Konto deaktiviert. Nutze deinen verknüpften OAuth-Anbieter zur Anmeldung."
+      },
+      "oauth": {
+        "connected": "Verbunden",
+        "notConnected": "Nicht verbunden",
+        "connect": "Verbinden",
+        "disconnect": "Trennen",
+        "disconnecting": "Wird getrennt…",
+        "disconnectSuccess": "Anbieter getrennt",
+        "disconnectError": "Anbieter konnte nicht getrennt werden. Bitte erneut versuchen.",
+        "noProviders": "Keine OAuth-Anbieter konfiguriert."
+      }
+    },
+    "profile": {
+      "pageTitle": "Profil",
+      "pageSubtitle": "Wie du in der App erscheinst.",
+      "save": "Änderungen speichern",
+      "saving": "Wird gespeichert…",
+      "saveSuccess": "Profil aktualisiert",
+      "saveError": "Profil konnte nicht aktualisiert werden. Bitte erneut versuchen.",
+      "fields": {
+        "name": "Name",
+        "firstName": "Vorname",
+        "lastName": "Nachname",
+        "email": "E-Mail",
+        "emailHint": "Verknüpfte E-Mail zur Anmeldung. Änderung unter Sicherheit.",
+        "avatar": "Avatar",
+        "avatarPlaceholder": "Avatar-Upload bald verfügbar."
+      }
+    },
+    "switcher": {
+      "ariaLabel": "Aktives Konto wechseln",
+      "currentBadge": "Aktiv",
+      "rolePrefix": "Rolle"
+    },
+    "invitations": {
+      "pageTitle": "Team",
+      "pageSubtitle": "Lade Teammitglieder ein und verwalte offene Einladungen.",
+      "inviteCta": "Teammitglied einladen",
+      "tableHeading": "Offene Einladungen",
+      "empty": "Keine offenen Einladungen.",
+      "columns": {
+        "email": "E-Mail",
+        "role": "Rolle",
+        "expiresAt": "Läuft ab",
+        "actions": "Aktionen"
+      },
+      "resend": "Erneut senden",
+      "revoke": "Widerrufen",
+      "form": {
+        "title": "Teammitglied einladen",
+        "description": "Sie erhalten eine E-Mail mit einem einmaligen Beitrittslink.",
+        "emailLabel": "E-Mail",
+        "roleLabel": "Rolle",
+        "submit": "Einladung senden",
+        "submitting": "Wird gesendet…",
+        "cancel": "Abbrechen",
+        "success": "Einladung gesendet",
+        "errorGeneric": "Einladung konnte nicht gesendet werden."
+      },
+      "roles": {
+        "admin": "Admin",
+        "member": "Mitglied",
+        "viewer": "Betrachter"
+      }
+    }
+  }
+}

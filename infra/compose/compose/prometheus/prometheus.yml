@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: alertmanager
+    static_configs:
+      - targets: ["alertmanager:9093"]
+
+  # Traefik exposes Prometheus metrics on a dedicated entrypoint (:8899)
+  # configured in docker-compose.yml. Internal docker DNS only — not
+  # published to the host.
+  - job_name: traefik
+    static_configs:
+      - targets: ["traefik:8899"]
+
+  - job_name: postgres
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+
+  - job_name: node
+    static_configs:
+      - targets: ["node-exporter:9100"]

@@ -1,0 +1,32 @@
+# lint:meta rule catalog
+
+Run `bun run lint:meta --list-rules` for the machine-readable list from the registry.
+
+## Adding a rule
+
+1. Pick a category folder under `scripts/lint-meta/rules/`.
+2. Export an `IMetaRule` object with `id`, `category`, `description`, and `run(ctx)`.
+3. Register it in `scripts/lint-meta/registry.ts`.
+4. Run `bun run generate:lint-meta-docs` to refresh this file.
+5. Add a test in `tests/lint-meta/` (fixture or temp dir — never commit invalid imports that break `tsc`).
+
+## Rules
+
+| Rule ID                             | Category     | CI-critical | What it guards                                                                                      |
+| ----------------------------------- | ------------ | ----------- | --------------------------------------------------------------------------------------------------- |
+| `package-json-exact-deps`           | supply-chain | no          | dependencies and devDependencies must use exact versions (no ranges).                               |
+| `no-overlapping-libs`               | supply-chain | no          | package.json must not list forbidden overlapping library pairs.                                     |
+| `github-actions-permissions`        | ci           | no          | GitHub Actions workflows require permissions block and SHA-pinned uses: refs.                       |
+| `github-actions-permissions:verify` | ci           | no          | Pinned action SHAs resolve on github.com (lint:meta:verify only).                                   |
+| `pre-push-ci-parity`                | ci           | no          | CI workflow must include every command listed in scripts/ci/pre-push.manifest.json.                 |
+| `engine-pin-parity`                 | ci           | no          | Bun version pin must stay aligned across package.json, Docker, and CI.                              |
+| `env-cascade-drift`                 | env          | no          | TypeBox env schema keys must align with .env.example documentation.                                 |
+| `generated-artifact-contract`       | artifacts    | no          | Sibling apps/ui generated ACL and OpenAPI files must carry required banner text.                    |
+| `forbidden-text`                    | source-text  | no          | Source files must not contain inline lint/TS suppression comments.                                  |
+| `no-inline-lint-disable`            | source-text  | no          | Inline ESLint disables are not allowed.                                                             |
+| `no-ts-ignore`                      | source-text  | no          | TypeScript suppression comments are not allowed.                                                    |
+| `no-raw-role-literal`               | source-text  | no          | Use ROLE.* from acl.constants.ts instead of raw owner/admin/member/viewer string literals.          |
+| `routes-require-test-sibling`       | testing      | no          | Route modules must ship with a matching HTTP-level test under tests/api/.                           |
+| `logic-files-require-test-sibling`  | testing      | no          | Logic modules must ship with a matching tests/**/*.test.ts sibling.                                 |
+| `touch-tests-too`                   | testing      | no          | Modified logic/route files must include a matching test change (opt-in via LINT_META_TOUCHED_BASE). |
+| `eslint-config-no-warn`             | config       | no          | ESLint severities must be "error" or "off", not "warn".                                             |

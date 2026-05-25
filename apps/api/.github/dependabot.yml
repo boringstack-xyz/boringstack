@@ -1,0 +1,127 @@
+version: 2
+updates:
+  # ---------------------------------------------------------------------------
+  # Bun dependencies (package.json + bun.lock)
+  # ---------------------------------------------------------------------------
+  # Must use `bun`, not `npm`: npm ecosystem only bumps package.json and leaves
+  # bun.lock stale, so CI fails at `bun install --frozen-lockfile`.
+  # Exact pins are enforced by the `package-json-exact-deps` lint rule.
+  # The `bun` ecosystem does not support `versioning-strategy: increase`; set
+  # `"private": true` in package.json so Dependabot treats this repo as an app
+  # (increase) rather than a library (widen with ^ / ~ ranges).
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 8
+    labels: ["dependencies"]
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    # Align with bunfig.toml minimumReleaseAge (604800s = 7 days) so Dependabot
+    # does not open PRs that CI will reject at `bun install --frozen-lockfile`.
+    cooldown:
+      default-days: 7
+
+    # Group related ecosystem bumps so we don't drown in single-package PRs.
+    groups:
+      elysia:
+        patterns:
+          - "elysia"
+          - "@elysiajs/*"
+      drizzle:
+        patterns:
+          - "drizzle-orm"
+          - "drizzle-kit"
+      typebox:
+        patterns:
+          - "@sinclair/typebox"
+      bullmq:
+        patterns:
+          - "bullmq"
+          - "ioredis"
+      stripe:
+        patterns:
+          - "stripe"
+      email:
+        patterns:
+          - "resend"
+          - "@sendgrid/mail"
+          - "nodemailer"
+          - "@types/nodemailer"
+          - "handlebars"
+      lint:
+        patterns:
+          - "eslint"
+          - "eslint-*"
+          - "@eslint/*"
+          - "typescript-eslint"
+          - "prettier"
+      observability:
+        patterns:
+          - "@sentry/*"
+          - "pino"
+          - "pino-pretty"
+      ai:
+        patterns:
+          - "@anthropic-ai/sdk"
+          - "openai"
+
+    # Major bumps for runtime-load-bearing libs: handle by hand, not by bot.
+    ignore:
+      - dependency-name: "elysia"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "drizzle-orm"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "drizzle-kit"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "bullmq"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "ioredis"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "stripe"
+        update-types: ["version-update:semver-major"]
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions — keep pinned by SHA via the `github-actions-permissions`
+  # rule. Dependabot updates the SHA and re-comments the version tag.
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 4
+    labels: ["dependencies", "ci"]
+    commit-message:
+      prefix: "chore(ci)"
+
+  # ---------------------------------------------------------------------------
+  # Docker base images (Dockerfile + Dockerfile.prod). Recommended workflow
+  # is to digest-pin upstream tags so changes are explicit.
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 4
+    labels: ["dependencies", "docker"]
+    commit-message:
+      prefix: "chore(docker)"
+    # Bun major bumps are handled by hand. We track stable lines; non-LTS
+    # majors (Node-style "Active" tracks) would happily get proposed the day
+    # they ship. Patch + minor bumps on the pinned major still flow through.
+    ignore:
+      - dependency-name: "oven/bun"
+        update-types: ["version-update:semver-major"]

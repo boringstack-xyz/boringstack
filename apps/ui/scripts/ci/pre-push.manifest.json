@@ -1,0 +1,10 @@
+{
+  "ciWorkflow": ".github/workflows/validate.yml",
+  "requiredCommands": [
+    "pnpm check",
+    "pnpm test:ci",
+    "pnpm build",
+    "pnpm size:check",
+    "pnpm size:check:modulepreload"
+  ]
+}

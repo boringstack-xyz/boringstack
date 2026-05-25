@@ -1,0 +1,28 @@
+# Grafana dashboard provider — auto-loads any JSON file dropped into the
+# adjacent `dashboards/` directory at container start (and rescans every 30s).
+#
+# To add a dashboard:
+#   1. Export the dashboard JSON from grafana.com or your existing instance.
+#   2. Drop the file into compose/grafana/dashboards/<your-dashboard>.json.
+#   3. Restart grafana: `docker compose restart grafana` (or wait 30s).
+#
+# Suggested starter dashboards (search by ID on grafana.com → export JSON):
+#   - Node Exporter Full           (id 1860)
+#   - Traefik 2 Dashboard          (id 17347)
+#   - PostgreSQL exporter quickstart(id 9628)
+#   - cAdvisor exporter            (id 14282)
+#   - Loki Logs                    (id 13186)
+
+apiVersion: 1
+
+providers:
+  - name: "boringstack"
+    orgId: 1
+    folder: ""
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true

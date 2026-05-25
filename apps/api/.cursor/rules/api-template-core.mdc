@@ -1,0 +1,13 @@
+---
+description: Bun/Elysia API template — merge bar, AGENT_CONTRACT authority
+alwaysApply: true
+---
+
+# API template — core agent rules
+
+- Read [AGENT_CONTRACT.md](mdc:AGENT_CONTRACT.md) before non-trivial changes — short merge bar, resource suffix rules, and machine-vs-doc table. Use [AGENTS.md](mdc:AGENTS.md) only for deep narrative (Drizzle examples, queues, billing, migrations). If code disagrees with the contract, follow the code and note drift for the maintainer.
+- **Merge bar:** `bun run validate` (or `bun run check` then `bun test`). Do not disable ESLint rules inline, do not use `any`, type assertions (`as`), or non-null assertions (`!`) to bypass failures—fix the root cause.
+- **TypeScript:** `catch (error: unknown)` and narrow; explicit return types on exported functions; interfaces/types use `I` prefix; only `as const` is allowed among assertions per ESLint.
+- **Security & env:** Follow [SECURITY.md](mdc:SECURITY.md) for secrets and webhooks when touching auth, billing, or env. New environment variables must be validated in `src/config/env/schema.ts` + `src/config/env/validate.ts`, documented in `.env.example`, and noted in SECURITY.md when relevant.
+- **Logging:** Use `logger` from `src/config/logger.ts`, never `console.log` (forbidden by lint).
+- **Canonical examples:** `src/api/auth/`, `src/api/users/`, `src/api/billing/`.

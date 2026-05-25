@@ -1,0 +1,45 @@
+---
+title: Scripts & tooling
+description: What lives under scripts/ in ui-template and api-template, which package.json command runs each file, and what pre-push executes.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import ScriptsCatalog from "../../../components/docs-kit/ScriptsCatalog";
+
+<PageIntro
+  eyebrow="Template scripts"
+  actions={[
+    { label: "Commands cheatsheet", href: "/reference/commands/" },
+    { label: "lint:meta rules", href: "/architecture/lint-meta/" },
+  ]}
+  facts={[
+    { value: "scripts/", label: "grouped by purpose" },
+    { value: "auto-sync", label: "from README + package.json" },
+    { value: "pre-push", label: "local CI mirror" },
+  ]}
+>
+  Prefer <code>pnpm</code> / <code>bun run</code> commands over calling files
+  directly. This page maps each wired command to the script under{" "}
+  <code>scripts/</code> and explains what that folder is for.
+</PageIntro>
+
+<Aside type="note" title="Generated catalog">
+  Tables below are built from each template&apos;s <code>scripts/README.md</code>{" "}
+  and <code>package.json</code>. Update the README when you add a command, then
+  run the boringstack docs generator so this page stays current.
+</Aside>
+
+## ui-template
+
+<ScriptsCatalog template="ui" />
+
+## api-template
+
+<ScriptsCatalog template="api" />
+
+## Related
+
+- [Commands cheatsheet](/reference/commands/) — infra flags and day-to-day workflow
+- [lint:meta rules](/architecture/lint-meta/) — static guardrails under `scripts/lint-meta/`
+- [Lint as the contract](/architecture/lint-as-contract/) — ESLint merge gate

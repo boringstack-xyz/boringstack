@@ -1,0 +1,348 @@
+import { t } from "elysia";
+
+import { env } from "../../config/env";
+import { isAdminRole, isOwnerRole } from "../../lib/acl";
+import { AUTH_COOKIE_CONFIG, AUTH_COOKIE_NAME } from "../../lib/cookies";
+import { ApiErrors, createSuccessResponse } from "../../lib/errors";
+import { buildJWTPayload } from "../../lib/jwt";
+import { emailRateLimiter } from "../../lib/rate-limit/email-rate-limit";
+import { errorHandler } from "../../middleware/error-handler";
+import {
+  resolveActiveMembership,
+  resolveFreshMembership,
+} from "../../middleware/require-active-membership";
+import { createAuthMiddleware } from "../auth/auth.plugin";
+
+import { accountsService } from "./accounts.service";
+import {
+  AcceptInvitationResponse,
+  AcceptInvitationSchema,
+  CreateInvitationSchema,
+  InvitationResponse,
+  PendingInvitationsResponse,
+  SwitchAccountResponse,
+  SwitchAccountSchema,
+  TransferOwnershipSchema,
+  UpdateAccountSchema,
+  AccountResponse,
+} from "./accounts.schemas";
+import { invitationsService } from "./invitations.service";
+
+const accountsRoutes = createAuthMiddleware()
+  .onError(({ code, error, set }) =>
+    errorHandler({ code: String(code), error, set })
+  )
+  .derive(async ({ user, accountId }) => ({
+    membership: await resolveActiveMembership(user.id, accountId),
+  }))
+  .get(
+    "/:id/invitations",
+    async ({ membership, params }) => {
+      if (params.id !== membership.accountId) {
+        throw ApiErrors.forbidden(
+          "Cannot list invitations for another account"
+        );
+      }
+
+      if (!isOwnerRole(membership.role) && !isAdminRole(membership.role)) {
+        throw ApiErrors.forbidden(
+          "Only an owner or admin can list invitations"
+        );
+      }
+
+      const rows = await invitationsService.listPending(membership.accountId);
+
+      return rows.map((row) => ({
+        id: row.id,
+        accountId: row.accountId,
+        email: row.email,
+        roleToAssign: row.roleToAssign,
+        expiresAt: row.expiresAt,
+      }));
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      response: PendingInvitationsResponse,
+      detail: {
+        tags: ["Accounts"],
+        summary: "List pending (not accepted, not revoked) invitations",
+      },
+    }
+  )
+  .post(
+    "/:id/invitations",
+    async ({ membership, params, body, user }) => {
+      if (params.id !== membership.accountId) {
+        throw ApiErrors.forbidden(
+          "Cannot create an invitation for another account"
+        );
+      }
+
+      if (!isOwnerRole(membership.role) && !isAdminRole(membership.role)) {
+        throw ApiErrors.forbidden("Only an account owner or admin can invite");
+      }
+
+      if (!emailRateLimiter.check(body.email)) {
+        throw ApiErrors.validation(
+          "Too many invitation emails for this address. Please wait a few minutes.",
+          "email"
+        );
+      }
+
+      const { invitation, rawToken } = await invitationsService.create(
+        {
+          accountId: membership.accountId,
+          email: body.email,
+          roleToAssign: body.roleToAssign,
+          invitedByMembershipId: membership.id,
+        },
+        user.id
+      );
+
+      return {
+        id: invitation.id,
+        accountId: invitation.accountId,
+        email: invitation.email,
+        roleToAssign: invitation.roleToAssign,
+        expiresAt: invitation.expiresAt,
+        ...(env.isProduction ? {} : { rawToken }),
+      };
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      body: CreateInvitationSchema,
+      response: InvitationResponse,
+      detail: {
+        tags: ["Accounts"],
+        summary: "Invite a teammate to an account",
+      },
+    }
+  )
+  .post(
+    "/:id/invitations/:invitationId/resend",
+    async ({ membership, params, user }) => {
+      if (params.id !== membership.accountId) {
+        throw ApiErrors.forbidden();
+      }
+
+      if (!isOwnerRole(membership.role) && !isAdminRole(membership.role)) {
+        throw ApiErrors.forbidden();
+      }
+
+      const pending = await invitationsService.findPending(
+        membership.accountId,
+        params.invitationId
+      );
+
+      if (!emailRateLimiter.check(pending.email)) {
+        throw ApiErrors.validation(
+          "Too many invitation emails for this address. Please wait a few minutes.",
+          "email"
+        );
+      }
+
+      const { invitation, rawToken } = await invitationsService.resend(
+        membership.accountId,
+        params.invitationId,
+        user.id
+      );
+
+      return {
+        id: invitation.id,
+        accountId: invitation.accountId,
+        email: invitation.email,
+        roleToAssign: invitation.roleToAssign,
+        expiresAt: invitation.expiresAt,
+        ...(env.isProduction ? {} : { rawToken }),
+      };
+    },
+    {
+      params: t.Object({ id: t.String(), invitationId: t.String() }),
+      response: InvitationResponse,
+      detail: {
+        tags: ["Accounts"],
+        summary: "Resend (and rotate) an invitation token",
+      },
+    }
+  )
+  .patch(
+    "/:id",
+    async ({ membership, params, body, user }) => {
+      if (params.id !== membership.accountId) {
+        throw ApiErrors.forbidden();
+      }
+
+      if (!isOwnerRole(membership.role) && !isAdminRole(membership.role)) {
+        throw ApiErrors.forbidden("Only an account owner or admin can rename");
+      }
+
+      return accountsService.updateName(
+        membership.accountId,
+        body.name,
+        user.id
+      );
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      body: UpdateAccountSchema,
+      response: AccountResponse,
+      detail: {
+        tags: ["Accounts"],
+        summary: "Rename the active account",
+      },
+    }
+  )
+  .post(
+    "/:id/transfer-ownership",
+    async ({ membership, params, body, user }) => {
+      if (params.id !== membership.accountId) {
+        throw ApiErrors.forbidden();
+      }
+
+      const fresh = await resolveFreshMembership(user.id, membership.accountId);
+
+      if (!isOwnerRole(fresh.role)) {
+        throw ApiErrors.forbidden(
+          "Only the current owner can transfer ownership"
+        );
+      }
+
+      await accountsService.transferOwnership(
+        membership.accountId,
+        user.id,
+        body.toUserId,
+        user.id
+      );
+
+      return createSuccessResponse({ transferred: true });
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      body: TransferOwnershipSchema,
+      response: t.Object({
+        success: t.Boolean(),
+        data: t.Object({ transferred: t.Boolean() }),
+        timestamp: t.String(),
+      }),
+      detail: {
+        tags: ["Accounts"],
+        summary: "Transfer ownership of an account to another member",
+      },
+    }
+  )
+  .delete(
+    "/:id",
+    async ({ membership, params, user, set }) => {
+      if (params.id !== membership.accountId) {
+        throw ApiErrors.forbidden();
+      }
+
+      const fresh = await resolveFreshMembership(user.id, membership.accountId);
+
+      if (!isOwnerRole(fresh.role)) {
+        throw ApiErrors.forbidden("Only the owner can delete the account");
+      }
+
+      await accountsService.softDelete(membership.accountId, user.id);
+      set.status = 204;
+
+      return null;
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      response: t.Null(),
+      detail: {
+        tags: ["Accounts"],
+        summary:
+          "Soft-delete the account (30-day grace + background hard-delete)",
+      },
+    }
+  )
+  .delete(
+    "/:id/invitations/:invitationId",
+    async ({ membership, params, user, set }) => {
+      if (params.id !== membership.accountId) {
+        throw ApiErrors.forbidden();
+      }
+
+      if (!isOwnerRole(membership.role) && !isAdminRole(membership.role)) {
+        throw ApiErrors.forbidden();
+      }
+
+      await invitationsService.revoke(
+        membership.accountId,
+        params.invitationId,
+        user.id
+      );
+      set.status = 204;
+
+      return null;
+    },
+    {
+      params: t.Object({ id: t.String(), invitationId: t.String() }),
+      response: t.Null(),
+      detail: { tags: ["Accounts"], summary: "Revoke an invitation" },
+    }
+  );
+
+/*
+ * Accept lives outside the membership-gated chain because the
+ * invitee is authenticated but doesn't yet belong to the target
+ * account.
+ */
+const invitationAcceptRoutes = createAuthMiddleware()
+  .onError(({ code, error, set }) =>
+    errorHandler({ code: String(code), error, set })
+  )
+  .post(
+    "/accept",
+    async ({ body, user }) => {
+      await invitationsService.accept(body.token, user.id, user.email);
+
+      return createSuccessResponse({ accepted: true });
+    },
+    {
+      body: AcceptInvitationSchema,
+      response: AcceptInvitationResponse,
+      detail: {
+        tags: ["Accounts"],
+        summary: "Accept an invitation by its raw token",
+      },
+    }
+  );
+
+/*
+ * Switch lives outside the membership-gated chain because the user
+ * is moving FROM the active account TO a different one, so gating
+ * on the current active membership would block the very move.
+ */
+const accountSessionRoutes = createAuthMiddleware()
+  .onError(({ code, error, set }) =>
+    errorHandler({ code: String(code), error, set })
+  )
+  .post(
+    "/switch",
+    async ({ body, user, jwt, cookie }) => {
+      await accountsService.switchAccount(user.id, body.accountId);
+
+      const token = await jwt.sign(
+        buildJWTPayload(user.id, user.email, body.accountId)
+      );
+      const auth = cookie[AUTH_COOKIE_NAME];
+
+      auth?.set({ value: token, ...AUTH_COOKIE_CONFIG });
+
+      return createSuccessResponse({ accountId: body.accountId });
+    },
+    {
+      body: SwitchAccountSchema,
+      response: SwitchAccountResponse,
+      detail: {
+        tags: ["Accounts"],
+        summary: "Switch the active account for this session",
+      },
+    }
+  );
+
+export { accountSessionRoutes, accountsRoutes, invitationAcceptRoutes };
+export default accountsRoutes;

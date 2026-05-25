@@ -1,0 +1,154 @@
+name: validate-compose
+
+# Validates every docker-compose YAML and every meaningful overlay
+# combination — without actually building images or booting services.
+# Catches syntax errors, missing env vars, malformed Traefik labels, and
+# overlay-merge regressions before they hit a developer's `up`.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/compose/**"
+      - ".github/workflows/infra-compose-validate-compose.yml"
+  pull_request:
+    paths:
+      - "infra/compose/**"
+      - ".github/workflows/infra-compose-validate-compose.yml"
+
+concurrency:
+  group: infra-compose-validate-compose-${{ github.ref }}
+
+permissions:
+  contents: read
+
+jobs:
+  compose-config:
+    name: docker compose config (all overlay combinations)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    # Build contexts point at monorepo apps (`../../../apps/api` and
+    # `../../../apps/ui` from infra/compose/compose).
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Seed .env
+        working-directory: infra/compose/compose
+        run: |
+          cp .env.example .env
+          # Required for STACK=prod + WITH_GLITCHTIP combinations:
+          echo "GLITCHTIP_SECRET_KEY=$(openssl rand -base64 50 | tr -d '\n')" >> .env
+          echo "GLITCHTIP_PUBLIC_HOST=glitchtip.example.com"                  >> .env
+          echo "GLITCHTIP_BASIC_AUTH_USERS=user:placeholder"                  >> .env
+
+      - name: Validate — dev (base)
+        working-directory: infra/compose/compose
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.development-labels.yml \
+            --profile dev config --quiet
+
+      - name: Validate — prod (base)
+        working-directory: infra/compose/compose
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.production-labels.yml \
+            --profile prod config --quiet
+
+      - name: Validate — dev + observability
+        working-directory: infra/compose/compose
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.development-labels.yml \
+            -f docker-compose.observability.yml \
+            --profile dev --profile observability config --quiet
+
+      - name: Validate — dev + glitchtip
+        working-directory: infra/compose/compose
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.development-labels.yml \
+            -f docker-compose.glitchtip.yml \
+            --profile dev --profile glitchtip-dev config --quiet
+
+      - name: Validate — prod + glitchtip (+ prod labels)
+        working-directory: infra/compose/compose
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.production-labels.yml \
+            -f docker-compose.glitchtip.yml \
+            -f docker-compose.glitchtip-prod-labels.yml \
+            --profile prod --profile glitchtip-prod config --quiet
+
+      - name: Validate — dev + bullmq
+        working-directory: infra/compose/compose
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.development-labels.yml \
+            -f docker-compose.bullmq.yml \
+            --profile dev --profile bullmq config --quiet
+
+      - name: Validate — dev + wud
+        working-directory: infra/compose/compose
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.development-labels.yml \
+            -f docker-compose.wud.yml \
+            --profile dev --profile wud config --quiet
+
+      - name: Validate — kitchen-sink (dev + all overlays)
+        working-directory: infra/compose/compose
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.development-labels.yml \
+            -f docker-compose.observability.yml \
+            -f docker-compose.glitchtip.yml \
+            -f docker-compose.bullmq.yml \
+            -f docker-compose.wud.yml \
+            --profile dev \
+            --profile observability \
+            --profile glitchtip-dev \
+            --profile bullmq \
+            --profile wud \
+            config --quiet
+
+  shellcheck:
+    name: shellcheck (scripts/)
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: ShellCheck
+        run: |
+          # Strict: error on warnings, follow `source` directives.
+          shellcheck -x -S warning infra/compose/compose/dev.sh infra/compose/scripts/*.sh
+
+  yamllint:
+    name: yamllint (compose + workflows)
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: yamllint
+        run: |
+          pip install --user yamllint
+          # Document syntax (line length, indentation, truthy values) but
+          # don't fail on style nits — only on real syntax errors.
+          ~/.local/bin/yamllint -d "{extends: relaxed, rules: {line-length: disable}}" \
+            infra/compose/compose/ .github/workflows/
+

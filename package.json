@@ -1,0 +1,11 @@
+{
+  "name": "boringstack",
+  "private": true,
+  "description": "BoringStack monorepo — api, ui, docs, and infra templates",
+  "scripts": {
+    "regen": "bash scripts/stack-regen.sh",
+    "check": "bash scripts/stack-check.sh",
+    "check:full": "bash scripts/stack-check.sh --full"
+  },
+  "packageManager": "pnpm@11.1.2"
+}

@@ -1,0 +1,198 @@
+---
+title: "Recipe: Add a background job"
+description: Add a new BullMQ queue and worker to the api-template. Goal, Prereqs, Steps, Verify, and what changes in code.
+verifiedOn: "2026-05"
+---
+
+import { Steps } from "@astrojs/starlight/components";
+import DocCallout from "../../../components/DocCallout.tsx";
+import HowToSchema from "../../../components/HowToSchema.astro";
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import CommandRun from "../../../components/docs-kit/CommandRun";
+import DocFileTree from "../../../components/DocFileTree";
+
+<HowToSchema
+  name="Add a background job to BoringStack"
+  description="Add a new BullMQ queue and worker to the api-template using the existing QueueManager."
+  totalTime="PT30M"
+  steps={[
+    "Create src/queues/<queue-name>/ by copying the file pattern from src/queues/email-delivery/.",
+    "Define the job payload type in <queue-name>.types.ts.",
+    "Set the queue name and BullMQ options in <queue-name>.constants.ts.",
+    "Add the producer that wraps queue.add() in <queue-name>.queue.ts.",
+    "Write the idempotent worker handler in <queue-name>.worker.ts.",
+    "Wire the queue and worker into src/config/setup-queues.ts and the QueueManager.",
+  ]}
+/>
+
+<PageIntro
+  eyebrow="Recipes"
+  actions={[
+    { label: "Steps", href: "#steps" },
+    { label: "Verification", href: "#verify" },
+  ]}
+  facts={[
+    { value: "30 min", label: "Estimated duration" },
+    { value: "BullMQ", label: "Job Queue" },
+    { value: "Valkey", label: "Broker" },
+  ]}
+>
+  Add a BullMQ queue and worker for background work (e.g., sending webhooks on
+  account upgrades). Jobs survive API restarts and show up in Bull Board during
+  dev.
+</PageIntro>
+
+## Goal
+
+The api-template's `QueueManager` already owns the queue + worker lifecycle. This recipe shows how to add a new queue, end to end.
+
+## Prereqs
+
+- A working local stack.
+- Read [Queues](/api/queues/) once for the file shape.
+
+## Steps
+
+There's no `new:queue` scaffolder. Copy the file pattern from an existing queue instead. Use [`src/queues/email-delivery/`](https://github.com/boringstack-xyz/api-template/tree/main/src/queues/email-delivery) as the reference shape. Every queue directory carries six files prefixed with the queue name:
+
+<DocFileTree
+  root="src/queues/webhook-fanout/"
+  title="Queue Directory Structure"
+  caption="Six files prefixed with the queue name"
+  nodes={[
+    { name: "webhook-fanout.constants.ts", detail: "queue name, job options" },
+    { name: "webhook-fanout.types.ts", detail: "job payload type" },
+    { name: "webhook-fanout.queue.ts", detail: "producer (enqueue API)" },
+    { name: "webhook-fanout.worker.ts", detail: "consumer (handler)" },
+    {
+      name: "webhook-fanout.setup.ts",
+      detail: "wire queue + worker into QueueManager",
+    },
+    { name: "index.ts", detail: "re-exports" },
+  ]}
+/>
+
+The [`@boring-stack-pkg/eslint-plugin-bullmq`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-bullmq)
+plugin enforces this shape. Files outside the pattern fail the merge gate.
+
+<Steps>
+
+1. Create the directory and copy the file skeleton from `email-delivery/`:
+
+   ```bash
+   cd api-template && mkdir -p src/queues/webhook-fanout
+   cp src/queues/email-delivery/email-delivery.*.ts \
+      src/queues/webhook-fanout/
+   # then rename the copied files from email-delivery.* to webhook-fanout.*
+   ```
+
+2. Define the job payload type in `webhook-fanout.types.ts`:
+
+   ```ts
+   export interface IWebhookFanoutJob {
+     accountId: string;
+     event: "account.upgraded" | "account.cancelled";
+     targetUrl: string;
+     payload: Record<string, unknown>;
+   }
+   ```
+
+3. Set the queue name and options in `webhook-fanout.constants.ts`:
+
+   ```ts
+   export const WEBHOOK_FANOUT_QUEUE = "webhook-fanout" as const;
+   export const WEBHOOK_FANOUT_DEFAULT_OPTS = {
+     attempts: 5,
+     backoff: { type: "exponential", delay: 1_000 },
+     removeOnComplete: 1_000,
+     removeOnFail: 5_000,
+   } as const;
+   ```
+
+4. Add the producer in `webhook-fanout.queue.ts`:
+
+   ```ts
+   export async function enqueueWebhookFanout(
+     queue: Queue<IWebhookFanoutJob>,
+     job: IWebhookFanoutJob,
+   ) {
+     return queue.add(job.event, job, WEBHOOK_FANOUT_DEFAULT_OPTS);
+   }
+   ```
+
+5. Write the worker in `webhook-fanout.worker.ts`:
+
+   ```ts
+   export async function webhookFanoutWorker(job: Job<IWebhookFanoutJob>) {
+     const res = await fetch(job.data.targetUrl, {
+       method: "POST",
+       headers: { "content-type": "application/json" },
+       body: JSON.stringify(job.data.payload),
+     });
+     if (!res.ok) throw new Error(`webhook responded ${res.status}`);
+     return { delivered: true };
+   }
+   ```
+
+   Throwing makes BullMQ retry with the configured backoff. Make sure your handler is idempotent. The same job can fire multiple times.
+
+6. Wire the queue and worker into `webhook-fanout.setup.ts`, then register the setup function in `src/config/setup-queues.ts` alongside the existing queues (`email-delivery`, `notification-dispatch`, etc.).
+
+7. Producer code calls it via the `QueueManager`:
+
+   ```ts
+   await queueManager.enqueueWebhookFanout({
+     accountId,
+     event: "account.upgraded",
+     targetUrl: "https://hooks.example.com/upgrades",
+     payload: { plan: "pro" },
+   });
+   ```
+
+   When `QUEUES_ENABLED=false` (default in tests), the manager runs the worker inline so test paths don't need a real Valkey.
+
+</Steps>
+
+## Verify
+
+- Boot the optional Bull Board overlay to watch jobs:
+
+  <CommandRun
+    title="Boot Bull Board Overlay"
+    caption="Launches Valkey-backed BullMQ dashboard"
+    command={["WITH_BULLMQ=1 ./scripts/compose-up.sh"]}
+    output={[
+      { tone: "ok", text: "bull-board ready on http://bull-board.localhost" },
+    ]}
+  />
+
+- Visit `http://bull-board.localhost` (or the dev URL printed in the API logs) to see the queue, active jobs, and retry counts.
+- Trigger the producer (test with `bun test` or a curl to a route that enqueues). The job appears in Bull Board's "completed" or "failed" tab.
+- The audit log captures lifecycle events if you wrap the worker in the [audit helper](/api/audit-log/).
+
+## What changes in code
+
+- `api-template/src/queues/webhook-fanout/`: new directory, 6 files, lint-enforced shape (constants / types / queue / worker / setup / index).
+- `api-template/src/config/setup-queues.ts`: call your new setup function alongside the existing queues.
+- `api-template/src/queues/queue-manager.ts`: add the `enqueueWebhookFanout(...)` method that wraps the producer for callers.
+- Wherever your producer lives (a service file): call `queueManager.enqueueWebhookFanout(...)`.
+
+No new dependencies. The pattern is reused for every kind of background work; the email pipeline, notifications, and audit log already follow it.
+
+<DocCallout
+  eyebrow="Tip"
+  title="Workers are processes, not lambdas"
+  variant="tip"
+>
+  Long-running workers stay attached. Don't try to "trigger and exit." BullMQ
+  needs the worker process up to claim jobs. In production this is the same
+  api-template container; in scale-out you can split workers into their own
+  container that runs `bun run start:worker`.
+</DocCallout>
+
+## Related
+
+- [Queues](/api/queues/); the BullMQ + QueueManager spine in depth.
+- [Background work](/architecture/background-work/); the architecture story.
+- [Audit log](/api/audit-log/); recording lifecycle events fire-and-forget.
+- [Lint as the contract](/architecture/lint-as-contract/); the BullMQ plugin that enforces this shape.

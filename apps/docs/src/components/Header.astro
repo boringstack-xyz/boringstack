@@ -1,0 +1,75 @@
+---
+import config from "virtual:starlight/user-config";
+
+import LanguageSelect from "virtual:starlight/components/LanguageSelect";
+import Search from "virtual:starlight/components/Search";
+import SocialIcons from "virtual:starlight/components/SocialIcons";
+import ThemeSelect from "virtual:starlight/components/ThemeSelect";
+
+const shouldRenderSearch =
+  config.pagefind ||
+  config.components.Search !== "@astrojs/starlight/components/Search.astro";
+
+const navItems = [
+  { href: "/quickstart/", label: "Quickstart" },
+  { href: "/architecture/why-boringstack/", label: "Why" },
+  { href: "/architecture/why-boringstack/#cost-calc-title", label: "Cost" },
+  { href: "/architecture/decisions/", label: "Decisions" },
+  { href: "/recipes/add-stripe/", label: "Recipes" },
+  { href: "/topics/deployment/", label: "Deploy" },
+  { href: "/reference/commands/", label: "Reference" },
+];
+---
+
+<div
+  class="grid h-full w-full max-w-full grid-cols-[auto_auto_minmax(15rem,28rem)_1fr] items-center gap-[1.2rem] [html[data-has-hero]_&]:mx-auto [html[data-has-hero]_&]:w-[min(1360px,calc(100vw-2rem))] max-[74rem]:grid-cols-[auto_minmax(12rem,1fr)_auto] max-[50rem]:grid-cols-[auto_1fr] max-[50rem]:gap-3"
+>
+  <a
+    class="inline-flex items-center gap-2.5 whitespace-nowrap text-[var(--sl-color-white)] no-underline"
+    href="/"
+    aria-label="BoringStack home"
+  >
+    <svg
+      class="h-[30px] w-[30px] shrink-0 text-[var(--sl-color-accent)]"
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="square"
+      stroke-linejoin="miter"
+    >
+      <rect x="3" y="6" width="18" height="12" />
+      <line x1="6" y1="9.5" x2="13" y2="9.5" />
+      <line x1="6" y1="12" x2="13" y2="12" />
+      <line x1="6" y1="14.5" x2="13" y2="14.5" />
+      <rect x="16.5" y="11" width="2" height="2" fill="currentColor" stroke="none" />
+    </svg>
+    <span class="font-extrabold leading-none">BoringStack</span>
+  </a>
+
+  <nav class="flex items-center gap-1 max-[74rem]:hidden" aria-label="Primary">
+    {
+      navItems.map((item) => (
+        <a
+          class="rounded-md px-3 py-2 text-[0.92rem] font-bold leading-none text-[var(--sl-color-gray-2)] no-underline transition-colors hover:bg-white/[0.05] hover:text-[var(--sl-color-white)]"
+          href={item.href}
+        >
+          {item.label}
+        </a>
+      ))
+    }
+  </nav>
+
+  <div class="min-w-0 print:hidden max-[50rem]:justify-self-end">
+    {shouldRenderSearch && <Search />}
+  </div>
+
+  <div
+    class="sl-hidden justify-self-end md:sl-flex print:hidden items-center justify-end gap-3 before:h-7 before:w-px before:bg-[var(--sl-color-gray-5)] before:content-['']"
+  >
+    <SocialIcons />
+    <ThemeSelect />
+    <LanguageSelect />
+  </div>
+</div>

@@ -1,0 +1,27 @@
+# CODEOWNERS — required reviewers per area
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner — anything not matched below
+*                                       @agjs
+
+# Architecture-load-bearing files: changes need extra scrutiny.
+/.github/                               @agjs
+/CLAUDE.md                              @agjs
+/AGENT_CONTRACT.md                      @agjs
+/AGENTS.md                              @agjs
+/AGENT_REVIEW.md                        @agjs
+/SECURITY.md                            @agjs
+/eslint.config.mjs                      @agjs
+/tsconfig.json                          @agjs
+/vite.config.ts                         @agjs
+/playwright.config.ts                   @agjs
+/.lighthouserc.json                     @agjs
+/.size-limit.json                       @agjs
+/scripts/lint-meta/cli.ts              @agjs
+
+# Cross-cutting infrastructure: changes here ripple everywhere.
+/src/lib/                               @agjs
+/src/app/                               @agjs
+
+# OpenAPI contract: regenerate, don't hand-edit.
+/src/lib/api/schema.d.ts                @agjs

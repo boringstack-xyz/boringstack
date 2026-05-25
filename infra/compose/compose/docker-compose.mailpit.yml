@@ -1,0 +1,36 @@
+# Mailpit — local SMTP catcher for testing transactional email flows.
+#
+# Captures every email the api sends (when EMAIL_PROVIDER=smtp + SMTP_HOST=mailpit),
+# without ever delivering them. View the rendered HTML in the web UI at
+# http://localhost:8025 — useful for iterating on email templates without
+# bouncing through Resend/SendGrid/Cloudflare.
+#
+# Merged in by dev.sh when WITH_MAILPIT=1. Dev-only.
+#
+# https://mailpit.axllent.org
+
+services:
+  mailpit:
+    image: axllent/mailpit:v1.21@sha256:81370195cd4a0eab9604d17c2617a7525b0486f9365555253b6c5376c6350f1a
+    profiles: [mailpit]
+    restart: unless-stopped
+    environment:
+      MP_MAX_MESSAGES: "5000"
+      MP_DATABASE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+    volumes:
+      - mailpit_data:/data
+    ports:
+      - "8025:8025"   # web UI
+      - "1025:1025"   # SMTP
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "${MAILPIT_LIMITS_CPUS:-0.25}"
+          memory: "${MAILPIT_LIMITS_MEMORY:-128M}"
+
+volumes:
+  mailpit_data:
