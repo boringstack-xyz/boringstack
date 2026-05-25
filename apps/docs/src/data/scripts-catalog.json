@@ -108,7 +108,7 @@
       {
         "task": "Audit GitHub repo settings drift",
         "script": "ci/audit-repo-settings.sh",
-        "description": "Diff this repo's GitHub settings against the desired-state file. Prints"
+        "description": "DEPRECATED: use monorepo canonical script at scripts/audit-repo-settings.sh"
       }
     ],
     "prePushStages": [
@@ -269,7 +269,7 @@
       {
         "task": "Audit GitHub repo settings drift",
         "script": "ci/audit-repo-settings.sh",
-        "description": "Diff this repo's GitHub settings against the desired-state file. Prints"
+        "description": "DEPRECATED: use monorepo canonical script at scripts/audit-repo-settings.sh"
       }
     ],
     "prePushStages": [
