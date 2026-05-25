@@ -1,39 +1,5 @@
-# =============================================================================
-# ai-starter-infra — base compose stack
-#
-# Architecture
-#   - Always-on:  postgres (data), valkey (cache/queues),
-#                 api-migrate (one-shot — applies schema + seeds demo user)
-#   - Dev profile (STACK=dev):  api-dev + ui-dev (bind-mount source, hot reload)
-#                               Browser hits Vite directly; Vite proxies /api/*
-#                               to api-dev. NO Traefik in dev.
-#   - Prod profile (STACK=prod): api + ui (built from production Dockerfiles)
-#                               Traefik terminates TLS and path-routes:
-#                               /api/* + /health → api; everything else → ui.
-#
-# Networks
-#   - backend:  data + api services (postgres, valkey, api[-dev], api-migrate)
-#   - frontend: anything browser-facing (traefik, ui)
-#   - In dev, api-dev is on the backend network only; the browser reaches
-#     it via Vite's server-side proxy, not directly.
-#
-# How to run
-#   ./dev.sh up -d                 # dev profile (default), open localhost:3001
-#   STACK=prod ./dev.sh up -d      # prod profile
-#
-# Overlays merged automatically by dev.sh:
-#   - docker-compose.development-labels.yml  (dev: host-published data ports)
-#   - docker-compose.production-labels.yml   (prod: Traefik HTTPS + ACME + path
-#                                             routing + security middlewares)
-# =============================================================================
-
 name: ai-starter-infra
 
-# Default Docker logging: rotate at 10 MB, keep 5 files per container. With six
-# always-on services that's ~300 MB max log footprint on disk, which is fine
-# even on the cheapest Hetzner VPS. Without this, json-file logs grow forever.
-# Services with structured shipping (Loki + Promtail when observability is on)
-# still get json-file rotation as a belt-and-braces fallback.
 x-default-logging: &default-logging
   driver: json-file
   options:
@@ -78,8 +44,6 @@ services:
           memory: "${POSTGRES_RESERVATIONS_MEMORY:-128M}"
 
   valkey:
-    # Valkey — BSD-licensed Redis-protocol-compatible store (Linux Foundation
-    # fork of Redis 7.2.4, drop-in compatible with Redis clients).
     image: valkey/valkey:8-alpine@sha256:b027235326507cfdade9b6684056ec1d0b0c0757412e628245129b5d7b788618
     restart: unless-stopped
     logging: *default-logging
@@ -102,9 +66,6 @@ services:
           memory: "${VALKEY_RESERVATIONS_MEMORY:-64M}"
 
   traefik:
-    # Pinned to v3.7 (current stable). Earlier 3.x minors negotiate an
-    # Engine API version that modern Docker daemons reject.
-    # Prod-only. Dev uses Vite's dev-server proxy directly.
     image: traefik:v3.7@sha256:6b9cbca6fac42ab0075f5437d8dc1685cfd188626d8d515839ea94f8b6271c42
     container_name: ai-starter-traefik
     profiles: [prod]
@@ -123,9 +84,6 @@ services:
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--providers.docker.network=frontend"
-      # Prometheus metrics on a separate entrypoint, internal-network only
-      # (not published to the host). Scraped by Prometheus when the
-      # observability overlay is active; harmless otherwise.
       - "--entryPoints.metrics.address=:8899"
       - "--metrics.prometheus=true"
       - "--metrics.prometheus.entryPoint=metrics"
@@ -145,9 +103,6 @@ services:
           cpus: "${TRAEFIK_RESERVATIONS_CPUS:-0.1}"
           memory: "${TRAEFIK_RESERVATIONS_MEMORY:-64M}"
 
-  # Dev one-shot: apply schema via db:push (schema-diff, acceptable for dev)
-  # and optionally seed a superuser. Uses the dev image (drizzle-kit is a
-  # devDep) and bind-mounts source so local schema changes are picked up.
   api-migrate-dev:
     profiles: [dev]
     build:
@@ -165,10 +120,6 @@ services:
       - "bun run db:push --force && bun run db:seed"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app_dev_password}@postgres:5432/${POSTGRES_DB:-app}
-      # Env-validator placeholders. The migrate+seed scripts import from
-      # src/clients/postgres, which triggers the API's full env validator
-      # at module load. The values themselves are never used during
-      # migration — only the schema check matters here.
       NODE_ENV: development
       JWT_SECRET: api-migrate-placeholder-secret-padded-to-thirty-two
       FRONTEND_URL: http://localhost:3001
@@ -187,9 +138,6 @@ services:
           cpus: "${API_MIGRATE_LIMITS_CPUS:-0.5}"
           memory: "${API_MIGRATE_LIMITS_MEMORY:-512M}"
 
-  # Prod one-shot: apply committed migrations via db:migrate (safe — never
-  # drops columns) and optionally seed a superuser. Uses the dev image because
-  # drizzle-kit is a devDep; source is baked into the image (no bind-mount).
   api-migrate-prod:
     profiles: [prod]
     build:
@@ -234,20 +182,8 @@ services:
     logging: *default-logging
     working_dir: /app
     volumes:
-      # Bind-mount source for hot reload; named volume on /app/node_modules
-      # shadows the bind mount so the container always uses the install
-      # baked into the image (Alpine/musl) instead of whatever the host
-      # tree carries — empty on a fresh clone, glibc binaries from a
-      # host-side `bun install` on Linux/WSL2 — both break the dev server.
-      # Touching package.json / bun.lock requires `./dev.sh up --build`
-      # (rebuilds the image) followed by `docker volume rm
-      # ai-starter-infra_api_dev_node_modules` to refresh the volume.
       - ../../../apps/api:/app
       - api_dev_node_modules:/app/node_modules
-    # Bypass `bun run dev` (which runs the host preflight before bun) — the
-    # preflight is for host-side `bun run dev` only. Calling the underlying
-    # watcher directly also forwards the args cleanly (a `pkg.json` script
-    # chained with `&&` would swallow CLI args into the wrong slot).
     command: ["bun", "run", "--watch", "src/index.ts"]
     env_file:
       - path: ./api.dev.env
@@ -261,14 +197,8 @@ services:
       PORT: "3000"
       JWT_SECRET: ${API_DEV_JWT_SECRET:-docker-compose-api-dev-jwt-secret-keys}
       FRONTEND_URL: ${API_DEV_FRONTEND_URL:-http://localhost:3001}
-      # Same-origin dev via Vite proxy: browser only ever sees localhost:3001,
-      # so no Origin header on cross-origin preflights — CORS is unused.
-      # Set ALLOWED_ORIGINS to a non-empty value only if you need to expose the
-      # api directly across origins (e.g., curl from another host).
       ALLOWED_ORIGINS: ${API_DEV_ALLOWED_ORIGINS:-}
       PUBLIC_API_URL: ${API_DEV_PUBLIC_API_URL:-http://localhost:3001/api}
-      # Playwright E2E uses /api/v1/auth/__test/force-verify; override via
-      # API_DEV_E2E_TEST_ENDPOINTS_ENABLED=false in compose/.env to hide helpers.
       E2E_TEST_ENDPOINTS_ENABLED: ${API_DEV_E2E_TEST_ENDPOINTS_ENABLED:-true}
     depends_on:
       postgres:
@@ -316,12 +246,9 @@ services:
     volumes:
       - ../../../apps/ui:/app
       - ui_dev_node_modules:/app/node_modules
-      - /app/.pnpm-store
-    command: ["bun", "run", "dev:docker"]
+    command: ["bun", "--no-install", "./node_modules/.bin/vite"]
     environment:
       CI: "true"
-      # Empty => same-origin (browser uses relative paths). Vite's dev server
-      # forwards /api to VITE_API_PROXY_TARGET inside the docker network.
       VITE_API_URL: ""
       VITE_API_PROXY_TARGET: http://api-dev:3000
     depends_on:
@@ -342,20 +269,11 @@ services:
 
   api:
     profiles: [prod]
-    # Default deploy pulls from GHCR (see api-template/.github/workflows/release.yml).
-    # `build:` is kept so `docker compose build` still works for local prod
-    # smoke tests / CI.
-    #
-    # If you forked via "Use this template" and renamed your api repo, set
-    # API_IMAGE_NAME=<your-renamed-repo> in compose/.env. The workflow uses
-    # ${{ github.event.repository.name }}, so its image path follows the
-    # rename automatically — only the consumer side here needs to know.
     image: ${API_IMAGE:-ghcr.io/${IMAGE_OWNER:-boringstack-xyz}/${API_IMAGE_NAME:-api-template}:${API_IMAGE_TAG:-latest}}
     build:
       context: ../../../apps/api
       dockerfile: Dockerfile.prod
     labels:
-      # WUD watches GHCR; auto-deploy via docker.app trigger (see docker-compose.wud.yml).
       - "wud.watch=true"
       - "wud.trigger.include=docker.app,discord.1,slack.alerts"
     restart: unless-stopped
@@ -411,20 +329,10 @@ services:
 
   ui:
     profiles: [prod]
-    # Default deploy pulls from GHCR (see ui-template/.github/workflows/release.yml).
-    # `build:` is kept so `docker compose build` still works for local prod
-    # smoke tests / CI.
-    #
-    # If you forked via "Use this template" and renamed your ui repo, set
-    # UI_IMAGE_NAME=<your-renamed-repo> in compose/.env.
     image: ${UI_IMAGE:-ghcr.io/${IMAGE_OWNER:-boringstack-xyz}/${UI_IMAGE_NAME:-ui-template}:${UI_IMAGE_TAG:-latest}}
     build:
       context: ../../../apps/ui
       dockerfile: Dockerfile.prod
-      # Same-origin path routing: SPA hits /api/* on the same host that serves
-      # it, so VITE_API_URL is empty and the build is domain-agnostic. Override
-      # only if you need to point the SPA at a different origin (cross-origin
-      # deployments require ALLOWED_ORIGINS in the api too).
       args:
         VITE_API_URL: ${PUBLIC_API_URL:-}
     labels:
@@ -452,7 +360,5 @@ volumes:
   postgres_data:
   valkey_data:
   letsencrypt_data:
-  # Shadows the api-template bind mount's `node_modules` — the Bun/Alpine
-  # image needs a musl install separate from whatever the host produces.
   api_dev_node_modules:
   ui_dev_node_modules:

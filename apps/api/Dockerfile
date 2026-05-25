@@ -10,10 +10,5 @@ COPY . .
 
 EXPOSE 3000
 
-# Dev container runs as root: workdir is bind-mounted from the host and
-# owned by the host UID, so a non-root container user can't write
-# generated files (vite-style timestamp files in sibling repos, queued
-# migrations, etc.). Production (Dockerfile.prod) runs as the non-root
-# `app` user; that build doesn't bind-mount the source.
 # nosemgrep: dockerfile.security.missing-user.missing-user
 CMD ["bun", "run", "dev"]

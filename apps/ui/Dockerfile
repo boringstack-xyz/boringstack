@@ -11,4 +11,4 @@ COPY . .
 EXPOSE 3001
 
 # nosemgrep: dockerfile.security.missing-user.missing-user
-CMD ["bun", "run", "dev:docker"]
+CMD ["bun", "--no-install", "./node_modules/.bin/vite"]
