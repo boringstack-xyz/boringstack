@@ -14,8 +14,10 @@ COPY . .
 
 EXPOSE 3001
 
-# Container runs as root so vite + bun can write into the bind-mounted
-# /app (owned by the host UID).
-# nosemgrep: dockerfile.security.missing-user.missing-user
+# Dev container runs as root: workdir is bind-mounted from the host and
+# owned by the host UID, so a non-root container user can't write
+# generated files. Production (Dockerfile.prod) runs as non-root.
+# nosemgrep: dockerfile.security.missing-user-entrypoint.missing-user-entrypoint
 ENTRYPOINT ["/usr/local/bin/dev-entrypoint.sh"]
+# nosemgrep: dockerfile.security.missing-user.missing-user
 CMD ["bun", "--no-install", "./node_modules/.bin/vite"]
