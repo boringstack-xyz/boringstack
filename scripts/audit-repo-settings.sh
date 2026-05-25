@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
 #
-# DEPRECATED: use monorepo canonical script at scripts/audit-repo-settings.sh
-#
 # Diff this repo's GitHub settings against the desired-state file. Prints
 # fully copy-pasteable `gh api ...` commands for every drift. No auto-apply
-# the operator runs the printed commands. Exit 0 if clean, 1 if any drift.
+# — the operator runs the printed commands. Exit 0 if clean, 1 if any drift.
 #
 # Required: gh (authenticated), jq.
 
 set -euo pipefail
 
-DESIRED=".github/desired-repo-settings.json"
+ROOT=$(git rev-parse --show-toplevel)
+DESIRED="$ROOT/.github/desired-repo-settings.json"
 
 if [[ ! -f "$DESIRED" ]]; then
-  echo "Missing $DESIRED. Run from the repo root." >&2
+  echo "Missing $DESIRED — expected at monorepo root." >&2
   exit 1
 fi
 

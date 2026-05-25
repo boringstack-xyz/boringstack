@@ -1,4 +1,5 @@
 {
+  "_deprecated": "Use monorepo canonical file: /.github/desired-repo-settings.json and scripts/audit-repo-settings.sh",
   "description": "Desired GitHub settings for this repo. Applied via scripts/audit-repo-settings.sh — operator runs the printed commands.",
   "security_and_analysis": {
     "secret_scanning": "enabled",

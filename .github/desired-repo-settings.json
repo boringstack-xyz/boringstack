@@ -1,6 +1,5 @@
 {
-  "_deprecated": "Use monorepo canonical file: /.github/desired-repo-settings.json and scripts/audit-repo-settings.sh",
-  "description": "Desired GitHub settings for this repo (the boringstack-xyz org's .github docs repo). Applied via scripts/audit-repo-settings.sh; operator runs the printed commands.",
+  "description": "Desired GitHub settings for boringstack-xyz/boringstack (monorepo). Applied via scripts/audit-repo-settings.sh — operator runs the printed commands.",
   "security_and_analysis": {
     "secret_scanning": "enabled",
     "secret_scanning_push_protection": "enabled",
@@ -14,8 +13,15 @@
   },
   "branch_protection_main": {
     "required_status_check_contexts": [
+      "dep vuln scan (osv + audit)",
+      "docker compose config (all overlay combinations)",
       "gitleaks secret scan",
-      "dep vuln scan (osv + audit)"
+      "semgrep SAST",
+      "shellcheck (scripts/)",
+      "tofu fmt + validate",
+      "typecheck + lint + test",
+      "validate",
+      "yamllint (compose + workflows)"
     ],
     "required_approving_review_count": 0,
     "dismiss_stale_reviews": true,
