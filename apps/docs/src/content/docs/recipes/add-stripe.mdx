@@ -1,6 +1,6 @@
 ---
 title: "Recipe: Add Stripe Checkout"
-description: Wire Stripe Checkout, the Customer Portal, and webhooks onto the api-template's existing billing spine. Goal, Prereqs, Steps, Verify, and what changes in code.
+description: Wire Stripe Checkout, the Customer Portal, and webhooks onto the API app's existing billing spine. Goal, prereqs, steps, verification, and code touchpoints.
 verifiedOn: "2026-05"
 ---
 
@@ -12,12 +12,12 @@ import CommandRun from "../../../components/docs-kit/CommandRun";
 
 <HowToSchema
   name="Add Stripe Checkout to BoringStack"
-  description="Wire Stripe Checkout, the Customer Portal, and webhooks onto the api-template's existing billing spine."
+  description="Wire Stripe Checkout, the Customer Portal, and webhooks onto the API app's existing billing spine."
   totalTime="PT45M"
   steps={[
     "Flip BILLING_ENABLED=true and capture STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ID_FREE, STRIPE_PRICE_ID_PRO in compose/.env.",
     "Forward webhooks locally with stripe listen --forward-to localhost:3000/api/v1/billing/stripe/webhooks.",
-    "Create a UI billing feature with bun run new:feature billing and POST to /api/v1/billing/stripe/checkout-session.",
+    "Extend the existing UI billing feature and POST to /api/v1/billing/stripe/checkout-session.",
     "Add a Manage subscription mutation that calls /api/v1/billing/stripe/portal-session.",
     "Declare your plan and feature flags in the ACL feature resolver.",
   ]}
@@ -41,7 +41,7 @@ import CommandRun from "../../../components/docs-kit/CommandRun";
 
 ## Goal
 
-Finish with a paid plan a user can subscribe to via Stripe Checkout, manage from the Customer Portal, and sync back into your DB through webhooks. The api-template already ships [`api/billing/`](https://github.com/boringstack-xyz/api-template/tree/main/src/api/billing) with the right shape. This recipe wires it to a real Stripe account.
+Finish with a paid plan a user can subscribe to via Stripe Checkout, manage from the Customer Portal, and sync back into your DB through webhooks. The apps/api already ships [`api/billing/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/billing) with the right shape. This recipe wires it to a real Stripe account.
 
 ## Prereqs
 
@@ -78,13 +78,7 @@ Finish with a paid plan a user can subscribe to via Stripe Checkout, manage from
    ./scripts/compose-up.sh   # picks up new env
    ```
 
-3. Add a Checkout call site to the UI. The ui-template doesn't ship a billing feature folder yet. Create one following the [component anatomy](/ui/architecture-rules/):
-
-   ```bash
-   cd ui-template && bun run new:feature billing
-   ```
-
-   That scaffolds `src/features/billing/` with the `Billing.queries.ts` / `Billing.mutations.ts` / `Billing.types.ts` shape every UI feature uses. Inside a new mutation, POST to the real endpoint via the typed client:
+3. Extend the UI billing feature. `apps/ui/src/features/billing/` already ships the page, queries, and mutations for the starter billing flow. Add or adapt the Checkout call site following the [component anatomy](/ui/architecture-rules/). Inside `Billing.mutations.ts`, POST to the real endpoint via the typed client:
 
    ```ts
    // Billing.mutations.ts
@@ -123,10 +117,10 @@ Finish with a paid plan a user can subscribe to via Stripe Checkout, manage from
 
 ## What changes in code
 
-- `api-template/src/api/billing/billing.service.ts`: fill in plan-to-price mapping and the webhook handler logic for `checkout.session.completed`.
-- `api-template/src/api/billing/billing.routes.ts`: already exposes `/stripe/checkout-session`, `/stripe/portal-session`, `/stripe/webhooks` under the billing router; no new routes needed.
+- `apps/api/src/api/billing/billing.service.ts`: fill in plan-to-price mapping and the webhook handler logic for `checkout.session.completed`.
+- `apps/api/src/api/billing/billing.routes.ts`: already exposes `/stripe/checkout-session`, `/stripe/portal-session`, `/stripe/webhooks` under the billing router; no new routes needed.
 - ACL plan config: declare your plan + features so the [ACL resolver](/api/acl/) knows about it.
-- `ui-template/src/features/billing/`: new feature folder (scaffolded with `bun run new:feature billing`) hosting the mutations that call the typed client and the page with the Upgrade button and Customer Portal link.
+- `apps/ui/src/features/billing/`: existing feature folder hosting the mutations that call the typed client and the page with the Upgrade button and Customer Portal link.
 
 No new dependencies. No new patterns. Stripe is wired as a [pluggable provider](/api/env-validator/) so changing pricing later is a config edit, not a code rewrite.
 

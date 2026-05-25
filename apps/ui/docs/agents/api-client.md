@@ -5,7 +5,7 @@ Read when calling the backend, regenerating types, or wondering why
 
 All HTTP goes through `@/lib/api/client.ts`. The client is built with
 [`openapi-fetch`](https://openapi-ts.dev/openapi-fetch/) on top of
-types generated from the api-template's OpenAPI spec — paths,
+types generated from the the API app's OpenAPI spec — paths,
 request bodies, and response shapes are all inferred from
 `src/lib/api/schema.d.ts`.
 
@@ -31,8 +31,8 @@ Non-2xx responses throw `ApiError` (`.status`, `.code`,
 ## Keeping types in sync
 
 ```bash
-# In one terminal: boot the api-template
-cd ../api-template && bun run dev
+# In one terminal: boot the apps/api
+cd ../apps/api && bun run dev
 
 # In another terminal: regenerate the UI types
 bun run generate:api

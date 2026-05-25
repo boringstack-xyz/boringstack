@@ -19,7 +19,7 @@ That's it. On a fresh boot the GlitchTip image entrypoint:
 - creates the superuser `admin@localhost` / `admin123456` (override via `GLITCHTIP_SUPERUSER_*` in `.env`)
 - creates a default organization (`Local`) with two projects (`API`, `Frontend`)
 
-Visit **http://glitchtip.localhost** and log in. Each project has a DSN under `Settings → Client Keys`. Copy them into the api-template's `.env` (as `SENTRY_DSN`) and the ui-template's `.env.local` (as `VITE_SENTRY_DSN`).
+Visit **http://glitchtip.localhost** and log in. Each project has a DSN under `Settings → Client Keys`. Copy them into the the API app's `.env` (as `SENTRY_DSN`) and the the UI app's `.env.local` (as `VITE_SENTRY_DSN`).
 
 ## How it's wired
 
@@ -59,7 +59,7 @@ The `/api/*` router has **no Basic Auth** so client SDKs can POST events without
 
 ## SDK integration
 
-**API (api-template)** — `bun add @sentry/bun` (or use the api-template's existing Sentry middleware):
+**API (apps/api)** — `bun add @sentry/bun` (or use the the API app's existing Sentry middleware):
 ```ts
 import * as Sentry from "@sentry/bun";
 
@@ -70,14 +70,14 @@ Sentry.init({
 });
 ```
 
-**UI (ui-template)** — uses `@sentry/react` and reads `VITE_SENTRY_DSN` from `src/lib/env`. Just set the DSN; the existing wiring sends events to whichever endpoint that DSN points at.
+**UI (apps/ui)** — uses `@sentry/react` and reads `VITE_SENTRY_DSN` from `src/lib/env`. Just set the DSN; the existing wiring sends events to whichever endpoint that DSN points at.
 
 ## Verifying ingestion
 
 After SDK setup, trigger a test error:
 ```bash
 # In the API:
-docker compose exec api-dev bun -e 'throw new Error("test from api-template")'
+docker compose exec api-dev bun -e 'throw new Error("test from apps/api")'
 ```
 
 The error should appear in GlitchTip within a few seconds under the `API` project. If not:

@@ -9,7 +9,7 @@ import PageIntro from "../../../components/docs-kit/PageIntro";
 import SignalGrid from "../../../components/docs-kit/SignalGrid";
 
 <PageIntro
-  eyebrow="api-template"
+  eyebrow="apps/api"
   actions={[
     { label: "Auth contract", href: "/api/auth/" },
     { label: "Queues", href: "/api/queues/" },
@@ -201,13 +201,13 @@ The architecture is held in place by a family of [custom ESLint plugins](/archit
 
 ## Source
 
-[`api-template`](https://github.com/boringstack-xyz/api-template) on GitHub. Start in `src/api/` for the feature shape; `src/config/` for the boot wiring.
+[`apps/api`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api) on GitHub. Start in `src/api/` for the feature shape; `src/config/` for the boot wiring.
 
 ## Related
 
 - [Lint as the contract](/architecture/lint-as-contract/); the family of plugins that keep these layers apart.
 - [lint:meta rules](/architecture/lint-meta/); static repo guardrails under `scripts/lint-meta/`.
-- [Scripts & tooling](/reference/scripts-tooling/); command → script map for api-template.
+- [Scripts & tooling](/reference/scripts-tooling/); command → script map for apps/api.
 - [Authentication](/api/auth/); cookie sessions and refresh on the same spine.
 - [ACL & feature resolution](/api/acl/); server-authoritative permissions and plan gates.
 - [Multi-tenant model](/api/multi-tenant/); accountId as the scoping primitive.

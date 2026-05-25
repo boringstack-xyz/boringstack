@@ -21,7 +21,7 @@ export const envSchema = z.object({
   VITE_API_URL: z.union([z.literal(""), z.url()]).default(""),
   VITE_PUBLIC_URL: z.url().default("http://localhost:3001"),
   VITE_SENTRY_DSN: z.string().optional().default(""),
-  VITE_AUTH_NAMESPACE: z.string().min(1).default("ui-template"),
+  VITE_AUTH_NAMESPACE: z.string().min(1).default("apps/ui"),
   /*
    * VAPID public key for Web Push. Generate the matching set on the API
    * side via `bun run vapid:generate` and paste the PUBLIC half here.

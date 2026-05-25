@@ -20,7 +20,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
     { value: "Lint-enforced", label: "no hardcoded strings" },
   ]}
 >
-  The ui-template uses [react-i18next](https://react.i18next.com) for
+  The apps/ui uses [react-i18next](https://react.i18next.com) for
   translation. Keys are type-safe (typos fail the build) and hardcoded strings
   in JSX are a lint error, so a forgotten translation can't ship.
 </PageIntro>
@@ -117,11 +117,11 @@ For interpolation, [react-i18next docs](https://react.i18next.com/guides/quick-s
 
 ## Lint coverage
 
-The ui-template's lint config bans hardcoded JSX strings on user-facing text. Numbers, technical identifiers, and `data-*` attributes are exempt. Static `t("…")` keys are also checked against the English catalog by [`@boring-stack-pkg/eslint-plugin-i18n-keys`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-i18n-keys) so a typo cannot ship. See [Architecture rules](/ui/architecture-rules/) and [Lint as the contract](/architecture/lint-as-contract/).
+The UI app's lint config bans hardcoded JSX strings on user-facing text. Numbers, technical identifiers, and `data-*` attributes are exempt. Static `t("…")` keys are also checked against the English catalog by [`@boring-stack-pkg/eslint-plugin-i18n-keys`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-i18n-keys) so a typo cannot ship. See [Architecture rules](/ui/architecture-rules/) and [Lint as the contract](/architecture/lint-as-contract/).
 
 ## Source
 
-[`src/lib/i18n/`](https://github.com/boringstack-xyz/ui-template/tree/main/src/lib/i18n); config, locales, and the catalog JSON.
+[`src/lib/i18n/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/ui/src/lib/i18n); config, locales, and the catalog JSON.
 
 ## Related
 

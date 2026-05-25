@@ -269,7 +269,7 @@ services:
 
   api:
     profiles: [prod]
-    image: ${API_IMAGE:-ghcr.io/${IMAGE_OWNER:-boringstack-xyz}/${API_IMAGE_NAME:-api-template}:${API_IMAGE_TAG:-latest}}
+    image: ${API_IMAGE:-ghcr.io/${IMAGE_OWNER:-boringstack-xyz}/${API_IMAGE_NAME:-boringstack-api}:${API_IMAGE_TAG:-latest}}
     build:
       context: ../../../apps/api
       dockerfile: Dockerfile.prod
@@ -329,7 +329,7 @@ services:
 
   ui:
     profiles: [prod]
-    image: ${UI_IMAGE:-ghcr.io/${IMAGE_OWNER:-boringstack-xyz}/${UI_IMAGE_NAME:-ui-template}:${UI_IMAGE_TAG:-latest}}
+    image: ${UI_IMAGE:-ghcr.io/${IMAGE_OWNER:-boringstack-xyz}/${UI_IMAGE_NAME:-boringstack-ui}:${UI_IMAGE_TAG:-latest}}
     build:
       context: ../../../apps/ui
       dockerfile: Dockerfile.prod

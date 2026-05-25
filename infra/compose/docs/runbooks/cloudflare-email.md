@@ -1,6 +1,6 @@
 # Cloudflare Email Service — operator runbook
 
-Step-by-step setup for outbound transactional email via [Cloudflare Email Service](https://developers.cloudflare.com/email-service/). This is what the api-template defaults to (`EMAIL_PROVIDER=cloudflare`).
+Step-by-step setup for outbound transactional email via [Cloudflare Email Service](https://developers.cloudflare.com/email-service/). This is what the apps/api defaults to (`EMAIL_PROVIDER=cloudflare`).
 
 ## Prerequisites
 
@@ -87,4 +87,4 @@ If a send fails with a 403, the most common cause is an unverified destination o
 
 ## Switching providers
 
-The api-template supports `cloudflare` (default), `resend`, and `sendgrid`. To switch, set `EMAIL_PROVIDER=resend` (or `sendgrid`) and provide the matching key — no other change required. The provider abstraction is in `src/lib/email/providers/`.
+The apps/api supports `cloudflare` (default), `resend`, and `sendgrid`. To switch, set `EMAIL_PROVIDER=resend` (or `sendgrid`) and provide the matching key — no other change required. The provider abstraction is in `src/lib/email/providers/`.

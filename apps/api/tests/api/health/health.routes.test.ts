@@ -85,7 +85,7 @@ describe("Health probes", () => {
       throw new Error("root response missing name/status");
     }
 
-    expect(body.name).toBe("api-template");
+    expect(body.name).toBe("boringstack-api");
     expect(body.status).toBe("ok");
   });
 

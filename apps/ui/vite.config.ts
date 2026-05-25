@@ -1,9 +1,102 @@
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { visualizer } from "rollup-plugin-visualizer";
-import { defineConfig, loadEnv } from "vite";
+import { brotliCompressSync, gzipSync } from "node:zlib";
+import { type PluginOption, defineConfig, loadEnv } from "vite";
 import svgr from "vite-plugin-svgr";
+
+const escapeHtml = (value: string): string =>
+  value.replace(/[&<>"']/g, (char) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    };
+
+    return entities[char] ?? char;
+  });
+
+const formatBytes = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`;
+
+  return `${(bytes / 1024).toFixed(2)} kB`;
+};
+
+const toSourceString = (source: string | Uint8Array): string =>
+  typeof source === "string" ? source : Buffer.from(source).toString("utf8");
+
+const bundleStatsPlugin = (): PluginOption => ({
+  name: "boringstack-bundle-stats",
+  generateBundle(_options, bundle) {
+    const assets = Object.entries(bundle)
+      .map(([fileName, output]) => {
+        const source =
+          output.type === "chunk" ? output.code : toSourceString(output.source);
+        const bytes = Buffer.byteLength(source, "utf8");
+
+        return {
+          bytes,
+          brotliBytes: brotliCompressSync(source).byteLength,
+          fileName,
+          gzipBytes: gzipSync(source).byteLength,
+          kind: output.type
+        };
+      })
+      .sort((a, b) => b.bytes - a.bytes);
+    const totalBytes = assets.reduce((sum, asset) => sum + asset.bytes, 0);
+    const rows = assets
+      .map(
+        (asset) => `
+          <tr>
+            <td>${escapeHtml(asset.fileName)}</td>
+            <td>${escapeHtml(asset.kind)}</td>
+            <td>${formatBytes(asset.bytes)}</td>
+            <td>${formatBytes(asset.gzipBytes)}</td>
+            <td>${formatBytes(asset.brotliBytes)}</td>
+          </tr>`
+      )
+      .join("");
+    const html = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BoringStack bundle stats</title>
+    <style>
+      body { color: #101828; font-family: Inter, ui-sans-serif, system-ui, sans-serif; margin: 2rem; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border-bottom: 1px solid #eaecf0; padding: 0.625rem 0.75rem; text-align: left; }
+      th { background: #f9fafb; font-size: 0.8125rem; text-transform: uppercase; }
+      td:nth-child(n + 3) { font-variant-numeric: tabular-nums; white-space: nowrap; }
+    </style>
+  </head>
+  <body>
+    <h1>BoringStack bundle stats</h1>
+    <p>${assets.length} emitted assets, ${formatBytes(totalBytes)} raw total.</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Asset</th>
+          <th>Type</th>
+          <th>Raw</th>
+          <th>Gzip</th>
+          <th>Brotli</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </body>
+</html>`;
+
+    this.emitFile({
+      fileName: "stats.html",
+      source: html,
+      type: "asset"
+    });
+  }
+});
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "VITE_");
@@ -34,24 +127,12 @@ export default defineConfig(({ mode }) => {
     sentryOrg !== "" &&
     sentryProject !== "";
 
-  // Bundle analyzer — opt in with `ANALYZE=true bun run build` to write a
-  // sunburst HTML of every chunk's contents to `dist/stats.html`.
-  const analyze = process.env.ANALYZE === "true";
-
   return {
     plugins: [
       tailwindcss(),
       react(),
       svgr(),
-      analyze
-        ? visualizer({
-            filename: "dist/stats.html",
-            template: "sunburst",
-            gzipSize: true,
-            brotliSize: true,
-            open: false
-          })
-        : null,
+      process.env.ANALYZE === "true" ? bundleStatsPlugin() : null,
       // Last in the plugin list (Sentry docs requirement).
       sentryUploadEnabled
         ? sentryVitePlugin({

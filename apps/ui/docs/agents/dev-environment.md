@@ -15,7 +15,7 @@ cd infra/compose/compose && docker volume rm ai-starter-infra_ui_dev_node_module
 Two ways to run the SPA in dev — `bun run dev` on the host, or the
 `ui-dev` compose container. **Pick one. Never both at once.**
 
-The container bind-mounts the ui-template tree into `/app` so source
+The container bind-mounts the apps/ui tree into `/app` so source
 edits hot-reload. A host-side Vite while the container's also running
 fights it for port 3001 and writes to the same `.vite` cache —
 symptoms range from stale modules to blank-page boots.

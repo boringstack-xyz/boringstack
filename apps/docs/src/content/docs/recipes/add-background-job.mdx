@@ -1,6 +1,6 @@
 ---
 title: "Recipe: Add a background job"
-description: Add a new BullMQ queue and worker to the api-template. Goal, Prereqs, Steps, Verify, and what changes in code.
+description: Add a new BullMQ queue and worker to the apps/api. Goal, Prereqs, Steps, Verify, and what changes in code.
 verifiedOn: "2026-05"
 ---
 
@@ -13,7 +13,7 @@ import DocFileTree from "../../../components/DocFileTree";
 
 <HowToSchema
   name="Add a background job to BoringStack"
-  description="Add a new BullMQ queue and worker to the api-template using the existing QueueManager."
+  description="Add a new BullMQ queue and worker to the apps/api using the existing QueueManager."
   totalTime="PT30M"
   steps={[
     "Create src/queues/<queue-name>/ by copying the file pattern from src/queues/email-delivery/.",
@@ -44,7 +44,7 @@ import DocFileTree from "../../../components/DocFileTree";
 
 ## Goal
 
-The api-template's `QueueManager` already owns the queue + worker lifecycle. This recipe shows how to add a new queue, end to end.
+The API app's `QueueManager` already owns the queue + worker lifecycle. This recipe shows how to add a new queue, end to end.
 
 ## Prereqs
 
@@ -53,7 +53,7 @@ The api-template's `QueueManager` already owns the queue + worker lifecycle. Thi
 
 ## Steps
 
-There's no `new:queue` scaffolder. Copy the file pattern from an existing queue instead. Use [`src/queues/email-delivery/`](https://github.com/boringstack-xyz/api-template/tree/main/src/queues/email-delivery) as the reference shape. Every queue directory carries six files prefixed with the queue name:
+There's no `new:queue` scaffolder. Copy the file pattern from an existing queue instead. Use [`src/queues/email-delivery/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/queues/email-delivery) as the reference shape. Every queue directory carries six files prefixed with the queue name:
 
 <DocFileTree
   root="src/queues/webhook-fanout/"
@@ -80,7 +80,7 @@ plugin enforces this shape. Files outside the pattern fail the merge gate.
 1. Create the directory and copy the file skeleton from `email-delivery/`:
 
    ```bash
-   cd api-template && mkdir -p src/queues/webhook-fanout
+   cd apps/api && mkdir -p src/queues/webhook-fanout
    cp src/queues/email-delivery/email-delivery.*.ts \
       src/queues/webhook-fanout/
    # then rename the copied files from email-delivery.* to webhook-fanout.*
@@ -172,9 +172,9 @@ plugin enforces this shape. Files outside the pattern fail the merge gate.
 
 ## What changes in code
 
-- `api-template/src/queues/webhook-fanout/`: new directory, 6 files, lint-enforced shape (constants / types / queue / worker / setup / index).
-- `api-template/src/config/setup-queues.ts`: call your new setup function alongside the existing queues.
-- `api-template/src/queues/queue-manager.ts`: add the `enqueueWebhookFanout(...)` method that wraps the producer for callers.
+- `apps/api/src/queues/webhook-fanout/`: new directory, 6 files, lint-enforced shape (constants / types / queue / worker / setup / index).
+- `apps/api/src/config/setup-queues.ts`: call your new setup function alongside the existing queues.
+- `apps/api/src/queues/queue-manager.ts`: add the `enqueueWebhookFanout(...)` method that wraps the producer for callers.
 - Wherever your producer lives (a service file): call `queueManager.enqueueWebhookFanout(...)`.
 
 No new dependencies. The pattern is reused for every kind of background work; the email pipeline, notifications, and audit log already follow it.
@@ -186,7 +186,7 @@ No new dependencies. The pattern is reused for every kind of background work; th
 >
   Long-running workers stay attached. Don't try to "trigger and exit." BullMQ
   needs the worker process up to claim jobs. In production this is the same
-  api-template container; in scale-out you can split workers into their own
+  apps/api container; in scale-out you can split workers into their own
   container that runs `bun run start:worker`.
 </DocCallout>
 

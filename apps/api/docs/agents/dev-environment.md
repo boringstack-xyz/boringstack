@@ -8,7 +8,7 @@ dev, or chasing "missing module" errors.
 Two ways to run the API in dev — `bun run dev` on the host, or the
 `api-dev` compose container. **Pick one. Never both at once.**
 
-The container bind-mounts the api-template tree into `/app` so source
+The container bind-mounts the apps/api tree into `/app` so source
 edits hot-reload. A host-side `bun install` or `bun run dev` writing
 to the same `./node_modules` while the container's running races and
 corrupts both — the symptom is usually a "missing module" error that

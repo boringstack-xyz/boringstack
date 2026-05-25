@@ -103,39 +103,17 @@ variable "vps_name" {
 }
 
 # ============================================================================
-# Repos to clone on first boot
+# Repo to clone on first boot
 # ============================================================================
 
-variable "api_repo" {
+variable "monorepo_repo" {
   type        = string
-  description = "Git URL for the api-template repo to clone on first boot. Override to point at your fork."
-  default     = "https://github.com/boringstack-xyz/api-template"
+  description = "Git URL for the BoringStack monorepo to clone on first boot. Override to point at your fork."
+  default     = "https://github.com/boringstack-xyz/boringstack"
 
   validation {
-    condition     = length(trimspace(var.api_repo)) > 0 && length(regexall("[\r\n]", var.api_repo)) == 0
-    error_message = "api_repo must be a single-line Git URL."
-  }
-}
-
-variable "ui_repo" {
-  type        = string
-  description = "Git URL for the ui-template repo."
-  default     = "https://github.com/boringstack-xyz/ui-template"
-
-  validation {
-    condition     = length(trimspace(var.ui_repo)) > 0 && length(regexall("[\r\n]", var.ui_repo)) == 0
-    error_message = "ui_repo must be a single-line Git URL."
-  }
-}
-
-variable "infra_repo" {
-  type        = string
-  description = "Git URL for the infra-docker-compose-template repo."
-  default     = "https://github.com/boringstack-xyz/infra-docker-compose-template"
-
-  validation {
-    condition     = length(trimspace(var.infra_repo)) > 0 && length(regexall("[\r\n]", var.infra_repo)) == 0
-    error_message = "infra_repo must be a single-line Git URL."
+    condition     = length(trimspace(var.monorepo_repo)) > 0 && length(regexall("[\r\n]", var.monorepo_repo)) == 0
+    error_message = "monorepo_repo must be a single-line Git URL."
   }
 }
 

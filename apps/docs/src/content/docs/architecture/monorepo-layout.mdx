@@ -1,5 +1,5 @@
 ---
-title: Repository layout
+title: Monorepo layout
 description: How the BoringStack monorepo is organized — apps, infra, docs, and cross-app contracts.
 ---
 
@@ -87,9 +87,9 @@ Each app keeps its own `package.json`, lockfile, and lint config. CI workflows l
 />
 
 <Aside type="note" title="Forking">
-  Fork the whole monorepo on GitHub. You do not need separate api/ui/infra
-  repositories. On a VPS, clone the monorepo and run Compose from
-  `infra/compose/compose`.
+  Fork the whole monorepo on GitHub. API, UI, docs, Compose, and bootstrap
+  infrastructure stay together in one tree. On a VPS, clone the monorepo and
+  run Compose from `infra/compose/compose`.
 </Aside>
 
 ## What lives where
@@ -139,7 +139,7 @@ bun run check   # drift checks (api on :3000 required for OpenAPI check)
 | lint-meta | each app `scripts/lint-meta/` | committed `RULES.md` | per app |
 | Docs catalogs | api + ui scripts/README | `apps/docs` | `src/data/*.json` |
 
-CI runs the same checks in one checkout — no sibling-repo clone on GitHub `main`.
+CI runs the same checks from one checkout on GitHub `main`.
 
 ## The contract between API and UI
 

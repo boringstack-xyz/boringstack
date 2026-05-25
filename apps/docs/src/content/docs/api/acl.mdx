@@ -215,11 +215,11 @@ Single endpoint, every piece the UI needs to render the right buttons. The `feat
 
 ## Source
 
-- [`src/lib/acl/`](https://github.com/boringstack-xyz/api-template/tree/main/src/lib/acl): types, constants, feature-resolution, ability builder, `scopedTo`, `enforceLimit`.
-- [`src/api/accounts/`](https://github.com/boringstack-xyz/api-template/tree/main/src/api/accounts): `accountsService`, `invitationsService`, routes.
-- [`src/api/admin/`](https://github.com/boringstack-xyz/api-template/tree/main/src/api/admin): `adminBillingService` (grantFeature / revokeFeature / grantPlan).
-- [`src/middleware/require-active-membership.ts`](https://github.com/boringstack-xyz/api-template/blob/main/src/middleware/require-active-membership.ts): runtime membership recheck.
-- [`src/queues/account-maintenance/`](https://github.com/boringstack-xyz/api-template/tree/main/src/queues/account-maintenance): five daily idempotent sweep jobs (expire overrides, expire admin plans, downgrade canceled Stripe plans, hard-delete soft-deleted accounts, clean expired invitations).
+- [`src/lib/acl/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/acl): types, constants, feature-resolution, ability builder, `scopedTo`, `enforceLimit`.
+- [`src/api/accounts/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/accounts): `accountsService`, `invitationsService`, routes.
+- [`src/api/admin/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/admin): `adminBillingService` (grantFeature / revokeFeature / grantPlan).
+- [`src/middleware/require-active-membership.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/middleware/require-active-membership.ts): runtime membership recheck.
+- [`src/queues/account-maintenance/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/queues/account-maintenance): five daily idempotent sweep jobs (expire overrides, expire admin plans, downgrade canceled Stripe plans, hard-delete soft-deleted accounts, clean expired invitations).
 
 ## Related
 

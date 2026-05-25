@@ -30,7 +30,7 @@ export default defineConfig({
       use: { ...devices["Desktop Safari"] }
     }
   ],
-  // Playwright expects a running stack: the UI on :3001 AND the api-template
+  // Playwright expects a running stack: the UI on :3001 AND apps/api
   // reachable through the Vite proxy. Locally: `cd ../../infra/compose/compose && ./dev.sh up -d`.
   // In CI: the full-stack-smoke workflow boots the stack before running these.
   webServer: {

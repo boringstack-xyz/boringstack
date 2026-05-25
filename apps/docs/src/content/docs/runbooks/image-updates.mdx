@@ -47,7 +47,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
 
 1. Optional notifications in `compose/.env` (Discord, Slack, or both):
 
-```env
+```dotenv
 WUD_DISCORD_WEBHOOK=https://discord.com/api/webhooks/...
 WUD_SLACK_BOT_TOKEN=xoxb-...
 WUD_SLACK_CHANNEL=docker-updates
@@ -55,14 +55,14 @@ WUD_SLACK_CHANNEL=docker-updates
 
 2. Optional private GHCR auth:
 
-```env
+```dotenv
 WUD_GHCR_USERNAME=your-gh-username
 WUD_GHCR_TOKEN=ghp_xxx
 ```
 
 3. Optional schedule override:
 
-```env
+```dotenv
 WUD_SCHEDULE="0 */6 * * *"
 ```
 
@@ -79,7 +79,7 @@ WUD_SCHEDULE="0 */6 * * *"
 
 ## Operational flow
 
-1. API/UI repo push publishes new GHCR image tags.
+1. A push that touches `apps/api` or `apps/ui` publishes new GHCR image tags.
 2. WUD detects tag movement on schedule.
 3. App containers auto-pull + auto-recreate.
 4. Base-image updates only generate notifications.
@@ -101,7 +101,7 @@ WITH_WUD=0 STACK=prod ./scripts/compose-up.sh
 
 ## Source
 
-[`infra-docker-compose-template/docs/image-update-detection.md`](https://github.com/boringstack-xyz/infra-docker-compose-template/blob/main/docs/image-update-detection.md) · [WUD docs](https://getwud.github.io/wud/)
+[`infra/compose/docs/image-update-detection.md`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/docs/image-update-detection.md) · [WUD docs](https://getwud.github.io/wud/)
 
 ## Related
 

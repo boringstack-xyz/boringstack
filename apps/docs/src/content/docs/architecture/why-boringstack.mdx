@@ -21,9 +21,9 @@ import SignalGrid from "../../../components/docs-kit/SignalGrid";
     { value: "lint", label: "ESLint plugins + validate" },
   ]}
 >
-  The MIT templates compose the full stack: api-template (Bun, Elysia, Drizzle),
-  ui-template (Vite, React, generated OpenAPI client), infra-docker-compose-template
-  (Postgres, Valkey, Traefik), and optional infra-bootstrap-tofu-template for VPS bootstrap.
+  The MIT templates compose the full stack: apps/api (Bun, Elysia, Drizzle),
+  apps/ui (Vite, React, generated OpenAPI client), infra/compose
+  (Postgres, Valkey, Traefik), and optional infra/bootstrap for VPS bootstrap.
   Auth, billing, queues, email, env validation, and deploy scripts are wired and documented;
   custom ESLint plugins enforce folder and contract shape in CI.
 </PageIntro>
@@ -39,7 +39,7 @@ import SignalGrid from "../../../components/docs-kit/SignalGrid";
     {
       label: "OpenAPI",
       title: "bun run generate:api fails on schema drift.",
-      body: "TypeBox routes emit /openapi.json; ui-template regenerates src/lib/api/schema.d.ts. Drift fails typecheck before review.",
+      body: "TypeBox routes emit /openapi.json; apps/ui regenerates src/lib/api/schema.d.ts. Drift fails typecheck before review.",
     },
     {
       label: "Lint",
@@ -55,7 +55,7 @@ import SignalGrid from "../../../components/docs-kit/SignalGrid";
 | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | You need accounts, auth, billing, email, and background jobs with Postgres + Valkey on your own VPS. | You only need a static site or a no-code prototype with no custom backend.                     |
 | You want Postgres, Valkey, Traefik, and Docker Compose under your control.                   | You want a serverless-first Vercel/Netlify path where the platform owns runtime decisions. |
-| You want API and UI as separate repos with an OpenAPI contract between them.                             | You prefer a single full-stack framework with one app boundary.      |
+| You want API and UI as separate deployable apps with an OpenAPI contract between them.                             | You prefer a single full-stack framework with one app boundary.      |
 | You want ESLint rules and validate CI to enforce architecture, including agent edits.       | You rely on conventions, README prose, and review alone.          |
 | You want Compose on one VPS now, with an optional path to managed Postgres or Kubernetes later.        | You need Kubernetes, multi-region, or managed-everything infrastructure on day one.             |
 
@@ -65,7 +65,7 @@ import SignalGrid from "../../../components/docs-kit/SignalGrid";
   columns={3}
   items={[
     {
-      eyebrow: "api-template",
+      eyebrow: "apps/api",
       title: "Auth, queues, and billing hooks in src/api/.",
       body: "Auth, sessions, OAuth, email, env validation, audit log, billing hooks, and queues are wired and documented.",
     },
@@ -145,14 +145,14 @@ The choice is not moral. BoringStack is intentionally biased toward ownership, e
 
 ```mermaid
 flowchart TB
-  subgraph ui [ui-template]
+  subgraph ui [apps/ui]
     spa[Vite + React SPA]
   end
-  subgraph api [api-template]
+  subgraph api [apps/api]
     http[Bun + Elysia API]
     jobs[BullMQ workers]
   end
-  subgraph infra [infra-docker-compose-template]
+  subgraph infra [infra/compose]
     edge[Traefik TLS routing]
     data[(Postgres + Valkey)]
   end
@@ -163,7 +163,7 @@ flowchart TB
   edge --> http
 ```
 
-<p class="bs-diagram-caption">Three stacked layers: the ui-template SPA sits above the api-template (HTTP server plus BullMQ workers), which sits on the infra layer (Traefik routing in front of Postgres and Valkey). The SPA reaches the API over a typed OpenAPI contract; both the API and the workers read and write the same data plane.</p>
+<p class="bs-diagram-caption">Three stacked layers: the apps/ui SPA sits above the apps/api (HTTP server plus BullMQ workers), which sits on the infra layer (Traefik routing in front of Postgres and Valkey). The SPA reaches the API over a typed OpenAPI contract; both the API and the workers read and write the same data plane.</p>
 
 ### API
 
@@ -194,8 +194,8 @@ Architecture lives in tooling. Prose is context. Read [Lint as the contract](/ar
   title="Working in one repo at a time"
   eyebrow="Repo layout"
 >
-  Sibling repos keep each layer's context small. Edit a route, a page, or a
-  compose overlay without loading the whole stack into one tree.
+  The monorepo keeps each layer in a focused workspace. Edit a route, a page, or a
+  compose overlay without pretending the layers are the same application.
 </DocCallout>
 
 ## Room to grow
@@ -205,5 +205,5 @@ Email, notifications, and other background work already have a home in the API. 
 ## Related
 
 - [Quickstart](/quickstart/)
-- [Repository layout](/architecture/three-repos/)
+- [Repository layout](/architecture/monorepo-layout/)
 - [Lint as the contract](/architecture/lint-as-contract/)

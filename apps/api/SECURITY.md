@@ -47,7 +47,7 @@ fails. The weekly cron exists so this surfaces even when no one pushes.
 
 ## Repo settings hardening
 
-The `main` branch on every BoringStack template repo enforces:
+The `main` branch on the BoringStack monorepo enforces:
 
 - Signed commits (configure your local signing before pushing)
 - Linear history (squash-merges only)
@@ -82,7 +82,7 @@ See `AGENTS.md` → "Security skill set" for the full skill reference.
 - **Security headers (CSP, HSTS, X-Frame-Options, Permissions-Policy,
   Referrer-Policy, X-Content-Type-Options)** — set by **Traefik** in
   front of the api, not by the api itself. The single source of truth
-  is `infra-docker-compose-template/compose/docker-compose.production-labels.yml`.
+  is `infra/compose/compose/docker-compose.production-labels.yml`.
   Running the api standalone (no Traefik in front) leaves it without
   these headers — front it with Traefik or your own reverse proxy.
 - **CORS** — gated on `ALLOWED_ORIGINS`. Empty (default) = not mounted

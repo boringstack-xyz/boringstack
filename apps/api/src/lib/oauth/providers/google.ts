@@ -57,7 +57,7 @@ class GoogleProvider implements IOAuthProviderModule {
       headers: {
         authorization: `Bearer ${accessToken}`,
         accept: "application/json",
-        "user-agent": "api-template",
+        "user-agent": "boringstack-api",
       },
     });
 

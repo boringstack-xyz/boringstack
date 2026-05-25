@@ -368,7 +368,7 @@ export default defineConfig({
               label: "Background work",
               link: "/architecture/background-work/",
             },
-            { label: "Repository layout", link: "/architecture/three-repos/" },
+            { label: "Repository layout", link: "/architecture/monorepo-layout/" },
             { label: "Stack at a glance", link: "/architecture/stack/" },
             { label: "Decision log", link: "/architecture/decisions/" },
             {

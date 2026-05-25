@@ -28,7 +28,7 @@ class GithubProvider implements IOAuthProviderModule {
     return {
       authorization: `Bearer ${accessToken}`,
       accept: "application/json",
-      "user-agent": "api-template",
+      "user-agent": "boringstack-api",
     };
   }
 

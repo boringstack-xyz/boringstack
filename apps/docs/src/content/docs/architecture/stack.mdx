@@ -13,7 +13,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
   eyebrow="Stack map"
   actions={[
     { label: "Why these choices", href: "/architecture/why-boringstack/" },
-    { label: "Repo layout", href: "/architecture/three-repos/" },
+    { label: "Repo layout", href: "/architecture/monorepo-layout/" },
   ]}
   facts={[
     { value: "UI", label: "api + infra" },
@@ -32,13 +32,13 @@ import FaqItem from "../../../components/FaqItem.tsx";
   columns={4}
   items={[
     {
-      eyebrow: "api-template",
+      eyebrow: "apps/api",
       title: "Bun HTTP API + workers",
       body: "Elysia, Drizzle, Postgres, Valkey, BullMQ, Pino. Owns security, persistence, background work, and OpenAPI.",
       href: "/api/overview/",
     },
     {
-      eyebrow: "ui-template",
+      eyebrow: "apps/ui",
       title: "Vite React SPA",
       body: "React 19, TanStack Query, Zustand, shadcn/ui, Playwright, and a generated client instead of hand-written API calls.",
       href: "/ui/overview/",
@@ -61,7 +61,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
 ## Full inventory
 
 <Tabs>
-  <TabItem label="api-template">
+  <TabItem label="apps/api">
     <FaqGroup>
       <FaqItem title="Runtime: Bun" open>Bun-native APIs, fastest install and cold boot.</FaqItem>
       <FaqItem title="HTTP framework: Elysia">TypeBox-typed routes, OpenAPI auto-emit.</FaqItem>
@@ -78,7 +78,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
       <FaqItem title="Dead-code detection">Knip gates `bun run validate`.</FaqItem>
     </FaqGroup>
   </TabItem>
-  <TabItem label="ui-template">
+  <TabItem label="apps/ui">
     <FaqGroup>
       <FaqItem title="Build tool: Vite" open>Fast HMR, native ESM, dev proxy for same-origin `/api/*`.</FaqItem>
       <FaqItem title="Framework: React 19">Current React with compiler support.</FaqItem>
@@ -134,5 +134,5 @@ Each app repo ships custom ESLint plugins (all open-sourced) that codify the pat
 ## Related
 
 - [Why BoringStack](/architecture/why-boringstack/); the decision guide behind these choices.
-- [Repository layout](/architecture/three-repos/); how the templates sit next to each other.
+- [Repository layout](/architecture/monorepo-layout/); how the templates sit next to each other.
 - [Deployment](/topics/deployment/); how the runtime choices ship.

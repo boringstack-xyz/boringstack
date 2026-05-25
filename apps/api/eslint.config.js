@@ -355,7 +355,7 @@ export default tseslint.config(
       "import/first": "error",
       "import/newline-after-import": "error",
 
-      // Vertical-rhythm formatting (mirrored from ui-template). Forces a
+      // Vertical-rhythm formatting (mirrored from apps/ui). Forces a
       // blank line before `return`, after the imports cluster, around
       // block-likes, and after declaration groups. Auto-fixable, so
       // `bun run lint:fix` handles it after touching a file. Without

@@ -89,7 +89,7 @@ Every template ships prose contracts and lint gates together. The prose says whe
 
 Use this as the reference catalog after the mental model makes sense.
 
-### Shared across api-template + ui-template
+### Shared across apps/api + apps/ui
 
 <FaqGroup>
   <FaqItem title="resource-architecture" open>
@@ -150,7 +150,7 @@ Two non-custom rules earn their place alongside the `@boring-stack-pkg` plugins:
   </FaqItem>
 </FaqGroup>
 
-### api-template only
+### apps/api only
 
 <FaqGroup>
   <FaqItem title="elysia" open>
@@ -198,7 +198,7 @@ Two non-custom rules earn their place alongside the `@boring-stack-pkg` plugins:
   </FaqItem>
 </FaqGroup>
 
-### ui-template only
+### apps/ui only
 
 <FaqGroup>
   <FaqItem title="react-component-architecture" open>
@@ -226,13 +226,13 @@ Two non-custom rules earn their place alongside the `@boring-stack-pkg` plugins:
 
 ## How they're wired
 
-Each template's flat ESLint config (`eslint.config.mjs` in ui-template, `eslint.config.js` in api-template) imports these plugins from `node_modules/`. They are **devDependencies** installed from npm as exact-version `@boring-stack-pkg/eslint-plugin-*` pins; source lives in the [`boringstack-xyz/eslint-plugins`](https://github.com/boringstack-xyz/eslint-plugins) monorepo, releases run through [Changesets](https://github.com/changesets/changesets), and every published version carries an OIDC-signed provenance attestation. The 7-day `minimumReleaseAge` quarantine that protects the rest of the dependency tree is exempted for the `@boring-stack-pkg/*` scope (it's our own code; the quarantine guards against compromised upstream publishes we don't control). The plugins ship their own `recommended` configs where applicable; we extend those and keep severities at `error` so the merge gate has real teeth.
+Each template's flat ESLint config (`eslint.config.mjs` in apps/ui, `eslint.config.js` in apps/api) imports these plugins from `node_modules/`. They are **devDependencies** installed from npm as exact-version `@boring-stack-pkg/eslint-plugin-*` pins; source lives in the [`boringstack-xyz/eslint-plugins`](https://github.com/boringstack-xyz/eslint-plugins) monorepo, releases run through [Changesets](https://github.com/changesets/changesets), and every published version carries an OIDC-signed provenance attestation. The 7-day `minimumReleaseAge` quarantine that protects the rest of the dependency tree is exempted for the `@boring-stack-pkg/*` scope (it's our own code; the quarantine guards against compromised upstream publishes we don't control). The plugins ship their own `recommended` configs where applicable; we extend those and keep severities at `error` so the merge gate has real teeth.
 
 Where `lint:meta` is wired (`bun run lint:meta` / `bun run lint:meta`), it adds extra contract checks on top of ESLint — package.json pin parity, CI/pre-push parity, env cascade drift, source-text bans, and test-sibling requirements. The full machine-readable catalog lives on [lint:meta rules](/architecture/lint-meta/); implementation is under `scripts/lint-meta/cli.ts` with fixture-based tests in `tests/lint-meta/`. For which script runs each merge-gate command, see [Scripts & tooling](/reference/scripts-tooling/).
 
 <CommandRun
   title="Merge gate"
-  caption="same contract in api-template and ui-template"
+  caption="same contract in apps/api and apps/ui"
   command={["bun run validate", "bun run lint", "bun run lint:fix", "bun run knip"]}
   output={[
     { text: "validate: typecheck + lint + knip + tests" },
@@ -242,7 +242,7 @@ Where `lint:meta` is wired (`bun run lint:meta` / `bun run lint:meta`), it adds 
   ]}
 />
 
-The same merge gate runs in three places so a broken change can't slip through the cracks. A husky `pre-commit` hook runs `bun run lint-staged` against the staged files, the cheap, scoped check on every commit. A husky `pre-push` hook (installed via `prepare` on `bun run install` / `bun install`; for `infra-docker-compose-template` and `.github`, run `./scripts/install-hooks.sh` once) then runs the full `validate` locally before anything leaves your machine: typecheck, lint, knip, tests, build, `osv-scanner` against the lockfile, and (when sibling repos are present) an OpenAPI schema drift check across api-template ↔ ui-template. CI re-runs the same gate so a `--no-verify` push is still caught.
+The same merge gate runs in three places so a broken change can't slip through the cracks. A husky `pre-commit` hook runs `bun run lint-staged` against the staged files, the cheap, scoped check on every commit. A husky `pre-push` hook (installed via `prepare` on `bun run install` / `bun install`; for `infra/compose` and `.github`, run `./scripts/install-hooks.sh` once) then runs the full `validate` locally before anything leaves your machine: typecheck, lint, knip, tests, build, `osv-scanner` against the lockfile, and (when workspace apps are present) an OpenAPI schema drift check across apps/api ↔ apps/ui. CI re-runs the same gate so a `--no-verify` push is still caught.
 
 [Knip](https://knip.dev) sits alongside the lint plugins, surfacing unused files, unused exports, and unused dependencies. It runs as part of `validate` so dead code can't drift in unnoticed.
 

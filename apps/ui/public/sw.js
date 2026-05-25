@@ -4,7 +4,7 @@
  *   - "push"              Receives an encrypted payload from the browser's
  *                         push service and shows an OS-level notification.
  *                         The payload shape is `{ title, body, url }` —
- *                         same shape the api-template's `web-push.channel`
+ *                         same shape the the API app's `web-push.channel`
  *                         emits.
  *   - "notificationclick" Focuses an existing app tab if open, otherwise
  *                         opens a new one at the URL the payload carried.

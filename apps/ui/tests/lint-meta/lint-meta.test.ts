@@ -230,7 +230,7 @@ describe("lint-meta guardrails", () => {
     expect(checkScriptRawFetch(root, [file])).toEqual([]);
   });
 
-  test("checkNoCrossRepoImports flags sibling api-template imports", () => {
+  test("checkNoCrossRepoImports flags imports that escape apps/ui", () => {
     const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
 
     try {

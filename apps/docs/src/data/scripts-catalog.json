@@ -88,19 +88,19 @@
       {
         "command": "generate:api",
         "script": "codegen/generate-api.ts",
-        "description": "Regenerate src/lib/api/schema.d.ts from the api-template's OpenAPI document.",
+        "description": "Regenerate src/lib/api/schema.d.ts from the API app's OpenAPI document.",
         "invocation": "tsx scripts/codegen/generate-api.ts"
       },
       {
         "command": "generate:api:check",
         "script": "codegen/generate-api.ts",
-        "description": "Regenerate src/lib/api/schema.d.ts from the api-template's OpenAPI document.",
+        "description": "Regenerate src/lib/api/schema.d.ts from the API app's OpenAPI document.",
         "invocation": "tsx scripts/codegen/generate-api.ts --check"
       },
       {
         "command": "pre-push",
         "script": "ci/pre-push.sh",
-        "description": "Local mirror of ui-template's CI gate. Runs everything CI runs so that a",
+        "description": "Local mirror of the UI app's CI gate. Runs everything CI runs so that a",
         "invocation": "./scripts/ci/pre-push.sh"
       }
     ],

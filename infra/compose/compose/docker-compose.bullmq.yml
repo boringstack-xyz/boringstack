@@ -1,5 +1,5 @@
 # BullMQ dashboard overlay — merged when WITH_BULLMQ=1 and STACK=dev.
-# Visualizes Bull / BullMQ jobs in the api-template's Valkey. Reuses the
+# Visualizes Bull / BullMQ jobs in the the API app's Valkey. Reuses the
 # existing `valkey` service from the base stack.
 
 services:

@@ -48,11 +48,11 @@ jobs:
       - name: Install docs deps
         run: bun install --frozen-lockfile
 
-      - name: Install ui-template deps for lint-meta export
+      - name: Install apps/ui deps for lint-meta export
         working-directory: apps/ui
         run: bun install --frozen-lockfile
 
-      - name: Install api-template deps for lint-meta export
+      - name: Install apps/api deps for lint-meta export
         working-directory: apps/api
         run: bun install --frozen-lockfile
 

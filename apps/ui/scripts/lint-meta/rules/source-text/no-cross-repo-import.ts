@@ -3,7 +3,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 
 import type { IMetaRule, IViolation } from "../../types";
 
-const SIBLING_REPO_MARKERS = ["api-template", "infra-template"] as const;
+const CROSS_WORKSPACE_MARKERS = ["apps/api", "infra/compose"] as const;
 
 const RELATIVE_IMPORT_SPECIFIER_RE =
   /\b(?:from|import)\s*(?:type\s*)?["'](\.\.[^"']+)["']/gu;
@@ -18,7 +18,7 @@ function isPathInsideRoot(root: string, target: string): boolean {
 }
 
 function siblingRepoMarker(specifier: string): string | null {
-  for (const marker of SIBLING_REPO_MARKERS) {
+  for (const marker of CROSS_WORKSPACE_MARKERS) {
     if (specifier.includes(marker)) {
       return marker;
     }
@@ -50,7 +50,7 @@ export function checkNoCrossRepoImports(
         violations.push({
           file,
           rule: "no-cross-repo-import",
-          message: `Import "${specifier}" references sibling repo "${marker}". ui-template CI runs in isolation — duplicate shared constants locally and sync by test or codegen.`
+          message: `Import "${specifier}" references workspace "${marker}". apps/ui must not import backend or infra source directly — duplicate shared constants locally and sync by test or codegen.`
         });
         continue;
       }
@@ -61,7 +61,7 @@ export function checkNoCrossRepoImports(
         violations.push({
           file,
           rule: "no-cross-repo-import",
-          message: `Import "${specifier}" resolves outside the ui-template repo (${relative(rootResolved, resolved)}). CI checks out this repo alone — sibling directories are not available.`
+          message: `Import "${specifier}" resolves outside apps/ui (${relative(rootResolved, resolved)}). Keep UI imports inside the workspace and sync cross-app contracts by test or codegen.`
         });
       }
     }
@@ -71,14 +71,15 @@ export function checkNoCrossRepoImports(
 }
 
 /**
- * CI checks out ui-template alone. Relative imports that escape the repo or
- * reference sibling templates typecheck locally in a monorepo but fail in CI.
+ * Relative imports that escape apps/ui couple the frontend directly to backend
+ * or infra source. Keep cross-app contracts explicit through OpenAPI, generated
+ * ACL types, or local mirrored constants with tests.
  */
 export const noCrossRepoImportRule: IMetaRule = {
   id: "no-cross-repo-import",
   category: "source-text",
   description:
-    "Relative imports must stay inside this repo; no sibling-template paths.",
+    "Relative imports must stay inside apps/ui; no backend or infra source paths.",
   ciCritical: true,
   run({ root, sourceFiles }) {
     return checkNoCrossRepoImports(root, sourceFiles);

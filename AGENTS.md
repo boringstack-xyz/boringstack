@@ -13,13 +13,13 @@ bun run check   # drift checks before push
 
 ## Layout
 
-| Path | Was | Role |
-|------|-----|------|
-| `apps/api` | api-template | Bun + Elysia API |
-| `apps/ui` | ui-template | Vite + React UI |
-| `apps/docs` | .github / boringstack.xyz | Astro docs site |
-| `infra/compose` | infra-docker-compose-template | Docker Compose |
-| `infra/bootstrap` | infra-bootstrap-tofu-template | OpenTofu bootstrap |
+| Path              | Role                   |
+| ----------------- | ---------------------- |
+| `apps/api`        | Bun + Elysia API       |
+| `apps/ui`         | Vite + React UI        |
+| `apps/docs`       | Astro docs site        |
+| `infra/compose`   | Docker Compose runtime |
+| `infra/bootstrap` | OpenTofu bootstrap     |
 
 CI: `.github/workflows/` at repo root with path filters.
 

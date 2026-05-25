@@ -10,7 +10,7 @@ bun run validate
 
 = lint clean + format clean + typecheck clean + Vitest green + production build green + bundle size within budget.
 
-Playwright (e2e) runs in `full-stack-smoke.yml` under `infra-docker-compose-template` against a real booted stack; it is a required check on this repo's PRs but not part of `bun run validate`. To run e2e locally against a stack you have running, use `bun run validate:full`.
+Playwright (e2e) runs in `infra-compose-full-stack-smoke.yml` against a real booted stack; it is a required monorepo check but not part of `bun run validate`. To run e2e locally against a stack you have running, use `bun run validate:full`.
 
 Hard rules:
 

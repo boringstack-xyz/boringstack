@@ -122,7 +122,7 @@ In `compose/.env` (the script sources it):
 
 ```bash
 # /etc/cron.d/backups; daily at 03:15
-15 3 * * * root /path/to/infra-docker-compose-template/scripts/backup-wrapper.sh
+15 3 * * * root /path/to/infra/compose/scripts/backup-wrapper.sh
 ```
 
 ## Retention math
@@ -198,7 +198,7 @@ For sensitive data, client-side is the right answer. Document the password in yo
 
 ## Source
 
-[`scripts/backup-wrapper.example.sh`](https://github.com/boringstack-xyz/infra-docker-compose-template/blob/main/scripts/backup-wrapper.example.sh) · [`docs/backup-offsite.md`](https://github.com/boringstack-xyz/infra-docker-compose-template/blob/main/docs/backup-offsite.md) in the infra repo.
+[`scripts/backup-wrapper.example.sh`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/scripts/backup-wrapper.example.sh) · [`docs/backup-offsite.md`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/docs/backup-offsite.md) under `infra/compose`.
 
 ## Related
 

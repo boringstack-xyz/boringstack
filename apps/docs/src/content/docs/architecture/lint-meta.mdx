@@ -39,15 +39,15 @@ typecheck → ESLint → lint:meta → knip → tests
 
 ## UI-only rules
 
-The ui-template catalog includes rules that only apply to the SPA repo:
+The apps/ui catalog includes rules that only apply to the SPA repo:
 
-- `no-cross-repo-import` — **CI-critical**; monorepo imports can pass locally but fail in single-repo CI
+- `no-cross-repo-import` — **CI-critical**; UI imports must not reach into backend or infra source
 - `modulepreload-size-limit-coverage` — bundle size-limit config must cover modulepreload chunks
 - `no-dark-variant`, `no-dangerous-html`, `env-access`, `no-raw-fetch` — source-text bans for Vite/React patterns
 
 ## API-only rules
 
-The api-template catalog adds backend test contracts:
+The apps/api catalog adds backend test contracts:
 
 - `routes-require-test-sibling` — every `*.routes.ts` needs a matching `tests/api/**/*.routes.test.ts`
 - `touch-tests-too` — opt-in via `LINT_META_TOUCHED_BASE` for diff-aware test enforcement
@@ -56,11 +56,11 @@ The api-template catalog adds backend test contracts:
 
 Both templates share supply-chain, CI, env, artifact, and config rules (exact deps, pre-push CI parity, engine pin parity, generated artifact banners, forbidden inline disables, raw role literals, logic-file test siblings).
 
-## ui-template catalog
+## apps/ui catalog
 
 <LintMetaCatalog template="ui" />
 
-## api-template catalog
+## apps/api catalog
 
 <LintMetaCatalog template="api" />
 

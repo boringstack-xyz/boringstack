@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local mirror of ui-template's CI gate. Runs everything CI runs so that a
+# Local mirror of the UI app's CI gate. Runs everything CI runs so that a
 # pre-push failure is the same signal CI would produce.
 #
 # Stages:
@@ -8,7 +8,7 @@
 #   3. Tests         : vitest run --coverage (no services needed)
 #   4. Build         : vite build (catches type-level regressions through routes)
 #   5. Size          : size-limit budget
-#   6. OpenAPI drift : if api-template is reachable on :3000, ensure schema is fresh
+#   6. OpenAPI drift : if apps/api is reachable on :3000, ensure schema is fresh
 #
 # Set ALLOW_OPENAPI_DRIFT_SKIP=false to fail instead of skip when the API is
 # unreachable (strict mode for release pushes).
@@ -76,9 +76,9 @@ if probe_tcp localhost 3000 && curl -fsS http://localhost:3000/swagger/json >/de
   ok "schema is fresh"
   RAN=$((RAN + 1))
 elif [ "${ALLOW_OPENAPI_DRIFT_SKIP:-true}" = "false" ]; then
-  fail "api-template not reachable on :3000 (start api-dev or set ALLOW_OPENAPI_DRIFT_SKIP=true)"
+  fail "apps/api not reachable on :3000 (start api-dev or set ALLOW_OPENAPI_DRIFT_SKIP=true)"
 else
-  skip "api-template not reachable on :3000"
+  skip "apps/api not reachable on :3000"
 fi
 
 printf '\n'

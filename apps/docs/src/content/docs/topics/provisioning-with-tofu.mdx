@@ -1,6 +1,6 @@
 ---
 title: Provisioning with OpenTofu
-description: An optional fourth template. One `tofu apply` provisions a Hetzner VPS, configures Cloudflare DNS, and bootstraps the docker-compose stack.
+description: Optional OpenTofu bootstrap for the monorepo. One `tofu apply` provisions a Hetzner VPS, configures Cloudflare DNS, and bootstraps the docker-compose stack.
 ---
 
 import PageIntro from "../../../components/docs-kit/PageIntro";
@@ -26,9 +26,9 @@ import FaqItem from "../../../components/FaqItem.tsx";
   docker-compose environment.
 </PageIntro>
 
-BoringStack's [Deployment](/topics/deployment/) path is manual: SSH into a VPS, install Docker, clone the infra repo, `compose pull && compose up -d`. Some operators prefer this.
+BoringStack's [Deployment](/topics/deployment/) path is manual: SSH into a VPS, install Docker, clone the monorepo, `compose pull && compose up -d`. Some operators prefer this.
 
-The OpenTofu template is the alternative for people who'd rather drive the same outcome from a single declarative apply. Source lives at [boringstack-xyz/infra-bootstrap-tofu-template](https://github.com/boringstack-xyz/infra-bootstrap-tofu-template).
+The OpenTofu stack is the alternative for people who'd rather drive the same outcome from a single declarative apply. Source lives in [`infra/bootstrap`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/bootstrap).
 
 ## What it does
 
@@ -45,7 +45,7 @@ flowchart LR
   hetz["Hetzner<br/>VPS · SSH key · firewall"]
   cf["Cloudflare<br/>A records · zone settings"]
   init["cloud-init on first boot<br/>installs Docker + git<br/>runs bootstrap.sh"]
-  script["bootstrap.sh from repo<br/>clones infra repo<br/>renders compose/.env<br/>compose pull && compose up -d"]
+  script["bootstrap.sh from repo<br/>clones monorepo<br/>renders compose/.env<br/>compose pull && compose up -d"]
   live["live site"]
   tfvars --> apply
   apply --> hetz
@@ -88,8 +88,8 @@ flowchart LR
   title="Provision with OpenTofu"
   caption="Clone the IaC skeleton and run the apply graph"
   command={[
-    "git clone https://github.com/boringstack-xyz/infra-bootstrap-tofu-template",
-    "cd infra-bootstrap-tofu-template",
+    "git clone https://github.com/boringstack-xyz/boringstack",
+    "cd boringstack/infra/bootstrap",
     "cp terraform.tfvars.example terraform.tfvars",
     "tofu init",
     "tofu validate",
@@ -109,7 +109,7 @@ flowchart LR
 
 ## Wait for cloud-init
 
-Bootstrap (Docker install, infra-repo clone, GHCR image pulls, first `compose up -d`) runs in the background after the server boots. A few minutes on first run.
+Bootstrap (Docker install, monorepo clone, GHCR image pulls, first `compose up -d`) runs in the background after the server boots. A few minutes on first run.
 
 <CommandRun
   title="Watch Bootstrap Status"
@@ -260,7 +260,7 @@ Everything in `terraform.tfvars.example` ships with comments explaining what it'
     Cloud-init template that installs Docker plus git, then runs `bootstrap.sh`.
   </FaqItem>
   <FaqItem title="bootstrap.sh">
-    Versioned shell script: clones the infra repo, renders `compose/.env`, runs
+    Versioned shell script: clones the monorepo, renders `compose/.env`, runs
     `compose pull && compose up -d`.
   </FaqItem>
 </FaqGroup>
@@ -285,10 +285,10 @@ The state file holds secrets (cloud-init renders with sensitive values). Encrypt
 
 ## Updating
 
-OpenTofu owns the infrastructure. GHCR + the infra repo own the running code.
+OpenTofu owns the infrastructure. GHCR + the monorepo own the running code.
 
-Code updates land via the release workflows. Push to `main` on `api-template`
-or `ui-template`, a new image tag appears on GHCR, and WUD on the VPS
+Code updates land via the release workflows. Push to `main` on `apps/api`
+or `apps/ui`, a new image tag appears on GHCR, and WUD on the VPS
 auto-deploys app containers. Base-image updates remain manual, applied on the
 VPS when you are ready:
 
@@ -299,7 +299,7 @@ docker compose pull
 docker compose up -d
 ```
 
-Infra YAML or env-var changes: `git pull` the infra repo on the VPS, then re-run `compose up -d`. Infrastructure changes (VPS resize, DNS, firewall rule): edit `terraform.tfvars` or the modules, then `tofu apply`.
+Infra YAML or env-var changes: `git pull` the monorepo on the VPS, then re-run `compose up -d`. Infrastructure changes (VPS resize, DNS, firewall rule): edit `terraform.tfvars` or the modules, then `tofu apply`.
 
 ## Scaling up
 

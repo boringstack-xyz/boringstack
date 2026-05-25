@@ -21,12 +21,12 @@ import FaqItem from "../../../components/FaqItem.tsx";
     { value: "1", label: "unified SDK" },
   ]}
 >
-  Both `api-template` and `ui-template` ship Sentry SDKs configured for zero
+  Both `apps/api` and `apps/ui` ship Sentry SDKs configured for zero
   overhead. Swap between Hosted Sentry and self-hosted GlitchTip with a single
   DSN key.
 </PageIntro>
 
-Both `api-template` and `ui-template` ship a Sentry SDK. The same SDK talks to:
+Both `apps/api` and `apps/ui` ship a Sentry SDK. The same SDK talks to:
 
 - **Hosted [Sentry](https://sentry.io)**; fastest setup, paid past the free tier.
 - **Self-hosted [GlitchTip](https://glitchtip.com)**; Sentry-API-compatible, runs as an overlay in the infra stack (`WITH_GLITCHTIP=1`). Zero per-event cost.
@@ -58,14 +58,14 @@ The SDKs don't know which one they're talking to. Choosing is a one-env-var chan
 
 ```mermaid
 flowchart LR
-  api["api-template<br/>@sentry/bun"] -- "events" --> backend{DSN points where?}
-  ui["ui-template<br/>@sentry/react"] -- "events + replays-on-error" --> backend
+  api["apps/api<br/>@sentry/bun"] -- "events" --> backend{DSN points where?}
+  ui["apps/ui<br/>@sentry/react"] -- "events + replays-on-error" --> backend
   backend -- "https://...sentry.io/..." --> sentry["hosted Sentry"]
   backend -- "https://...glitchtip.localhost/..." --> glitchtip["self-hosted GlitchTip"]
 ```
 
 <p class="bs-diagram-caption">
-  Both api-template (@sentry/bun) and ui-template (@sentry/react) emit events to
+  Both apps/api (@sentry/bun) and apps/ui (@sentry/react) emit events to
   the same Sentry-compatible wire protocol. The DSN env var picks the
   destination: a <code>sentry.io</code> hostname for hosted Sentry, or a{" "}
   <code>glitchtip.localhost</code> hostname for the self-hosted overlay. The
@@ -88,7 +88,7 @@ First boot bootstraps a superuser, a default org, and two projects (`API` and `F
 
 The overlay reuses the base stack's Postgres (in a separate `glitchtip` database) and Valkey (DB 1). Adding GlitchTip costs two extra containers, not a separate database server.
 
-For production hardening (Basic Auth, HTTPS, real SMTP), see the [GlitchTip docs in the infra repo](https://github.com/boringstack-xyz/infra-docker-compose-template/blob/main/docs/glitchtip.md).
+For production hardening (Basic Auth, HTTPS, real SMTP), see the [GlitchTip docs under `infra/compose`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/docs/glitchtip.md).
 
 ## Switching backends
 
@@ -121,9 +121,9 @@ No SDK changes. The infrastructure is the variable, not the code.
 
 ## Source
 
-- API init: [`src/config/sentry.ts`](https://github.com/boringstack-xyz/api-template/blob/main/src/config/sentry.ts) + [`src/config/error-handlers.ts`](https://github.com/boringstack-xyz/api-template/blob/main/src/config/error-handlers.ts).
-- UI init: [`src/app/main.tsx`](https://github.com/boringstack-xyz/ui-template/blob/main/src/app/main.tsx).
-- GlitchTip overlay: [`compose/docker-compose.glitchtip.yml`](https://github.com/boringstack-xyz/infra-docker-compose-template/blob/main/compose/docker-compose.glitchtip.yml).
+- API init: [`src/config/sentry.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/config/sentry.ts) + [`src/config/error-handlers.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/config/error-handlers.ts).
+- UI init: [`src/app/main.tsx`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/ui/src/app/main.tsx).
+- GlitchTip overlay: [`compose/docker-compose.glitchtip.yml`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/docker-compose.glitchtip.yml).
 
 ## Related
 

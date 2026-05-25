@@ -13,7 +13,7 @@ export function checkEnginePinParity(root: string): IViolation[] {
     violations.push({
       file: join(root, "package.json"),
       rule: "engine-pin-parity",
-      message: "Missing package.json engines.bun pin for api-template.",
+      message: "Missing package.json engines.bun pin for apps/api.",
     });
 
     return violations;

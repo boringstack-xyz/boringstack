@@ -1,4 +1,4 @@
-# api-template scripts
+# apps/api scripts
 
 Grouped by purpose. Prefer `bun run` commands over calling files directly.
 

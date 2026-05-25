@@ -121,7 +121,7 @@ ${formatRulesTable(rows)}
 
 ## CI-critical rules
 
-Rules marked CI-critical can pass locally (e.g. monorepo checkout) but fail in single-repo CI. Always run \`bun run check\` before pushing ui-template.
+Rules marked CI-critical protect contracts that TypeScript alone can miss. Always run \`bun run check\` before pushing apps/ui.
 `;
 }
 

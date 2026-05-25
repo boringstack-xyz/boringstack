@@ -2,18 +2,18 @@
 
 `schema.d.ts` is **generated**. Never edit it by hand.
 
-The generator is `scripts/codegen/generate-api.ts`. It reads
-api-template's `/swagger/json`, runs `openapi-typescript`, and writes
+The generator is `scripts/codegen/generate-api.ts`. It reads the API app's
+`/swagger/json`, runs `openapi-typescript`, and writes
 `src/lib/api/schema.d.ts`. The path is fixed because the typed
 `apiClient` (built on `openapi-fetch`) imports `paths` from it.
 
 ## Regenerating
 
-When api-template changes a route shape:
+When `apps/api` changes a route shape:
 
-1. Boot api-template (typically via
+1. Boot the API app (typically via
    `../../../../infra/compose/compose/dev.sh up -d`).
-2. From this repo's root:
+2. From `apps/ui`:
    `OPENAPI_URL=http://localhost:3000/swagger/json bun run generate:api`.
 3. Commit the diff.
 
@@ -22,17 +22,16 @@ When api-template changes a route shape:
 Drift between the checked-in `schema.d.ts` and the live API is enforced
 in three places:
 
-- **ui-template pre-push hook**: runs `generate:api:check` if api is
+- **apps/ui pre-push hook**: runs `generate:api:check` if api is
   reachable on `:3000` at push time.
-- **api-template `openapi-drift` CI workflow**: boots api-template,
-  checks out ui-template alongside, runs `bun run generate:api:check`. Fails
-  the api-template PR that introduced the drift.
+- **apps/api `openapi-drift` CI workflow**: boots the API app, then runs
+  `bun run generate:api:check` in `apps/ui`. Fails the PR that introduced the
+  drift.
 - **infra `full-stack-smoke` workflow**: integration-tests the schema
   on every infra push.
 
-If the api-template `openapi-drift` job fails on a PR, the schema must
-be regenerated and committed to ui-template's main BEFORE the
-api-template PR can merge.
+If the `openapi-drift` job fails on a PR, regenerate the schema and commit it
+with the API change before merging.
 
 ## apiClient
 

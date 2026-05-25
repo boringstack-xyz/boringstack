@@ -9,7 +9,7 @@
 # Same-origin routing: Traefik path-routes /api/* on the apex to the api
 # container, so there is no api.<domain> record. If you need a separate api
 # subdomain (cross-origin deployment), re-add the A/AAAA pair and update
-# infra-docker-compose-template/compose/docker-compose.production-labels.yml
+# infra/compose/compose/docker-compose.production-labels.yml
 # to use Host(`${PUBLIC_API_HOST}`) on the api router.
 #
 # Zone settings match what production-labels.yml expects from Traefik upstream:

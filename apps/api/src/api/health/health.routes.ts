@@ -13,7 +13,7 @@ import { healthService } from "./health.service";
  *   email shouldn't pull a healthy API out of the LB).
  */
 const healthRoutes = new Elysia()
-  .get("/", () => ({ name: "api-template", status: "ok" }), {
+  .get("/", () => ({ name: "boringstack-api", status: "ok" }), {
     detail: { tags: ["Health"], summary: "Root liveness ping" },
   })
   .get("/health", () => ({ status: "ok", timestamp: now() }), {

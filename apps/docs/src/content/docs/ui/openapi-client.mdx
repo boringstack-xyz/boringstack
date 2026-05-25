@@ -1,6 +1,6 @@
 ---
 title: OpenAPI client
-description: A typed API client generated from the api-template's OpenAPI schema. Drift between server and UI becomes a compile error.
+description: A typed API client generated from the API app's OpenAPI schema. Drift between server and UI becomes a compile error.
 ---
 
 import PageIntro from "../../../components/docs-kit/PageIntro";
@@ -30,7 +30,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
 
 ```mermaid
 flowchart LR
-  api["api-template<br/>publishes /swagger/json"]
+  api["apps/api<br/>publishes /swagger/json"]
   gen["bun run generate:api"]
   schema["src/lib/api/schema.d.ts<br/>generated types"]
   client["apiClient.GET / POST / ..."]
@@ -128,7 +128,7 @@ Direct `fetch()` / `axios` / `XMLHttpRequest` outside `src/lib/api/` fails the l
 
 ## Source
 
-[`src/lib/api/`](https://github.com/boringstack-xyz/ui-template/tree/main/src/lib/api) on GitHub; client, middleware, error mapper, generated schema.
+[`src/lib/api/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/ui/src/lib/api) on GitHub; client, middleware, error mapper, generated schema.
 
 ## Related
 

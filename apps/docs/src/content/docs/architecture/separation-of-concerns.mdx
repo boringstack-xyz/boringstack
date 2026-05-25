@@ -10,7 +10,7 @@ import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
   eyebrow="Layer boundaries"
   actions={[
     { label: "Why BoringStack", href: "/architecture/why-boringstack/" },
-    { label: "Repository layout", href: "/architecture/three-repos/" },
+    { label: "Repository layout", href: "/architecture/monorepo-layout/" },
   ]}
   facts={[
     { value: "3", label: "isolated layers" },
@@ -28,12 +28,12 @@ import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
   items={[
     {
       label: "API",
-      title: "api-template",
+      title: "apps/api",
       body: "Owns security, databases, sessions, JWT cookies, background queues (BullMQ), email delivery, and the audit log trail.",
     },
     {
       label: "UI",
-      title: "ui-template",
+      title: "apps/ui",
       body: "Owns the browser experience, local client states, i18n, queries, and routing via Vite and React 19.",
     },
     {
@@ -59,7 +59,7 @@ flowchart LR
 
 <p class="bs-diagram-caption">Left to right: a browser SPA calls the Bun + Elysia API over HTTPS using a typed OpenAPI contract; the API alone talks to Postgres for durable state and to Valkey for cache and queue work. No browser-to-database path exists.</p>
 
-The API publishes OpenAPI at `/swagger/json`. The UI runs `bun run generate:api` to refresh `schema.d.ts`. `openapi-fetch` rejects invalid paths and bodies at compile time. See [OpenAPI client](/ui/openapi-client/) and [Repository layout](/architecture/three-repos/) for wiring.
+The API publishes OpenAPI at `/swagger/json`. The UI runs `bun run generate:api` to refresh `schema.d.ts`. `openapi-fetch` rejects invalid paths and bodies at compile time. See [OpenAPI client](/ui/openapi-client/) and [Repository layout](/architecture/monorepo-layout/) for wiring.
 
 In production, Traefik serves the SPA and API on one apex host (`/` and `/api/*`). That simplifies TLS and cookies. The repositories and Docker images stay separate.
 
@@ -94,6 +94,6 @@ In production, Traefik serves the SPA and API on one apex host (`/` and `/api/*`
 ## Related
 
 - [Why BoringStack](/architecture/why-boringstack/)
-- [Repository layout](/architecture/three-repos/)
+- [Repository layout](/architecture/monorepo-layout/)
 - [Background work](/architecture/background-work/)
 

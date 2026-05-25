@@ -5,8 +5,8 @@
 #   1. Installs Docker, the compose plugin, git, and a couple of utilities.
 #   2. Writes the rendered compose/.env contents to disk.
 #   3. Writes the bootstrap.sh script to /opt/boringstack/bootstrap.sh.
-#   4. Runs the script once (clones the three repos as siblings, kicks off
-#      `STACK=prod ./scripts/compose-up.sh --build`).
+#   4. Runs the script once (clones the monorepo, then kicks off
+#      `STACK=prod ./scripts/compose-up.sh`).
 #
 # Cloud-init handles ONLY the bare-minimum install + run-once. The actual
 # stack wiring lives in bootstrap.sh — readable bash, easy to test, versioned
@@ -15,18 +15,18 @@
 # ============================================================================
 
 locals {
-  # Derive the GHCR namespace and image names from the repo URLs. A fork
-  # created via "Use this template" + rename Just Works without manual env
-  # tweaks: the workflows publish to ghcr.io/<owner>/<repo>, and these
-  # locals teach compose how to find them.
-  # e.g. "https://github.com/boringstack-xyz/api-template" → ("boringstack-xyz", "api-template")
+  # Derive the GHCR namespace and image names from the monorepo URL. Release
+  # workflows publish distinct packages from the same repo:
+  # ghcr.io/<owner>/<repo>-api and ghcr.io/<owner>/<repo>-ui.
+  # e.g. "https://github.com/boringstack-xyz/boringstack" →
+  # ("boringstack-xyz", "boringstack-api", "boringstack-ui")
   # ghcr.io paths are case-insensitive but conventionally lowercase.
-  _api_repo_parts = split("/", trimsuffix(replace(var.api_repo, "https://github.com/", ""), ".git"))
-  _ui_repo_parts  = split("/", trimsuffix(replace(var.ui_repo, "https://github.com/", ""), ".git"))
+  _monorepo_parts = split("/", trimsuffix(replace(var.monorepo_repo, "https://github.com/", ""), ".git"))
 
-  image_owner    = lower(element(local._api_repo_parts, 0))
-  api_image_name = lower(element(local._api_repo_parts, 1))
-  ui_image_name  = lower(element(local._ui_repo_parts, 1))
+  image_owner    = lower(element(local._monorepo_parts, 0))
+  repo_name      = lower(element(local._monorepo_parts, 1))
+  api_image_name = "${local.repo_name}-api"
+  ui_image_name  = "${local.repo_name}-ui"
 
   compose_env_values = {
     stack                      = "prod"
@@ -65,9 +65,7 @@ locals {
   env_file_contents = templatefile("${path.module}/templates/compose.env.tftpl", local.compose_env)
 
   bootstrap_config_json = jsonencode({
-    api_repo              = var.api_repo
-    ui_repo               = var.ui_repo
-    infra_repo            = var.infra_repo
+    monorepo_repo         = var.monorepo_repo
     backups_enabled       = var.backups_enabled
     rclone_remote_name    = var.rclone_remote_name
     rclone_remote_path    = var.rclone_remote_path

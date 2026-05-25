@@ -35,7 +35,7 @@ Test verify-email, password-reset, welcome, and notification flows locally witho
 
    Adds two host ports: `1025` (SMTP) and `8025` (web UI).
 
-2. Point the api at the catcher. In `infra-docker-compose-template/compose/api.dev.env` (create if it doesn't exist):
+2. Point the api at the catcher. In `infra/compose/compose/api.dev.env` (create if it doesn't exist):
 
    ```bash
    EMAIL_PROVIDER=smtp
@@ -64,7 +64,7 @@ Test verify-email, password-reset, welcome, and notification flows locally witho
 
 ## Use this for
 
-- Designing a new email template. Edit the Handlebars source under `api-template/src/templates/email/`, trigger a flow, refresh Mailpit.
+- Designing a new email template. Edit the Handlebars source under `apps/api/src/templates/email/`, trigger a flow, refresh Mailpit.
 - Debugging delivery locally. Mailpit captures the full SMTP envelope, so you can verify From / Reply-To / List-Unsubscribe before going near a real provider.
 - E2E tests that exercise email. Point the api at Mailpit and assert against the API surface (`http://localhost:8025/api/v1/messages`). No mail leaves the host.
 

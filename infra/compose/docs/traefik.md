@@ -16,7 +16,7 @@ If you lock down **port 80** on the origin, HTTP-01 renewal can fail; prefer **D
 
 ## Dev stack (`STACK=dev`, default)
 
-1. Lay out **siblings**: `api-template`, `ui-template`, and `infra-docker-compose-template` under the same parent directory.
+1. Lay out **siblings**: `apps/api`, `apps/ui`, and `infra/compose` under the same parent directory.
 
 2. Copy [compose/.env.example](../compose/.env.example) to `compose/.env`.
 
@@ -56,7 +56,7 @@ Builds `api` and `ui` from sibling clones using `Dockerfile.prod`, wires Let's E
 
 ## Where security headers live
 
-Traefik in `production-labels.yml` is the **single source of truth** for HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, and CSP (on the ui router). The nginx config in `ui-template/` is intentionally minimal — file serving and cache-control only. The api has no helmet middleware.
+Traefik in `production-labels.yml` is the **single source of truth** for HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, and CSP (on the ui router). The nginx config in `apps/ui/` is intentionally minimal — file serving and cache-control only. The api has no helmet middleware.
 
 ## Observability alongside Traefik
 

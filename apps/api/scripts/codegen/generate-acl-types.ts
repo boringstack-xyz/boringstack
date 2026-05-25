@@ -3,7 +3,7 @@ import { dirname, join, resolve } from "node:path";
 
 /**
  * Copies the canonical ACL type spine from apps/api to
- * apps/ui so the two repos stay byte-identical on Role / Action /
+ * apps/ui so the two workspace apps stay byte-identical on Role / Action /
  * Subject / FeatureKey unions. Mirrors the existing
  * `generate:api[:check]` pattern.
  *
@@ -12,7 +12,7 @@ import { dirname, join, resolve } from "node:path";
  *   - "check":           fail with exit 1 when the generated file
  *                        drifts from the source
  *
- * Sibling location resolution:
+ * Workspace location resolution:
  *   - `BORINGSTACK_UI_DIR` env var if set
  *   - otherwise `../ui` relative to the apps/api root
  */
@@ -34,7 +34,7 @@ const resolveUiTemplateRoot = (): string => {
 
 const HEADER = `/*
  * AUTO-GENERATED — do not edit. Run \`bun run generate:acl-types\` in the
- * apps/api repo to refresh this file. Drift between this file and
+ * apps/api workspace to refresh this file. Drift between this file and
  * apps/api/${SOURCE_REL} fails CI via
  * \`bun run generate:acl-types:check\`.
  */

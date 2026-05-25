@@ -26,7 +26,7 @@ import { Steps } from "@astrojs/starlight/components";
 If you're provisioning via the [OpenTofu template](/topics/provisioning-with-tofu/), the Hetzner cloud firewall already enforces the Cloudflare-only allowlist at the provider level. This UFW path is for manually-provisioned hosts, or as defense-in-depth on top of the cloud firewall.
 
 <DocCallout variant="caution" title="Read before running" eyebrow="Safety check">
-  The `scripts/ufw.example.sh` script in the infra repo **resets your UFW config**. Read it before pointing it at a real server. It refuses to run without `CONFIRM=yes`.
+  The `infra/compose/scripts/ufw.example.sh` script **resets your UFW config**. Read it before pointing it at a real server. It refuses to run without `CONFIRM=yes`.
 </DocCallout>
 
 ## Outcome
@@ -132,7 +132,7 @@ UFW + Cloudflare-IP-allowlist protects you from random scans hitting your origin
 - App-layer abuse (credential stuffing, scraping). Use Traefik's rate-limit middleware (already configured for the API router in prod) and per-account rate limits in the API.
 - Compromise via SSH. Move SSH to a non-standard port, disable password auth, use a hardware key.
 
-The infra repo's `docs/security-hardening.md` has a full checklist.
+[`infra/compose/docs/security-hardening.md`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/docs/security-hardening.md) has a full checklist.
 
 ## Related
 

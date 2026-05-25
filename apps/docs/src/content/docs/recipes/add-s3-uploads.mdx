@@ -17,7 +17,7 @@ import DocFileTree from "../../../components/DocFileTree";
   totalTime="PT60M"
   steps={[
     "Add S3 credentials (endpoint, region, bucket, access key, secret) to compose/.env and to the API's env schema.",
-    "Install @aws-sdk/client-s3 and @aws-sdk/s3-request-presigner in api-template.",
+    "Install @aws-sdk/client-s3 and @aws-sdk/s3-request-presigner in apps/api.",
     "Scaffold an uploads feature folder with bun run new:resource uploads.",
     "Implement uploads.service.ts to sign a 5-minute PUT URL keyed by accountId and uuid.",
     "Add a media table with a Drizzle migration; finalize each upload via a transactional insert.",
@@ -70,13 +70,13 @@ Let an authenticated user upload a file straight from the browser into an S3-com
 2. Add the AWS SDK to the API:
 
    ```bash
-   cd api-template && bun add @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+   cd apps/api && bun add @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
    ```
 
 3. Create a new feature folder. Use the scaffold so the layer split is correct from the start:
 
    ```bash
-   cd api-template && bun run new:resource uploads
+   cd apps/api && bun run new:resource uploads
    ```
 
    That writes `uploads.routes.ts`, `uploads.service.ts`, `uploads.types.ts` and wires the routes into `config/routes.ts`.
@@ -85,7 +85,7 @@ Let an authenticated user upload a file straight from the browser into an S3-com
 
 5. Add a `media` table to the schema. Minimum columns: `id`, `account_id`, `object_key`, `mime_type`, `size_bytes`, `created_at`. After a successful PUT, the UI POSTs a `finalize` request to the API which inserts the row inside a transaction.
 
-6. UI side. The ui-template's `lib/api` client already has the typed routes (regenerate with `bun run generate:api`). A simple file picker:
+6. UI side. The UI app's `lib/api` client already has the typed routes (regenerate with `bun run generate:api`). A simple file picker:
 
    ```ts
    const { uploadUrl, objectKey, publicUrl } =
@@ -110,11 +110,11 @@ Let an authenticated user upload a file straight from the browser into an S3-com
 
 ## What changes in code
 
-- `api-template/src/config/env.schema.ts`: add the six S3 env vars to the [TypeBox env shape](/api/env-validator/).
-- `api-template/src/api/uploads/`: new feature folder, follows the [route/service/types split](/api/overview/).
-- `api-template/src/clients/postgres/schema/media.ts`: new Drizzle table.
-- `api-template/drizzle/0xxx_add_media_table.sql`: generated migration (`bun run db:generate`).
-- `ui-template/src/features/<wherever-you-need-uploads>/`: picker + progress UI calling the typed client.
+- `apps/api/src/config/env.schema.ts`: add the six S3 env vars to the [TypeBox env shape](/api/env-validator/).
+- `apps/api/src/api/uploads/`: new feature folder, follows the [route/service/types split](/api/overview/).
+- `apps/api/src/clients/postgres/schema/media.ts`: new Drizzle table.
+- `apps/api/drizzle/0xxx_add_media_table.sql`: generated migration (`bun run db:generate`).
+- `apps/ui/src/features/<wherever-you-need-uploads>/`: picker + progress UI calling the typed client.
 
 <DocCallout eyebrow="Safety" title="Don't return public URLs you can't revoke" variant="caution">
   Make `S3_PUBLIC_BASE_URL` an authenticated reader (signed-URL GET) for

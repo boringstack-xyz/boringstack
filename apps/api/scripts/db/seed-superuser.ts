@@ -35,7 +35,7 @@ async function main(): Promise<void> {
       "[seed-superuser] SUPERUSER_EMAIL or SUPERUSER_PASSWORD unset — skipping. " +
         "Set both to create a privileged user on first migrate, or sign up via the UI. " +
         "Running under docker-compose? The api-migrate service interpolates these " +
-        "from compose/.env (NOT api-template/.env)."
+        "from compose/.env (NOT apps/api/.env)."
     );
 
     return;

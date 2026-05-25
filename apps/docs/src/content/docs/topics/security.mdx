@@ -61,7 +61,7 @@ Catches API keys, tokens, private keys, and other high-entropy strings before th
 Two passes:
 
 - `osv-scanner` reads the lockfile and queries the OSV database for known CVEs across the dep tree, including transitive deps.
-- The native audit (`bun audit` for api-template, `bun run audit` for ui-template, Trivy `config` mode for the OpenTofu repo) catches things the OSV cross-reference misses.
+- The native audit (`bun audit` for apps/api, `bun run audit` for apps/ui, Trivy `config` mode for the OpenTofu repo) catches things the OSV cross-reference misses.
 
 Both honor `osv-scanner.toml` for accepted-risk allowlisting. Every ignored CVE carries a reason and an `ignoreUntil` date. When the date passes, the suppression dies and CI fails. No silent suppressions, no infinite snoozing.
 
@@ -114,7 +114,7 @@ Install once. After that, humans and agents can both invoke `/sharp-edges src/au
 
 ## Layer 3: project-owned review skill
 
-`.claude/skills/security-review.md` in each template orchestrates Layer 2 and adds checks the generic tools can't make. For api-template:
+`.claude/skills/security-review.md` in each template orchestrates Layer 2 and adds checks the generic tools can't make. For apps/api:
 
 - ACL coverage on every account-scoped table
 - Stripe webhook idempotency (`stripe_event_id` dedup)
@@ -123,7 +123,7 @@ Install once. After that, humans and agents can both invoke `/sharp-edges src/au
 - Audit-log on every mutation
 - BullMQ jobs idempotent under retry
 
-For ui-template:
+For apps/ui:
 
 - No raw `fetch`; only `@/lib/api/client.ts` calls the API
 - No `dangerouslySetInnerHTML`

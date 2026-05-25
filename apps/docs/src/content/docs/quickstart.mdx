@@ -82,7 +82,7 @@ git clone https://github.com/boringstack-xyz/boringstack.git
 cd boringstack
 ```
 
-Fork the repo on GitHub if you want your own copy under your org. You do **not** need separate api/ui/infra repos anymore.
+Fork the monorepo on GitHub if you want your own copy under your org. API, UI, docs, Compose, and bootstrap infrastructure all live in this one tree.
 
 <DocFileTree
   root="boringstack/"
@@ -188,7 +188,7 @@ Traefik runs only in the prod profile. In prod it terminates TLS and path-routes
 ## Related
 
 - [Why BoringStack](/architecture/why-boringstack/). What ships in the box.
-- [Repository layout](/architecture/three-repos/). Monorepo folders and contracts.
+- [Repository layout](/architecture/monorepo-layout/). Monorepo folders and contracts.
 - [Environment variables](/reference/env-vars/). Every var, what it does.
 - [Deployment](/topics/deployment/). Production runtime path.
 - [Provisioning with OpenTofu](/topics/provisioning-with-tofu/). `tofu apply` to a live VPS.

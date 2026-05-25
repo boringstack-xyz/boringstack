@@ -2,14 +2,13 @@
 #
 # BoringStack first-boot bootstrap.
 #
-# Runs from cloud-init's runcmd after Docker is installed. Clones only the
-# infra repo (which holds the docker-compose YAML), drops the rendered
-# compose/.env, and pulls the api + ui images from GHCR.
+# Runs from cloud-init's runcmd after Docker is installed. Clones the monorepo,
+# drops the rendered compose/.env into infra/compose, and pulls the API + UI
+# images from GHCR.
 #
-# No api/ui source clones — those repos are deployment artifacts, not source.
-# No on-box builds — images come from the release.yml workflows in each repo.
+# No on-box app builds — images come from the monorepo release workflows.
 #
-# Idempotent: re-running re-pulls the infra repo, pulls fresh images, and
+# Idempotent: re-running re-pulls the monorepo, pulls fresh images, and
 # brings the stack back up.
 # Safe to run by hand for debugging:
 #   bash -x /opt/boringstack/bootstrap.sh
@@ -44,18 +43,18 @@ fi
 
 jq -e . "$CONFIG_FILE" >/dev/null
 
-INFRA_REPO=$(config_value infra_repo)
+MONOREPO_REPO=$(config_value monorepo_repo)
 BACKUPS_ENABLED=$(config_value backups_enabled)
 RCLONE_REMOTE_NAME=$(config_value rclone_remote_name)
 RCLONE_REMOTE_PATH=$(config_value rclone_remote_path)
 BACKUP_RETENTION_DAYS=$(config_value backup_retention_days)
 
-require_value infra_repo "$INFRA_REPO"
+require_value monorepo_repo "$MONOREPO_REPO"
 
 mkdir -p "$ROOT"
 cd "$ROOT"
 
-# ---- Clone only the infra repo (api + ui come from GHCR as built images) ---
+# ---- Clone the monorepo (api + ui still come from GHCR as built images) ---
 clone_or_pull() {
   local url="$1"
   local dir="$2"
@@ -68,11 +67,11 @@ clone_or_pull() {
   fi
 }
 
-clone_or_pull "$INFRA_REPO" infra/compose
+clone_or_pull "$MONOREPO_REPO" repo
 
 # ---- Drop compose/.env from the rendered template --------------------------
 log "Installing compose/.env..."
-INFRA_DIR="$ROOT/infra/compose"
+INFRA_DIR="$ROOT/repo/infra/compose"
 install -m 0600 "$ENV_FILE_SRC" "$INFRA_DIR/compose/.env"
 chmod +x "$INFRA_DIR"/scripts/*.sh "$INFRA_DIR/compose/dev.sh" 2>/dev/null || true
 

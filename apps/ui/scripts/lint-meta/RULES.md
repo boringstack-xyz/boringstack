@@ -30,7 +30,7 @@ Run `bun run lint:meta --list-rules` for the machine-readable list from the regi
 | `env-access`                        | source-text  | no          | Read Vite env through src/lib/env only.                                                                                                          |
 | `no-raw-fetch`                      | source-text  | no          | Use the typed apiClient; raw fetch is restricted to src/lib/api/openapi.                                                                         |
 | `no-dark-variant`                   | source-text  | no          | The `dark:` Tailwind variant is banned.                                                                                                          |
-| `no-cross-repo-import`              | source-text  | **yes**     | Relative imports must stay inside this repo; no sibling-template paths.                                                                          |
+| `no-cross-repo-import`              | source-text  | **yes**     | Relative imports must stay inside apps/ui; no backend or infra source paths.                                                                     |
 | `no-raw-role-literal`               | source-text  | no          | Use ROLE.* from acl.types instead of raw owner/admin/member/viewer string literals.                                                              |
 | `no-raw-fetch-scripts`              | source-text  | no          | Scripts must not call global fetch except github-actions-permissions.ts (lint:meta --verify SHA check).                                          |
 | `logic-files-require-test-sibling`  | testing      | no          | Logic modules must ship with a colocated *.test.ts or *.test.tsx sibling.                                                                        |
@@ -38,4 +38,4 @@ Run `bun run lint:meta --list-rules` for the machine-readable list from the regi
 
 ## CI-critical rules
 
-Rules marked CI-critical can pass locally (e.g. monorepo checkout) but fail in single-repo CI. Always run `bun run check` before pushing ui-template.
+Rules marked CI-critical protect contracts that TypeScript alone can miss. Always run `bun run check` before pushing apps/ui.

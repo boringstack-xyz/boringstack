@@ -1,6 +1,6 @@
 /*
  * AUTO-GENERATED — do not edit. Run `bun run generate:acl-types` in the
- * apps/api repo to refresh this file. Drift between this file and
+ * apps/api workspace to refresh this file. Drift between this file and
  * apps/api/src/lib/acl/acl.constants.ts fails CI via
  * `bun run generate:acl-types:check`.
  */

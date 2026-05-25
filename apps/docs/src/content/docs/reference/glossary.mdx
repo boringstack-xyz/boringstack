@@ -25,17 +25,17 @@ import FaqItem from "../../../components/FaqItem.tsx";
 ## Architecture vocabulary
 
 <FaqGroup>
-  <FaqItem title="The sibling repos" open>
-    The repositories that compose BoringStack's runtime: `api-template`, `ui-template`, `infra-docker-compose-template`. They sit as siblings under one parent directory because the infra repo references the others via relative paths in its compose builds. The `infra-bootstrap-tofu-template` repo provisions a VPS via OpenTofu and is optional.
+  <FaqItem title="The workspace apps" open>
+    The folders that compose BoringStack's runtime: `apps/api`, `apps/ui`, and `infra/compose`. They live in one monorepo so Compose, CI, and docs can reference every layer through stable relative paths. `infra/bootstrap` provisions a VPS via OpenTofu and is optional.
   </FaqItem>
   <FaqItem title="Feature folder">
-    <span id="feature-folder"></span>A single directory per feature (`src/api/<feature>/`, `src/features/<feature>/`). Holds the routes, services, types, and tests for that one feature. The unit of independent change. The api-template ships `auth`, `users`, `billing`, `dashboard`, `admin`, `health` as framework features; no demo domain resource. [Read more](/architecture/three-repos/).
+    <span id="feature-folder"></span>A single directory per feature (`src/api/<feature>/`, `src/features/<feature>/`). Holds the routes, services, types, and tests for that one feature. The unit of independent change. The apps/api ships `auth`, `users`, `billing`, `dashboard`, `admin`, `health` as framework features; no demo domain resource. [Read more](/architecture/monorepo-layout/).
   </FaqItem>
   <FaqItem title="Route / service / types split">
-    The api-template's per-feature pattern. For a hypothetical `posts` resource: `posts.routes.ts` does HTTP only, `posts.service.ts` does business logic + DB, `posts.types.ts` holds the shapes shared between them. Enforced by ESLint. [Read more](/api/overview/).
+    The API app's per-feature pattern. For a hypothetical `posts` resource: `posts.routes.ts` does HTTP only, `posts.service.ts` does business logic + DB, `posts.types.ts` holds the shapes shared between them. Enforced by ESLint. [Read more](/api/overview/).
   </FaqItem>
   <FaqItem title="Component anatomy">
-    The ui-template's per-component pattern. A page like `DashboardPage/` is a folder of ~8 files (`.tsx`, `.hooks.ts`, `.types.ts`, `.constants.ts`, `.utils.ts`, `.test.tsx`, `.stories.tsx`, `index.ts`). [Read more](/ui/overview/).
+    The UI app's per-component pattern. A page like `DashboardPage/` is a folder of ~8 files (`.tsx`, `.hooks.ts`, `.types.ts`, `.constants.ts`, `.utils.ts`, `.test.tsx`, `.stories.tsx`, `index.ts`). [Read more](/ui/overview/).
   </FaqItem>
   <FaqItem title="View object">
     <span id="view-object"></span>The shape a hook returns to its component (`IDashboardPageView` returned by `useDashboardPage`). The component never reads queries, stores, or env directly; it only renders the view object. Decouples logic from JSX.
@@ -86,10 +86,10 @@ import FaqItem from "../../../components/FaqItem.tsx";
 
 <FaqGroup>
   <FaqItem title="Drizzle" open>
-    The TypeScript-first ORM the api-template uses for Postgres. Schema-as-TS, migrations as generated SQL files, queries that look like SQL but are typed. Picked over Prisma because there's no shadow database and migrations are plain SQL.
+    The TypeScript-first ORM the apps/api uses for Postgres. Schema-as-TS, migrations as generated SQL files, queries that look like SQL but are typed. Picked over Prisma because there's no shadow database and migrations are plain SQL.
   </FaqItem>
   <FaqItem title="Schema (Postgres)">
-    A namespace within a database. The api-template uses two: `public` (app tables) and `audit` (the audit log). Keeping them separate lets you grant, archive, or migrate them independently.
+    A namespace within a database. The apps/api uses two: `public` (app tables) and `audit` (the audit log). Keeping them separate lets you grant, archive, or migrate them independently.
   </FaqItem>
   <FaqItem title="Audit log">
     The append-only `audit.audit_log` table. Records security- and compliance-relevant events. Fire-and-forget; writes never block requests. [Read more](/api/audit-log/).
@@ -123,7 +123,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
 
 ## Related
 
-- [Repository layout](/architecture/three-repos/); where the sibling repos live and why they're separate.
+- [Repository layout](/architecture/monorepo-layout/); where the monorepo workspaces live and how they connect.
 - [Stack at a glance](/architecture/stack/); the dependency inventory behind the vocabulary.
 - [Profiles & overlays](/infra/profiles-and-overlays/); overlay vs profile in practice.
 - [Commands cheatsheet](/reference/commands/); what to type for each term.

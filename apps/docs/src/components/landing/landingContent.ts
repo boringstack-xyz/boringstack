@@ -31,7 +31,7 @@ export const codeTabs: CodeTab[] = [
     id: "api",
     label: "Typed API",
     lines: [
-      { kind: "muted", text: "# api-template" },
+      { kind: "muted", text: "# apps/api" },
       { kind: "command", text: "bun run generate:openapi" },
       { kind: "spacer" },
       { kind: "ok", text: "TypeBox routes emitted /openapi.json" },
@@ -45,7 +45,7 @@ export const codeTabs: CodeTab[] = [
     id: "jobs",
     label: "Background jobs",
     lines: [
-      { kind: "muted", text: "# api-template queues" },
+      { kind: "muted", text: "# apps/api queues" },
       { kind: "command", text: "WITH_BULLMQ=1 ./compose/dev.sh up -d" },
       { kind: "spacer" },
       { kind: "ok", text: "Valkey is shared by cache and queue workers" },
@@ -77,12 +77,12 @@ export const codeTabs: CodeTab[] = [
 export const stackLinks = [
   {
     href: "/api/overview/",
-    label: "api-template",
+    label: "apps/api",
     detail: "Bun / Elysia / Drizzle / auth / billing",
   },
   {
     href: "/ui/overview/",
-    label: "ui-template",
+    label: "apps/ui",
     detail: "React / Vite / OpenAPI client / Playwright",
   },
   {
@@ -135,15 +135,15 @@ export const docsCoverage = [
 export const stackFlow = [
   {
     href: "/api/overview/",
-    label: "api-template",
-    title: "api-template",
+    label: "apps/api",
+    title: "apps/api",
     detail:
       "Auth, billing, queues, email, audit, roles, memberships, and Stripe hooks.",
   },
   {
     href: "/ui/overview/",
-    label: "ui-template",
-    title: "ui-template",
+    label: "apps/ui",
+    title: "apps/ui",
     detail:
       "React, Vite, TanStack Query, Playwright, i18n, and generated OpenAPI client.",
   },

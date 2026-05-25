@@ -1,12 +1,12 @@
 #!/usr/bin/env tsx
 /**
- * Regenerate src/lib/api/schema.d.ts from the api-template's OpenAPI document.
+ * Regenerate src/lib/api/schema.d.ts from the API app's OpenAPI document.
  *
  *   bun run generate:api            # writes the file in place
  *   bun run generate:api:check      # exit 1 if regeneration would change the file
  *
  * URL comes from env (`OPENAPI_URL`, then `VITE_API_URL`, then localhost:3000).
- * The api-template's Elysia swagger plugin serves the JSON at /swagger/json.
+ * The API app's Elysia swagger plugin serves the JSON at /swagger/json.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -70,7 +70,7 @@ async function main(): Promise<void> {
   } catch (error) {
     console.error(`[generate:api] FAILED: ${getErrorMessage(error)}`);
     console.error(
-      "[generate:api] Hint: start the api-template (bun run dev in api-template/)" +
+      "[generate:api] Hint: start apps/api (bun run dev from apps/api/)" +
         " or set OPENAPI_URL to a reachable spec."
     );
     process.exit(1);

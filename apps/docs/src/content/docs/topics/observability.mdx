@@ -32,7 +32,7 @@ The default configuration covers debugging production incidents: app metrics, sy
 
 ```mermaid
 flowchart LR
-  api["api-template<br/>/metrics endpoint"]
+  api["apps/api<br/>/metrics endpoint"]
   pg["postgres-exporter"]
   valkey_exp["valkey-exporter"]
   node["node-exporter<br/>host metrics"]
@@ -121,7 +121,7 @@ pg_stat_database_numbackends{datname="app"}
 rate(bullmq_jobs_completed_total[1m])
 ```
 
-See the [PromQL cheatsheet](https://github.com/boringstack-xyz/infra-docker-compose-template/blob/main/docs/promql-cheatsheet.md) in the infra repo for more.
+See the [`infra/compose` PromQL cheatsheet](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/docs/promql-cheatsheet.md) for more.
 
 **Logs (Loki, LogQL):**
 
@@ -133,7 +133,7 @@ See the [PromQL cheatsheet](https://github.com/boringstack-xyz/infra-docker-comp
 {container=~"api.*"} | json | event="email_delivery_completed"
 ```
 
-See the [LogQL cheatsheet](https://github.com/boringstack-xyz/infra-docker-compose-template/blob/main/docs/logql-cheatsheet.md).
+See the [LogQL cheatsheet](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/docs/logql-cheatsheet.md).
 
 ## Adding an alert
 
@@ -145,7 +145,7 @@ Alertmanager can route to Slack, email, PagerDuty, or a webhook. The template sh
 
 ## Adding a custom app metric
 
-The api-template's `/metrics` endpoint uses the standard Prometheus client library. Define a counter / gauge / histogram in `src/lib/metrics/`, increment it from your code, and Prometheus picks it up on the next scrape. The convention is one file per metric domain (`http-metrics.ts`, `queue-metrics.ts`).
+The API app's `/metrics` endpoint uses the standard Prometheus client library. Define a counter / gauge / histogram in `src/lib/metrics/`, increment it from your code, and Prometheus picks it up on the next scrape. The convention is one file per metric domain (`http-metrics.ts`, `queue-metrics.ts`).
 
 ## Cost
 
@@ -153,7 +153,7 @@ The overlay is light on memory at the default sizing; see [Resource limits](/inf
 
 ## Source
 
-[`compose/docker-compose.observability.yml`](https://github.com/boringstack-xyz/infra-docker-compose-template/blob/main/compose/docker-compose.observability.yml) · [`compose/prometheus/`](https://github.com/boringstack-xyz/infra-docker-compose-template/tree/main/compose/prometheus) · [`compose/grafana/`](https://github.com/boringstack-xyz/infra-docker-compose-template/tree/main/compose/grafana) · [`compose/promtail/`](https://github.com/boringstack-xyz/infra-docker-compose-template/tree/main/compose/promtail).
+[`compose/docker-compose.observability.yml`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/docker-compose.observability.yml) · [`compose/prometheus/`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/compose/compose/prometheus) · [`compose/grafana/`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/compose/compose/grafana) · [`compose/promtail/`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/compose/compose/promtail).
 
 ## Related
 

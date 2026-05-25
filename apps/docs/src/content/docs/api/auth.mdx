@@ -226,7 +226,7 @@ Email-verification and password-reset tokens follow the same rule: raw token onl
 
 ## Adding an OAuth provider
 
-1. Add it to `OAUTH_PROVIDERS` and the env-key map in [`oauth.manifest.ts`](https://github.com/boringstack-xyz/api-template/blob/main/src/lib/oauth/oauth.manifest.ts).
+1. Add it to `OAUTH_PROVIDERS` and the env-key map in [`oauth.manifest.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/lib/oauth/oauth.manifest.ts).
 2. Drop a provider module in `src/lib/oauth/providers/` using Arctic's class for that IdP.
 3. Add the client-id/secret pair to the env schema with a cross-field invariant ("required when provider enabled").
 
@@ -247,7 +247,7 @@ See [Lint as the contract](/architecture/lint-as-contract/) for why these matter
 
 ## Source
 
-[`src/api/auth/`](https://github.com/boringstack-xyz/api-template/tree/main/src/api/auth) and [`src/lib/oauth/`](https://github.com/boringstack-xyz/api-template/tree/main/src/lib/oauth) on GitHub; the routes, the services, the OAuth state store, and the providers.
+[`src/api/auth/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/auth) and [`src/lib/oauth/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/oauth) on GitHub; the routes, the services, the OAuth state store, and the providers.
 
 ## Related
 

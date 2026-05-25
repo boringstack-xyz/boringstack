@@ -20,7 +20,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
     { value: "Compile-time", label: "not vibes" },
   ]}
 >
-  The ui-template enforces its architecture through ESLint, not vibes. The
+  The apps/ui enforces its architecture through ESLint, not vibes. The
   UI-specific work is
   [`@boring-stack-pkg/eslint-plugin-react-component-architecture`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-react-component-architecture).
   It composes with the shared plugins (resource-architecture, module-boundaries,
@@ -97,11 +97,11 @@ If you find yourself suppressing the same rule across many files, that's a signa
 
 ## Source
 
-Plugin source + per-rule docs: [`@boring-stack-pkg/eslint-plugin-react-component-architecture`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-react-component-architecture). ui-template ESLint config: [`eslint.config.mjs`](https://github.com/boringstack-xyz/ui-template/blob/main/eslint.config.mjs).
+Plugin source + per-rule docs: [`@boring-stack-pkg/eslint-plugin-react-component-architecture`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-react-component-architecture). apps/ui ESLint config: [`eslint.config.mjs`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/ui/eslint.config.mjs).
 
 ## Related
 
 - [Lint as the contract](/architecture/lint-as-contract/): the full family across both repos.
 - [lint:meta rules](/architecture/lint-meta/): static guardrails under `scripts/lint-meta/`.
-- [Scripts & tooling](/reference/scripts-tooling/): command → script map for ui-template.
+- [Scripts & tooling](/reference/scripts-tooling/): command → script map for apps/ui.
 - [UI template overview](/ui/overview/): the component anatomy these rules enforce.

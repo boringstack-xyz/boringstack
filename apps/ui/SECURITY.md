@@ -33,7 +33,7 @@ fails. The weekly cron exists so this surfaces even when no one pushes.
 
 ## Repo settings hardening
 
-The `main` branch on every BoringStack template repo enforces:
+The `main` branch on the BoringStack monorepo enforces:
 
 - Signed commits (configure local signing before pushing)
 - Linear history (squash-merges only)
@@ -51,7 +51,7 @@ copy-pasteable fix commands — no auto-apply.
 `.claude/settings.json` declares the Trail of Bits and Ghost Security
 plugin marketplaces. The `/security-review` skill at
 `.claude/skills/security-review.md` orchestrates them and adds
-ui-template invariants:
+apps/ui invariants:
 
 - No raw `fetch` outside `@/lib/api/client.ts`
 - No `dangerouslySetInnerHTML`
@@ -69,7 +69,7 @@ the full reference.
 All security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options,
 Referrer-Policy, Permissions-Policy) are set by **Traefik** in front of the
 SPA — not by `nginx.conf` in this repo. The single source of truth is
-`infra-docker-compose-template/compose/docker-compose.production-labels.yml`.
+`infra/compose/compose/docker-compose.production-labels.yml`.
 
 The default CSP sent on every SPA response is:
 

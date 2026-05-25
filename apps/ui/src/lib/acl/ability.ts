@@ -7,7 +7,7 @@ import type { AppAbility, Role } from "./acl.types";
 
 /**
  * Pure function: maps `(role, accountId, features)` to a CASL ability for
- * UI rendering. Mirrors `api-template/src/lib/acl/ability.ts` exactly.
+ * UI rendering. Mirrors `apps/api/src/lib/acl/ability.ts` exactly.
  *
  * Critically: the UI-side ability is a **rendering hint only**. The server
  * never trusts client-derived rules. Every mutating route on the API runs

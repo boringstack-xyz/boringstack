@@ -149,7 +149,7 @@ export function checkEnginePinParity(root: string): IViolation[] {
       {
         file: join(root, ".nvmrc"),
         rule: "engine-pin-parity",
-        message: "Missing .nvmrc — Node major pin required for ui-template."
+        message: "Missing .nvmrc — Node major pin required for apps/ui."
       }
     ];
   }

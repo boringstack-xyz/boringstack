@@ -12,8 +12,8 @@ import FaqItem from "../../../components/FaqItem.tsx";
   eyebrow="Commands"
   actions={[
     { label: "Infra Commands", href: "#infra-docker-compose-stack" },
-    { label: "API Commands", href: "#api-template" },
-    { label: "UI Commands", href: "#ui-template" },
+    { label: "API Commands", href: "#api-app" },
+    { label: "UI Commands", href: "#ui-app" },
   ]}
   facts={[
     { value: "30+", label: "workflow commands" },
@@ -48,9 +48,9 @@ Run from the repository root (`boringstack/`):
   </FaqItem>
 </FaqGroup>
 
-Paths in the sections below are relative to each app unless noted. Infra scripts
-live under `infra/compose/compose/scripts/` (or `infra/compose/scripts/` for
-some helpers).
+Paths in the sections below are relative to each app unless noted. Compose
+commands run from `infra/compose/compose`; operational helper scripts live in
+`infra/compose/scripts`.
 
 ## Infra (docker-compose stack)
 
@@ -98,7 +98,7 @@ some helpers).
 
 Flags compose: `WITH_OBSERVABILITY=1 WITH_GLITCHTIP=1 ./scripts/compose-up.sh`.
 
-## api-template
+## API app
 
 <FaqGroup>
   <FaqItem title="Run in watch mode" open>
@@ -157,7 +157,7 @@ Flags compose: `WITH_OBSERVABILITY=1 WITH_GLITCHTIP=1 ./scripts/compose-up.sh`.
   </FaqItem>
 </FaqGroup>
 
-## ui-template
+## UI app
 
 <FaqGroup>
   <FaqItem title="Dev server (port 3001)" open>

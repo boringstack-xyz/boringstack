@@ -1,4 +1,4 @@
-# ui-template scripts
+# apps/ui scripts
 
 Grouped by purpose. Prefer `bun run` commands over calling files directly.
 

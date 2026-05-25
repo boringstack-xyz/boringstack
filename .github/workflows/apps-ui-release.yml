@@ -10,7 +10,7 @@ name: release
 #   - on a changesets publish  → also :<semver> (from the merged Version Packages PR)
 #
 # Downstream consumers (BoringStack's WUD service in the prod compose stack)
-# watch ghcr.io/<owner>/ui-template:latest and auto-redeploy when a new sha
+# watch ghcr.io/<owner>/<repo>-ui:latest and auto-redeploy when a new sha
 # is pushed.
 
 on:
@@ -83,9 +83,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         with:
-          # Tracks both the fork owner AND the repo name, so renaming after
-          # "Use this template" Just Works without touching the workflow.
-          images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}
+          # Monorepo image names are suffix-based so API and UI publish distinct
+          # packages from the same repository.
+          images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}-ui
           # Always produce :latest (on main) and :sha-<7>. Add the semver tag
           # only when changesets actually published a new version on this run.
           tags: |

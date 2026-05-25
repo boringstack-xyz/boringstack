@@ -52,7 +52,7 @@ test.describe("ACL — multi-tenant golden paths", () => {
      * when the feature is off. Free plan default is `can_invite_team:
      * false`, so a freshly-registered owner should NOT see the submit
      * button. If you set the feature to `true` by default in
-     * api-template/src/lib/acl/acl.constants.ts FEATURES, this test
+     * apps/api/src/lib/acl/acl.constants.ts FEATURES, this test
      * flips and `e2e/acl.spec.ts:78` becomes the one to update.
      */
     const invitations = new InvitationsPage(page);

@@ -1,5 +1,5 @@
 {
-  "name": "ui-template",
+  "name": "boringstack-ui",
   "version": "0.1.0",
   "description": "Production-grade SPA starter (Vite + React + TypeScript) for the BoringStack family. Wired with shadcn/ui, TanStack Query, Zustand, react-router, RHF + Zod, i18next, Storybook, Playwright, and 8 custom ESLint plugins enforcing the architecture.",
   "type": "module",
@@ -132,7 +132,6 @@
     "openapi-typescript": "7.13.0",
     "prettier": "3.8.3",
     "prettier-plugin-tailwindcss": "0.8.0",
-    "rollup-plugin-visualizer": "7.0.1",
     "size-limit": "12.1.0",
     "storybook": "10.3.6",
     "tailwindcss": "4.3.0",

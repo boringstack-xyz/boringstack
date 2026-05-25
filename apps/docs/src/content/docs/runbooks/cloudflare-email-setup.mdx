@@ -41,7 +41,7 @@ flowchart LR
   dns["SPF / DKIM / DMARC<br/>auto-provisioned"]
   acct["Account ID<br/>scope for the endpoint"]
   token["API Token<br/>Email Sending: Edit"]
-  api["api-template<br/>EMAIL_PROVIDER=cloudflare"]
+  api["apps/api<br/>EMAIL_PROVIDER=cloudflare"]
   paid --> domain --> dns
   domain --> acct --> api
   domain --> token --> api
@@ -51,7 +51,7 @@ flowchart LR
   Cloudflare Email setup chain: a Workers Paid plan unlocks the Email Service;
   enabling it on your domain auto-provisions SPF, DKIM, and DMARC; from there
   you capture the Account ID (used in the endpoint URL) and a scoped API token
-  (used in the bearer header). The api-template reads both via{" "}
+  (used in the bearer header). The apps/api reads both via{" "}
   <code>EMAIL_PROVIDER=cloudflare</code>.
 </p>
 
@@ -172,7 +172,7 @@ Every quarter, or after any staff change:
 
 ## Switching to Resend / SendGrid
 
-The api-template is provider-agnostic. Swapping is one env var:
+The apps/api is provider-agnostic. Swapping is one env var:
 
 <CommandRun
   title="Switch Provider to Resend"
@@ -187,7 +187,7 @@ The env validator refuses to boot in production if the matching key is missing. 
 
 ## Source
 
-- Provider implementation: [`src/lib/email/providers/cloudflare.ts`](https://github.com/boringstack-xyz/api-template/blob/main/src/lib/email/providers/cloudflare.ts) in the api-template.
+- Provider implementation: [`src/lib/email/providers/cloudflare.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/lib/email/providers/cloudflare.ts) in the apps/api.
 - Cloudflare's own docs: [developers.cloudflare.com/email-service](https://developers.cloudflare.com/email-service/).
 
 ## Related

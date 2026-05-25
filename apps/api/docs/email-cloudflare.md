@@ -33,7 +33,7 @@ The `EMAIL_PROVIDER` env supports three values: `cloudflare`, `resend`, `sendgri
 
 ## Operator setup
 
-DNS, Workers Paid plan, API token creation, and domain verification all live in the **infra** runbook so it stays close to deployment: [infra-docker-compose-template/docs/runbooks/cloudflare-email.md](../../../infra/compose/docs/runbooks/cloudflare-email.md).
+DNS, Workers Paid plan, API token creation, and domain verification all live in the **infra** runbook so it stays close to deployment: [infra/compose/docs/runbooks/cloudflare-email.md](../../../infra/compose/docs/runbooks/cloudflare-email.md).
 
 ## Caveats
 

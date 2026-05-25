@@ -1,5 +1,5 @@
 {
-  "name": "api-template",
+  "name": "boringstack-api",
   "version": "0.1.0",
   "description": "Production-ready Bun + Elysia + Drizzle API starter template",
   "type": "module",

@@ -100,7 +100,7 @@
       "id": "no-cross-repo-import",
       "category": "source-text",
       "ciCritical": true,
-      "description": "Relative imports must stay inside this repo; no sibling-template paths."
+      "description": "Relative imports must stay inside apps/ui; no backend or infra source paths."
     },
     {
       "id": "no-raw-role-literal",

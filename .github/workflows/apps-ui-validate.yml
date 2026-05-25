@@ -68,7 +68,7 @@ jobs:
           retention-days: 1
 
       # NOTE: Playwright report upload lives in full-stack-smoke.yml in the
-      # infra-docker-compose-template repo, where E2E actually runs.
+      # infra/compose repo, where E2E actually runs.
 
       - name: Upload Storybook
         if: always()

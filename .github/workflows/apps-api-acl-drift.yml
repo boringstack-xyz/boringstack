@@ -1,9 +1,9 @@
 name: acl-drift
 
-# Catch ui-template ACL type drift in the api-template PR that introduced
-# it. The generated file lives in ui-template's tree; without this gate,
+# Catch apps/ui ACL type drift in the apps/api PR that introduced
+# it. The generated file lives in the UI app's tree; without this gate,
 # changes to src/lib/acl/acl.constants.ts here ship without the
-# corresponding ui-template regeneration.
+# corresponding apps/ui regeneration.
 
 on:
   push:
@@ -26,7 +26,7 @@ permissions:
 
 jobs:
   drift:
-    name: ui-template ACL types are fresh
+    name: apps/ui ACL types are fresh
     defaults:
       run:
         working-directory: apps/api
@@ -41,11 +41,11 @@ jobs:
         with:
           bun-version: 1.3.13
 
-      - name: Install api-template deps
+      - name: Install apps/api deps
         working-directory: apps/api
         run: bun install --frozen-lockfile
 
-      - name: Check ui-template ACL types are up-to-date
+      - name: Check apps/ui ACL types are up-to-date
         working-directory: apps/api
         env:
           BORINGSTACK_UI_DIR: ${{ github.workspace }}/apps/ui

@@ -20,7 +20,7 @@ import DocCallout from "../../../components/DocCallout.tsx";
     { value: "Beta", label: "release status" },
   ]}
 >
-  The api-template ships [Cloudflare Email Service](https://developers.cloudflare.com/email-service/) as the default outbound mail provider. Bundled into Workers Paid with no documented per-message charge, it is usually the cheapest transactional path at non-trivial volume among the providers wired into this template.
+  The apps/api ships [Cloudflare Email Service](https://developers.cloudflare.com/email-service/) as the default outbound mail provider. Bundled into Workers Paid with no documented per-message charge, it is usually the cheapest transactional path at non-trivial volume among the providers wired into this template.
 </PageIntro>
 
 ## Why it's the default
@@ -65,7 +65,7 @@ If you're already paying for Workers, Cloudflare Email has no per-message cost. 
 
 ## Integration
 
-The api-template's email layer is pluggable: one `IEmailService` interface, five concrete implementations (Cloudflare, Resend, SendGrid, SMTP, noop). The Cloudflare provider POSTs to an account-scoped endpoint on `api.cloudflare.com` with a bearer token. Retries, structured logging, and the shared `retryWithBackoff` wrapper apply equally to all providers; Cloudflare gets the same reliability treatment as Resend. For local template iteration, set `EMAIL_PROVIDER=smtp` with `SMTP_HOST=mailpit` and the [Mailpit overlay](/topics/email-in-dev/) catches everything for inspection.
+The API app's email layer is pluggable: one `IEmailService` interface, five concrete implementations (Cloudflare, Resend, SendGrid, SMTP, noop). The Cloudflare provider POSTs to an account-scoped endpoint on `api.cloudflare.com` with a bearer token. Retries, structured logging, and the shared `retryWithBackoff` wrapper apply equally to all providers; Cloudflare gets the same reliability treatment as Resend. For local template iteration, set `EMAIL_PROVIDER=smtp` with `SMTP_HOST=mailpit` and the [Mailpit overlay](/topics/email-in-dev/) catches everything for inspection.
 
 See [Email](/api/email/) for the abstraction shape and how dispatch works.
 

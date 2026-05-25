@@ -1,6 +1,6 @@
 ---
 title: Deployment
-description: Boring deployment. Single-host VPS, Docker, the templates forked, GHCR images, one prod profile. HTTPS via ACME, perimeter locked by Cloudflare.
+description: Boring deployment. Single-host VPS, Docker, one monorepo fork, GHCR images, one prod profile. HTTPS via ACME, perimeter locked by Cloudflare.
 ---
 
 import { Aside } from "@astrojs/starlight/components";
@@ -23,13 +23,13 @@ import FaqItem from "../../../components/FaqItem.tsx";
   ]}
 >
   BoringStack runs on a VPS you control: Docker Compose, GHCR images, Traefik
-  TLS, and Cloudflare at the edge. Fork the templates, fill compose/.env, then
+  TLS, and Cloudflare at the edge. Fork the monorepo, fill compose/.env, then
   boot the production profile manually or let OpenTofu do first provisioning.
 </PageIntro>
 
 ## The mental model
 
-Push to `main` on `api-template` or `ui-template`. The release workflow builds a Docker image and pushes it to `ghcr.io/<your-owner>/<repo>:latest`. WUD on the VPS detects the new tag and auto-deploys app containers (`api`, `ui`). Base images remain notify-only and operator-applied. Traefik handles TLS via Let's Encrypt; Cloudflare proxies all traffic to your single apex domain via same-origin path routing.
+Push to `main` with changes under `apps/api` or `apps/ui`. Path-filtered release workflows build Docker images and push them to `ghcr.io/<your-owner>/<repo>-api:latest` and `ghcr.io/<your-owner>/<repo>-ui:latest`. WUD on the VPS detects the new tags and auto-deploys app containers (`api`, `ui`). Base images remain notify-only and operator-applied. Traefik handles TLS via Let's Encrypt; Cloudflare proxies all traffic to your single apex domain via same-origin path routing.
 
 <SignalGrid
   columns={3}
@@ -37,7 +37,7 @@ Push to `main` on `api-template` or `ui-template`. The release workflow builds a
     {
       label: "build",
       title: "GitHub builds the app images",
-      body: "API and UI repos publish GHCR images from release workflows instead of building on the VPS.",
+      body: "API and UI release jobs publish GHCR images from the monorepo instead of building on the VPS.",
     },
     {
       label: "wud",
@@ -81,50 +81,48 @@ Push to `main` on `api-template` or `ui-template`. The release workflow builds a
 
 ## First-time wiring
 
-Three things need configuring before the first deploy. The release workflows handle everything else from your renamed fork URLs.
+Three things need configuring before the first deploy. The release workflows handle everything else from your monorepo fork URL.
 
 ### 1. Publish images to GHCR
 
-The `release.yml` workflows on `api-template` and `ui-template` run on push to `main` and on `v*.*.*` tags. They use `${{ github.event.repository.name }}`, so they publish to `ghcr.io/<your-owner>/<your-renamed-repo>:latest` automatically. The default `GITHUB_TOKEN` has `packages: write` via the workflow grant, so the first push from a freshly-forked repo works without secret setup.
+The API and UI release workflows run on push to `main` when their app paths change. They use `${{ github.event.repository.name }}` plus an app suffix, so a fork named `acme-stack` publishes `ghcr.io/<your-owner>/acme-stack-api:latest` and `ghcr.io/<your-owner>/acme-stack-ui:latest` automatically. The default `GITHUB_TOKEN` has `packages: write` via the workflow grant, so the first push from a freshly-forked repo works without secret setup.
 
 After the first publish, **make the GHCR package public** so the VPS can pull without credentials:
 
-1. Go to `https://github.com/<your-owner>/<your-renamed-repo>/pkgs/container/<your-renamed-repo>`.
+1. Go to the fork's Packages tab and open both containers: `<repo>-api` and `<repo>-ui`.
 2. Package settings → Change visibility → Public.
 
 Without this, downstream consumers (your VPS) need a pull credential.
 
 ### 2. Point the prod compose stack at your images
 
-In your `infra-docker-compose-template` fork's `compose/.env`:
+In `infra/compose/compose/.env`:
 
 ```bash
 IMAGE_OWNER=acme
-API_IMAGE_NAME=acme-api    # only if you renamed the api repo
-UI_IMAGE_NAME=acme-ui      # only if you renamed the ui repo
+API_IMAGE_NAME=acme-stack-api
+UI_IMAGE_NAME=acme-stack-ui
 ```
 
-Kept canonical names? Only `IMAGE_OWNER` needs to change.
+Kept the canonical upstream repo name? Set `IMAGE_OWNER`; the defaults are `boringstack-api` and `boringstack-ui`.
 
 ### 3. (Optional) Wire OpenTofu bootstrap
 
-If using the OpenTofu path, `terraform.tfvars` in your `infra-bootstrap-tofu-template` fork:
+If using the OpenTofu path, `terraform.tfvars` under `infra/bootstrap`:
 
 ```hcl
-api_repo   = "https://github.com/acme/acme-api"
-ui_repo    = "https://github.com/acme/acme-ui"
-infra_repo = "https://github.com/acme/acme-infra"
-domain     = "acme.com"
+monorepo_repo = "https://github.com/acme/acme-stack"
+domain        = "acme.com"
 # ... other vars per terraform.tfvars.example
 ```
 
-The module derives `IMAGE_OWNER`, `API_IMAGE_NAME`, and `UI_IMAGE_NAME` from those URLs and renders them into `compose/.env` on the VPS. You don't set them twice.
+The module derives `IMAGE_OWNER`, `API_IMAGE_NAME=<repo>-api`, and `UI_IMAGE_NAME=<repo>-ui` from that URL and renders them into `compose/.env` on the VPS. You don't set them twice.
 
 ## First-deploy checklist
 
 Use this once, after Quickstart and before the first production boot:
 
-- [ ] API, UI, and infra template repos forked under your org/user.
+- [ ] BoringStack monorepo forked under your org/user.
 - [ ] First API and UI images published to GHCR (push to `main`, then watch each Actions tab).
 - [ ] GHCR packages set to **Public**, or the VPS has a pull credential.
 - [ ] `compose/.env` has `IMAGE_OWNER` and any renamed `API_IMAGE_NAME` / `UI_IMAGE_NAME`.
@@ -138,17 +136,17 @@ Use this once, after Quickstart and before the first production boot:
 
 ## First-time deploy
 
-The preferred path is [Provisioning with OpenTofu](/topics/provisioning-with-tofu/): one `tofu apply` provisions the VPS, configures Cloudflare DNS + zone settings, and runs cloud-init which clones the infra repo, drops a rendered `compose/.env`, and pulls the GHCR images.
+The preferred path is [Provisioning with OpenTofu](/topics/provisioning-with-tofu/): one `tofu apply` provisions the VPS, configures Cloudflare DNS + zone settings, and runs cloud-init which clones the monorepo, drops a rendered `compose/.env`, and pulls the GHCR images.
 
 Manual path if you'd rather:
 
 1. Provision a Ubuntu VPS with Docker installed.
-2. Clone your `infra-docker-compose-template` fork onto the VPS.
+2. Clone your monorepo fork onto the VPS.
 3. Write `compose/.env` with `PUBLIC_UI_HOST`, `ACME_EMAIL`, `IMAGE_OWNER`, and the rest from `.env.example`.
 4. `STACK=prod ./scripts/compose-up.sh pull && STACK=prod ./scripts/compose-up.sh up -d`.
 5. Run the [Firewall & TLS runbook](/runbooks/firewall-and-tls/) to verify Cloudflare-only ingress.
 
-You do **not** clone `api-template` or `ui-template` on the VPS. Their built images come from GHCR.
+You do **not** clone `apps/api` or `apps/ui` on the VPS. Their built images come from GHCR.
 
 ## Subsequent deploys
 
@@ -177,7 +175,7 @@ WUD watches `latest`. App containers (`api`, `ui`) are updated automatically. Fo
   ]}
 />
 
-For changes to the infra YAML or env vars, `git pull` the infra repo on the VPS then re-run `compose up -d`.
+For changes to the infra YAML or env vars, `git pull` the monorepo on the VPS then re-run `compose up -d`.
 
 ## Image update strategy
 
@@ -204,7 +202,7 @@ docker compose pull
 docker compose up -d
 ```
 
-Postgres schema is the only thing this doesn't roll back. Destructive migrations are forward-only by convention. The api-template's discipline is "additive changes are normal, destructive changes are deliberate," so most rollbacks just work.
+Postgres schema is the only thing this doesn't roll back. Destructive migrations are forward-only by convention. The API app discipline is "additive changes are normal, destructive changes are deliberate," so most rollbacks just work.
 
 For high-stakes deploys, snapshot Postgres before applying a destructive migration. See [Backups](/runbooks/backups/).
 

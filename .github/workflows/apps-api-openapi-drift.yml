@@ -1,9 +1,9 @@
 name: openapi-drift
 
-# Catch ui-template schema drift in the api-template PR that introduced it.
-# Before this job, drift only surfaced in infra-docker-compose-template's
+# Catch apps/ui schema drift in the apps/api PR that introduced it.
+# Before this job, drift only surfaced in infra/compose's
 # full-stack-smoke workflow — which runs only on infra pushes, so drift
-# would sit on api-template main until someone touched infra.
+# would sit on apps/api main until someone touched infra.
 
 on:
   push:
@@ -28,7 +28,7 @@ permissions:
 
 jobs:
   drift:
-    name: ui-template OpenAPI schema is fresh
+    name: apps/ui OpenAPI schema is fresh
     runs-on: ubuntu-latest
     timeout-minutes: 8
 
@@ -79,7 +79,7 @@ jobs:
         with:
           bun-version: 1.3.13
 
-      - name: Install api-template deps
+      - name: Install apps/api deps
         working-directory: apps/api
         run: bun install --frozen-lockfile
 
@@ -111,11 +111,11 @@ jobs:
         with:
           bun-version: 1.3.13
 
-      - name: Install ui-template deps
+      - name: Install apps/ui deps
         working-directory: apps/ui
         run: bun install --frozen-lockfile
 
-      - name: Check ui-template schema is up-to-date
+      - name: Check apps/ui schema is up-to-date
         working-directory: apps/ui
         env:
           OPENAPI_URL: http://localhost:3000/swagger/json

@@ -43,12 +43,10 @@ valkey_password   = ""  # openssl rand -base64 32
 acme_email        = "ops@example.com"  # real address; Let's Encrypt rejects example.com
 
 # ----------------------------------------------------------------------------
-# Repos to clone on first boot (override for forks)
+# Repo to clone on first boot (override for forks)
 # ----------------------------------------------------------------------------
 
-# api_repo   = "https://github.com/boringstack-xyz/api-template"
-# ui_repo    = "https://github.com/boringstack-xyz/ui-template"
-# infra_repo = "https://github.com/boringstack-xyz/infra-docker-compose-template"
+# monorepo_repo = "https://github.com/boringstack-xyz/boringstack"
 
 # ----------------------------------------------------------------------------
 # Email provider  (optional; leave empty to disable)

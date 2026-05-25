@@ -54,7 +54,7 @@ Worked example below: adding **Meilisearch** as an opt-in search engine, exposed
 
 <Steps>
 
-1. Create the overlay file. In `infra-docker-compose-template/compose/`:
+1. Create the overlay file. In `infra/compose/compose/`:
 
    ```yaml
    # docker-compose.meilisearch.yml
@@ -132,11 +132,11 @@ Worked example below: adding **Meilisearch** as an opt-in search engine, exposed
 
 ## What changes in code
 
-- `infra-docker-compose-template/compose/docker-compose.meilisearch.yml`: new (the service).
-- `infra-docker-compose-template/compose/docker-compose.meilisearch-dev-labels.yml`: new (Traefik routing in dev).
-- `infra-docker-compose-template/compose/docker-compose.meilisearch-prod-labels.yml`: new (HTTPS + BasicAuth in prod).
-- `infra-docker-compose-template/compose/dev.sh`: one new `if` block for the `WITH_MEILISEARCH=1` flag.
-- `infra-docker-compose-template/compose/.env.example`: new env stanza.
+- `infra/compose/compose/docker-compose.meilisearch.yml`: new (the service).
+- `infra/compose/compose/docker-compose.meilisearch-dev-labels.yml`: new (Traefik routing in dev).
+- `infra/compose/compose/docker-compose.meilisearch-prod-labels.yml`: new (HTTPS + BasicAuth in prod).
+- `infra/compose/compose/dev.sh`: one new `if` block for the `WITH_MEILISEARCH=1` flag.
+- `infra/compose/compose/.env.example`: new env stanza.
 
 No changes to `docker-compose.yml`. That's the point of the overlay model: the base never grows, opt-in services live in their own files.
 

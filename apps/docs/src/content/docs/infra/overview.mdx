@@ -21,7 +21,7 @@ import SignalGrid from "../../../components/docs-kit/SignalGrid";
     { value: "Overlays", label: "observability, mail, queues" },
   ]}
 >
-  The infra-docker-compose-template composes the sibling repos into one running
+  `infra/compose` composes `apps/api` and `apps/ui` into one running
   stack. It targets your laptop and a first VPS before you need cluster
   machinery, while keeping observability, email, and queue tooling close to the
   app.
@@ -71,7 +71,7 @@ Flags compose: `WITH_OBSERVABILITY=1 WITH_GLITCHTIP=1 ./dev.sh up -d` brings up 
 ## File layout
 
 <DocFileTree
-  root="infra-docker-compose-template/"
+  root="infra/compose/"
   title="Infra source map"
   caption="base stack plus overlays and runbooks"
   nodes={[
@@ -141,9 +141,9 @@ Every service has `deploy.resources.limits` and `reservations` driven by env var
 
 ## What's not in this template
 
-- Kubernetes manifests. Planned as a separate repo. This template is Compose-first; mixing Compose and cluster YAML in one repo is exactly the kind of confusion BoringStack avoids.
-- Application code. The api-template and ui-template own that.
-- Cloud-provider provisioning. A separate [OpenTofu template](/topics/provisioning-with-tofu/) handles that.
+- Kubernetes manifests. This template is Compose-first; mixing Compose and cluster YAML in the starter would blur the deployment path BoringStack keeps intentionally clear.
+- Application code. The apps/api and apps/ui own that.
+- Cloud-provider provisioning. The [OpenTofu bootstrap](/topics/provisioning-with-tofu/) in `infra/bootstrap` handles that.
 
 ## Related
 
