@@ -26,5 +26,6 @@ error message to switch sides cleanly.
   `docker volume rm ai-starter-infra_ui_dev_node_modules` before the
   next `up`.
 
-`node_modules` is baked into the image at build time, so the
-container no longer runs `bun run install` on every startup.
+`node_modules` is baked into the image at build time and copied into the
+named volume on first boot by `scripts/docker/dev-entrypoint.sh`. The
+container does not run `bun install` on startup.

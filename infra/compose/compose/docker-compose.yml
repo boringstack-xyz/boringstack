@@ -323,6 +323,11 @@ services:
       # ai-starter-infra_ui_dev_node_modules` to refresh the volume.
       - ../../../apps/ui:/app
       - ui_dev_node_modules:/app/node_modules
+    # Seed node_modules from the image (see scripts/docker/dev-entrypoint.sh),
+    # then run vite directly with --no-install so Bun never auto-installs on
+    # every restart when the named volume is empty or still carries pnpm.
+    entrypoint: ["/usr/local/bin/dev-entrypoint.sh"]
+    command: ["bun", "--no-install", "./node_modules/.bin/vite"]
     environment:
       CI: "true"
       # Empty => same-origin (browser uses relative paths). Vite's dev server
