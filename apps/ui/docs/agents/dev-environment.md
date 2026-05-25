@@ -3,9 +3,7 @@
 Read when starting the SPA in dev, switching between host and
 container dev, or chasing stale-module / blank-page boots.
 
-## One-time cleanup
-
-If `ui-dev` fails after a host-side package-manager leak:
+## Reset container deps
 
 ```bash
 rm -rf apps/ui/.pnpm-store apps/ui/node_modules
