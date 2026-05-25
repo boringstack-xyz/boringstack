@@ -7,7 +7,7 @@ FROM oven/bun:1.3.13-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json bun.lock .npmrc ./
+COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
 # Vite bakes import.meta.env.VITE_* into the bundle at build time. Compose
