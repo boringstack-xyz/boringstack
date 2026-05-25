@@ -8,7 +8,7 @@ When you add a `package.json` script that runs a file under `scripts/`, update t
 
 | Folder                     | Purpose                                                 |
 | -------------------------- | ------------------------------------------------------- |
-| [`ci/`](ci/)               | Pre-push gate, CI manifest, GitHub settings audit       |
+| [`ci/`](ci/)               | Pre-push gate, CI manifest                              |
 | [`dev/`](dev/)             | Local developer workflow guards                         |
 | [`codegen/`](codegen/)     | Scaffolding, ACL type sync, VAPID key generation        |
 | [`db/`](db/)               | Database seed utilities                                 |
@@ -47,6 +47,5 @@ When you add a `package.json` script that runs a file under `scripts/`, update t
 
 ## Manual / operator
 
-| Task                             | Script                      |
-| -------------------------------- | --------------------------- |
-| Audit GitHub repo settings drift | `ci/audit-repo-settings.sh` |
+See the monorepo root `scripts/audit-repo-settings.sh` to audit GitHub repo
+settings drift against `.github/desired-repo-settings.json`.

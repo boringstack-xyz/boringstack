@@ -48,10 +48,10 @@ const spec: unknown = new Function("return " + precompiledCode)();
 
 ## Repo settings drift detector
 
-`scripts/ci/audit-repo-settings.sh` reads `.github/desired-repo-settings.json`,
-diffs against the live GitHub API, and prints copy-pasteable `gh api`
-commands for any drift. It auto-applies nothing. Run it after anyone
-touches repo settings in the GitHub UI.
+The monorepo root `./scripts/audit-repo-settings.sh` reads
+`.github/desired-repo-settings.json`, diffs against the live GitHub API,
+and prints copy-pasteable `gh api` commands for any drift. It auto-applies
+nothing. Run it after anyone touches repo settings in the GitHub UI.
 
 Desired state (enforced on every repo):
 

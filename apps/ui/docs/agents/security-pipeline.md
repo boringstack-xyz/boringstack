@@ -47,7 +47,7 @@ single `//` for the directive:
 
 ## Repo settings drift detector
 
-`scripts/ci/audit-repo-settings.sh` diffs
+The monorepo root `./scripts/audit-repo-settings.sh` diffs
 `.github/desired-repo-settings.json` against the live GitHub API and
 prints copy-pasteable `gh api` commands. No auto-apply. Run it after
 anyone touches repo settings in the UI.

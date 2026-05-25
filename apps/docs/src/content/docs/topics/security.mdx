@@ -71,7 +71,7 @@ Runs OWASP and JavaScript rule packs plus repo-specific rules from `.semgrep/`. 
 
 ### Repo settings hardening
 
-A `scripts/audit-repo-settings.sh` script in every repo diffs the live GitHub configuration against `.github/desired-repo-settings.json`. Drift prints copy-pasteable `gh api` commands. Nothing auto-applies.
+The monorepo root `./scripts/audit-repo-settings.sh` diffs the live GitHub configuration against `.github/desired-repo-settings.json`. Drift prints copy-pasteable `gh api` commands. Nothing auto-applies.
 
 The desired state on every repo:
 

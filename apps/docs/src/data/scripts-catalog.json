@@ -5,7 +5,7 @@
     "folders": [
       {
         "folder": "[`ci/`](ci/)",
-        "purpose": "Pre-push gate, CI manifest, GitHub settings audit"
+        "purpose": "Pre-push gate, CI manifest"
       },
       {
         "folder": "[`dev/`](dev/)",
@@ -104,13 +104,6 @@
         "invocation": "./scripts/ci/pre-push.sh"
       }
     ],
-    "manual": [
-      {
-        "task": "Audit GitHub repo settings drift",
-        "script": "ci/audit-repo-settings.sh",
-        "description": "DEPRECATED: use monorepo canonical script at scripts/audit-repo-settings.sh"
-      }
-    ],
     "prePushStages": [
       "1/${TOTAL} Fast checks (lint, lint:meta, format, typecheck, knip)",
       "2/${TOTAL} Dependency vulnerability scan",
@@ -126,7 +119,7 @@
     "folders": [
       {
         "folder": "[`ci/`](ci/)",
-        "purpose": "Pre-push gate, CI manifest, GitHub settings audit"
+        "purpose": "Pre-push gate, CI manifest"
       },
       {
         "folder": "[`dev/`](dev/)",
@@ -263,13 +256,6 @@
         "script": "ci/pre-push.sh",
         "description": "Local mirror of apps/api CI gate. Runs everything CI runs so that a",
         "invocation": "./scripts/ci/pre-push.sh"
-      }
-    ],
-    "manual": [
-      {
-        "task": "Audit GitHub repo settings drift",
-        "script": "ci/audit-repo-settings.sh",
-        "description": "DEPRECATED: use monorepo canonical script at scripts/audit-repo-settings.sh"
       }
     ],
     "prePushStages": [

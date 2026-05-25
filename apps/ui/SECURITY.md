@@ -41,10 +41,10 @@ The `main` branch on every BoringStack template repo enforces:
 - No force-push, no deletion
 
 Repo-level settings (secret scanning, push protection, Dependabot
-security updates, merge prefs) are described in
-`.github/desired-repo-settings.json`. The `scripts/ci/audit-repo-settings.sh`
-script diffs that against the live GitHub API and prints copy-pasteable
-fix commands — no auto-apply.
+security updates, merge prefs) are described in the monorepo root
+`.github/desired-repo-settings.json`. Run `./scripts/audit-repo-settings.sh`
+from the repo root to diff that file against the live GitHub API and print
+copy-pasteable fix commands — no auto-apply.
 
 ## Agent-driven review
 
