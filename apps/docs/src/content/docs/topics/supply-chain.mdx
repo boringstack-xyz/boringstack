@@ -48,16 +48,16 @@ import FaqItem from "../../../components/FaqItem.tsx";
 ## How it works per package manager
 
 <FaqGroup>
-  <FaqItem title="api-template (Bun)" open>
+  <FaqItem title="apps/api (Bun)" open>
     `bunfig.toml`: `[install] minimumReleaseAge = 604800` (seconds).
   </FaqItem>
-  <FaqItem title="ui-template (Bun)">
-    `.npmrc`: `minimum-release-age=10080` (minutes).
+  <FaqItem title="apps/ui (Bun)" open>
+    `bunfig.toml`: `[install] minimumReleaseAge = 604800` (seconds), with per-package excludes for high-churn and first-party packages.
   </FaqItem>
-  <FaqItem title=".github docs (Bun)">
-    `.npmrc`: `minimum-release-age=10080`.
+  <FaqItem title="apps/docs (Bun)">
+    `bunfig.toml`: `[install] minimumReleaseAge = 604800` (seconds).
   </FaqItem>
-  <FaqItem title="infra-docker-compose-template">
+  <FaqItem title="infra/compose">
     No JS deps; n/a.
   </FaqItem>
   <FaqItem title="infra-bootstrap-tofu-template">
@@ -81,18 +81,19 @@ import FaqItem from "../../../components/FaqItem.tsx";
 
 ## Overriding for a specific package
 
-Bun and npm-compatible `.npmrc` support per-package overrides via `minimum-release-age-exclude[]`. The array syntax with `[]=` is required; a comma-separated list won't parse:
+Bun supports per-package overrides in `bunfig.toml` via `minimumReleaseAgeExcludes`:
 
-```ini
-minimum-release-age-exclude[]=yaml
-minimum-release-age-exclude[]=msw
-minimum-release-age-exclude[]=@tailwindcss/oxide*
+```toml
+minimumReleaseAgeExcludes = [
+  "yaml",
+  "@tailwindcss/oxide*",
+]
 ```
 
 Glob patterns are supported, useful for platform-variant packages like `@tailwindcss/oxide-*`.
 
 <DocCallout variant="note" title="Use sparingly" eyebrow="Override discipline">
-  Each exclusion weakens the threat model slightly. The default `ui-template` `.npmrc` already excludes several high-churn packages whose latest versions fall within the seven-day window. Only add exclusions when a specific CVE or release justifies it. Document the reason in a comment.
+  Each exclusion weakens the threat model slightly. The default `apps/ui/bunfig.toml` already excludes several high-churn packages whose latest versions fall within the seven-day window. Only add exclusions when a specific CVE or release justifies it. Document the reason in a comment.
 </DocCallout>
 
 ## Why not just trust npm?
