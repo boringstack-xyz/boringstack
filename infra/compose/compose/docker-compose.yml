@@ -314,7 +314,15 @@ services:
     logging: *default-logging
     working_dir: /app
     volumes:
+      # Bind-mount source for hot reload; named volume on /app/node_modules
+      # shadows the bind mount so the container always uses the Bun/Alpine
+      # install baked into the image instead of stale host-side pnpm trees
+      # or glibc binaries from a host-side `bun install`.
+      # Touching package.json / bun.lock requires `./dev.sh up --build`
+      # followed by `docker volume rm
+      # ai-starter-infra_ui_dev_node_modules` to refresh the volume.
       - ../../../apps/ui:/app
+      - ui_dev_node_modules:/app/node_modules
     environment:
       CI: "true"
       # Empty => same-origin (browser uses relative paths). Vite's dev server
@@ -452,3 +460,4 @@ volumes:
   # Shadows the api-template bind mount's `node_modules` — the Bun/Alpine
   # image needs a musl install separate from whatever the host produces.
   api_dev_node_modules:
+  ui_dev_node_modules:

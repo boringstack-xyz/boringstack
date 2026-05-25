@@ -12,7 +12,7 @@
   },
   "scripts": {
     "dev": "./scripts/dev/preflight-host-dev.sh && vite",
-    "dev:docker": "bun install --frozen-lockfile && vite",
+    "dev:docker": "vite",
     "build": "vite build && (cp _headers dist/ 2>/dev/null || true)",
     "preview": "vite preview",
     "validate": "bun run check && bun run test:ci && bun run build && bun run size:check && bun run size:check:modulepreload",
