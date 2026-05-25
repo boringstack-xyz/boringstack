@@ -3,18 +3,14 @@
 Read when starting the SPA in dev, switching between host and
 container dev, or chasing stale-module / blank-page boots.
 
-## One-time cleanup after a host-side pnpm leak
+## One-time cleanup
 
-If `ui-dev` logs show `EMFILE` while scanning `/app/.pnpm-store`, a
-host-side `pnpm install` left a project-local store in the bind mount.
-Remove it once, then refresh the named volume:
+If `ui-dev` fails after a host-side package-manager leak:
 
 ```bash
-cd apps/ui && rm -rf .pnpm-store node_modules
-docker volume rm ai-starter-infra_ui_dev_node_modules
+rm -rf apps/ui/.pnpm-store apps/ui/node_modules
+cd infra/compose/compose && docker volume rm ai-starter-infra_ui_dev_node_modules 2>/dev/null; ./dev.sh up -d --build ui-dev
 ```
-
-Then `./dev.sh up --build` from `infra/compose/compose`.
 
 ## Pick one runner
 
@@ -39,9 +35,5 @@ error message to switch sides cleanly.
   `docker volume rm ai-starter-infra_ui_dev_node_modules` before the
   next `up`.
 
-`node_modules` is baked into the image at build time and copied into the
-named volume on first boot by `scripts/docker/dev-entrypoint.sh`. The
-container does not run `bun install` on startup. Compose shadows
-`/app/.pnpm-store` with an empty anonymous volume so Bun never walks a
-host-side pnpm store. `ui-dev` uses `restart: "no"` so a failed boot
-does not loop into EMFILE under `unless-stopped`.
+`node_modules` is baked into the image at build time, so the container
+does not run `bun install` on startup.
