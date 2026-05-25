@@ -75,7 +75,7 @@ jobs:
             --no-progress
             --offline
             --root-dir ${{ github.workspace }}/apps/docs/dist
-            './**/*.html'
+            '${{ github.workspace }}/apps/docs/dist/**/*.html'
           fail: true
 
       - name: External link check (warning only)
@@ -89,5 +89,5 @@ jobs:
             --exclude-path './llms-small.txt'
             --exclude '^https?://(localhost|127\.0\.0\.1|.*\.localhost)'
             --exclude 'github\.com/boringstack-xyz/.*/(blob|tree)/'
-            './**/*.html'
+            '${{ github.workspace }}/apps/docs/dist/**/*.html'
           fail: false

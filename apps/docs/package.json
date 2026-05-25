@@ -37,7 +37,8 @@
     "react-dom": "^19.2.6",
     "reading-time": "^1.5.0",
     "sharp": "^0.34.0",
-    "tailwindcss": "^4.3.0"
+    "tailwindcss": "^4.3.0",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@axe-core/cli": "^4.11.3",
