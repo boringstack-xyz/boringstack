@@ -84,3 +84,8 @@ reason = "undici; same scope as above."
 id = "GHSA-q8mj-m7cp-5q26"
 ignoreUntil = "2026-11-22T00:00:00Z"
 reason = "qs@6.15.1 pulled in transitively via http-server → union → qs. http-server is a dev-only local preview tool; the deployed site is static Cloudflare Pages with no qs on the runtime path. Re-evaluate when http-server bumps."
+
+[[IgnoredVulns]]
+id = "GHSA-58qx-3vcg-4xpx"
+ignoreUntil = "2026-11-22T00:00:00Z"
+reason = "ws@8.18.0 via miniflare/wrangler dev tooling only. Static Cloudflare Pages output has no WebSocket server runtime. Override pending upstream miniflare bump."
