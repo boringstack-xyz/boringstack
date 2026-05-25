@@ -104,6 +104,7 @@
         "invocation": "./scripts/ci/pre-push.sh"
       }
     ],
+    "manual": [],
     "prePushStages": [
       "1/${TOTAL} Fast checks (lint, lint:meta, format, typecheck, knip)",
       "2/${TOTAL} Dependency vulnerability scan",
@@ -258,6 +259,7 @@
         "invocation": "./scripts/ci/pre-push.sh"
       }
     ],
+    "manual": [],
     "prePushStages": [
       "1/${TOTAL} Fast checks (typecheck, lint, lint:meta, knip)",
       "2/${TOTAL} Dependency vulnerability scan",
