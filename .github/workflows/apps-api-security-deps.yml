@@ -53,8 +53,8 @@ jobs:
           # first. Capture exit code, evaluate after upload.
           set +e
           osv-scanner \
-            --config=apps/api/osv-scanner.toml \
-            --lockfile=apps/api/bun.lock \
+            --config=osv-scanner.toml \
+            --lockfile=bun.lock \
             --format=sarif \
             --output-file=osv-results.sarif
           echo "OSV_EXIT=$?" >> "$GITHUB_ENV"

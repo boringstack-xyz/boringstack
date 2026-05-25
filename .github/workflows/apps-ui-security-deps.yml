@@ -51,8 +51,8 @@ jobs:
         run: |
           set +e
           osv-scanner \
-            --config=apps/ui/osv-scanner.toml \
-            --lockfile=apps/ui/bun.lock \
+            --config=osv-scanner.toml \
+            --lockfile=bun.lock \
             --format=sarif \
             --output-file=osv-results.sarif
           echo "OSV_EXIT=$?" >> "$GITHUB_ENV"

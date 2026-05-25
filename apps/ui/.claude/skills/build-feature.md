@@ -28,8 +28,8 @@ Print a one-line summary. Stop until the user confirms.
 
 Map the spec to scaffolders + glue points.
 
-| Need                                                                                       | Command                                       |
-| ------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| Need                                                                                       | Command                                          |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | Feature folder (constants, schemas, types, queries, store, utils + starter Page component) | `bun run new:feature <Name>`                     |
 | Shared component (core/global)                                                             | `bun run new:component <scope>/<Name>`           |
 | Feature-scoped component                                                                   | `bun run new:feature-component <feature>/<Name>` |

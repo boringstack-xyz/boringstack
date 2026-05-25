@@ -58,7 +58,7 @@ jobs:
             --config=p/javascript
             --config=p/typescript
             --config=p/nodejs
-            --config=apps/api/.semgrep/api.yml
+            --config=.semgrep/api.yml
             --sarif --output=semgrep-results.sarif
             --error
           )

@@ -57,7 +57,7 @@ jobs:
             --config=p/javascript
             --config=p/typescript
             --config=p/react
-            --config=apps/ui/.semgrep/ui.yml
+            --config=.semgrep/ui.yml
             --sarif --output=semgrep-results.sarif
             --error
           )

@@ -5,14 +5,7 @@ import type { IMetaRule, IViolation } from "../../types";
 
 const GENERATED_ARTIFACTS = [
   {
-    file: join(
-      "..",
-      "ui",
-      "src",
-      "lib",
-      "acl",
-      "acl.types.generated.ts"
-    ),
+    file: join("..", "ui", "src", "lib", "acl", "acl.types.generated.ts"),
     requiredSnippets: ["AUTO-GENERATED", "generate:acl-types"],
   },
   {

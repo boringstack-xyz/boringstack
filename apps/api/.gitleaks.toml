@@ -16,6 +16,6 @@ useDefault = true
 [allowlist]
 description = "Web Push test fixtures use placeholder p256dhKey / authKey strings; never real secrets."
 paths = [
-  '''tests/api/notifications/notifications\.push\.utils\.test\.ts''',
-  '''tests/api/notifications/notifications\.push\.service\.test\.ts''',
+  '''apps/api/tests/api/notifications/notifications\.push\.utils\.test\.ts''',
+  '''apps/api/tests/api/notifications/notifications\.push\.service\.test\.ts''',
 ]
