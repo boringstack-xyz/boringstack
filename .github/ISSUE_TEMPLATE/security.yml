@@ -5,16 +5,14 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Please do not paste exploit code or live credentials here.**
+        **Do not paste exploit code or live credentials here.**
 
-        For active vulnerabilities, email `security@example.com` (see
-        SECURITY.md) instead of filing a public issue.
+        For active vulnerabilities, email `security@example.com` instead of filing a public issue.
 
   - type: input
     id: summary
     attributes:
       label: Summary
-      placeholder: "CSP allows 'unsafe-inline' for style-src"
     validations:
       required: true
 
@@ -22,7 +20,6 @@ body:
     id: surface
     attributes:
       label: Affected surface
-      description: Which file / config / endpoint / lint rule is at fault.
     validations:
       required: true
 
@@ -30,7 +27,6 @@ body:
     id: impact
     attributes:
       label: Potential impact
-      placeholder: "An XSS payload in user-supplied content could execute due to inline styles."
     validations:
       required: true
 
@@ -38,7 +34,6 @@ body:
     id: remediation
     attributes:
       label: Suggested remediation
-      placeholder: "Switch to CSP nonces; document migration in SECURITY.md."
 
   - type: dropdown
     id: severity

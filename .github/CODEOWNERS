@@ -1,0 +1,30 @@
+* @agjs
+
+/.github/ @agjs
+/AGENTS.md @agjs
+/scripts/ @agjs
+
+/apps/ui/AGENT_CONTRACT.md @agjs
+/apps/ui/AGENTS.md @agjs
+/apps/ui/AGENT_REVIEW.md @agjs
+/apps/ui/SECURITY.md @agjs
+/apps/ui/eslint.config.mjs @agjs
+/apps/ui/tsconfig.json @agjs
+/apps/ui/vite.config.ts @agjs
+/apps/ui/playwright.config.ts @agjs
+/apps/ui/.lighthouserc.json @agjs
+/apps/ui/.size-limit.json @agjs
+/apps/ui/scripts/lint-meta/ @agjs
+/apps/ui/src/lib/ @agjs
+/apps/ui/src/app/ @agjs
+/apps/ui/src/lib/api/schema.d.ts @agjs
+
+/apps/api/AGENT_CONTRACT.md @agjs
+/apps/api/AGENTS.md @agjs
+/apps/api/SECURITY.md @agjs
+/apps/api/eslint.config.mjs @agjs
+/apps/api/src/config/ @agjs
+/apps/api/src/lib/ @agjs
+
+/infra/compose/compose/docker-compose.yml @agjs
+/infra/bootstrap/ @agjs
