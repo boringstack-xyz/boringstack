@@ -2,11 +2,13 @@
 set -eu
 
 # ui-dev bind-mounts source over /app and shadows node_modules with a named
-# volume. On first boot the volume is empty; if the host still has a pnpm
-# tree, Docker may copy that into the volume instead of the image install.
-# Either way, vite must not run against an empty or pnpm layout — and `bun
-# run` with default --install=auto will try to reinstall on every start,
-# which loops forever under restart: unless-stopped.
+# volume plus an anonymous volume on /app/.pnpm-store so a host-side pnpm
+# store never appears inside the container. On first boot the node_modules
+# volume is empty; if the host still has a pnpm tree, Docker may copy that
+# into the volume instead of the image install. Either way, vite must not
+# run against an empty or pnpm layout — and `bun run` with default
+# --install=auto will try to reinstall on every start and scan the workdir
+# (including any visible .pnpm-store) until EMFILE.
 
 if [ ! -x /opt/node_modules/.bin/vite ]; then
   echo "[ui-dev] ERROR: /opt/node_modules is missing — rebuild the image." >&2
