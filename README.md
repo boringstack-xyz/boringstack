@@ -22,7 +22,7 @@
 
 <p align="center">
   <strong>Production-ready from the first fork.</strong><br />
-  One monorepo for the full stack. Clone, boot with <code>./setup.sh --up</code>, deploy on Compose.
+  One monorepo for the full stack.
 </p>
 
 <p align="center">
@@ -33,47 +33,7 @@
   <a href="https://github.com/boringstack-xyz/eslint-plugins"><img src="https://img.shields.io/badge/eslint--plugins-4ade80?style=for-the-badge&labelColor=090909" alt="eslint-plugins"></a>
 </p>
 
-## Quick start
-
-```bash
-git clone https://github.com/boringstack-xyz/boringstack.git
-cd boringstack
-./setup.sh --up
-open http://localhost:3001
-```
-
-Sign in with `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` from `infra/compose/compose/.env`, or register a new account.
-
-Docs: [boringstack.xyz/quickstart](https://boringstack.xyz/quickstart/)
-
-## Layout
-
-```
-apps/
-  api/          Bun + Elysia + Drizzle API
-  ui/           Vite + React SPA
-  docs/         boringstack.xyz (Astro Starlight)
-infra/
-  compose/      Docker Compose runtime
-  bootstrap/    OpenTofu VPS bootstrap (optional)
-```
-
-| Path | Was | Role |
-|------|-----|------|
-| `apps/api` | api-template | Bun + Elysia API |
-| `apps/ui` | ui-template | Vite + React UI |
-| `apps/docs` | .github / boringstack.xyz | Astro docs site |
-| `infra/compose` | infra-docker-compose-template | Docker Compose |
-| `infra/bootstrap` | infra-bootstrap-tofu-template | OpenTofu bootstrap |
-
-## Maintainer commands (repo root)
-
-```bash
-bun run regen    # ACL → OpenAPI → lint-meta RULES → docs JSON catalogs
-bun run check    # all cross-app drift checks (needs api on :3000 for OpenAPI)
-bun run check:full   # check + api/ui validate + docs build:ci
-./scripts/audit-repo-settings.sh   # diff GitHub repo settings vs desired config
-```
+Documentation lives at [boringstack.xyz](https://boringstack.xyz) — start with the [Quickstart](https://boringstack.xyz/quickstart/).
 
 ## License
 
