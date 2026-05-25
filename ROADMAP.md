@@ -12,11 +12,11 @@ Four sibling repos that compose into a production-ready full-stack SaaS:
 
 Docs live at **boringstack.xyz**.
 
-The four repos work locally, pass `bun run check` / `pnpm check`, and deploy end-to-end via the Tofu bootstrap. The remaining work moves them from "complete" to **"production in 5 minutes, reusable across many projects, agent-friendly end-to-end."**
+The four repos work locally, pass `bun run check` / `bun run check`, and deploy end-to-end via the Tofu bootstrap. The remaining work moves them from "complete" to **"production in 5 minutes, reusable across many projects, agent-friendly end-to-end."**
 
 **Sequencing rule:** code and DX work first. Infra / deployment / production-pushing work is at the bottom and won't be touched until the code itself is at the "I'd recommend this to a stranger" bar.
 
-**Test coverage floor (enforced):** both templates run a `lint:meta` rule that fails the merge gate when any `*.{service,utils,jobs,check,routes}.ts` (api) or `*.{utils,queries,mutations,hooks,schemas,store,service}.{ts,tsx}` (ui) lacks a colocated test sibling. Wired into `bun run check` / `pnpm check`. No new logic file can land without a test.
+**Test coverage floor (enforced):** both templates run a `lint:meta` rule that fails the merge gate when any `*.{service,utils,jobs,check,routes}.ts` (api) or `*.{utils,queries,mutations,hooks,schemas,store,service}.{ts,tsx}` (ui) lacks a colocated test sibling. Wired into `bun run check` / `bun run check`. No new logic file can land without a test.
 
 ---
 

@@ -4,7 +4,7 @@
 [install]
 # Supply-chain protection. Refuses to install package versions younger than
 # the threshold below, on the theory that a compromised publish gets caught
-# and yanked within a few days. Matches the pnpm settings on ui-template
+# Matches the Bun supply-chain settings on ui-template
 # and the docs site. Value is in seconds: 604800 = 7 days.
 # https://bun.com/docs/install/lockfile#minimumreleaseage
 minimumReleaseAge = 604800

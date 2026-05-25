@@ -1,11 +1,11 @@
 ---
 name: build-feature
-description: Use when implementing a new feature in ui-template — adding a page, scaffolding a component, building a vertical UI slice, wiring an existing API endpoint into the SPA, or creating a form. Drives the canonical loop — spec → plan → scaffold → tests-first → implement → `pnpm validate` → diff summary. Triggers — "add a feature", "add a page", "scaffold a component", "build [X] UI", "wire up [X] page", "add a route", "add the [X] screen", "new component", "new feature folder", "consume the /api/[X] endpoint".
+description: Use when implementing a new feature in ui-template — adding a page, scaffolding a component, building a vertical UI slice, wiring an existing API endpoint into the SPA, or creating a form. Drives the canonical loop — spec → plan → scaffold → tests-first → implement → `bun run validate` → diff summary. Triggers — "add a feature", "add a page", "scaffold a component", "build [X] UI", "wire up [X] page", "add a route", "add the [X] screen", "new component", "new feature folder", "consume the /api/[X] endpoint".
 ---
 
 # Build feature (ui-template)
 
-You are implementing a new UI feature end-to-end. The loop has six checkpoints. Don't skip ahead — each step's output informs the next. The merge gate is `pnpm validate`; pre-1.0 rules apply (no `dark:` Tailwind classes, no `any`/`!`/`as`, no `dangerouslySetInnerHTML`, no `import.meta.env` outside `src/lib/env/`, no inline `eslint-disable`, no `console.*`).
+You are implementing a new UI feature end-to-end. The loop has six checkpoints. Don't skip ahead — each step's output informs the next. The merge gate is `bun run validate`; pre-1.0 rules apply (no `dark:` Tailwind classes, no `any`/`!`/`as`, no `dangerouslySetInnerHTML`, no `import.meta.env` outside `src/lib/env/`, no inline `eslint-disable`, no `console.*`).
 
 ## Checkpoint 1 — Spec
 
@@ -20,7 +20,7 @@ Ask the user (or restate from context) in this order:
    - Form (RHF + Zod)
    - List view fed by TanStack Query
 3. **What does success look like?** User-visible behavior. Becomes test expectations in Checkpoint 4.
-4. **Does this need a new endpoint?** If yes — run api-template's `/build-feature` first, regenerate the OpenAPI client via `pnpm openapi:types`, then come back here.
+4. **Does this need a new endpoint?** If yes — run api-template's `/build-feature` first, regenerate the OpenAPI client via `bun run openapi:types`, then come back here.
 
 Print a one-line summary. Stop until the user confirms.
 
@@ -30,9 +30,9 @@ Map the spec to scaffolders + glue points.
 
 | Need                                                                                       | Command                                       |
 | ------------------------------------------------------------------------------------------ | --------------------------------------------- |
-| Feature folder (constants, schemas, types, queries, store, utils + starter Page component) | `pnpm new:feature <Name>`                     |
-| Shared component (core/global)                                                             | `pnpm new:component <scope>/<Name>`           |
-| Feature-scoped component                                                                   | `pnpm new:feature-component <feature>/<Name>` |
+| Feature folder (constants, schemas, types, queries, store, utils + starter Page component) | `bun run new:feature <Name>`                     |
+| Shared component (core/global)                                                             | `bun run new:component <scope>/<Name>`           |
+| Feature-scoped component                                                                   | `bun run new:feature-component <feature>/<Name>` |
 
 Print:
 
@@ -61,7 +61,7 @@ For components: Testing Library + Vitest. Test user-visible behavior, not implem
 Run only the new tests:
 
 ```bash
-pnpm test:ci src/features/<feature> src/components/<scope>
+bun run test:ci src/features/<feature> src/components/<scope>
 ```
 
 Red is expected. Green means the test isn't actually exercising new behavior — fix the test before writing the implementation.
@@ -83,7 +83,7 @@ Fill in JSX, hooks, queries, schemas. AGENT_CONTRACT.md / AGENTS.md rules that c
 Re-run the new-file tests until green:
 
 ```bash
-pnpm test:ci src/features/<feature>
+bun run test:ci src/features/<feature>
 ```
 
 ## Checkpoint 6 — Verify
@@ -91,12 +91,12 @@ pnpm test:ci src/features/<feature>
 Full merge gate:
 
 ```bash
-pnpm validate
+bun run validate
 ```
 
 That's `check → test:ci → build → size:check`. `check` itself = `lint + lint:meta + format:check + typecheck + knip`. Watch `size:check` for a bundle regression — if the new feature pushes a chunk over budget, lazy-load the page route via `React.lazy` + `Suspense`.
 
-When `pnpm validate` is fully green:
+When `bun run validate` is fully green:
 
 ```bash
 git status -s

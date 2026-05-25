@@ -12,11 +12,11 @@ alwaysApply: true
 2. Read **AGENTS.md** for component anatomy, classNames discipline, state-in-hooks rule, queries, stores, RHF + Zod, i18n.
 3. **SECURITY.md** for CSP / token storage / OAuth PKCE.
 
-`pnpm validate` is the merge gate. If repo rules conflict with the codebase, follow the codebase and flag the drift.
+`bun run validate` is the merge gate. If repo rules conflict with the codebase, follow the codebase and flag the drift.
 
 ## Before claiming work is done
 
-After any code change in this repo, run **`pnpm validate`** (or at minimum **`pnpm check`** while iterating, then full validate before finishing). Do not say the work is done, fixed, or passing unless the relevant command has succeeded in this session and you cite the result. If validate fails, fix it before responding.
+After any code change in this repo, run **`bun run validate`** (or at minimum **`bun run check`** while iterating, then full validate before finishing). Do not say the work is done, fixed, or passing unless the relevant command has succeeded in this session and you cite the result. If validate fails, fix it before responding.
 
 ## CI runs this repo in isolation
 

@@ -115,7 +115,7 @@ elif ! probe_tcp localhost 3000; then
 else
   if [ ! -d "$UI_DIR/node_modules" ]; then
     c_blue "  installing apps/ui deps for schema check…"
-    (cd "$UI_DIR" && pnpm install --frozen-lockfile >/dev/null)
+    (cd "$UI_DIR" && bun install --frozen-lockfile >/dev/null)
   fi
   (cd "$UI_DIR" && OPENAPI_URL=http://localhost:3000/swagger/json node_modules/.bin/tsx scripts/codegen/generate-api.ts --check)
   ok "apps/ui schema is fresh"

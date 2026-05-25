@@ -33,10 +33,10 @@ const resolveUiTemplateRoot = (): string => {
 };
 
 const HEADER = `/*
- * AUTO-GENERATED — do not edit. Run \`pnpm generate:acl-types\` in the
+ * AUTO-GENERATED — do not edit. Run \`bun run generate:acl-types\` in the
  * apps/api repo to refresh this file. Drift between this file and
  * apps/api/${SOURCE_REL} fails CI via
- * \`pnpm generate:acl-types:check\`.
+ * \`bun run generate:acl-types:check\`.
  */
 `;
 
@@ -59,7 +59,7 @@ const main = (): void => {
   if (mode === "check") {
     if (!existsSync(destPath)) {
       console.error(
-        `[generate:acl-types:check] missing: ${destPath} — run pnpm generate:acl-types`
+        `[generate:acl-types:check] missing: ${destPath} — run bun run generate:acl-types`
       );
       process.exit(1);
 

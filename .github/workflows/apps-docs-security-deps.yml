@@ -52,7 +52,7 @@ jobs:
           set +e
           osv-scanner \
             --config=apps/docs/osv-scanner.toml \
-            --lockfile=apps/docs/pnpm-lock.yaml \
+            --lockfile=apps/docs/bun.lock \
             --format=sarif \
             --output-file=osv-results.sarif
           echo "OSV_EXIT=$?" >> "$GITHUB_ENV"
@@ -87,8 +87,8 @@ jobs:
             exit 1
           fi
 
-      # No pnpm audit step here: osv-scanner above with osv-scanner.toml is
-      # the canonical "what we accept" allowlist for this docs repo. pnpm
+      # No bun audit step here: osv-scanner above with osv-scanner.toml is
+      # the canonical "what we accept" allowlist for this docs repo. bun
       # audit can't reference the same allowlist (CVE IDs only, no GHSA
       # support), so it would always reintroduce noise. The docs site is a
       # static-site build with no runtime auth or user input. osv is

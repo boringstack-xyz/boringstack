@@ -34,7 +34,7 @@
       "id": "engine-pin-parity",
       "category": "ci",
       "ciCritical": false,
-      "description": "Node and pnpm version pins must stay aligned across .nvmrc, package.json, Docker, and CI."
+      "description": "Node and Bun version pins must stay aligned across .nvmrc, package.json, Docker, and CI."
     },
     {
       "id": "env-cascade-drift",

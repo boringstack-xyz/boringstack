@@ -23,8 +23,8 @@ import FaqItem from "../../../components/FaqItem.tsx";
   ]}
 >
   BoringStack ships as a single monorepo. API, UI, docs site, and Compose infra
-  live in one tree with path-filtered CI and root-level `pnpm regen` /
-  `pnpm check` for cross-app contracts.
+  live in one tree with path-filtered CI and root-level `bun run regen` /
+  `bun run check` for cross-app contracts.
 </PageIntro>
 
 The runtime is composed from `apps/api`, `apps/ui`, and `infra/compose`. Optional VPS provisioning lives in `infra/bootstrap`. The docs site source is `apps/docs` (deployed to boringstack.xyz).
@@ -128,8 +128,8 @@ Each app keeps its own `package.json`, lockfile, and lint config. CI workflows l
 From the **repo root**:
 
 ```bash
-pnpm regen   # ACL types → OpenAPI schema → RULES.md → docs JSON
-pnpm check   # drift checks (api on :3000 required for OpenAPI check)
+bun run regen   # ACL types → OpenAPI schema → RULES.md → docs JSON
+bun run check   # drift checks (api on :3000 required for OpenAPI check)
 ```
 
 | Contract | Producer | Consumer | Generated artifact |
@@ -143,7 +143,7 @@ CI runs the same checks in one checkout — no sibling-repo clone on GitHub `mai
 
 ## The contract between API and UI
 
-The API exposes its OpenAPI document at `/swagger/json`. The UI ships `pnpm generate:api` that reads that document and rewrites `src/lib/api/schema.d.ts`. When the API changes routes, the UI either fails typecheck or you run `pnpm regen` at the repo root.
+The API exposes its OpenAPI document at `/swagger/json`. The UI ships `bun run generate:api` that reads that document and rewrites `src/lib/api/schema.d.ts`. When the API changes routes, the UI either fails typecheck or you run `bun run regen` at the repo root.
 
 See [OpenAPI client](/ui/openapi-client/) for the full flow.
 

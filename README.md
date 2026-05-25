@@ -28,9 +28,9 @@ Sign in with `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` from `infra/compose/compos
 ## Maintainer commands (repo root)
 
 ```bash
-pnpm regen    # ACL → OpenAPI → lint-meta RULES → docs JSON catalogs
-pnpm check    # all cross-app drift checks (needs api on :3000 for OpenAPI)
-pnpm check:full   # check + api/ui validate + docs build:ci
+bun run regen    # ACL → OpenAPI → lint-meta RULES → docs JSON catalogs
+bun run check    # all cross-app drift checks (needs api on :3000 for OpenAPI)
+bun run check:full   # check + api/ui validate + docs build:ci
 ```
 
 Docs site: [boringstack.xyz](https://boringstack.xyz) — built from `apps/docs`.

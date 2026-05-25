@@ -38,7 +38,7 @@ Then wait up to 60 s for `http://localhost:3000/swagger/json` to be reachable. P
 
 ```bash
 # From ui-template:
-OPENAPI_URL=http://localhost:3000/swagger/json pnpm generate:api
+OPENAPI_URL=http://localhost:3000/swagger/json bun run generate:api
 ```
 
 The script writes to `src/lib/api/schema.d.ts`. See that file's `AGENTS.md` for the contract.
@@ -69,4 +69,4 @@ Do NOT push automatically — the pre-push gate runs the full validate suite, an
 
 - **Docker daemon not running** → user starts it manually, re-run.
 - **api-template port already taken by stale container** → `docker compose down` in `../../infra/compose/compose` then re-run.
-- **`pnpm generate:api` fails with esbuild platform mismatch** → host node_modules were created inside the docker container as root. Run `sudo rm -rf node_modules && CI=true pnpm install --frozen-lockfile` in ui-template, then re-run.
+- **`bun run generate:api` fails with esbuild platform mismatch** → host node_modules were created inside the docker container as root. Run `sudo rm -rf node_modules && CI=true bun install --frozen-lockfile` in ui-template, then re-run.

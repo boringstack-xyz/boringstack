@@ -62,7 +62,7 @@ import FaqItem from "../../components/FaqItem.tsx";
     {
       label: "04",
       title: "Ship changes",
-      body: "From repo root: `pnpm regen` then `pnpm check` before you push.",
+      body: "From repo root: `bun run regen` then `bun run check` before you push.",
     },
   ]}
 />
@@ -167,7 +167,7 @@ Traefik runs only in the prod profile. In prod it terminates TLS and path-routes
 
 ## Common next steps
 
-- Regenerate cross-app contracts: `pnpm regen` from repo root (api must be on :3000 for OpenAPI).
+- Regenerate cross-app contracts: `bun run regen` from repo root (api must be on :3000 for OpenAPI).
 - Observability: `WITH_OBSERVABILITY=1 ./scripts/compose-up.sh` from `infra/compose/compose`. [Details](/topics/observability/).
 - Self-hosted error tracking: `WITH_GLITCHTIP=1 ./scripts/compose-up.sh`. [Details](/topics/error-tracking/).
 - Local email testing: `WITH_MAILPIT=1 ./scripts/compose-up.sh`. [Details](/topics/email-in-dev/).

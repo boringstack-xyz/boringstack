@@ -1,6 +1,6 @@
 # Security
 
-The merge gate (`pnpm validate`) is the first line of defense. This document
+The merge gate (`bun run validate`) is the first line of defense. This document
 covers what _can't_ be enforced by lint and what production deployers must
 verify.
 
@@ -21,11 +21,11 @@ Three blocking workflows run on every push to `main`, every PR, and on a
 weekly cron (Monday morning UTC, staggered by minute). All upload SARIF
 to GitHub Code Scanning.
 
-| Workflow           | Scanner                                         | Allowlist              |
-| ------------------ | ----------------------------------------------- | ---------------------- |
-| `security-secrets` | gitleaks CLI (pinned by SHA)                    | `.gitleaksignore`      |
-| `security-deps`    | `osv-scanner` + `pnpm audit --audit-level high` | `osv-scanner.toml`     |
-| `security-sast`    | Semgrep — OWASP + JS packs + `.semgrep/` rules  | inline `// nosemgrep:` |
+| Workflow           | Scanner                                            | Allowlist              |
+| ------------------ | -------------------------------------------------- | ---------------------- |
+| `security-secrets` | gitleaks CLI (pinned by SHA)                       | `.gitleaksignore`      |
+| `security-deps`    | `osv-scanner` + `bun run audit --audit-level high` | `osv-scanner.toml`     |
+| `security-sast`    | Semgrep — OWASP + JS packs + `.semgrep/` rules     | inline `// nosemgrep:` |
 
 Every accepted-risk suppression has a written reason and an `ignoreUntil`
 date. Suppressions are temporary by default — when the date passes, CI
@@ -118,7 +118,7 @@ header set with a `_headers` file in this directory.
 - `peerDependencies` use `^`. Enforced by the same rule.
 - 3rd-party GitHub Actions are pinned by full commit SHA. Enforced by
   `github-actions-permissions`.
-- `pnpm audit --audit-level high` runs in CI on every PR.
+- `bun run audit --audit-level high` runs in CI on every PR.
 
 ### Sentry source maps
 
@@ -153,7 +153,7 @@ Before going live:
 - [ ] CSP matches all 3rd parties you embed (Stripe, Hotjar, etc.)
 - [ ] `Strict-Transport-Security: preload` only after the domain is
       submitted to hstspreload.org and verified
-- [ ] CI green on `pnpm validate` for the branch being deployed
+- [ ] CI green on `bun run validate` for the branch being deployed
 - [ ] Lighthouse a11y ≥ 90 on the production build
 - [ ] Source maps uploaded to Sentry (not served to the public)
 - [ ] Cookies set by the API are `Secure`, `HttpOnly`, `SameSite=Strict`

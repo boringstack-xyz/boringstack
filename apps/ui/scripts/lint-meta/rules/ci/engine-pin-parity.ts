@@ -50,6 +50,10 @@ function checkDockerNodePins(root: string, nodeMajor: string): IViolation[] {
 
     const content = readFileSync(dockerPath, "utf8");
 
+    if (/FROM\s+oven\/bun:/u.test(content)) {
+      continue;
+    }
+
     if (!content.includes(`node:${nodeMajor}`)) {
       violations.push({
         file: dockerPath,
@@ -96,32 +100,45 @@ function checkWorkflowNodePins(root: string, nodeMajor: string): IViolation[] {
   return violations;
 }
 
-function checkDockerPnpmPin(
+function checkDockerBunPin(
   root: string,
   pkg: ReturnType<typeof readUiPackageJson>
 ): IViolation[] {
   const packageManager = pkg?.packageManager ?? "";
-  const pnpmMatch = /^pnpm@([^+]+)/u.exec(packageManager);
-  const pnpmVersion = pnpmMatch?.[1];
-  const dockerPath = join(root, "Dockerfile");
+  const bunMatch = /^bun@([^+]+)/u.exec(packageManager);
+  const bunVersion = bunMatch?.[1];
 
-  if (pnpmVersion === undefined || !existsSync(dockerPath)) {
+  if (bunVersion === undefined) {
     return [];
   }
 
-  const dockerfile = readFileSync(dockerPath, "utf8");
+  const violations: IViolation[] = [];
 
-  if (dockerfile.includes(`pnpm@${pnpmVersion}`)) {
-    return [];
-  }
+  for (const dockerfile of ["Dockerfile", "Dockerfile.prod"]) {
+    const dockerPath = join(root, dockerfile);
 
-  return [
-    {
+    if (!existsSync(dockerPath)) {
+      continue;
+    }
+
+    const content = readFileSync(dockerPath, "utf8");
+
+    if (!/FROM\s+oven\/bun:/u.test(content)) {
+      continue;
+    }
+
+    if (content.includes(`bun:${bunVersion}`)) {
+      continue;
+    }
+
+    violations.push({
       file: dockerPath,
       rule: "engine-pin-parity",
-      message: `Dockerfile must install pnpm@${pnpmVersion} to match package.json packageManager.`
-    }
-  ];
+      message: `Dockerfile must pin bun:${bunVersion} to match package.json packageManager.`
+    });
+  }
+
+  return violations;
 }
 
 export function checkEnginePinParity(root: string): IViolation[] {
@@ -143,16 +160,16 @@ export function checkEnginePinParity(root: string): IViolation[] {
     ...checkPackageJsonNodeEngine(root, nodeMajor, pkg),
     ...checkDockerNodePins(root, nodeMajor),
     ...checkWorkflowNodePins(root, nodeMajor),
-    ...checkDockerPnpmPin(root, pkg)
+    ...checkDockerBunPin(root, pkg)
   ];
 }
 
-/** Node/pnpm pins must match across .nvmrc, package.json, Dockerfiles, and workflows. */
+/** Node/Bun pins must match across .nvmrc, package.json, Dockerfiles, and workflows. */
 export const enginePinParityRule: IMetaRule = {
   id: "engine-pin-parity",
   category: "ci",
   description:
-    "Node and pnpm version pins must stay aligned across .nvmrc, package.json, Docker, and CI.",
+    "Node and Bun version pins must stay aligned across .nvmrc, package.json, Docker, and CI.",
   run({ root }) {
     return checkEnginePinParity(root);
   }

@@ -119,7 +119,7 @@ Role rules carry CASL conditions (`{ accountId: membership.accountId }`) so reso
 
 ## Feature gates
 
-`FEATURE_KEYS` is a code const tuple. Adding a feature is a TypeScript edit + a `pnpm generate:acl-types` round-trip:
+`FEATURE_KEYS` is a code const tuple. Adding a feature is a TypeScript edit + a `bun run generate:acl-types` round-trip:
 
 ```ts
 // src/lib/acl/acl.constants.ts

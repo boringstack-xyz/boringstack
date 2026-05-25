@@ -19,7 +19,7 @@ if require_api_swagger; then
   step "OpenAPI types (api swagger → ui)"
   (
     cd "$BORINGSTACK_UI_DIR"
-    OPENAPI_URL="${OPENAPI_URL:-http://localhost:3000/swagger/json}" pnpm generate:api
+    OPENAPI_URL="${OPENAPI_URL:-http://localhost:3000/swagger/json}" bun run generate:api
   )
   ok "OpenAPI schema regenerated"
 fi
@@ -34,7 +34,7 @@ ok "api RULES.md regenerated"
 step "lint-meta RULES.md (ui)"
 (
   cd "$BORINGSTACK_UI_DIR"
-  pnpm generate:lint-meta-docs
+  bun run generate:lint-meta-docs
 )
 ok "ui RULES.md regenerated"
 
@@ -43,7 +43,7 @@ step "docs catalogs (lint-meta + scripts JSON)"
   cd "$BORINGSTACK_DOCS_DIR"
   BORINGSTACK_API_DIR="$BORINGSTACK_API_DIR" \
   BORINGSTACK_UI_DIR="$BORINGSTACK_UI_DIR" \
-    pnpm generate:docs-data
+    bun run generate:docs-data
 )
 ok "docs data regenerated"
 

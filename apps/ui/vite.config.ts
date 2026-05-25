@@ -34,7 +34,7 @@ export default defineConfig(({ mode }) => {
     sentryOrg !== "" &&
     sentryProject !== "";
 
-  // Bundle analyzer — opt in with `ANALYZE=true pnpm build` to write a
+  // Bundle analyzer — opt in with `ANALYZE=true bun run build` to write a
   // sunburst HTML of every chunk's contents to `dist/stats.html`.
   const analyze = process.env.ANALYZE === "true";
 

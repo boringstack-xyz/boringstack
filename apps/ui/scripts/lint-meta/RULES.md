@@ -1,13 +1,13 @@
 # lint:meta rule catalog
 
-Run `pnpm lint:meta --list-rules` for the machine-readable list from the registry.
+Run `bun run lint:meta --list-rules` for the machine-readable list from the registry.
 
 ## Adding a rule
 
 1. Pick a category folder under `scripts/lint-meta/rules/`.
 2. Export an `IMetaRule` object with `id`, `category`, `description`, and `run(ctx)`.
 3. Register it in `scripts/lint-meta/registry.ts`.
-4. Run `pnpm generate:lint-meta-docs` to refresh this file.
+4. Run `bun run generate:lint-meta-docs` to refresh this file.
 5. Add a test in `tests/lint-meta/` (fixture or temp dir — never commit invalid imports that break `tsc`).
 
 ## Rules
@@ -19,7 +19,7 @@ Run `pnpm lint:meta --list-rules` for the machine-readable list from the registr
 | `github-actions-permissions`        | ci           | no          | GitHub Actions workflows require permissions block and SHA-pinned uses: refs.                                                                    |
 | `github-actions-permissions:verify` | ci           | no          | Pinned action SHAs resolve on github.com (lint:meta:verify only).                                                                                |
 | `pre-push-ci-parity`                | ci           | no          | CI workflow must include every command listed in scripts/ci/pre-push.manifest.json.                                                              |
-| `engine-pin-parity`                 | ci           | no          | Node and pnpm version pins must stay aligned across .nvmrc, package.json, Docker, and CI.                                                        |
+| `engine-pin-parity`                 | ci           | no          | Node and Bun version pins must stay aligned across .nvmrc, package.json, Docker, and CI.                                                         |
 | `env-cascade-drift`                 | env          | no          | Vite env keys must align across schema.ts, .env.example, and vite-env.d.ts.                                                                      |
 | `generated-artifact-contract`       | artifacts    | no          | Generated ACL types and OpenAPI schema files must exist with required banner text.                                                               |
 | `modulepreload-size-limit-coverage` | artifacts    | no          | .size-limit.json must include globs for all modulepreload entry chunks.                                                                          |
@@ -38,4 +38,4 @@ Run `pnpm lint:meta --list-rules` for the machine-readable list from the registr
 
 ## CI-critical rules
 
-Rules marked CI-critical can pass locally (e.g. monorepo checkout) but fail in single-repo CI. Always run `pnpm check` before pushing ui-template.
+Rules marked CI-critical can pass locally (e.g. monorepo checkout) but fail in single-repo CI. Always run `bun run check` before pushing ui-template.

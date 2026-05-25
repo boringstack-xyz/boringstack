@@ -1,37 +1,37 @@
 # Contributing
 
 This template assumes most code is written by AI agents. The conventions
-exist so `pnpm validate` is a reliable signal — if the merge gate is green,
+exist so `bun run validate` is a reliable signal — if the merge gate is green,
 the code is shippable.
 
 ## Setup
 
 ```bash
 nvm use            # respect .nvmrc
-pnpm install
+bun install
 cp .env.example .env.local
-pnpm dev           # http://localhost:3001
+bun run dev           # http://localhost:3001
 ```
 
 ## Add a component
 
 ```bash
-pnpm new:component core/Card
+bun run new:component core/Card
 ```
 
 Creates `src/components/core/Card/` with all 8 files filled with stubs.
 Edit, then:
 
 ```bash
-pnpm check          # lint + format + typecheck
-pnpm test           # vitest
-pnpm storybook      # see it in :6006
+bun run check          # lint + format + typecheck
+bun run test           # vitest
+bun run storybook      # see it in :6006
 ```
 
 ## Add a feature
 
 ```bash
-pnpm new:feature Widgets
+bun run new:feature Widgets
 ```
 
 Creates `src/features/widgets/` with all dot-suffix files and a starter
@@ -51,7 +51,7 @@ Then:
 ## Add a shadcn primitive
 
 ```bash
-pnpm ui:add button input dialog
+bun run ui:add button input dialog
 ```
 
 Wires it into `src/components/ui/` (shadcn's flat convention). Compose on
@@ -60,7 +60,7 @@ top of it in `src/components/core/<Name>/` (our 8-file anatomy).
 ## The validate contract
 
 ```bash
-pnpm validate
+bun run validate
 ```
 
 = lint clean + format clean + typecheck + Vitest green + Playwright green +
@@ -72,8 +72,8 @@ wrong, change the rule config.
 ## Visual regression (local only)
 
 ```bash
-pnpm e2e:visual          # compare against your committed-locally baselines
-pnpm e2e:visual:update   # accept current rendering as the new baseline
+bun run e2e:visual          # compare against your committed-locally baselines
+bun run e2e:visual:update   # accept current rendering as the new baseline
 ```
 
 Baselines are platform-specific (font hinting + anti-aliasing differ between
@@ -82,13 +82,13 @@ developer keeps their own baselines locally. CI does **not** run visual
 regression; getting it CI-stable requires Docker-rendered baselines, which
 is intentionally out of scope for v0.1.
 
-When a visual change is intentional, run `pnpm e2e:visual:update` to refresh
+When a visual change is intentional, run `bun run e2e:visual:update` to refresh
 your local baselines and continue.
 
 ## Lighthouse (a11y / perf / SEO budgets)
 
 ```bash
-pnpm lighthouse
+bun run lighthouse
 ```
 
 Builds, serves `dist/` via `vite preview`, and runs Lighthouse against

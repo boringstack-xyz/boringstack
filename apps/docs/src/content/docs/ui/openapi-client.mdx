@@ -31,7 +31,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
 ```mermaid
 flowchart LR
   api["api-template<br/>publishes /swagger/json"]
-  gen["pnpm generate:api"]
+  gen["bun run generate:api"]
   schema["src/lib/api/schema.d.ts<br/>generated types"]
   client["apiClient.GET / POST / ..."]
   api --> gen
@@ -40,7 +40,7 @@ flowchart LR
   client -.->|HTTP| api
 ```
 
-`pnpm generate:api` runs `openapi-typescript` against the live API (or a saved spec) and emits one big `.d.ts` of paths, params, and response components. `openapi-fetch` wraps native `fetch` and uses those types so every call is path- and shape-checked.
+`bun run generate:api` runs `openapi-typescript` against the live API (or a saved spec) and emits one big `.d.ts` of paths, params, and response components. `openapi-fetch` wraps native `fetch` and uses those types so every call is path- and shape-checked.
 
 ## Design choices
 
@@ -106,13 +106,13 @@ useQuery({
 
 <FaqGroup>
   <FaqItem title="API spec changed (most common)" open>
-    Run `pnpm generate:api` against the running dev API.
+    Run `bun run generate:api` against the running dev API.
   </FaqItem>
   <FaqItem title="Working from a committed spec">
     Point `generate:api` at a saved `.json`.
   </FaqItem>
   <FaqItem title="CI consistency check">
-    Run `pnpm generate:api && git diff --exit-code src/lib/api/schema.d.ts`.
+    Run `bun run generate:api && git diff --exit-code src/lib/api/schema.d.ts`.
   </FaqItem>
 </FaqGroup>
 
@@ -120,7 +120,7 @@ The CI check fails if a developer changed the API but forgot to regenerate; drif
 
 ## Adding a call
 
-There's no "adding". If the API exposes a new endpoint, `pnpm generate:api` makes it available; you call it the same way you call any other.
+There's no "adding". If the API exposes a new endpoint, `bun run generate:api` makes it available; you call it the same way you call any other.
 
 ## Lint coverage
 

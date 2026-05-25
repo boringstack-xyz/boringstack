@@ -76,14 +76,14 @@ import FaqItem from "../../../components/FaqItem.tsx";
 
     **When we'd reconsider.** When docs need user-specific data (auth, customer-specific examples). Then add an API or move to a hybrid framework.
   </FaqItem>
-  <FaqItem title="pnpm + Bun (and not npm)">
-    **Choice.** pnpm for the UI and docs repos; Bun's built-in installer for the API. No `npm` or `yarn`.
+  <FaqItem title="Bun everywhere (and not npm or pnpm)">
+    **Choice.** Bun for all three app repos (API, UI, docs) and root orchestration. No `npm`, `pnpm`, or `yarn` as required tools.
 
-    **Why.** pnpm's content-addressable store is faster and dramatically smaller on disk for monorepos. Bun's installer pairs naturally with the Bun runtime. Both pin `minimum-release-age=10080` minutes for supply-chain protection.
+    **Why.** One installer/runtime story across the monorepo; Bun's lockfile and CLI cover SPA, docs, and API workloads. Supply-chain pins live in each app's `bun.lock` and `osv-scanner.toml`.
 
-    **What we gave up.** A single tool across all repos. The split is by repo, not by file, so day-to-day friction is low.
+    **What we gave up.** pnpm's content-addressable store and its `minimum-release-age` knob. Bun's resolver and per-repo lockfiles are the trade.
 
-    **When we'd reconsider.** If pnpm's `node_modules` shape ever breaks a dep we can't replace.
+    **When we'd reconsider.** If a critical dependency breaks under Bun's resolver and cannot be replaced or patched.
   </FaqItem>
 </FaqGroup>
 
@@ -141,7 +141,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
     **When we'd reconsider.** When the rules feel like ceremony rather than load-bearing. That's a signal the architecture changed shape and the lint needs updating, not removing.
   </FaqItem>
   <FaqItem title="OpenAPI between API and UI">
-    **Choice.** The API auto-emits an OpenAPI document at `/swagger/json`. The UI runs `pnpm generate:api` to regenerate a typed client from it. `openapi-fetch` makes wrong paths or wrong body shapes a typecheck error.
+    **Choice.** The API auto-emits an OpenAPI document at `/swagger/json`. The UI runs `bun run generate:api` to regenerate a typed client from it. `openapi-fetch` makes wrong paths or wrong body shapes a typecheck error.
 
     **Why.** Server-client drift is one of the highest-cost bugs in any SaaS. This makes drift a compile error, not a runtime 500.
 

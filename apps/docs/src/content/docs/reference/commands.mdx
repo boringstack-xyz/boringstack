@@ -32,14 +32,14 @@ Run from the repository root (`boringstack/`):
 
 <FaqGroup>
   <FaqItem title="Regenerate all cross-app artifacts" open>
-    `pnpm regen` — ACL types, OpenAPI schema (needs api on :3000), lint-meta
+    `bun run regen` — ACL types, OpenAPI schema (needs api on :3000), lint-meta
     RULES.md, docs JSON catalogs.
   </FaqItem>
   <FaqItem title="Drift checks before push">
-    `pnpm check` — same gates as CI for contracts across apps/docs.
+    `bun run check` — same gates as CI for contracts across apps/docs.
   </FaqItem>
   <FaqItem title="Full validate">
-    `pnpm check:full` — check plus `apps/api` validate, `apps/ui` validate, and
+    `bun run check:full` — check plus `apps/api` validate, `apps/ui` validate, and
     `apps/docs` `build:ci`.
   </FaqItem>
   <FaqItem title="First-time local setup">
@@ -161,64 +161,64 @@ Flags compose: `WITH_OBSERVABILITY=1 WITH_GLITCHTIP=1 ./scripts/compose-up.sh`.
 
 <FaqGroup>
   <FaqItem title="Dev server (port 3001)" open>
-    `pnpm dev`
+    `bun run dev`
   </FaqItem>
   <FaqItem title="Production build">
-    `pnpm build`
+    `bun run build`
   </FaqItem>
   <FaqItem title="Production preview">
-    `pnpm preview`
+    `bun run preview`
   </FaqItem>
   <FaqItem title="Typecheck">
-    `pnpm typecheck`
+    `bun run typecheck`
   </FaqItem>
   <FaqItem title="Lint + format + typecheck + knip">
-    `pnpm check`
+    `bun run check`
   </FaqItem>
   <FaqItem title="Auto-fix lint">
-    `pnpm lint:fix`
+    `bun run lint:fix`
   </FaqItem>
   <FaqItem title="Dead-code detection">
-    `pnpm knip`
+    `bun run knip`
   </FaqItem>
   <FaqItem title="Unit + component tests">
-    `pnpm test`
+    `bun run test`
   </FaqItem>
   <FaqItem title="Coverage">
-    `pnpm test:ci`
+    `bun run test:ci`
   </FaqItem>
   <FaqItem title="e2e (Playwright)">
-    `pnpm e2e`
+    `bun run e2e`
   </FaqItem>
   <FaqItem title="e2e visual baselines">
-    `pnpm e2e:visual:update`
+    `bun run e2e:visual:update`
   </FaqItem>
   <FaqItem title="Bundle size budget">
-    `pnpm size:check`
+    `bun run size:check`
   </FaqItem>
   <FaqItem title="Bundle analyzer">
-    `pnpm analyze`
+    `bun run analyze`
   </FaqItem>
   <FaqItem title="Lighthouse">
-    `pnpm lighthouse`
+    `bun run lighthouse`
   </FaqItem>
   <FaqItem title="Full merge gate">
-    `pnpm validate`
+    `bun run validate`
   </FaqItem>
   <FaqItem title="Run the pre-push gate (same as `git push`)">
-    `pnpm pre-push`
+    `bun run pre-push`
   </FaqItem>
   <FaqItem title="Regenerate API schema">
-    `pnpm generate:api`
+    `bun run generate:api`
   </FaqItem>
   <FaqItem title="Scaffold a component">
-    `pnpm new:component <Name>`
+    `bun run new:component <Name>`
   </FaqItem>
   <FaqItem title="Scaffold a feature">
-    `pnpm new:feature <name>`
+    `bun run new:feature <name>`
   </FaqItem>
   <FaqItem title="Storybook">
-    `pnpm storybook`
+    `bun run storybook`
   </FaqItem>
 </FaqGroup>
 

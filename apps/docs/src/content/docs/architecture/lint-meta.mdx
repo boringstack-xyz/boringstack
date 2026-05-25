@@ -22,7 +22,7 @@ import LintMetaCatalog from "../../../components/docs-kit/LintMetaCatalog";
   ESLint enforces architecture inside TypeScript modules. <code>lint:meta</code>{" "}
   catches repo-level drift ESLint cannot see: unpinned GitHub Actions, env
   cascade gaps, forbidden inline disables, cross-repo imports, and missing test
-  siblings. It runs inside <code>pnpm check</code> / <code>bun run check</code>.
+  siblings. It runs inside <code>bun run check</code> / <code>bun run check</code>.
 </PageIntro>
 
 ## Merge gate stack
@@ -68,7 +68,7 @@ Both templates share supply-chain, CI, env, artifact, and config rules (exact de
 
 1. Implement `IMetaRule` under `scripts/lint-meta/rules/<category>/`
 2. Register it in `scripts/lint-meta/registry.ts`
-3. Run `pnpm generate:lint-meta-docs` (ui) or `bun run generate:lint-meta-docs` (api)
+3. Run `bun run generate:lint-meta-docs` (ui) or `bun run generate:lint-meta-docs` (api)
 4. Run the boringstack docs generators and commit the updated JSON catalogs
 5. Add a test under `tests/lint-meta/`
 

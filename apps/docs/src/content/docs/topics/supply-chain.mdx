@@ -51,10 +51,10 @@ import FaqItem from "../../../components/FaqItem.tsx";
   <FaqItem title="api-template (Bun)" open>
     `bunfig.toml`: `[install] minimumReleaseAge = 604800` (seconds).
   </FaqItem>
-  <FaqItem title="ui-template (pnpm)">
+  <FaqItem title="ui-template (Bun)">
     `.npmrc`: `minimum-release-age=10080` (minutes).
   </FaqItem>
-  <FaqItem title=".github docs (pnpm)">
+  <FaqItem title=".github docs (Bun)">
     `.npmrc`: `minimum-release-age=10080`.
   </FaqItem>
   <FaqItem title="infra-docker-compose-template">
@@ -72,7 +72,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
     Pin to a specific older version or wait.
   </FaqItem>
   <FaqItem title="Critical security patches are delayed seven days">
-    Override per-package via `minimumReleaseAgeExclude` (pnpm) when a real CVE drops.
+    Override per-package via Bun/npmrc exclusions when a real CVE drops.
   </FaqItem>
   <FaqItem title="Slightly behind the bleeding edge">
     This is the point.
@@ -81,7 +81,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
 
 ## Overriding for a specific package
 
-pnpm supports per-package overrides via `minimumReleaseAgeExclude` in `.npmrc`. The array syntax with `[]=` is required; a comma-separated list won't parse:
+Bun and npm-compatible `.npmrc` support per-package overrides via `minimum-release-age-exclude[]`. The array syntax with `[]=` is required; a comma-separated list won't parse:
 
 ```ini
 minimum-release-age-exclude[]=yaml
@@ -101,11 +101,10 @@ npm's audit signal lags detection. By the time `npm audit` reports a malicious v
 
 ## References
 
-- [pnpm settings: minimumReleaseAge](https://pnpm.io/settings#minimum-release-age)
 - [Bun docs: install lockfile settings](https://bun.com/docs/install/lockfile)
 
 ## Related
 
 - [Security pipeline](/topics/security/); CI scans, SAST, and dependency review that pair with the install delay.
 - [Lint as the contract](/architecture/lint-as-contract/); architecture-level guardrails the merge gate enforces.
-- [Commands cheatsheet](/reference/commands/); where `pnpm validate` and `bun run validate` live.
+- [Commands cheatsheet](/reference/commands/); where `bun run validate` and `bun run validate` live.

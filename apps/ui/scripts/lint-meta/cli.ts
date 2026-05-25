@@ -2,13 +2,13 @@
 /**
  * Static checks for files ESLint can't parse as JavaScript:
  *
- *   pnpm lint:meta
- *   pnpm lint:meta --list-rules
- *   pnpm lint:meta --verify
+ *   bun run lint:meta
+ *   bun run lint:meta --list-rules
+ *   bun run lint:meta --verify
  *
  * Rule catalog: scripts/lint-meta/RULES.md
  *
- * Exits non-zero on any violation. Run is part of `pnpm check`.
+ * Exits non-zero on any violation. Run is part of `bun run check`.
  */
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";

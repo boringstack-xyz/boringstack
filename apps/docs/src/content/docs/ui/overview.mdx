@@ -218,7 +218,7 @@ A page or component folder always looks like:
 
 Stories ship 1:1 with the components and run under a global theme decorator (`@storybook/addon-themes` wired in `.storybook/preview.tsx`), so every story has a light/dark toggle in the Storybook toolbar with no per-story plumbing.
 
-`pnpm new:component <Name>` writes this anatomy. `pnpm new:feature <name>` writes a feature scaffold.
+`bun run new:component <Name>` writes this anatomy. `bun run new:feature <name>` writes a feature scaffold.
 
 ## State, in one decision
 
@@ -252,7 +252,7 @@ If you can't tell which bucket something belongs to, that's almost always a sign
 
 ## The typed OpenAPI client
 
-The API publishes `/swagger/json`. `pnpm generate:api` reads it and emits the typed client. From there `apiClient.GET("/api/v1/users/me")` autocompletes the path and types the response. Drift between server and client becomes a compile error, not a runtime 500.
+The API publishes `/swagger/json`. `bun run generate:api` reads it and emits the typed client. From there `apiClient.GET("/api/v1/users/me")` autocompletes the path and types the response. Drift between server and client becomes a compile error, not a runtime 500.
 
 See [OpenAPI client](/ui/openapi-client/).
 

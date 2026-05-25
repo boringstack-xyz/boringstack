@@ -5,8 +5,8 @@ Single repository: `apps/api`, `apps/ui`, `apps/docs`, `infra/compose`, `infra/b
 ## Maintainer commands (repo root)
 
 ```bash
-pnpm regen      # cross-app generators (ACL, OpenAPI, lint-meta, docs JSON)
-pnpm check      # drift checks before push
+bun run regen   # cross-app generators (ACL, OpenAPI, lint-meta, docs JSON)
+bun run check   # drift checks before push
 ./setup.sh --up # boot local dev stack
 ```
 

@@ -2,7 +2,7 @@
 /**
  * Scaffold a new feature folder.
  *
- *   pnpm new:feature Posts
+ *   bun run new:feature Posts
  *
  * Creates src/features/posts/ with all dot-suffix files filled in
  * (constants, schemas, types, queries, store, utils) and a starter
@@ -21,7 +21,7 @@ function bail(message: string): never {
 const arg = process.argv[2];
 
 if (typeof arg !== "string" || arg.length === 0) {
-  bail("Usage: pnpm new:feature <Name>");
+  bail("Usage: bun run new:feature <Name>");
 }
 
 if (!/^[A-Z][A-Za-z0-9]+$/.test(arg)) {
@@ -43,7 +43,7 @@ const dotFiles: Record<string, string> = {
   [`${Name}.schemas.ts`]: `import { z } from "zod";\n\nexport const ${lower}ItemSchema = z.object({\n  id: z.uuid(),\n  createdAt: z.string()\n});\n`,
   [`${Name}.types.ts`]: `import type { z } from "zod";\nimport type { ${lower}ItemSchema } from "./${Name}.schemas";\n\nexport type I${Name}Item = z.infer<typeof ${lower}ItemSchema>;\n`,
   [`${Name}.utils.ts`]: `import type { I${Name}Item } from "./${Name}.types";\n\nexport function sort${Name}ByCreated(items: readonly I${Name}Item[]): I${Name}Item[] {\n  return [...items].sort((a, b) => a.createdAt.localeCompare(b.createdAt));\n}\n`,
-  [`${Name}.queries.ts`]: `import { useQuery, type UseQueryResult } from "@tanstack/react-query";\nimport { ${Name.toUpperCase()}_QUERY_KEYS } from "./${Name}.constants";\nimport type { I${Name}Item } from "./${Name}.types";\n\n/**\n * Replace the queryFn stub with a typed call:\n *\n *   import { apiClient } from "@/lib/api/client";\n *   queryFn: async (): Promise<I${Name}Item[]> => {\n *     const { data } = await apiClient.GET("/api/${lower}");\n *     return data ?? [];\n *   }\n *\n * Run \`pnpm generate:api\` after the endpoint is added to the OpenAPI spec.\n */\nexport function use${Name}(): UseQueryResult<I${Name}Item[]> {\n  return useQuery({\n    queryKey: ${Name.toUpperCase()}_QUERY_KEYS.list,\n    queryFn: async (): Promise<I${Name}Item[]> => Promise.resolve([])\n  });\n}\n`,
+  [`${Name}.queries.ts`]: `import { useQuery, type UseQueryResult } from "@tanstack/react-query";\nimport { ${Name.toUpperCase()}_QUERY_KEYS } from "./${Name}.constants";\nimport type { I${Name}Item } from "./${Name}.types";\n\n/**\n * Replace the queryFn stub with a typed call:\n *\n *   import { apiClient } from "@/lib/api/client";\n *   queryFn: async (): Promise<I${Name}Item[]> => {\n *     const { data } = await apiClient.GET("/api/${lower}");\n *     return data ?? [];\n *   }\n *\n * Run \`bun run generate:api\` after the endpoint is added to the OpenAPI spec.\n */\nexport function use${Name}(): UseQueryResult<I${Name}Item[]> {\n  return useQuery({\n    queryKey: ${Name.toUpperCase()}_QUERY_KEYS.list,\n    queryFn: async (): Promise<I${Name}Item[]> => Promise.resolve([])\n  });\n}\n`,
   [`${Name}.store.ts`]: `import { create } from "zustand";\n\ninterface I${Name}State {\n  readonly selectedId: string | null;\n  setSelected(id: string | null): void;\n}\n\nexport const use${Name}Store = create<I${Name}State>((set) => ({\n  selectedId: null,\n  setSelected: (id) => {\n    set({ selectedId: id });\n  }\n}));\n`
 };
 

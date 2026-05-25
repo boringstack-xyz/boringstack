@@ -1,6 +1,6 @@
 ---
 name: security-review
-description: Use when reviewing a branch or PR for security regressions in ui-template. Replays the Layer 1 CI scanners locally (gitleaks, osv-scanner, pnpm audit), invokes Layer 2 agent skills (differential-review, insecure-defaults, sharp-edges, supply-chain-risk-auditor) in parallel, then runs BoringStack-specific UI invariants — no raw fetch outside openapi.ts, no dangerouslySetInnerHTML, no import.meta.env outside src/lib/env/, no localStorage token storage, no JSX-level user-supplied strings without i18n, CSRF + content-type validation on user-data flows. Triggers — "security review", "review for security", "any vulnerabilities in this branch", "audit this PR", "is this safe to merge", "did we leave any XSS holes", "is the auth flow safe".
+description: Use when reviewing a branch or PR for security regressions in ui-template. Replays the Layer 1 CI scanners locally (gitleaks, osv-scanner, bun audit), invokes Layer 2 agent skills (differential-review, insecure-defaults, sharp-edges, supply-chain-risk-auditor) in parallel, then runs BoringStack-specific UI invariants — no raw fetch outside openapi.ts, no dangerouslySetInnerHTML, no import.meta.env outside src/lib/env/, no localStorage token storage, no JSX-level user-supplied strings without i18n, CSRF + content-type validation on user-data flows. Triggers — "security review", "review for security", "any vulnerabilities in this branch", "audit this PR", "is this safe to merge", "did we leave any XSS holes", "is the auth flow safe".
 ---
 
 # Security review (ui-template)
@@ -37,15 +37,15 @@ Three scanners, one after another.
 2. **osv-scanner**:
 
    ```bash
-   osv-scanner --lockfile=pnpm-lock.yaml
+   osv-scanner --lockfile=bun.lock
    ```
 
    `HIGH` / `CRITICAL` only.
 
-3. **pnpm audit**:
+3. **bun audit**:
 
    ```bash
-   pnpm audit --audit-level=high
+   bun audit --audit-level=high
    ```
 
    Same threshold. Dedupe vs. osv-scanner in the final report.
@@ -142,4 +142,4 @@ End with:
 - ✓ "No blocking findings. Branch is safe to merge after Layer 1 CI passes."
 - ✗ "<N> blocking finding(s). Fix the must-fix-before-merge list before merging."
 
-Read-only. No `git push`, no `gh pr ...`, no `pnpm build` side-effects.
+Read-only. No `git push`, no `gh pr ...`, no `bun run build` side-effects.

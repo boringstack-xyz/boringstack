@@ -4,21 +4,22 @@
   "version": "0.1.0",
   "private": true,
   "description": "boringstack.xyz docs site for the BoringStack project. Astro Starlight, deployed via Cloudflare Pages.",
+  "packageManager": "bun@1.3.13",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
     "generate:lint-meta-docs": "node scripts/generate-lint-meta-docs.mjs",
     "generate:scripts-docs": "node scripts/generate-scripts-docs.mjs",
-    "generate:docs-data": "pnpm generate:lint-meta-docs && pnpm generate:scripts-docs",
+    "generate:docs-data": "bun run generate:lint-meta-docs && bun run generate:scripts-docs",
     "check:lint-meta-docs": "node scripts/generate-lint-meta-docs.mjs --check",
     "check:scripts-docs": "node scripts/generate-scripts-docs.mjs --check",
-    "check:docs-data": "pnpm check:lint-meta-docs && pnpm check:scripts-docs",
+    "check:docs-data": "bun run check:lint-meta-docs && bun run check:scripts-docs",
     "build:site": "astro build",
     "build": "astro build",
-    "build:ci": "pnpm check:docs-data && astro build",
-    "preview": "pnpm build:site && wrangler dev",
+    "build:ci": "bun run check:docs-data && astro build",
+    "preview": "bun run build:site && wrangler dev",
     "astro": "astro",
-    "deploy": "pnpm build:ci && wrangler deploy",
+    "deploy": "bun run build:ci && wrangler deploy",
     "cf-typegen": "wrangler types",
     "a11y": "bash scripts/a11y.sh"
   },
@@ -44,15 +45,7 @@
     "starlight-llms-txt": "0.6.1",
     "wrangler": "4.87.0"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "chromedriver",
-      "esbuild",
-      "sharp",
-      "workerd"
-    ],
-    "overrides": {
-      "ws@<8.20.1": "^8.20.1"
-    }
+  "overrides": {
+    "ws@<8.20.1": "^8.20.1"
   }
 }

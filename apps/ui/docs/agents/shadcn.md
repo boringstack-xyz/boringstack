@@ -11,7 +11,7 @@ flat single-file convention and are lint-exempt from
 ## Adding a primitive
 
 ```bash
-pnpm ui:add button input form label dialog dropdown-menu toast
+bun run ui:add button input form label dialog dropdown-menu toast
 ```
 
 Wire shadcn's CSS variables to our `@theme` tokens in

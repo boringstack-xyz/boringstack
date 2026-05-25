@@ -4,7 +4,7 @@
 #
 # Stages:
 #   1. Fast checks   : lint, lint:meta, format, typecheck, knip
-#   2. Dependency    : osv-scanner against pnpm-lock.yaml
+#   2. Dependency    : osv-scanner against bun.lock
 #   3. Tests         : vitest run --coverage (no services needed)
 #   4. Build         : vite build (catches type-level regressions through routes)
 #   5. Size          : size-limit budget
@@ -41,7 +41,7 @@ skip() {
 }
 
 step "1/${TOTAL} Fast checks (lint, lint:meta, format, typecheck, knip)"
-pnpm check
+bun run check
 ok "check passed"
 RAN=$((RAN + 1))
 
@@ -49,30 +49,30 @@ step "2/${TOTAL} Dependency vulnerability scan"
 if ! command -v osv-scanner >/dev/null 2>&1; then
   fail "osv-scanner not installed. Install with: brew install osv-scanner"
 fi
-osv-scanner --config="$ROOT/osv-scanner.toml" --lockfile="$ROOT/pnpm-lock.yaml"
+osv-scanner --config="$ROOT/osv-scanner.toml" --lockfile="$ROOT/bun.lock"
 ok "osv-scanner clean"
 RAN=$((RAN + 1))
 
 step "3/${TOTAL} Tests"
-pnpm test:ci
+bun run test:ci
 ok "tests passed"
 RAN=$((RAN + 1))
 
 step "4/${TOTAL} Production build"
-pnpm build
+bun run build
 ok "build passed"
 RAN=$((RAN + 1))
 
 step "5/${TOTAL} Bundle size budgets"
-pnpm size:check
-pnpm size:check:modulepreload
+bun run size:check
+bun run size:check:modulepreload
 ok "size budgets met"
 RAN=$((RAN + 1))
 
 step "6/${TOTAL} OpenAPI schema drift"
 probe_tcp() { nc -z "$1" "$2" 2>/dev/null; }
 if probe_tcp localhost 3000 && curl -fsS http://localhost:3000/swagger/json >/dev/null 2>&1; then
-  OPENAPI_URL=http://localhost:3000/swagger/json pnpm generate:api:check
+  OPENAPI_URL=http://localhost:3000/swagger/json bun run generate:api:check
   ok "schema is fresh"
   RAN=$((RAN + 1))
 elif [ "${ALLOW_OPENAPI_DRIFT_SKIP:-true}" = "false" ]; then

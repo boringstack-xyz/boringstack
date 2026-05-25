@@ -22,13 +22,13 @@ The structure mirrors AGENT_REVIEW.md so reviewers see the same shape every PR.
 - [ ] chore — tooling / deps / infra
 - [ ] docs — text only
 
-## Merge bar (`pnpm validate` must pass)
+## Merge bar (`bun run validate` must pass)
 
-- [ ] `pnpm check` — lint + lint:meta + format + typecheck green
-- [ ] `pnpm test:ci` — Vitest green, coverage floor held
-- [ ] `pnpm e2e:ci` — Playwright green on Chromium + WebKit
-- [ ] `pnpm build` — production build green
-- [ ] `pnpm size:check` — bundle budgets held (or budget intentionally raised in this PR)
+- [ ] `bun run check` — lint + lint:meta + format + typecheck green
+- [ ] `bun run test:ci` — Vitest green, coverage floor held
+- [ ] `bun run e2e:ci` — Playwright green on Chromium + WebKit
+- [ ] `bun run build` — production build green
+- [ ] `bun run size:check` — bundle budgets held (or budget intentionally raised in this PR)
 
 ## Agent review (full template: [AGENT_REVIEW.md](../AGENT_REVIEW.md))
 

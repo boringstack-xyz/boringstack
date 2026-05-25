@@ -61,7 +61,7 @@ Catches API keys, tokens, private keys, and other high-entropy strings before th
 Two passes:
 
 - `osv-scanner` reads the lockfile and queries the OSV database for known CVEs across the dep tree, including transitive deps.
-- The native audit (`bun audit` for api-template, `pnpm audit` for ui-template, Trivy `config` mode for the OpenTofu repo) catches things the OSV cross-reference misses.
+- The native audit (`bun audit` for api-template, `bun run audit` for ui-template, Trivy `config` mode for the OpenTofu repo) catches things the OSV cross-reference misses.
 
 Both honor `osv-scanner.toml` for accepted-risk allowlisting. Every ignored CVE carries a reason and an `ignoreUntil` date. When the date passes, the suppression dies and CI fails. No silent suppressions, no infinite snoozing.
 

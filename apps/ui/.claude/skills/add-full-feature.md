@@ -38,7 +38,7 @@ Let `/build-feature` run its six checkpoints. The gate is `bun run validate` —
 
 ```bash
 cd ../ui
-pnpm generate:api
+bun run generate:api
 git status -s src/lib/api/
 ```
 
@@ -46,7 +46,7 @@ git status -s src/lib/api/
 
 Confirm the new resource shows up in the generated paths. If the diff is empty, the api wasn't running or the spec wasn't regenerated — STOP and surface this.
 
-CI runs `pnpm generate:api:check`, the dry-run variant. If `:check` shows drift after a merge, the operator forgot this step.
+CI runs `bun run generate:api:check`, the dry-run variant. If `:check` shows drift after a merge, the operator forgot this step.
 
 ## Checkpoint 4 — ui half (still in `ui-template/`)
 
@@ -58,7 +58,7 @@ Dispatch `/build-feature` with:
 
 The skill's Checkpoint 4 (tests first) is where you encode "list renders the records the api would have returned." Mock the OpenAPI client at the call site (e.g. `vi.mock("@/lib/api/client")` returning typed payloads from your `*.queries.ts` test setup).
 
-Run `pnpm validate` as the gate.
+Run `bun run validate` as the gate.
 
 ## Checkpoint 5 — Cross-cutting verify
 

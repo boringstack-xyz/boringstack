@@ -1,7 +1,7 @@
 # osv-scanner accepted-risk allowlist.
 #
 # Each entry must include the reasoning + a re-evaluation date. Re-run
-# `osv-scanner --lockfile=pnpm-lock.yaml` periodically to confirm each
+# `osv-scanner --lockfile=bun.lock` periodically to confirm each
 # remains accepted-risk (upstream patches eventually land and the entry
 # can be removed).
 

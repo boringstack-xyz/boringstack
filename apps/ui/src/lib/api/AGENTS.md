@@ -14,7 +14,7 @@ When api-template changes a route shape:
 1. Boot api-template (typically via
    `../../../../infra/compose/compose/dev.sh up -d`).
 2. From this repo's root:
-   `OPENAPI_URL=http://localhost:3000/swagger/json pnpm generate:api`.
+   `OPENAPI_URL=http://localhost:3000/swagger/json bun run generate:api`.
 3. Commit the diff.
 
 ## Drift gates
@@ -25,7 +25,7 @@ in three places:
 - **ui-template pre-push hook**: runs `generate:api:check` if api is
   reachable on `:3000` at push time.
 - **api-template `openapi-drift` CI workflow**: boots api-template,
-  checks out ui-template alongside, runs `pnpm generate:api:check`. Fails
+  checks out ui-template alongside, runs `bun run generate:api:check`. Fails
   the api-template PR that introduced the drift.
 - **infra `full-stack-smoke` workflow**: integration-tests the schema
   on every infra push.

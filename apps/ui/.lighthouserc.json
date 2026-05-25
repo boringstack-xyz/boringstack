@@ -1,7 +1,7 @@
 {
   "ci": {
     "collect": {
-      "startServerCommand": "pnpm preview --port 4173 --strictPort",
+      "startServerCommand": "bun run preview --port 4173 --strictPort",
       "startServerReadyPattern": "Local:",
       "url": [
         "http://localhost:4173/login",

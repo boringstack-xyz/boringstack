@@ -52,6 +52,6 @@ jobs:
         run: |
           if ! bun run generate:acl-types:check; then
             echo "::error::apps/ui/src/lib/acl/acl.types.generated.ts is stale against this API change."
-            echo "::error::To fix: from repo root run 'pnpm regen' (or 'cd apps/api && bun run generate:acl-types') and commit apps/ui in the same PR."
+            echo "::error::To fix: from repo root run 'bun run regen' (or 'cd apps/api && bun run generate:acl-types') and commit apps/ui in the same PR."
             exit 1
           fi

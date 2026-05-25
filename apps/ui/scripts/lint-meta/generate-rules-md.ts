@@ -105,14 +105,14 @@ export function renderRulesMd(root: string = REPO_ROOT): string {
 
   return `# lint:meta rule catalog
 
-Run \`pnpm lint:meta --list-rules\` for the machine-readable list from the registry.
+Run \`bun run lint:meta --list-rules\` for the machine-readable list from the registry.
 
 ## Adding a rule
 
 1. Pick a category folder under \`scripts/lint-meta/rules/\`.
 2. Export an \`IMetaRule\` object with \`id\`, \`category\`, \`description\`, and \`run(ctx)\`.
 3. Register it in \`scripts/lint-meta/registry.ts\`.
-4. Run \`pnpm generate:lint-meta-docs\` to refresh this file.
+4. Run \`bun run generate:lint-meta-docs\` to refresh this file.
 5. Add a test in \`tests/lint-meta/\` (fixture or temp dir — never commit invalid imports that break \`tsc\`).
 
 ## Rules
@@ -121,7 +121,7 @@ ${formatRulesTable(rows)}
 
 ## CI-critical rules
 
-Rules marked CI-critical can pass locally (e.g. monorepo checkout) but fail in single-repo CI. Always run \`pnpm check\` before pushing ui-template.
+Rules marked CI-critical can pass locally (e.g. monorepo checkout) but fail in single-repo CI. Always run \`bun run check\` before pushing ui-template.
 `;
 }
 
@@ -133,7 +133,7 @@ export function main(checkMode = process.argv.includes("--check")): void {
 
     if (current !== content) {
       console.error(
-        "[generate:lint-meta-docs] RULES.md is out of date — run pnpm generate:lint-meta-docs"
+        "[generate:lint-meta-docs] RULES.md is out of date — run bun run generate:lint-meta-docs"
       );
       process.exit(1);
     }

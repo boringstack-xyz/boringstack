@@ -3,9 +3,9 @@
 # failure matches CI — using the monorepo apps/ui and apps/api checkouts.
 #
 # Stages:
-#   1. Docs data : pnpm check:docs-data against local apps
-#   2. Dependency: osv-scanner against pnpm-lock.yaml
-#   3. Build     : pnpm build (Astro/Starlight)
+#   1. Docs data : bun run check:docs-data against local apps
+#   2. Dependency: osv-scanner against bun.lock
+#   3. Build     : bun run build (Astro/Starlight)
 #   4. Linkcheck : lychee against dist (when installed)
 #
 # Bypass: `git push --no-verify`.
@@ -30,20 +30,20 @@ ok()      { c_green "✓ $*"; }
 step "1/4 Docs data (monorepo apps)"
 BORINGSTACK_UI_DIR="$BORINGSTACK_UI_DIR" \
 BORINGSTACK_API_DIR="$BORINGSTACK_API_DIR" \
-  pnpm check:docs-data || fail "docs data drift — run pnpm generate:docs-data from apps/docs"
+  bun run check:docs-data || fail "docs data drift — run bun run generate:docs-data from apps/docs"
 ok "docs data matches apps/ui + apps/api"
 
 step "2/4 Dependency vulnerability scan"
 if ! command -v osv-scanner >/dev/null 2>&1; then
   fail "osv-scanner not installed. Install with: brew install osv-scanner"
 fi
-osv-scanner --config="$ROOT/osv-scanner.toml" --lockfile="$DOCS_DIR/pnpm-lock.yaml"
+osv-scanner --config="$ROOT/osv-scanner.toml" --lockfile="$DOCS_DIR/bun.lock"
 ok "osv-scanner clean"
 
 step "3/4 Production build"
 BORINGSTACK_UI_DIR="$BORINGSTACK_UI_DIR" \
 BORINGSTACK_API_DIR="$BORINGSTACK_API_DIR" \
-  pnpm build:ci || fail "build failed — run pnpm generate:docs-data from apps/docs"
+  bun run build:ci || fail "build failed — run bun run generate:docs-data from apps/docs"
 ok "build passed"
 
 step "4/4 Internal link check (lychee)"

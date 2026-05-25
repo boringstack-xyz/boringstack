@@ -2,8 +2,8 @@
 /**
  * Scaffold a new component folder with the 8-file anatomy.
  *
- *   pnpm new:component core/Card
- *   pnpm new:feature-component auth/PasswordStrengthMeter
+ *   bun run new:component core/Card
+ *   bun run new:feature-component auth/PasswordStrengthMeter
  *
  * Refuses to overwrite existing files.
  */
@@ -20,7 +20,7 @@ function bail(message: string): never {
 const arg = process.argv[2];
 
 if (typeof arg !== "string" || arg.length === 0) {
-  bail("Usage: pnpm new:component <core|global>/<ComponentName>");
+  bail("Usage: bun run new:component <core|global>/<ComponentName>");
 }
 
 const [bucket, ...rest] = arg.split("/");

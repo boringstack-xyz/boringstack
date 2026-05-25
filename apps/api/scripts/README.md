@@ -2,7 +2,7 @@
 
 Grouped by purpose. Prefer `bun run` commands over calling files directly.
 
-When you add a `package.json` script that runs a file under `scripts/`, update this README and run `bun run check:scripts-docs`. After changing lint-meta rules, run `bun run generate:lint-meta-docs`. Refresh boringstack.xyz catalogs from `.github` with `pnpm generate:docs-data`.
+When you add a `package.json` script that runs a file under `scripts/`, update this README and run `bun run check:scripts-docs`. After changing lint-meta rules, run `bun run generate:lint-meta-docs`. Refresh boringstack.xyz catalogs from `.github` with `bun run generate:docs-data`.
 
 ## Folders
 

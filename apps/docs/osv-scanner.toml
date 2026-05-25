@@ -7,7 +7,7 @@
 # All listed CVEs affect dev/build-time tooling; the published artifact
 # does not ship them as exploitable surface.
 #
-# Re-evaluate quarterly via `pnpm update` to drop entries that newer
+# Re-evaluate quarterly via `bun run update` to drop entries that newer
 # transitive versions have patched.
 
 [[IgnoredVulns]]

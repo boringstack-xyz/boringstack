@@ -72,7 +72,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
 
 <FaqGroup>
   <FaqItem title="The contract" open>
-    Shorthand for "the rules the ESLint plugins enforce." When something is "in the contract," violating it fails `pnpm validate`. The phrase emphasizes that *the lint is load-bearing*, not the prose docs. [Read more](/architecture/lint-as-contract/).
+    Shorthand for "the rules the ESLint plugins enforce." When something is "in the contract," violating it fails `bun run validate`. The phrase emphasizes that *the lint is load-bearing*, not the prose docs. [Read more](/architecture/lint-as-contract/).
   </FaqItem>
   <FaqItem title="Fire-and-forget">
     A call site that intentionally doesn't `await` a Promise. Used for audit-log writes and other telemetry where failure must never propagate to the caller. The `void` prefix marks the intent for both readers and the linter.
@@ -116,7 +116,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
   <FaqItem title="dev.sh" open>
     The infra orchestrator. Forwards every argument to `docker compose` with the right overlay + profile flags based on `STACK=` and `WITH_*=` env vars. Plain bash; you can read what it does.
   </FaqItem>
-  <FaqItem title="pnpm validate / bun run validate">
+  <FaqItem title="bun run validate / bun run validate">
     The merge gate. Typecheck + lint + tests. A PR can't merge if `validate` fails. The phrase "the merge gate" anywhere in the docs means this command.
   </FaqItem>
 </FaqGroup>

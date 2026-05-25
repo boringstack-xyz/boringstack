@@ -34,7 +34,7 @@ export default defineConfig({
   // reachable through the Vite proxy. Locally: `cd ../../infra/compose/compose && ./dev.sh up -d`.
   // In CI: the full-stack-smoke workflow boots the stack before running these.
   webServer: {
-    command: "pnpm dev",
+    command: "bun run dev",
     url: BASE_URL,
     reuseExistingServer:
       process.env.PLAYWRIGHT_REUSE_SERVER === "true" || !process.env.CI,

@@ -49,9 +49,8 @@ export function buildLintMetaCatalog() {
   }
 
   return {
-    ui: runJsonExport(uiRoot, "pnpm", [
-      "exec",
-      "tsx",
+    ui: runJsonExport(uiRoot, "bun", [
+      "run",
       "scripts/lint-meta/export-catalog.ts",
     ]),
     api: runJsonExport(apiRoot, "bun", [
@@ -239,7 +238,7 @@ export function buildScriptsCatalog() {
   const apiRoot = resolveTemplateRoot("BORINGSTACK_API_DIR", "api");
 
   return {
-    ui: buildTemplateScriptsCatalog(uiRoot, "ui", "pnpm"),
+    ui: buildTemplateScriptsCatalog(uiRoot, "ui", "bun run"),
     api: buildTemplateScriptsCatalog(apiRoot, "api", "bun run"),
   };
 }

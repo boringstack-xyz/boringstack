@@ -1,16 +1,16 @@
 # Agent contract
 
-Read this first. Everything below is enforced by `pnpm validate`.
+Read this first. Everything below is enforced by `bun run validate`.
 
 ## Merge bar
 
 ```
-pnpm validate
+bun run validate
 ```
 
 = lint clean + format clean + typecheck clean + Vitest green + production build green + bundle size within budget.
 
-Playwright (e2e) runs in `full-stack-smoke.yml` under `infra-docker-compose-template` against a real booted stack; it is a required check on this repo's PRs but not part of `pnpm validate`. To run e2e locally against a stack you have running, use `pnpm validate:full`.
+Playwright (e2e) runs in `full-stack-smoke.yml` under `infra-docker-compose-template` against a real booted stack; it is a required check on this repo's PRs but not part of `bun run validate`. To run e2e locally against a stack you have running, use `bun run validate:full`.
 
 Hard rules:
 
@@ -26,24 +26,24 @@ Hard rules:
 - No hardcoded user-facing strings in JSX. Translate with `t("…")`.
 - No `dark:` Tailwind classes. Theme switching is driven by CSS custom
   properties under `:root[data-theme="dark"]`, not the `dark:` variant.
-  After `pnpm ui:add <primitive>`, strip the `dark:` classes the scaffolder
+  After `bun run ui:add <primitive>`, strip the `dark:` classes the scaffolder
   emits — they're dead code under this theme model.
 
 ## Commands
 
-| Command                     | What it does                                                           |
-| --------------------------- | ---------------------------------------------------------------------- |
-| `pnpm dev`                  | Vite dev server on :3001 (proxies `/api` and `/auth` → `VITE_API_URL`) |
-| `pnpm validate`             | Merge gate: lint + format + typecheck + vitest + build + size budget   |
-| `pnpm validate:full`        | `validate` + Playwright (needs a running stack on :3001)               |
-| `pnpm check`                | Lint + format + typecheck (no tests)                                   |
-| `pnpm test`                 | Vitest in watch mode                                                   |
-| `pnpm test:ci`              | Vitest single run with coverage                                        |
-| `pnpm e2e`                  | Playwright (Chromium + WebKit)                                         |
-| `pnpm storybook`            | Storybook on :6006                                                     |
-| `pnpm ui:add <name>`        | Add a shadcn/ui primitive                                              |
-| `pnpm new:component <path>` | Scaffold a component folder with all suffixes                          |
-| `pnpm new:feature <Name>`   | Scaffold a feature folder + starter page; prints route/i18n next steps |
+| Command                        | What it does                                                           |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| `bun run dev`                  | Vite dev server on :3001 (proxies `/api` and `/auth` → `VITE_API_URL`) |
+| `bun run validate`             | Merge gate: lint + format + typecheck + vitest + build + size budget   |
+| `bun run validate:full`        | `validate` + Playwright (needs a running stack on :3001)               |
+| `bun run check`                | Lint + format + typecheck (no tests)                                   |
+| `bun run test`                 | Vitest in watch mode                                                   |
+| `bun run test:ci`              | Vitest single run with coverage                                        |
+| `bun run e2e`                  | Playwright (Chromium + WebKit)                                         |
+| `bun run storybook`            | Storybook on :6006                                                     |
+| `bun run ui:add <name>`        | Add a shadcn/ui primitive                                              |
+| `bun run new:component <path>` | Scaffold a component folder with all suffixes                          |
+| `bun run new:feature <Name>`   | Scaffold a feature folder + starter page; prints route/i18n next steps |
 
 ## Feature folder layout
 
@@ -117,7 +117,7 @@ installed as ordinary semver-pinned `devDependencies` in `package.json`:
 ## Quick pointers
 
 - HTTP types come from the **OpenAPI contract**. `src/lib/api/schema.d.ts` is
-  generated from `${VITE_API_URL}/swagger/json` via `pnpm generate:api` —
+  generated from `${VITE_API_URL}/swagger/json` via `bun run generate:api` —
   never edit by hand. `apiClient.GET("/auth/me")` infers the response type
   from this file. Regenerate whenever the API changes.
 - Add a server-state hook → `*.queries.ts` (TanStack Query). Component imports it through `*.hooks.ts`, never directly.
@@ -125,7 +125,7 @@ installed as ordinary semver-pinned `devDependencies` in `package.json`:
 - Add a form → react-hook-form + Zod (`zodResolver`). Server errors mapped via `applyServerErrors` in `@/features/auth/Auth.utils.ts`.
 - Log an event → `logger.info({ event: "namespace.event_name", ...payload })`.
 - Translate a string → wrap in `t("…")`. Add the key to `src/lib/i18n/locales/en/common.json`.
-- Need a shadcn primitive → `pnpm ui:add <name>`.
-- Need a new component → `pnpm new:component <core|global>/<Name>`.
-- Need a new feature → `pnpm new:feature <Name>`.
-- Add a lint-meta rule → implement `IMetaRule` under `scripts/lint-meta/rules/<category>/`, register in `registry.ts`, run `pnpm generate:lint-meta-docs`, test in `tests/lint-meta/`, then refresh boringstack docs data via `.github` `pnpm generate:docs-data`.
+- Need a shadcn primitive → `bun run ui:add <name>`.
+- Need a new component → `bun run new:component <core|global>/<Name>`.
+- Need a new feature → `bun run new:feature <Name>`.
+- Add a lint-meta rule → implement `IMetaRule` under `scripts/lint-meta/rules/<category>/`, register in `registry.ts`, run `bun run generate:lint-meta-docs`, test in `tests/lint-meta/`, then refresh boringstack docs data via `.github` `bun run generate:docs-data`.

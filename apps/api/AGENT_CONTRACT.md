@@ -70,7 +70,7 @@ on npm; their source and release flow live at
 ## Quick pointers
 
 - Canonical modules: `src/api/auth/`, `src/api/users/`, `src/api/billing/`.
-- Add a lint-meta rule → implement `IMetaRule` under `scripts/lint-meta/rules/<category>/`, register in `registry.ts`, run `bun run generate:lint-meta-docs`, test in `tests/lint-meta/`, then refresh boringstack docs data via `.github` `pnpm generate:docs-data`.
+- Add a lint-meta rule → implement `IMetaRule` under `scripts/lint-meta/rules/<category>/`, register in `registry.ts`, run `bun run generate:lint-meta-docs`, test in `tests/lint-meta/`, then refresh boringstack docs data via `.github` `bun run generate:docs-data`.
 - Throw `ApiErrors.*`, never `new Error(...)`.
 - Audit log via `auditLogService.record({ ... })` — `void`-prefixed.
 - Logger: `logger.info("msg", { event: "x.y.z", ... })`.

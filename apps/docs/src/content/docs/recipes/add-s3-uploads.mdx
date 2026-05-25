@@ -85,7 +85,7 @@ Let an authenticated user upload a file straight from the browser into an S3-com
 
 5. Add a `media` table to the schema. Minimum columns: `id`, `account_id`, `object_key`, `mime_type`, `size_bytes`, `created_at`. After a successful PUT, the UI POSTs a `finalize` request to the API which inserts the row inside a transaction.
 
-6. UI side. The ui-template's `lib/api` client already has the typed routes (regenerate with `pnpm generate:api`). A simple file picker:
+6. UI side. The ui-template's `lib/api` client already has the typed routes (regenerate with `bun run generate:api`). A simple file picker:
 
    ```ts
    const { uploadUrl, objectKey, publicUrl } =

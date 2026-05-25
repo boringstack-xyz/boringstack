@@ -3,8 +3,8 @@ import { expect, test } from "./fixtures/auth";
 /**
  * Visual regression baseline for the canonical user-facing pages.
  *
- *   pnpm e2e e2e/visual.spec.ts                     # compare
- *   pnpm e2e e2e/visual.spec.ts --update-snapshots  # accept changes
+ *   bun run e2e e2e/visual.spec.ts                     # compare
+ *   bun run e2e e2e/visual.spec.ts --update-snapshots  # accept changes
  *
  * Screenshots live under `e2e/__screenshots__/<spec>/<test>-<browser>-<platform>.png`.
  *

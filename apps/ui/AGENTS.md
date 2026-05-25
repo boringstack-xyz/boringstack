@@ -4,7 +4,7 @@
 suffix rules, ESLint plugin map). This file is a navigation index to
 focused pattern guides under [`docs/agents/`](docs/agents/).
 
-`pnpm validate` is the oracle. If anything below disagrees with what
+`bun run validate` is the oracle. If anything below disagrees with what
 `validate` says, the lint config wins — flag the drift.
 
 ## Deep dives

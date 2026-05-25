@@ -35,12 +35,12 @@ Non-2xx responses throw `ApiError` (`.status`, `.code`,
 cd ../api-template && bun run dev
 
 # In another terminal: regenerate the UI types
-pnpm generate:api
+bun run generate:api
 ```
 
 This rewrites `src/lib/api/schema.d.ts`. Commit the change alongside
 whatever feature work consumes the new endpoints. CI's
-`pnpm generate:api:check` is only meaningful when the API is
+`bun run generate:api:check` is only meaningful when the API is
 reachable during the run.
 
 **Never call `fetch` or `axios` directly.** Lint fails the PR.

@@ -12,7 +12,7 @@ repo's Security tab.
 | Workflow           | What it catches                                      | Allowlist file         |
 | ------------------ | ---------------------------------------------------- | ---------------------- |
 | `security-secrets` | Leaked API keys, tokens, private keys (gitleaks CLI) | `.gitleaksignore`      |
-| `security-deps`    | Known CVEs via `osv-scanner` + `pnpm audit`          | `osv-scanner.toml`     |
+| `security-deps`    | Known CVEs via `osv-scanner` + `bun run audit`       | `osv-scanner.toml`     |
 | `security-sast`    | OWASP / JS rule packs + custom rules in `.semgrep/`  | inline `// nosemgrep:` |
 
 ## Allowlist discipline

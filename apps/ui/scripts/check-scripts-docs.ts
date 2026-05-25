@@ -32,7 +32,7 @@ function readReadmeCommandKeys(): Set<string> {
   const text = readFileSync(README_PATH, "utf8");
   const keys = new Set<string>();
 
-  for (const match of text.matchAll(/\|\s*`pnpm\s+([^`]+)`\s*\|/gu)) {
+  for (const match of text.matchAll(/\|\s*`bun run\s+([^`]+)`\s*\|/gu)) {
     const key = match[1]?.trim();
 
     if (key !== undefined && key.length > 0) {
@@ -54,7 +54,7 @@ function main(): void {
     );
 
     for (const key of missing) {
-      console.error(`  - pnpm ${key}`);
+      console.error(`  - bun run ${key}`);
     }
 
     process.exit(1);

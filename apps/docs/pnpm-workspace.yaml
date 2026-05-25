@@ -1,6 +1,0 @@
-allowBuilds:
-  chromedriver: true
-  esbuild: false
-  sharp: false
-  workerd: false
-onlyBuiltDependencies: chromedriver

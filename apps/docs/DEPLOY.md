@@ -20,7 +20,7 @@ This file documents the wire-up so future-you (or a teammate) can rebuild it fro
    | ---------------------- | ------------------- |
    | Production branch      | `main`              |
    | Framework preset       | Astro               |
-   | Build command          | `pnpm build`        |
+   | Build command          | `bun run build`     |
    | Build output directory | `dist`              |
    | Root directory         | `apps/docs`         |
    | Node version           | `22` (via `.nvmrc`) |
@@ -36,19 +36,19 @@ This file documents the wire-up so future-you (or a teammate) can rebuild it fro
 
 ```bash
 cd apps/docs
-pnpm install
-pnpm dev       # local preview at http://localhost:4321
-pnpm build:site     # produces dist/ (Cloudflare uses this; no sibling templates needed)
-pnpm build:ci       # check:docs-data + build; same as docs-linkcheck CI
-pnpm preview   # serves dist/ at http://localhost:4321
+bun install
+bun run dev       # local preview at http://localhost:4321
+bun run build:site     # produces dist/ (Cloudflare uses this; no sibling templates needed)
+bun run build:ci       # check:docs-data + build; same as docs-linkcheck CI
+bun run preview   # serves dist/ at http://localhost:4321
 ```
 
 The build runs Pagefind automatically (Starlight bundles it), so search works on the built site too.
 
 ## How deploys work
 
-- Push to `main` → Cloudflare auto-builds with `pnpm build` (Astro only; committed JSON in `src/data/` is the catalog source of truth).
-- Manual production deploy: `pnpm deploy` runs `build:ci` (docs-data check + build) before `wrangler deploy`. From the monorepo, defaults use `apps/ui` and `apps/api` (override with `BORINGSTACK_UI_DIR` / `BORINGSTACK_API_DIR`).
+- Push to `main` → Cloudflare auto-builds with `bun run build` (Astro only; committed JSON in `src/data/` is the catalog source of truth).
+- Manual production deploy: `bun run deploy` runs `build:ci` (docs-data check + build) before `wrangler deploy`. From the monorepo, defaults use `apps/ui` and `apps/api` (override with `BORINGSTACK_UI_DIR` / `BORINGSTACK_API_DIR`).
 - Pushes to other branches → preview deployment at `<branch>.boringstack-docs.pages.dev`.
 - PRs from forks get preview deployments too (CF Pages comments the URL on the PR).
 - Rollback: Pages dashboard → Deployments → pick a previous deployment → Rollback.
@@ -56,5 +56,5 @@ The build runs Pagefind automatically (Starlight bundles it), so search works on
 ## Notes
 
 - **No CNAME file.** Unlike GitHub Pages, Cloudflare Pages binds the custom domain via the dashboard, not via a `public/CNAME` file. Adding one would just serve `/CNAME` as text.
-- **Sitemap.** Starlight generates `sitemap-index.xml` and `sitemap-0.xml` during `pnpm build`. Pagefind plus the sidebar remains the primary human navigation.
+- **Sitemap.** Starlight generates `sitemap-index.xml` and `sitemap-0.xml` during `bun run build`. Pagefind plus the sidebar remains the primary human navigation.
 - **Analytics.** Not wired up. If you add Cloudflare Web Analytics later, drop the `<script>` into `astro.config.mjs` via Starlight's `head` option.

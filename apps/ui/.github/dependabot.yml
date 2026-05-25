@@ -1,7 +1,7 @@
 version: 2
 updates:
   # ---------------------------------------------------------------------------
-  # npm dependencies (pnpm-managed via package.json)
+  # npm dependencies (Bun-managed via package.json)
   # ---------------------------------------------------------------------------
   # The `package-json-exact-deps` lint rule (and AGENTS.md) require:
   #   - dependencies / devDependencies pinned exactly (no ^, no ~)

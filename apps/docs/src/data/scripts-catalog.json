@@ -1,7 +1,7 @@
 {
   "ui": {
     "template": "ui",
-    "runner": "pnpm",
+    "runner": "bun run",
     "folders": [
       {
         "folder": "[`ci/`](ci/)",
@@ -34,7 +34,7 @@
       {
         "command": "size:check:modulepreload",
         "script": "quality/check-modulepreload-size-coverage.ts",
-        "description": "After `pnpm build`, every `<link rel=\"modulepreload\">` in dist/index.html",
+        "description": "After `bun run build`, every `<link rel=\"modulepreload\">` in dist/index.html",
         "invocation": "tsx scripts/quality/check-modulepreload-size-coverage.ts"
       },
       {

@@ -19,7 +19,7 @@ const ALLOWED_WARNING_LINES = [
 const vitestArgs = process.argv.slice(2);
 const args = vitestArgs.length > 0 ? vitestArgs : ["run", "--coverage"];
 
-const result = spawnSync("pnpm", ["exec", "vitest", ...args], {
+const result = spawnSync("bunx", ["vitest", ...args], {
   encoding: "utf8",
   env: {
     ...process.env,

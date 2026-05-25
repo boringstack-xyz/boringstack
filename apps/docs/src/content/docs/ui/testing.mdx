@@ -80,16 +80,16 @@ flowchart LR
 
 <FaqGroup>
   <FaqItem title="Unit / component" open>
-    Location: `src/**/*.test.ts` colocated with source. Run: `pnpm test`.
+    Location: `src/**/*.test.ts` colocated with source. Run: `bun run test`.
   </FaqItem>
   <FaqItem title="e2e">
-    Location: `e2e/*.spec.ts`. Run: `pnpm e2e` (needs dev stack up).
+    Location: `e2e/*.spec.ts`. Run: `bun run e2e` (needs dev stack up).
   </FaqItem>
   <FaqItem title="Visual baselines">
-    Location: `e2e/visual.spec.ts-snapshots/`. Run: `pnpm e2e:visual:update` to
+    Location: `e2e/visual.spec.ts-snapshots/`. Run: `bun run e2e:visual:update` to
     refresh.
   </FaqItem>
-  <FaqItem title="Coverage">Run via `pnpm test:ci`.</FaqItem>
+  <FaqItem title="Coverage">Run via `bun run test:ci`.</FaqItem>
 </FaqGroup>
 
 ## Why no mock layer
@@ -112,9 +112,9 @@ E2E test: navigate, interact, assert. Use Playwright's page-object pattern under
 
 Usually one of three things:
 
-- Visual baselines: different OS font rendering. The CI workflow stores baselines per-platform; run `pnpm e2e:visual:update` on a matching machine, or regenerate baselines in CI itself.
+- Visual baselines: different OS font rendering. The CI workflow stores baselines per-platform; run `bun run e2e:visual:update` on a matching machine, or regenerate baselines in CI itself.
 - Flaky timing: Playwright auto-waits, but custom polling loops in app code can race. Look for `setTimeout`-based assumptions.
-- API drift: backend changed, `pnpm generate:api` wasn't run. CI catches this via the schema diff check.
+- API drift: backend changed, `bun run generate:api` wasn't run. CI catches this via the schema diff check.
 
 ## Lint coverage
 

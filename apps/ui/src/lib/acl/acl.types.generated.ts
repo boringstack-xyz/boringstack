@@ -1,8 +1,8 @@
 /*
- * AUTO-GENERATED — do not edit. Run `pnpm generate:acl-types` in the
+ * AUTO-GENERATED — do not edit. Run `bun run generate:acl-types` in the
  * apps/api repo to refresh this file. Drift between this file and
  * apps/api/src/lib/acl/acl.constants.ts fails CI via
- * `pnpm generate:acl-types:check`.
+ * `bun run generate:acl-types:check`.
  */
 
 export const ROLE = {

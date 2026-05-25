@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * After `pnpm build`, every `<link rel="modulepreload">` in dist/index.html
+ * After `bun run build`, every `<link rel="modulepreload">` in dist/index.html
  * must match at least one glob in `.size-limit.json`.
  */
 import { existsSync, readFileSync } from "node:fs";
@@ -97,7 +97,7 @@ function extractModulepreloadHrefs(html: string): string[] {
 function main(): void {
   if (!existsSync(INDEX_HTML)) {
     console.error(
-      "[size:modulepreload] dist/index.html not found — run `pnpm build` first."
+      "[size:modulepreload] dist/index.html not found — run `bun run build` first."
     );
     process.exit(1);
   }
