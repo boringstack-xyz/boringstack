@@ -9,7 +9,7 @@ description: >-
 
 # Article illustrations (BoringStack docs)
 
-This repo is **boringstack-docs**: an [Astro Starlight](https://starlight.astro.build) site under `.github/`. Documentation pages live as **MDX** in `src/content/docs/` (mirrored in the sidebar from `astro.config.mjs`). There is **no** `pnpm optimize:image` or `process:transparency` script here; use the workflow below with normal static assets and `npm run build` to verify.
+This repo is **boringstack-docs**: an [Astro Starlight](https://starlight.astro.build) site under `.github/`. Documentation pages live as **MDX** in `src/content/docs/` (mirrored in the sidebar from `astro.config.mjs`). Use the workflow below with normal static assets and `bun run build` to verify.
 
 ## Prerequisites
 

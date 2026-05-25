@@ -6,7 +6,7 @@ container dev, or chasing stale-module / blank-page boots.
 ## Reset container deps
 
 ```bash
-rm -rf apps/ui/.pnpm-store apps/ui/node_modules
+rm -rf apps/ui/node_modules
 cd infra/compose/compose && docker volume rm ai-starter-infra_ui_dev_node_modules 2>/dev/null; ./dev.sh up -d --build ui-dev
 ```
 

@@ -8,7 +8,7 @@ export function printPunchList(kind: string, name: string): void {
   console.log(`✓ Added ${kind}: ${name}`);
   console.log("");
   console.log("Next:");
-  console.log("  1. Run pnpm generate:acl-types to mirror the change to");
+  console.log("  1. Run bun run generate:acl-types (from apps/api) to mirror the change to");
   console.log("     ../ui/src/lib/acl/acl.types.generated.ts.");
   console.log(
     "  2. If you added a role or a subject, update buildAbility(...)"

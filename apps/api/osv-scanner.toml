@@ -3,8 +3,7 @@
 # Each entry must include the reasoning + a re-evaluation date. Re-run
 # `osv-scanner --lockfile=bun.lock` periodically to confirm each remains
 # accepted-risk (upstream patches eventually land and the entry can be
-# removed). pnpm-lock.yaml is .gitignored in this repo — bun.lock is
-# canonical.
+# removed). bun.lock is canonical.
 
 [[IgnoredVulns]]
 id = "GHSA-67mh-4wv8-2f99"

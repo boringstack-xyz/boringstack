@@ -6,15 +6,10 @@ test-results
 coverage
 .lighthouseci
 
-# pnpm content-addressable store. Should live at ~/Library/pnpm/store on
-# the host, but the docker `ui-dev` container can't reach the host's
-# pnpm store and falls back to a project-local one when running
-# `pnpm install` against the bind-mounted source. Ignoring keeps the
-# leak out of git.
 .pnpm-store/
 
 # Visual regression baselines are platform-specific (font rendering, AA).
-# Each developer regenerates locally with `pnpm e2e:visual:update`.
+# Each developer regenerates locally with `bun run e2e:visual:update`.
 # CI does not run visual regression — see CONTRIBUTING.md.
 e2e/**/*-snapshots/
 .env

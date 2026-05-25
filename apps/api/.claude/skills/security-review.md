@@ -42,7 +42,7 @@ Three scanners, one after another. Print findings before moving on.
 2. **osv-scanner** (dependency CVEs):
 
    ```bash
-   osv-scanner --lockfile=bun.lock --lockfile=pnpm-lock.yaml
+   osv-scanner --lockfile=bun.lock
    ```
 
    Filter to `HIGH` / `CRITICAL`. Note any `MEDIUM` only if the package

@@ -81,7 +81,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
 
     **Why.** One installer/runtime story across the monorepo; Bun's lockfile and CLI cover SPA, docs, and API workloads. Supply-chain pins live in each app's `bun.lock` and `osv-scanner.toml`.
 
-    **What we gave up.** pnpm's content-addressable store and its `minimum-release-age` knob. Bun's resolver and per-repo lockfiles are the trade.
+    **What we gave up.** npm/yarn/pnpm-specific tooling (separate lockfile ecosystems, package-manager-only supply-chain knobs). Bun's resolver and per-repo lockfiles are the trade.
 
     **When we'd reconsider.** If a critical dependency breaks under Bun's resolver and cannot be replaced or patched.
   </FaqItem>
