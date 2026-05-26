@@ -1,11 +1,14 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../../../clients/postgres";
 import { userAuthProviders, users } from "../../../clients/postgres/schema";
+import { env } from "../../../config/env";
 import { AUDIT_ACTIONS, auditLogService } from "../../../lib/audit-log";
 import { ApiErrors } from "../../../lib/errors";
-import type { IOAuthProfile } from "../../../lib/oauth";
+import { notifications } from "../../../lib/notifications";
+import { canDisconnect, type IOAuthProfile } from "../../../lib/oauth";
 import { now } from "../../../lib/time/now";
 import { accountsService } from "../../accounts";
+import { authWelcomeEvent } from "../../notifications/events";
 import type { IOAuthLoginResult } from "../auth.types";
 import { EMAIL_PROVIDER_KEY } from "../auth.constants";
 import { normalizeEmail, toPublicUser } from "../auth.utils";
@@ -141,6 +144,16 @@ export class OAuthAuthService {
       metadata: { provider: providerName },
     });
 
+    if (result.isNew) {
+      void notifications.send(authWelcomeEvent, {
+        recipientUserId: result.user.id,
+        payload: {
+          firstName: result.user.firstName,
+          dashboardUrl: `${env.FRONTEND_URL}/dashboard`,
+        },
+      });
+    }
+
     return {
       user: toPublicUser(result.user),
       accountId: result.accountId,
@@ -225,51 +238,42 @@ export class OAuthAuthService {
         where: eq(userAuthProviders.userId, userId),
       });
 
-      if (providers.length <= 1) {
-        throw ApiErrors.validation(
-          "You must keep at least one sign-in method",
-          "provider"
-        );
+      const decision = canDisconnect(
+        providers,
+        providerName,
+        EMAIL_PROVIDER_KEY
+      );
+
+      if (!decision.ok) {
+        if (decision.reason === "Provider link not found") {
+          throw ApiErrors.notFound("Provider link");
+        }
+
+        throw ApiErrors.validation(decision.reason, "provider");
       }
 
       const target = providers.find((row) => row.provider === providerName);
 
-      if (!target) {
+      if (target === undefined) {
+        /*
+         * canDisconnect already returned ok here; this satisfies the
+         * narrowing for the subsequent .id access without an assertion.
+         */
         throw ApiErrors.notFound("Provider link");
       }
 
-      const hasPassword = providers.some(
-        (row) => row.provider === EMAIL_PROVIDER_KEY && row.passwordHash !== ""
-      );
-
-      const oauthCount = providers.filter(
-        (row) => row.provider !== EMAIL_PROVIDER_KEY
-      ).length;
-
-      if (providerName === EMAIL_PROVIDER_KEY) {
-        if (oauthCount === 0) {
-          throw ApiErrors.validation(
-            "You must keep at least one sign-in method",
-            "provider"
-          );
-        }
-
+      if (decision.action === "clear-password") {
         await tx
           .update(userAuthProviders)
           .set({ passwordHash: "" })
           .where(eq(userAuthProviders.id, target.id));
-      } else {
-        if (!hasPassword && oauthCount <= 1) {
-          throw ApiErrors.validation(
-            "You must keep at least one sign-in method",
-            "provider"
-          );
-        }
 
-        await tx
-          .delete(userAuthProviders)
-          .where(eq(userAuthProviders.id, target.id));
+        return;
       }
+
+      await tx
+        .delete(userAuthProviders)
+        .where(eq(userAuthProviders.id, target.id));
     });
 
     void auditLogService.record({

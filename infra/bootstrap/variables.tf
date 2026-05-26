@@ -118,6 +118,46 @@ variable "monorepo_repo" {
 }
 
 # ============================================================================
+# Private GHCR pull credentials
+# ============================================================================
+#
+# WUD and `docker compose pull` both fetch the api + ui images from GHCR
+# at first boot. Public packages need no auth; the moment the fork goes
+# private, anonymous pulls fail with "manifest unknown" and the stack
+# silently stops getting updates. Render `~/.docker/config.json` from a
+# PAT scoped `read:packages` so private images pull cleanly.
+#
+# To generate the PAT:
+#   GitHub → Settings → Developer settings → Personal access tokens
+#   → Tokens (classic) → Generate new token → select read:packages.
+#
+# Rotate at least annually; the bootstrap script writes whatever value
+# is in tfvars on every apply, so a `tofu apply` is the rotation tool.
+
+variable "ghcr_username" {
+  type        = string
+  description = "GitHub username the GHCR PAT belongs to. Leave empty if the fork's GHCR packages are public — pulls run anonymously."
+  default     = ""
+
+  validation {
+    condition     = length(regexall("[\r\n\\s]", var.ghcr_username)) == 0
+    error_message = "ghcr_username must fit on one line and contain no whitespace."
+  }
+}
+
+variable "ghcr_token" {
+  type        = string
+  description = "GitHub PAT (classic) with read:packages scope. Required when ghcr_username is set. Rotate at least annually; `tofu apply` rewrites the docker config on the box."
+  default     = ""
+  sensitive   = true
+
+  validation {
+    condition     = length(regexall("[\r\n]", var.ghcr_token)) == 0
+    error_message = "ghcr_token must fit on one line."
+  }
+}
+
+# ============================================================================
 # Stack secrets (rendered into compose/.env on first boot)
 # ============================================================================
 

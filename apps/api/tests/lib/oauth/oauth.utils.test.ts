@@ -3,14 +3,23 @@ import { describe, expect, test } from "bun:test";
 import { ApiError } from "../../../src/lib/errors";
 import {
   buildRedirectURI,
+  canDisconnect,
   fetchJson,
   getCredentials,
   isRecord,
   readBoolean,
   readString,
   splitDisplayName,
+  type IProviderRow,
 } from "../../../src/lib/oauth/oauth.utils";
 import { isValidOAuthProvider } from "../../../src/lib/oauth";
+
+const EMAIL_PROVIDER = "email";
+
+const provider = (name: string, passwordHash = ""): IProviderRow => ({
+  provider: name,
+  passwordHash,
+});
 
 describe("isValidOAuthProvider", () => {
   test("accepts each known provider", () => {
@@ -158,6 +167,94 @@ function withMockedFetch<T>(
     Object.assign(globalThis, { fetch: original });
   });
 }
+
+describe("canDisconnect", () => {
+  test("rejects when the target provider isn't linked to the user", () => {
+    const result = canDisconnect(
+      [provider(EMAIL_PROVIDER, "hash"), provider("github")],
+      "google",
+      EMAIL_PROVIDER
+    );
+
+    expect(result).toEqual({ ok: false, reason: "Provider link not found" });
+  });
+
+  test("rejects when the user has no providers at all", () => {
+    const result = canDisconnect([], "google", EMAIL_PROVIDER);
+
+    expect(result).toEqual({ ok: false, reason: "Provider link not found" });
+  });
+
+  test("rejects disconnecting password when no OAuth link exists", () => {
+    const result = canDisconnect(
+      [provider(EMAIL_PROVIDER, "hash")],
+      EMAIL_PROVIDER,
+      EMAIL_PROVIDER
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      reason: "You must keep at least one sign-in method",
+    });
+  });
+
+  test("allows disconnecting password when at least one OAuth link exists (clears hash)", () => {
+    const result = canDisconnect(
+      [provider(EMAIL_PROVIDER, "hash"), provider("github")],
+      EMAIL_PROVIDER,
+      EMAIL_PROVIDER
+    );
+
+    expect(result).toEqual({ ok: true, action: "clear-password" });
+  });
+
+  test("rejects disconnecting the only OAuth link when no password is set", () => {
+    const result = canDisconnect(
+      [provider(EMAIL_PROVIDER, ""), provider("github")],
+      "github",
+      EMAIL_PROVIDER
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      reason: "You must keep at least one sign-in method",
+    });
+  });
+
+  test("allows disconnecting an OAuth link when password login exists (deletes row)", () => {
+    const result = canDisconnect(
+      [provider(EMAIL_PROVIDER, "hash"), provider("github")],
+      "github",
+      EMAIL_PROVIDER
+    );
+
+    expect(result).toEqual({ ok: true, action: "delete" });
+  });
+
+  test("allows disconnecting one OAuth link when another OAuth link survives", () => {
+    const result = canDisconnect(
+      [provider("github"), provider("google")],
+      "github",
+      EMAIL_PROVIDER
+    );
+
+    expect(result).toEqual({ ok: true, action: "delete" });
+  });
+
+  test("ignores password rows with empty hash for the 'hasPassword' check", () => {
+    const result = canDisconnect(
+      [provider(EMAIL_PROVIDER, ""), provider("github")],
+      "github",
+      EMAIL_PROVIDER
+    );
+
+    // Empty-hash email row does NOT count as a sign-in method.
+    expect(result).toEqual({
+      ok: false,
+      reason: "You must keep at least one sign-in method",
+    });
+  });
+});
 
 describe("fetchJson", () => {
   test("returns the parsed JSON body on 2xx", async () => {

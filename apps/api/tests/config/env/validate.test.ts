@@ -107,6 +107,7 @@ const seedValid = (): TestEnv => ({
   PUBLIC_API_URL: "http://localhost:3000",
   ALLOWED_ORIGINS: "",
   EMAIL_PROVIDER: "resend",
+  EMAIL_FROM: "noreply@acme.test",
   RESEND_API_KEY: "rk_test",
 });
 
@@ -249,6 +250,29 @@ describe("validateEnv", () => {
 
     expect(env.BILLING_ENABLED).toBe(false);
     expect(env.QUEUES_ENABLED).toBe(true);
+  });
+
+  it("rejects production EMAIL_FROM on a placeholder domain", () => {
+    testEnv.NODE_ENV = "production";
+    testEnv.ALLOWED_ORIGINS = "";
+    testEnv.EMAIL_PROVIDER = "resend";
+    testEnv.RESEND_API_KEY = "rk_test";
+    testEnv.EMAIL_FROM = "noreply@example.com";
+    expect(() => validateEnv(testEnv)).toThrow(/placeholder domain/);
+  });
+
+  it("rejects production EMAIL_FROM on a placeholder subdomain", () => {
+    testEnv.NODE_ENV = "production";
+    testEnv.ALLOWED_ORIGINS = "";
+    testEnv.EMAIL_PROVIDER = "resend";
+    testEnv.RESEND_API_KEY = "rk_test";
+    testEnv.EMAIL_FROM = "noreply@mail.example.com";
+    expect(() => validateEnv(testEnv)).toThrow(/placeholder domain/);
+  });
+
+  it("allows the same placeholder address in development", () => {
+    testEnv.EMAIL_FROM = "noreply@example.com";
+    expect(() => validateEnv(testEnv)).not.toThrow();
   });
 
   it("requires SMTP_HOST when EMAIL_PROVIDER=smtp in production", () => {

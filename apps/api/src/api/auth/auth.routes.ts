@@ -16,6 +16,7 @@ import {
   DEFAULT_OAUTH_SCOPES,
   isValidOAuthProvider,
 } from "../../lib/oauth";
+import { now } from "../../lib/time/now";
 import { errorHandler } from "../../middleware/error-handler";
 import { createAuthMiddleware } from "./auth.plugin";
 import {
@@ -151,7 +152,14 @@ const credentialingRoutes = new Elysia()
       if (env.NODE_ENV !== "test" && !env.E2E_TEST_ENDPOINTS_ENABLED) {
         set.status = 404;
 
-        return { success: false, error: { code: "NOT_FOUND" } };
+        return {
+          success: false as const,
+          error: {
+            code: "NOT_FOUND",
+            message: "Resource not found",
+            timestamp: now(),
+          },
+        };
       }
 
       const result = await emailVerificationService.forceVerifyForTests(
@@ -172,6 +180,17 @@ const credentialingRoutes = new Elysia()
     },
     {
       body: t.Object({ email: t.String({ format: "email" }) }),
+      response: t.Union([
+        AuthResponse,
+        t.Object({
+          success: t.Literal(false),
+          error: t.Object({
+            code: t.String(),
+            message: t.String(),
+            timestamp: t.String(),
+          }),
+        }),
+      ]),
       detail: {
         tags: ["Authentication"],
         summary:

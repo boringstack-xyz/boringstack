@@ -58,6 +58,8 @@ locals {
     vite_sentry_dsn            = var.vite_sentry_dsn
     superuser_email            = var.superuser_email
     superuser_password         = var.superuser_password
+    ghcr_username              = var.ghcr_username
+    ghcr_token                 = var.ghcr_token
   }
 
   # Docker Compose treats single-quoted .env values literally, avoiding
@@ -76,9 +78,28 @@ locals {
     backup_retention_days = var.backup_retention_days
   })
 
+  # ghcr.io requires HTTP Basic auth with `<username>:<token>` base64-encoded
+  # in `~/.docker/config.json`. The bootstrap script writes this file at
+  # 0600 before `docker compose pull`, and WUD mounts it read-only so its
+  # GHCR polling honours the same credentials.
+  ghcr_auth_b64 = (
+    var.ghcr_username == "" || var.ghcr_token == ""
+    ? ""
+    : base64encode("${var.ghcr_username}:${var.ghcr_token}")
+  )
+
+  docker_config_json = local.ghcr_auth_b64 == "" ? "" : jsonencode({
+    auths = {
+      "ghcr.io" = {
+        auth = local.ghcr_auth_b64
+      }
+    }
+  })
+
   cloud_init = templatefile("${path.module}/templates/cloud-init.yaml.tftpl", {
     env_file_contents     = local.env_file_contents
     bootstrap_script      = file("${path.module}/templates/bootstrap.sh")
     bootstrap_config_json = local.bootstrap_config_json
+    docker_config_json    = local.docker_config_json
   })
 }

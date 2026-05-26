@@ -81,6 +81,10 @@ module "bootstrap" {
   # Optional first-boot superuser
   superuser_email    = var.superuser_email
   superuser_password = var.superuser_password
+
+  # Private GHCR auth
+  ghcr_username = var.ghcr_username
+  ghcr_token    = var.ghcr_token
 }
 
 # ----------------------------------------------------------------------------

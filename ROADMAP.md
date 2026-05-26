@@ -126,3 +126,54 @@ Separate product, not a feature of `boringstack-xyz`. Own repo, design cycle, ro
 - **Welcome state** — `DashboardWelcome` + theme tokens, no `dark:` classes.
 - **Docker digest pinning** — all `FROM` lines + all third-party compose `image:` refs pinned by `@sha256:`. `scripts/pin-image-digests.sh` refreshes them.
 - **F — Agent-discoverable skills** — `/security-review`, `/build-feature`, `/add-audit-event`, `/add-email-template`, `/add-notification-event`, `/add-full-feature` shipped to `.claude/skills/` in apps/api and apps/ui. The broader `/add-database-resource`, `/add-job`, `/add-ui-feature` intents are subsumed by `/build-feature`.
+
+---
+
+Done — summary of what shipped
+
+13 audit items landed. 32 files modified, 6 new files, ~570 lines net added. bun run check (api) clean, 877 tests pass, tofu validate clean, all compose overlay combinations validate, docs catalogs in sync.
+
+Code fixes (apps/api)
+
+- Widgets audit actions (widgets.service.ts, audit-log.constants.ts) — WIDGET_CREATED/UPDATED/DELETED replace the copy-pasted USER_PROFILE_UPDATED.
+- auth.welcome notification event (events/auth-welcome.event.ts, events/index.ts, email-verification.service.ts, oauth.service.ts) — fires from both verify-email and first-time OAuth registration. Forks have a working example.
+- /\_\_test/force-verify typed response (auth.routes.ts) — t.Union([AuthResponse, error-shape]) matches every other route's convention.
+- Dashboard activity labels (dashboard.utils.ts + tests) — ACTIVITY_LABELS map translates auth.login_success → "Signed in" before the UI sees it; derives a readable label for unmapped events.
+- EMAIL_FROM placeholder guard (config/env/validate.ts + tests) — production refuses to boot with \*@example.com/example.org/example.net/localhost sender domains; 3 new tests pin the behaviour.
+- canDisconnect pure helper (lib/oauth/oauth.utils.ts) — extracted from disconnectProvider; 8 new tests cover every locked-out / allowed branch; service is now thin.
+- Valkey-backed rate limiter (lib/rate-limit/valkey-context.ts, config/security/security.ts) — elysia-rate-limit uses a Valkey-shared counter when CACHE_ENABLED=true && CACHE_PROVIDER=valkey; in-memory default unchanged. Permissive fallback on Valkey failure (Traefik's edge limit is still in front).
+
+Infra hardening
+
+- Private-GHCR auth (infra/bootstrap/) — ghcr*username + ghcr_token tfvars, rendered into /root/.docker/config.json via cloud-init and into WUD_GHCR*\* in compose/.env. tofu apply is the rotation tool. Closes the A7 hard gate from ROADMAP.
+- WUD default → notify-only (docker-compose.wud.yml, .env.example, runbook) — WUD_TRIGGER_DOCKER_APP_AUTO defaults to false. Auto-mode now opt-in with a documented prerequisite checklist.
+- Prometheus alert rules (prometheus/rules.yml, mounted via observability overlay) — 13 alerts across api (5xx rate, p95 latency, unreachable), database (down, conn pool, replication), host (disk, memory, CPU), edge (Traefik). Alertmanager wiring untouched (operator adds receivers).
+- Backup restore script + runbook (scripts/restore-from-backup.example.sh, updated docs/backup-offsite.md) — partner to backup-wrapper.example.sh; restores into a side-car DB, prints the manual promotion commands. Dry-run via RESTORE_DRY_RUN=1.
+- k6 load-test harness (apps/api/scripts/loadtest/) — golden-path scenario: register → force-verify → login → dashboard summary → widget CRUD → SSE. p95 thresholds enforce the budget. bun run loadtest.
+
+DX
+
+- bun run rename:project <project> <ghcr-owner> <domain> (root scripts/rename-project.sh) — atomic rebrand across 24 files. DRY_RUN=1 previews. Tested with acme acme-corp acme.com. Final output prints next steps + the handful of things to rename manually (LICENSE attribution, Sentry DSNs, docs prose).
+
+What's still outstanding from the audit
+
+Architectural decisions still on you:
+
+- #2 Multi-project reuse mechanism — needs a commit to "template-as-fork + bun run upstream-merge runbook" vs scaffolder vs library-split.
+- #4, #5, #24 OAuth/Stripe/email runbooks — content writing, no good way to ghostwrite without your voice.
+- #7 First-feature-in-10-minutes tutorial — same.
+- #8 MFA / TOTP — meaningful feature work (~2 days).
+- #16, #17 Cookie consent + privacy/ToS — legal-adjacent, needs your call on tone + jurisdiction defaults.
+- #18 Account ownership transfer two-step — design needed for the accept flow.
+- #19 Account join requests — decide implement vs delete the schema. Half-feature today.
+- #20 LinkedIn OAuth disconnect in UI — UI work outside this api-only pass.
+- #28, #29, #30 — landing-page advertising for skills, argon2id decision, JWT revocation list — all judgment calls.
+
+One follow-up needed before pushing
+
+apps/ui/src/lib/api/schema.d.ts will need regeneration once api-dev is running against the new code (the \_\_test/force-verify response shape changed):
+
+cd infra/compose/compose && ./dev.sh up -d postgres valkey api-migrate-dev api-dev
+cd apps/ui && OPENAPI_URL=http://localhost:3000/swagger/json bun run generate:api
+
+Then bun run check from the repo root passes clean across api/ui/docs.

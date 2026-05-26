@@ -254,6 +254,35 @@ const checkOrigins = (env: Env): string[] => {
     : [];
 };
 
+/**
+ * Catches the most common deploy-day footgun: shipping the template's
+ * placeholder sender domain to a real email provider. Every provider
+ * rejects sends from unverified domains, but the rejection surfaces
+ * deep in a queue worker — the validator stops the process before
+ * the first send instead.
+ */
+const PLACEHOLDER_FROM_DOMAINS = [
+  "example.com",
+  "example.org",
+  "example.net",
+  "localhost",
+] as const;
+
+const isPlaceholderFromAddress = (from: string): boolean => {
+  const atIndex = from.indexOf("@");
+
+  if (atIndex === -1) {
+    return false;
+  }
+
+  const domain = from.slice(atIndex + 1).toLowerCase();
+
+  return PLACEHOLDER_FROM_DOMAINS.some(
+    (placeholder) =>
+      domain === placeholder || domain.endsWith(`.${placeholder}`)
+  );
+};
+
 const checkEmailProvider = (env: Env): string[] => {
   if (env.NODE_ENV !== "production") {
     return [];
@@ -270,14 +299,14 @@ const checkEmailProvider = (env: Env): string[] => {
       ];
     }
 
-    return [];
+    return checkEmailFromDomain(env);
   }
 
   // SMTP just needs a host; auth is optional (Mailpit accepts any).
   if (env.EMAIL_PROVIDER === "smtp") {
     return env.SMTP_HOST === ""
       ? ["Email provider 'smtp' requires SMTP_HOST"]
-      : [];
+      : checkEmailFromDomain(env);
   }
 
   const keyByProvider: Record<"resend" | "sendgrid", string> = {
@@ -291,7 +320,18 @@ const checkEmailProvider = (env: Env): string[] => {
     ];
   }
 
-  return [];
+  return checkEmailFromDomain(env);
+};
+
+const checkEmailFromDomain = (env: Env): string[] => {
+  if (!isPlaceholderFromAddress(env.EMAIL_FROM)) {
+    return [];
+  }
+
+  return [
+    `EMAIL_FROM "${env.EMAIL_FROM}" uses a placeholder domain. ` +
+      "Set it to an address on a domain you control and verified with the provider.",
+  ];
 };
 
 const checkAIProvider = (env: Env): string[] => {

@@ -78,6 +78,18 @@ chmod +x "$INFRA_DIR"/scripts/*.sh "$INFRA_DIR/compose/dev.sh" 2>/dev/null || tr
 # Symlink for predictable paths in docs/playbooks
 ln -sfn "$INFRA_DIR" "$ROOT/infra"
 
+# ---- Confirm private-GHCR auth, if rendered --------------------------------
+# When the operator set ghcr_username + ghcr_token in tfvars, cloud-init
+# wrote /root/.docker/config.json before this script ran. We do not
+# overwrite it here; `tofu apply` is the rotation tool. Failing to read
+# this file when private images are in use leaves the operator chasing
+# a "manifest unknown" error during the very next pull.
+if [[ -r /root/.docker/config.json ]]; then
+  log "Private-GHCR auth: docker config detected at /root/.docker/config.json."
+else
+  log "Private-GHCR auth: no docker config installed. Anonymous GHCR pulls only."
+fi
+
 # ---- Pull pre-built images from GHCR and start ----------------------------
 log "Pulling production images from GHCR..."
 cd "$INFRA_DIR"

@@ -120,3 +120,16 @@ variable "superuser_password" {
   default   = ""
   sensitive = true
 }
+
+# Private GHCR auth (empty = anonymous pulls)
+
+variable "ghcr_username" {
+  type    = string
+  default = ""
+}
+
+variable "ghcr_token" {
+  type      = string
+  default   = ""
+  sensitive = true
+}

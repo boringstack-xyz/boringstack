@@ -135,3 +135,76 @@ export const fetchJson = async (
 
   return res.json();
 };
+
+/*
+ * ---------------------------------------------------------------------------
+ * disconnect-provider eligibility
+ * ---------------------------------------------------------------------------
+ *
+ * Pure helpers split the "is this disconnect allowed?" decision from the
+ * DB mutation, so the "must keep at least one sign-in method" invariant
+ * lives in one switch instead of three branches inside the service.
+ */
+
+export interface IProviderRow {
+  readonly provider: string;
+  readonly passwordHash: string;
+}
+
+export type DisconnectDecision =
+  | { readonly ok: true; readonly action: "clear-password" | "delete" }
+  | { readonly ok: false; readonly reason: string };
+
+const KEEP_ONE_METHOD_REASON = "You must keep at least one sign-in method";
+const NOT_FOUND_REASON = "Provider link not found";
+
+/**
+ * Returns whether the user can disconnect the named provider and the
+ * concrete DB action the service should perform.
+ *
+ * Locked-out scenarios:
+ *
+ *   - Disconnecting the password method when no OAuth provider is linked.
+ *   - Disconnecting the only OAuth link when no password is set.
+ *
+ * Anything else is allowed. Disconnecting the password method wipes the
+ * password hash so the local-auth row survives but can't authenticate;
+ * disconnecting an OAuth provider deletes the link row outright.
+ */
+export const canDisconnect = (
+  providers: readonly IProviderRow[],
+  providerName: string,
+  emailProviderKey: string
+): DisconnectDecision => {
+  if (providers.length === 0) {
+    return { ok: false, reason: NOT_FOUND_REASON };
+  }
+
+  const target = providers.find((row) => row.provider === providerName);
+
+  if (target === undefined) {
+    return { ok: false, reason: NOT_FOUND_REASON };
+  }
+
+  const hasPassword = providers.some(
+    (row) => row.provider === emailProviderKey && row.passwordHash !== ""
+  );
+
+  const oauthCount = providers.filter(
+    (row) => row.provider !== emailProviderKey
+  ).length;
+
+  if (providerName === emailProviderKey) {
+    if (oauthCount === 0) {
+      return { ok: false, reason: KEEP_ONE_METHOD_REASON };
+    }
+
+    return { ok: true, action: "clear-password" };
+  }
+
+  if (!hasPassword && oauthCount <= 1) {
+    return { ok: false, reason: KEEP_ONE_METHOD_REASON };
+  }
+
+  return { ok: true, action: "delete" };
+};

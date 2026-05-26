@@ -10,9 +10,11 @@ import { logger } from "../../../config/logger";
 import { AUDIT_ACTIONS, auditLogService } from "../../../lib/audit-log";
 import { sendTemplate } from "../../../lib/email";
 import { ApiErrors, getErrorMessage } from "../../../lib/errors";
+import { notifications } from "../../../lib/notifications";
 import { now } from "../../../lib/time/now";
 import { generateOpaqueToken, hashOpaqueToken } from "../../../lib/tokens";
 import { accountsService } from "../../accounts";
+import { authWelcomeEvent } from "../../notifications/events";
 import {
   EMAIL_SUBJECTS,
   ENUMERATION_SAFE_MESSAGES,
@@ -80,6 +82,14 @@ export class EmailVerificationService {
       userId: user.id,
       action: AUDIT_ACTIONS.AUTH_ACCOUNT_PROVISIONED,
       resource: `account:${provisioned.account.id}`,
+    });
+
+    void notifications.send(authWelcomeEvent, {
+      recipientUserId: user.id,
+      payload: {
+        firstName: user.firstName,
+        dashboardUrl: `${env.FRONTEND_URL}/dashboard`,
+      },
     });
 
     return {

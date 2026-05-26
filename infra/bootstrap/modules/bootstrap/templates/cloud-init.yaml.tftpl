@@ -35,6 +35,17 @@ write_files:
     content: |
       ${indent(6, bootstrap_config_json)}
 
+%{ if docker_config_json != "" ~}
+  # Private-GHCR pull credentials. `docker compose pull` and WUD both
+  # honour this file. 0600 because the encoded `auth` value is a bearer
+  # token equivalent.
+  - path: /root/.docker/config.json
+    permissions: "0600"
+    owner: root:root
+    content: |
+      ${indent(6, docker_config_json)}
+%{ endif ~}
+
 runcmd:
   # Install Docker via the official convenience script. For a long-lived
   # production host this would normally pin a version; cloud-init is one-shot

@@ -51,7 +51,7 @@ export class WidgetsService {
 
     void auditLogService.record({
       userId: actorUserId,
-      action: AUDIT_ACTIONS.USER_PROFILE_UPDATED,
+      action: AUDIT_ACTIONS.WIDGET_CREATED,
       resource: `widget:${created.id}`,
       metadata: { name: created.name, accountId },
     });
@@ -77,7 +77,7 @@ export class WidgetsService {
 
     void auditLogService.record({
       userId: actorUserId,
-      action: AUDIT_ACTIONS.USER_PROFILE_UPDATED,
+      action: AUDIT_ACTIONS.WIDGET_UPDATED,
       resource: `widget:${updated.id}`,
       metadata: { name: updated.name, accountId },
     });
@@ -101,9 +101,9 @@ export class WidgetsService {
 
     void auditLogService.record({
       userId: actorUserId,
-      action: AUDIT_ACTIONS.USER_PROFILE_UPDATED,
+      action: AUDIT_ACTIONS.WIDGET_DELETED,
       resource: `widget:${id}`,
-      metadata: { accountId, deleted: true },
+      metadata: { accountId },
     });
   }
 }

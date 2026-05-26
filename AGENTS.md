@@ -5,9 +5,10 @@ Single repository: `apps/api`, `apps/ui`, `apps/docs`, `infra/compose`, `infra/b
 ## Maintainer commands (repo root)
 
 ```bash
-bun run regen   # cross-app generators (ACL, OpenAPI, lint-meta, docs JSON)
-bun run check   # drift checks before push
-./setup.sh --up # boot local dev stack
+bun run regen           # cross-app generators (ACL, OpenAPI, lint-meta, docs JSON)
+bun run check           # drift checks before push
+bun run rename:project  # one-shot fork rebrand (boringstack → your project)
+./setup.sh --up         # boot local dev stack
 ./scripts/audit-repo-settings.sh # diff GitHub repo settings vs .github/desired-repo-settings.json
 ```
 

@@ -9,9 +9,11 @@ export { OAUTH_STATE_PREFIX, OAUTH_STATE_TTL_SECONDS } from "./oauth.constants";
 export { completeOAuthCallback, createAuthorizationURL } from "./oauth.service";
 export { oauthStateStore } from "./oauth.state";
 export {
+  canDisconnect,
   getConfiguredOAuthProviders,
   isValidOAuthProvider,
 } from "./oauth.utils";
+export type { DisconnectDecision, IProviderRow } from "./oauth.utils";
 export type {
   IAuthorizationURLResult,
   IOAuthCredentials,

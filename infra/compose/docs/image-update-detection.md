@@ -1,6 +1,6 @@
 # Image update detection (WUD)
 
-[**WUD (What's Up Docker)**](https://getwud.github.io/wud/) watches running containers. In prod (`STACK=prod`, `WITH_WUD=1` by default) it **auto pull+recreates** `api` and `ui` when GHCR publishes a new tag. Optional notifications go to Discord and/or Slack.
+[**WUD (What's Up Docker)**](https://getwud.github.io/wud/) watches running containers. In prod (`STACK=prod`, `WITH_WUD=1` by default) it polls GHCR for new `api` and `ui` tags. By default it is **notify-only** — Discord/Slack messages, no auto-redeploy. Flip `WUD_TRIGGER_DOCKER_APP_AUTO=true` once you have notifications wired and a tested rollback path; then WUD auto pull+recreates on every new tag.
 
 ## Setup
 
@@ -44,10 +44,26 @@
 
 1. Release workflow publishes a new GHCR tag.
 2. WUD detects the move on its cron schedule.
-3. WUD pulls and recreates the `api` / `ui` containers (`docker.app` trigger).
-4. Optional Discord/Slack notification fires if configured.
+3. Discord/Slack notification fires (when configured).
+4. **Notify-only mode (default)** — operator decides when to apply. Pull + recreate manually:
+   ```bash
+   STACK=prod ./scripts/compose-up.sh pull
+   STACK=prod ./scripts/compose-up.sh up -d
+   ```
+5. **Auto mode** (`WUD_TRIGGER_DOCKER_APP_AUTO=true`) — WUD pulls and recreates the `api` / `ui` containers automatically via the `docker.app` trigger. Skips step 4.
 
 Base images (Postgres, Valkey, Traefik) are not auto-updated — pin and bump those manually.
+
+## When to flip to auto mode
+
+Auto-redeploy on every main push has no canary, no health check, and no rollback automation. Stay in notify-only until:
+
+- Notifications go somewhere a human reads within a few hours.
+- A rollback runbook exists (set `API_IMAGE_TAG` to the prior `sha-<7>` and re-up).
+- Health checks (`/health`, `/ready`) are alerted on (see `prometheus/rules.yml`).
+- The product has a tested incident response — even if "tested" is "I did one rehearsal."
+
+Without those, instant redeploy of bad code is a footgun.
 
 ## Costs / footprint
 

@@ -7,20 +7,28 @@ import {
 import { DASHBOARD_ACTIVITY_MAX_LIMIT } from "../../../src/api/dashboard/dashboard.constants";
 
 describe("formatActivityTitle", () => {
-  test("combines action and resource when resource is non-empty", () => {
+  test("uses the known label and appends the resource when present", () => {
     expect(formatActivityTitle("widget.created", "widget:abc-123")).toBe(
-      "widget.created — widget:abc-123"
+      "Created a widget — widget:abc-123"
     );
   });
 
-  test("returns only the action when resource is null", () => {
-    expect(formatActivityTitle("user.registered", null)).toBe(
-      "user.registered"
+  test("uses the known label only when resource is null", () => {
+    expect(formatActivityTitle("auth.login_success", null)).toBe("Signed in");
+  });
+
+  test("uses the known label only when resource is empty string", () => {
+    expect(formatActivityTitle("account.deleted", "")).toBe("Deleted account");
+  });
+
+  test("derives a label from an unknown action key", () => {
+    expect(formatActivityTitle("comment.replied", null)).toBe(
+      "Comment replied"
     );
   });
 
-  test("returns only the action when resource is empty string", () => {
-    expect(formatActivityTitle("account.deleted", "")).toBe("account.deleted");
+  test("falls back to 'Activity' for empty action keys", () => {
+    expect(formatActivityTitle("", null)).toBe("Activity");
   });
 });
 

@@ -135,6 +135,10 @@
         "purpose": "Database seed utilities"
       },
       {
+        "folder": "[`loadtest/`](loadtest/)",
+        "purpose": "k6 golden-path load test against the dev stack"
+      },
+      {
         "folder": "[`quality/`](quality/)",
         "purpose": "Test and coverage adjunct checks outside ESLint"
       },
@@ -257,6 +261,12 @@
         "script": "ci/pre-push.sh",
         "description": "Local mirror of apps/api CI gate. Runs everything CI runs so that a",
         "invocation": "./scripts/ci/pre-push.sh"
+      },
+      {
+        "command": "loadtest",
+        "script": "loadtest/run.sh`",
+        "description": "",
+        "invocation": "./scripts/loadtest/run.sh"
       }
     ],
     "manual": [],

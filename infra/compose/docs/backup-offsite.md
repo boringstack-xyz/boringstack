@@ -78,6 +78,30 @@ Quarterly (or after every schema change):
 
 If you never drill, you do not have backups; you have **hope**.
 
+[restore-from-backup.example.sh](../scripts/restore-from-backup.example.sh)
+is the partner script to `backup-wrapper.example.sh`. Copy it, customize
+`$COMPOSE_DIR`, then:
+
+```bash
+# List available backups on the remote
+./scripts/restore-from-backup.sh
+
+# Pull the most recent into a side-car database for smoke checks
+./scripts/restore-from-backup.sh latest
+
+# Restore a specific point in time
+./scripts/restore-from-backup.sh db_backup_20260520T030000Z.sql.gz
+```
+
+The script restores into `${POSTGRES_DB}_restore_<timestamp>` by default
+so the live database is never touched. Promotion to live is a manual
+`ALTER DATABASE ... RENAME TO ...` pair — the script prints the exact
+commands at the end. Keeping promotion manual is intentional: an
+unattended restore that swaps prod is one operator typo away from
+data loss.
+
+For dry runs (no docker, no rclone): `RESTORE_DRY_RUN=1 ./scripts/restore-from-backup.sh latest`.
+
 ## Cron wrapper
 
 Run as a dedicated Unix user with minimal rights:

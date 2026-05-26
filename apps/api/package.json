@@ -44,6 +44,7 @@
     "generate:acl-types": "bun run scripts/codegen/generate-acl-types.ts",
     "generate:acl-types:check": "bun run scripts/codegen/generate-acl-types.ts --check",
     "pre-push": "./scripts/ci/pre-push.sh",
+    "loadtest": "./scripts/loadtest/run.sh",
     "prepare": "husky 2>/dev/null || true"
   },
   "dependencies": {

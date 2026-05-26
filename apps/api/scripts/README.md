@@ -12,6 +12,7 @@ When you add a `package.json` script that runs a file under `scripts/`, update t
 | [`dev/`](dev/)             | Local developer workflow guards                         |
 | [`codegen/`](codegen/)     | Scaffolding, ACL type sync, VAPID key generation        |
 | [`db/`](db/)               | Database seed utilities                                 |
+| [`loadtest/`](loadtest/)   | k6 golden-path load test against the dev stack          |
 | [`quality/`](quality/)     | Test and coverage adjunct checks outside ESLint         |
 | [`lint-meta/`](lint-meta/) | Static meta-lint rules ([RULES.md](lint-meta/RULES.md)) |
 
@@ -36,6 +37,7 @@ When you add a `package.json` script that runs a file under `scripts/`, update t
 | `bun run new:role`           | `codegen/new-role.ts`                          |
 | `bun run new:subject`        | `codegen/new-subject.ts`                       |
 | `bun run new:notification-event` | `codegen/new-notification-event.ts`        |
+| `bun run loadtest`           | `loadtest/run.sh` (k6 golden-path)             |
 
 ## Maintainer
 
