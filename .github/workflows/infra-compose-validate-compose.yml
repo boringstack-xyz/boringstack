@@ -33,7 +33,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'infra/compose/**'
+              - '!infra/compose/**/*.md'
+              - 'scripts/**'
+              - '.github/workflows/**'
+
       - name: Seed .env
+        if: steps.filter.outputs.code == 'true'
         working-directory: infra/compose/compose
         run: |
           cp .env.example .env
@@ -43,6 +55,7 @@ jobs:
           echo "GLITCHTIP_BASIC_AUTH_USERS=user:placeholder"                  >> .env
 
       - name: Validate — dev (base)
+        if: steps.filter.outputs.code == 'true'
         working-directory: infra/compose/compose
         run: |
           docker compose \
@@ -51,6 +64,7 @@ jobs:
             --profile dev config --quiet
 
       - name: Validate — prod (base)
+        if: steps.filter.outputs.code == 'true'
         working-directory: infra/compose/compose
         run: |
           docker compose \
@@ -59,6 +73,7 @@ jobs:
             --profile prod config --quiet
 
       - name: Validate — dev + observability
+        if: steps.filter.outputs.code == 'true'
         working-directory: infra/compose/compose
         run: |
           docker compose \
@@ -68,6 +83,7 @@ jobs:
             --profile dev --profile observability config --quiet
 
       - name: Validate — dev + glitchtip
+        if: steps.filter.outputs.code == 'true'
         working-directory: infra/compose/compose
         run: |
           docker compose \
@@ -77,6 +93,7 @@ jobs:
             --profile dev --profile glitchtip-dev config --quiet
 
       - name: Validate — prod + glitchtip (+ prod labels)
+        if: steps.filter.outputs.code == 'true'
         working-directory: infra/compose/compose
         run: |
           docker compose \
@@ -87,6 +104,7 @@ jobs:
             --profile prod --profile glitchtip-prod config --quiet
 
       - name: Validate — dev + bullmq
+        if: steps.filter.outputs.code == 'true'
         working-directory: infra/compose/compose
         run: |
           docker compose \
@@ -96,6 +114,7 @@ jobs:
             --profile dev --profile bullmq config --quiet
 
       - name: Validate — dev + wud
+        if: steps.filter.outputs.code == 'true'
         working-directory: infra/compose/compose
         run: |
           docker compose \
@@ -105,6 +124,7 @@ jobs:
             --profile dev --profile wud config --quiet
 
       - name: Validate — kitchen-sink (dev + all overlays)
+        if: steps.filter.outputs.code == 'true'
         working-directory: infra/compose/compose
         run: |
           docker compose \
@@ -129,7 +149,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'infra/compose/**'
+              - '!infra/compose/**/*.md'
+              - 'scripts/**'
+              - '.github/workflows/**'
+
       - name: ShellCheck
+        if: steps.filter.outputs.code == 'true'
         run: |
           # Strict: error on warnings, follow `source` directives.
           shellcheck -x -S warning infra/compose/compose/dev.sh infra/compose/scripts/*.sh
@@ -142,7 +174,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'infra/compose/**'
+              - '!infra/compose/**/*.md'
+              - 'scripts/**'
+              - '.github/workflows/**'
+
       - name: yamllint
+        if: steps.filter.outputs.code == 'true'
         run: |
           pip install --user yamllint
           # Document syntax (line length, indentation, truthy values) but

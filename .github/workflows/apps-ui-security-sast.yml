@@ -36,7 +36,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'apps/ui/**'
+              - '!apps/ui/**/*.md'
+              - '!apps/ui/**/*.mdx'
+              - '.github/workflows/apps-ui-security-sast.yml'
+
       - name: Compute baseline
+        if: steps.filter.outputs.code == 'true'
         id: baseline
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -46,6 +58,7 @@ jobs:
           fi
 
       - name: Run semgrep
+        if: steps.filter.outputs.code == 'true'
         shell: bash
         run: |
           BASELINE="${{ steps.baseline.outputs.ref }}"

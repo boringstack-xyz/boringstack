@@ -23,12 +23,24 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'infra/bootstrap/**'
+              - '!infra/bootstrap/**/*.md'
+              - '.github/workflows/infra-bootstrap-validate.yml'
+
       - name: Install OpenTofu
+        if: steps.filter.outputs.code == 'true'
         uses: opentofu/setup-opentofu@v2
         with:
           tofu_wrapper: false
 
       - name: Check formatting
+        if: steps.filter.outputs.code == 'true'
         run: tofu fmt -check -recursive -diff
 
       # `-backend=false` lets us run without configuring real cloud credentials.
@@ -36,9 +48,11 @@ jobs:
       # so it catches "unexpected attribute" / wrong-provider-syntax / missing
       # variable errors before they hit `apply`.
       - name: Initialize (no backend)
+        if: steps.filter.outputs.code == 'true'
         run: tofu init -backend=false -input=false
 
       - name: Validate root + every module
+        if: steps.filter.outputs.code == 'true'
         run: |
           set -euo pipefail
           tofu validate -no-color

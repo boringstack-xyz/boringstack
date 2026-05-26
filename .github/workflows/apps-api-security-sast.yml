@@ -37,7 +37,19 @@ jobs:
           # Need full history for differential scans on PRs.
           fetch-depth: 0
 
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'apps/api/**'
+              - '!apps/api/**/*.md'
+              - '!apps/api/**/*.mdx'
+              - '.github/workflows/apps-api-security-sast.yml'
+
       - name: Compute baseline
+        if: steps.filter.outputs.code == 'true'
         id: baseline
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
@@ -47,6 +59,7 @@ jobs:
           fi
 
       - name: Run semgrep
+        if: steps.filter.outputs.code == 'true'
         shell: bash
         run: |
           BASELINE="${{ steps.baseline.outputs.ref }}"
