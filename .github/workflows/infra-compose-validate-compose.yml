@@ -12,9 +12,7 @@ on:
       - "infra/compose/**"
       - ".github/workflows/infra-compose-validate-compose.yml"
   pull_request:
-    paths:
-      - "infra/compose/**"
-      - ".github/workflows/infra-compose-validate-compose.yml"
+    branches: [main]
 
 concurrency:
   group: infra-compose-validate-compose-${{ github.ref }}

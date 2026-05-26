@@ -20,6 +20,10 @@ permissions:
 
 jobs:
   size-diff:
+    # Dependabot PRs run with a read-only GITHUB_TOKEN, so the size-limit-action
+    # can't post the comparison comment and fails with "Parameter token or
+    # opts.auth is required". The comment isn't useful on bot bumps anyway.
+    if: github.actor != 'dependabot[bot]'
     defaults:
       run:
         working-directory: apps/ui

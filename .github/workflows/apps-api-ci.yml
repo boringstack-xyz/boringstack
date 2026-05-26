@@ -7,9 +7,7 @@ on:
       - "apps/api/**"
       - ".github/workflows/apps-api-ci.yml"
   pull_request:
-    paths:
-      - "apps/api/**"
-      - ".github/workflows/apps-api-ci.yml"
+    branches: [main]
 
 # Cancel in-flight runs of the same ref on a new push.
 concurrency:

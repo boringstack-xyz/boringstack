@@ -7,9 +7,7 @@ on:
       - "apps/docs/**"
       - ".github/workflows/apps-docs-security-deps.yml"
   pull_request:
-    paths:
-      - "apps/docs/**"
-      - ".github/workflows/apps-docs-security-deps.yml"
+    branches: [main]
   schedule:
     - cron: "23 6 * * 1"
 

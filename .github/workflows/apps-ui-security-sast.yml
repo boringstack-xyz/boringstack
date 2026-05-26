@@ -7,9 +7,7 @@ on:
       - "apps/ui/**"
       - ".github/workflows/apps-ui-security-sast.yml"
   pull_request:
-    paths:
-      - "apps/ui/**"
-      - ".github/workflows/apps-ui-security-sast.yml"
+    branches: [main]
   schedule:
     - cron: "29 6 * * 1"
 

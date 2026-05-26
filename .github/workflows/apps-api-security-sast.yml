@@ -7,9 +7,7 @@ on:
       - "apps/api/**"
       - ".github/workflows/apps-api-security-sast.yml"
   pull_request:
-    paths:
-      - "apps/api/**"
-      - ".github/workflows/apps-api-security-sast.yml"
+    branches: [main]
   schedule:
     - cron: "29 6 * * 1"
 
