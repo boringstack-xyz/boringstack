@@ -17,11 +17,10 @@ export function HeroSection() {
           className="mt-[0.55rem] max-w-[38rem] text-balance text-[2.45rem] leading-[1.08] tracking-[-0.02em] text-[var(--bs-text)] min-[421px]:text-[2.65rem] min-[641px]:text-[3.25rem] lg:text-[3.75rem]"
           id="bs-hero-title"
         >
-          Production-ready from the first fork.
+          Production-ready from the first template clone.
         </h1>
         <p className="mt-[1.25rem] max-w-[34rem] text-pretty text-base leading-[1.55] text-[var(--bs-muted-strong)] min-[641px]:mt-[1.15rem] min-[641px]:text-[1.05rem]">
-          GitHub templates for the full stack. Fork the org, boot with compose/dev.sh, deploy
-          on Compose.
+          A GitHub template repository for the full stack. Click <b>Use this template</b>, boot with compose/dev.sh, deploy on Compose.
         </p>
 
         <div aria-label="Primary actions" className="mt-9 grid w-full max-w-full gap-3 min-[641px]:mt-[2.1rem] min-[641px]:w-[min(100%,30rem)] min-[641px]:gap-[0.65rem]">

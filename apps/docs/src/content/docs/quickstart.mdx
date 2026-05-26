@@ -1,6 +1,6 @@
 ---
 title: Quickstart
-description: "Clone the BoringStack monorepo, run setup.sh, sign in at localhost:3001."
+description: "Use the BoringStack template on GitHub, clone your new repo, run setup.sh, sign in at localhost:3001."
 ---
 
 import CommandRun from "../../components/docs-kit/CommandRun";
@@ -18,13 +18,13 @@ import FaqItem from "../../components/FaqItem.tsx";
     { label: "What's running", href: "#whats-running" },
   ]}
   facts={[
-    { value: "1", label: "git clone" },
+    { value: "1", label: "click Use this template" },
     { value: "Docker", label: "only prerequisite" },
     { value: "0", label: "local Node or Bun installs" },
   ]}
 >
-  Clone the [BoringStack monorepo](https://github.com/boringstack-xyz/boringstack),
-  run `./setup.sh --up`, and Compose starts Postgres, Valkey, api-dev (migrations +
+  Click **Use this template** on the [BoringStack monorepo](https://github.com/boringstack-xyz/boringstack),
+  clone your new repo, run `./setup.sh --up`, and Compose starts Postgres, Valkey, api-dev (migrations +
   OpenAPI), and ui-dev (Vite on :3001 with generated client). Optional overlays:
   Mailpit, Bull Board, observability, GlitchTip.
 </PageIntro>
@@ -46,8 +46,8 @@ import FaqItem from "../../components/FaqItem.tsx";
   items={[
     {
       label: "01",
-      title: "Clone the monorepo",
-      body: "One repo contains apps/api, apps/ui, infra/compose, and apps/docs.",
+      title: "Use this template",
+      body: "Click \"Use this template\" on GitHub, then clone the new repo created under your org.",
     },
     {
       label: "02",
@@ -75,14 +75,18 @@ You now have Postgres, Valkey, the API, and the UI running locally with hot relo
 - About 4 GB of free RAM.
 - No local Node or Bun needed for the default path; everything runs in containers.
 
-## Step 1. Clone the monorepo
+## Step 1. Use this template
+
+The BoringStack monorepo is a [GitHub template repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template). On the [`boringstack-xyz/boringstack`](https://github.com/boringstack-xyz/boringstack) page, click **Use this template → Create a new repository** to make a fresh copy under your org with full ownership and no fork relationship.
+
+Then clone the repo you just created:
 
 ```bash
-git clone https://github.com/boringstack-xyz/boringstack.git
-cd boringstack
+git clone https://github.com/<your-org>/<your-repo>.git
+cd <your-repo>
 ```
 
-Fork the monorepo on GitHub if you want your own copy under your org. API, UI, docs, Compose, and bootstrap infrastructure all live in this one tree.
+API, UI, docs, Compose, and bootstrap infrastructure all live in this one tree. Run `bun run rename:project` from the root any time to rebrand the BoringStack identifiers across the codebase.
 
 <DocFileTree
   root="boringstack/"

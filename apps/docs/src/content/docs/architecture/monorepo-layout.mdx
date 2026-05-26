@@ -13,13 +13,13 @@ import FaqItem from "../../../components/FaqItem.tsx";
 <PageIntro
   eyebrow="Repository contract"
   actions={[
-    { label: "Quickstart", href: "/quickstart/#step-1-clone-the-monorepo" },
+    { label: "Quickstart", href: "/quickstart/#step-1-use-this-template" },
     { label: "Separation of concerns", href: "/architecture/separation-of-concerns/" },
   ]}
   facts={[
     { value: "apps/", label: "api · ui · docs" },
     { value: "infra/", label: "compose · bootstrap" },
-    { value: "1", label: "git clone" },
+    { value: "1", label: "template clone" },
   ]}
 >
   BoringStack ships as a single monorepo. API, UI, docs site, and Compose infra
@@ -32,7 +32,7 @@ The runtime is composed from `apps/api`, `apps/ui`, and `infra/compose`. Optiona
 <DocFileTree
   root="boringstack/"
   title="Monorepo layout"
-  caption="one clone, explicit join points"
+  caption="one template clone, explicit join points"
   nodes={[
     { name: "apps/api/", detail: "Bun + Elysia + Drizzle API" },
     { name: "apps/ui/", detail: "Vite + React SPA" },
@@ -86,10 +86,12 @@ Each app keeps its own `package.json`, lockfile, and lint config. CI workflows l
   ]}
 />
 
-<Aside type="note" title="Forking">
-  Fork the whole monorepo on GitHub. API, UI, docs, Compose, and bootstrap
-  infrastructure stay together in one tree. On a VPS, clone the monorepo and
-  run Compose from `infra/compose/compose`.
+<Aside type="note" title="Use this template">
+  The monorepo is a GitHub template. Click **Use this template** on
+  [`boringstack-xyz/boringstack`](https://github.com/boringstack-xyz/boringstack)
+  to create a fresh repo under your org — API, UI, docs, Compose, and bootstrap
+  infrastructure all in one tree, no fork relationship. On a VPS, clone your repo
+  and run Compose from `infra/compose/compose`.
 </Aside>
 
 ## What lives where

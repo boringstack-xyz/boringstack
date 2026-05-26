@@ -1,6 +1,6 @@
 ---
 title: Deployment
-description: Boring deployment. Single-host VPS, Docker, one monorepo fork, GHCR images, one prod profile. HTTPS via ACME, perimeter locked by Cloudflare.
+description: Boring deployment. Single-host VPS, Docker, one repo created from the GitHub template, GHCR images, one prod profile. HTTPS via ACME, perimeter locked by Cloudflare.
 ---
 
 import { Aside } from "@astrojs/starlight/components";
@@ -23,8 +23,9 @@ import FaqItem from "../../../components/FaqItem.tsx";
   ]}
 >
   BoringStack runs on a VPS you control: Docker Compose, GHCR images, Traefik
-  TLS, and Cloudflare at the edge. Fork the monorepo, fill compose/.env, then
-  boot the production profile manually or let OpenTofu do first provisioning.
+  TLS, and Cloudflare at the edge. Use the GitHub template to create your repo,
+  fill compose/.env, then boot the production profile manually or let OpenTofu
+  do first provisioning.
 </PageIntro>
 
 ## The mental model
@@ -81,15 +82,15 @@ Push to `main` with changes under `apps/api` or `apps/ui`. Path-filtered release
 
 ## First-time wiring
 
-Three things need configuring before the first deploy. The release workflows handle everything else from your monorepo fork URL.
+Three things need configuring before the first deploy. The release workflows handle everything else from your repo URL.
 
 ### 1. Publish images to GHCR
 
-The API and UI release workflows run on push to `main` when their app paths change. They use `${{ github.event.repository.name }}` plus an app suffix, so a fork named `acme-stack` publishes `ghcr.io/<your-owner>/acme-stack-api:latest` and `ghcr.io/<your-owner>/acme-stack-ui:latest` automatically. The default `GITHUB_TOKEN` has `packages: write` via the workflow grant, so the first push from a freshly-forked repo works without secret setup.
+The API and UI release workflows run on push to `main` when their app paths change. They use `${{ github.event.repository.name }}` plus an app suffix, so a repo named `acme-stack` publishes `ghcr.io/<your-owner>/acme-stack-api:latest` and `ghcr.io/<your-owner>/acme-stack-ui:latest` automatically. The default `GITHUB_TOKEN` has `packages: write` via the workflow grant, so the first push from a fresh template clone works without secret setup.
 
 After the first publish, **make the GHCR package public** so the VPS can pull without credentials:
 
-1. Go to the fork's Packages tab and open both containers: `<repo>-api` and `<repo>-ui`.
+1. Go to your repo's Packages tab and open both containers: `<repo>-api` and `<repo>-ui`.
 2. Package settings → Change visibility → Public.
 
 Without this, downstream consumers (your VPS) need a pull credential.
@@ -122,7 +123,7 @@ The module derives `IMAGE_OWNER`, `API_IMAGE_NAME=<repo>-api`, and `UI_IMAGE_NAM
 
 Use this once, after Quickstart and before the first production boot:
 
-- [ ] BoringStack monorepo forked under your org/user.
+- [ ] Repo created from the BoringStack template (**Use this template** on [`boringstack-xyz/boringstack`](https://github.com/boringstack-xyz/boringstack)) under your org/user.
 - [ ] First API and UI images published to GHCR (push to `main`, then watch each Actions tab).
 - [ ] GHCR packages set to **Public**, or the VPS has a pull credential.
 - [ ] `compose/.env` has `IMAGE_OWNER` and any renamed `API_IMAGE_NAME` / `UI_IMAGE_NAME`.
@@ -132,7 +133,7 @@ Use this once, after Quickstart and before the first production boot:
 - [ ] [Firewall & TLS](/runbooks/firewall-and-tls/) verified: Cloudflare can reach the origin, direct requests cannot.
 - [ ] [Backups](/runbooks/backups/) configured and at least one restore drill run.
 - [ ] [Cloudflare Email setup](/runbooks/cloudflare-email-setup/) completed if Cloudflare is your outbound mail provider.
-- [ ] Optional OpenTofu path: `terraform.tfvars` has fork URLs, real `domain`, and production secrets.
+- [ ] Optional OpenTofu path: `terraform.tfvars` has your repo URL, real `domain`, and production secrets.
 
 ## First-time deploy
 
@@ -141,7 +142,7 @@ The preferred path is [Provisioning with OpenTofu](/topics/provisioning-with-tof
 Manual path if you'd rather:
 
 1. Provision a Ubuntu VPS with Docker installed.
-2. Clone your monorepo fork onto the VPS.
+2. Clone the repo you created from the template onto the VPS.
 3. Write `compose/.env` with `PUBLIC_UI_HOST`, `ACME_EMAIL`, `IMAGE_OWNER`, and the rest from `.env.example`.
 4. `STACK=prod ./scripts/compose-up.sh pull && STACK=prod ./scripts/compose-up.sh up -d`.
 5. Run the [Firewall & TLS runbook](/runbooks/firewall-and-tls/) to verify Cloudflare-only ingress.

@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <strong>Production-ready from the first fork.</strong><br />
+  <strong>Production-ready from the first template clone.</strong><br />
   One monorepo for the full stack.
 </p>
 
