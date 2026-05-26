@@ -21,7 +21,7 @@ COPY . .
 RUN bun run build
 
 # ---- Runner ---------------------------------------------------------------
-FROM nginx:1.31-alpine@sha256:dc48b7a872a79fb541ba5081d320b11b549231bc63ba465a7495afaa7d2ebcb8 AS runner
+FROM nginx:1.31-alpine@sha256:8b1e78743a03dbb2c95171cc58639fef29abc8816598e27fb910ed2e621e589a AS runner
 
 # Non-root user (Kubernetes / OpenShift friendly).
 # nginx writes its pid to /run/nginx.pid by default; that path needs to be
