@@ -47,10 +47,8 @@ provider "cloudflare" {
 module "bootstrap" {
   source = "./modules/bootstrap"
 
-  domain     = var.domain
-  api_repo   = var.api_repo
-  ui_repo    = var.ui_repo
-  infra_repo = var.infra_repo
+  domain        = var.domain
+  monorepo_repo = var.monorepo_repo
 
   # Compose stack secrets
   jwt_secret        = var.jwt_secret

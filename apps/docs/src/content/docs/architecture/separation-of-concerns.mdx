@@ -61,7 +61,7 @@ flowchart LR
 
 The API publishes OpenAPI at `/swagger/json`. The UI runs `bun run generate:api` to refresh `schema.d.ts`. `openapi-fetch` rejects invalid paths and bodies at compile time. See [OpenAPI client](/ui/openapi-client/) and [Repository layout](/architecture/monorepo-layout/) for wiring.
 
-In production, Traefik serves the SPA and API on one apex host (`/` and `/api/*`). That simplifies TLS and cookies. The repositories and Docker images stay separate.
+In production, Traefik serves the SPA and API on one apex host (`/` and `/api/*`). That simplifies TLS and cookies. The app workspaces stay isolated, and the Docker images stay separate.
 
 ## What you gain
 
@@ -96,4 +96,3 @@ In production, Traefik serves the SPA and API on one apex host (`/` and `/api/*`
 - [Why BoringStack](/architecture/why-boringstack/)
 - [Repository layout](/architecture/monorepo-layout/)
 - [Background work](/architecture/background-work/)
-

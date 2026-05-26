@@ -21,7 +21,11 @@ locals {
   # e.g. "https://github.com/boringstack-xyz/boringstack" →
   # ("boringstack-xyz", "boringstack-api", "boringstack-ui")
   # ghcr.io paths are case-insensitive but conventionally lowercase.
-  _monorepo_parts = split("/", trimsuffix(replace(var.monorepo_repo, "https://github.com/", ""), ".git"))
+  _normalized_monorepo_repo = trimsuffix(
+    replace(replace(var.monorepo_repo, "https://github.com/", ""), "git@github.com:", ""),
+    ".git"
+  )
+  _monorepo_parts = split("/", local._normalized_monorepo_repo)
 
   image_owner    = lower(element(local._monorepo_parts, 0))
   repo_name      = lower(element(local._monorepo_parts, 1))

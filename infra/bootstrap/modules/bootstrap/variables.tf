@@ -2,15 +2,7 @@ variable "domain" {
   type = string
 }
 
-variable "api_repo" {
-  type = string
-}
-
-variable "ui_repo" {
-  type = string
-}
-
-variable "infra_repo" {
+variable "monorepo_repo" {
   type = string
 }
 

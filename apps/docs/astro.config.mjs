@@ -94,6 +94,9 @@ function lastmodForUrl(absoluteUrl) {
 // https://astro.build/config
 export default defineConfig({
   site: "https://boringstack.xyz",
+  redirects: {
+    "/architecture/three-repos/": "/architecture/monorepo-layout/",
+  },
 
   markdown: {
     rehypePlugins: [rehypeAccessibleTables],
@@ -346,7 +349,7 @@ export default defineConfig({
       ],
       editLink: {
         baseUrl:
-          "https://github.com/boringstack-xyz/.github/edit/main/",
+          "https://github.com/boringstack-xyz/boringstack/edit/main/apps/docs/",
       },
       lastUpdated: true,
       sidebar: [

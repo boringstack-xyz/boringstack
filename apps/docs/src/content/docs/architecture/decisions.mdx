@@ -77,7 +77,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
     **When we'd reconsider.** When docs need user-specific data (auth, customer-specific examples). Then add an API or move to a hybrid framework.
   </FaqItem>
   <FaqItem title="Bun everywhere (and not npm or pnpm)">
-    **Choice.** Bun for all three app repos (API, UI, docs) and root orchestration. No `npm`, `pnpm`, or `yarn` as required tools.
+    **Choice.** Bun for all three app workspaces (API, UI, docs) and root orchestration. No `npm`, `pnpm`, or `yarn` as required tools.
 
     **Why.** One installer/runtime story across the monorepo; Bun's lockfile and CLI cover SPA, docs, and API workloads. Supply-chain pins live in each app's `bun.lock` and `osv-scanner.toml`.
 
