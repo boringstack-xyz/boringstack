@@ -44,7 +44,7 @@
     "@axe-core/cli": "^4.11.3",
     "http-server": "^14.1.1",
     "starlight-llms-txt": "0.6.1",
-    "wrangler": "4.87.0"
+    "wrangler": "4.93.0"
   },
   "overrides": {
     "ws@<8.20.1": "^8.20.1"
