@@ -4,11 +4,11 @@
   "description": "Production-grade SPA starter (Vite + React + TypeScript) for the BoringStack family. Wired with shadcn/ui, TanStack Query, Zustand, react-router, RHF + Zod, i18next, Storybook, Playwright, and 8 custom ESLint plugins enforcing the architecture.",
   "type": "module",
   "private": true,
-  "packageManager": "bun@1.3.13",
+  "packageManager": "bun@1.3.14",
   "license": "MIT",
   "engines": {
     "node": ">=24.0.0",
-    "bun": "1.3.13"
+    "bun": "1.3.14"
   },
   "scripts": {
     "dev": "./scripts/dev/preflight-host-dev.sh && vite",

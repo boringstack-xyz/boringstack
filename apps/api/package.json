@@ -6,7 +6,7 @@
   "private": true,
   "module": "src/index.ts",
   "engines": {
-    "bun": "1.3.13"
+    "bun": "1.3.14"
   },
   "scripts": {
     "test": "NODE_ENV=test bun run scripts/quality/run-tests-clean.ts",
@@ -99,7 +99,7 @@
     "@types/nodemailer": "8.0.0",
     "@types/pg": "8.20.0",
     "@types/web-push": "3.6.4",
-    "bun-types": "1.3.13",
+    "bun-types": "1.3.14",
     "chokidar": "5.0.0",
     "drizzle-kit": "0.31.10",
     "eslint": "9.39.4",
