@@ -1152,7 +1152,71 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    } | {
+                        /** @constant */
+                        success: false;
+                        error: {
+                            code: string;
+                            message: string;
+                            timestamp: string;
+                        };
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    } | {
+                        /** @constant */
+                        success: false;
+                        error: {
+                            code: string;
+                            message: string;
+                            timestamp: string;
+                        };
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    } | {
+                        /** @constant */
+                        success: false;
+                        error: {
+                            code: string;
+                            message: string;
+                            timestamp: string;
+                        };
+                    };
+                };
             };
         };
     };
