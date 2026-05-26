@@ -32,6 +32,13 @@ jobs:
       image: semgrep/semgrep:1.142.0
 
     steps:
+      # The semgrep container runs as root, while the runner-prepared
+      # workspace is owned by the runner user (uid != 0). Without this
+      # config, `actions/checkout` and semgrep's own git calls bail out
+      # with `fatal: detected dubious ownership in repository`.
+      - name: Trust the runner-prepared workspace
+        run: git config --global --add safe.directory '*'
+
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           # Need full history for differential scans on PRs.
