@@ -59,7 +59,7 @@
   },
   "dependencies": {
     "@casl/ability": "6.8.1",
-    "@casl/react": "5.0.1",
+    "@casl/react": "6.0.0",
     "@hookform/resolvers": "5.2.2",
     "@sentry/react": "10.53.1",
     "@tanstack/react-query": "5.100.11",
