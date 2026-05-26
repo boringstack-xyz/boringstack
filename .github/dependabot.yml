@@ -127,6 +127,11 @@ updates:
       include: scope
     cooldown:
       default-days: 7
+    ignore:
+      # @astrojs/cloudflare 13.x requires Astro 6 (uses astro/app/manifest
+      # which is not exported by Astro 5). Stay on 12.x until we bump Astro.
+      - dependency-name: "@astrojs/cloudflare"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
