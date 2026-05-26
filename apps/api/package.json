@@ -58,7 +58,7 @@
     "@sinclair/typebox": "0.34.41",
     "arctic": "3.7.0",
     "bcryptjs": "3.0.3",
-    "bullmq": "5.76.5",
+    "bullmq": "5.76.10",
     "dotenv": "17.4.2",
     "drizzle-orm": "0.45.2",
     "elysia": "1.4.28",
