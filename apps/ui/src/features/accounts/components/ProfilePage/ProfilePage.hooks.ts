@@ -16,6 +16,31 @@ import { applyServerErrors } from "@/features/auth/Auth.utils";
 
 import type { IProfileFormInput, IProfilePageView } from "./ProfilePage.types";
 
+function deriveInitials(
+  firstName: string,
+  lastName: string,
+  email: string
+): string {
+  const first = firstName.trim();
+  const last = lastName.trim();
+
+  if (first.length > 0 || last.length > 0) {
+    return `${first[0] ?? ""}${last[0] ?? ""}`.toUpperCase();
+  }
+
+  return email.slice(0, 2).toUpperCase();
+}
+
+function deriveDisplayName(
+  firstName: string,
+  lastName: string,
+  email: string
+): string {
+  const combined = `${firstName.trim()} ${lastName.trim()}`.trim();
+
+  return combined.length > 0 ? combined : email;
+}
+
 export function useProfilePage(): IProfilePageView {
   const { t } = useTranslation();
   const me = useMe();
@@ -74,6 +99,13 @@ export function useProfilePage(): IProfilePageView {
     [handleSubmit, onSubmit]
   );
 
+  const firstName = user?.firstName ?? "";
+  const lastName = user?.lastName ?? "";
+  const initials =
+    user !== undefined ? deriveInitials(firstName, lastName, user.email) : "";
+  const displayName =
+    user !== undefined ? deriveDisplayName(firstName, lastName, user.email) : "";
+
   return {
     pageTitle: t("accounts.profile.pageTitle"),
     pageSubtitle: t("accounts.profile.pageSubtitle"),
@@ -82,9 +114,12 @@ export function useProfilePage(): IProfilePageView {
     firstNameLabel: t("accounts.profile.fields.firstName"),
     lastNameLabel: t("accounts.profile.fields.lastName"),
     emailLabel: t("accounts.profile.fields.email"),
+    identityLabel: t("accounts.profile.identityLabel"),
     saveLabel: t("accounts.profile.save"),
     savingLabel: t("accounts.profile.saving"),
     saveSuccessLabel: t("accounts.profile.saveSuccess"),
+    initials,
+    displayName,
     register,
     errors,
     isSubmitting: isSubmitting || updateProfile.isPending,

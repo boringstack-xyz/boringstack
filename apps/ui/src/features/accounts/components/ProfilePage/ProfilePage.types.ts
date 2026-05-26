@@ -19,9 +19,12 @@ export interface IProfilePageView {
   readonly firstNameLabel: string;
   readonly lastNameLabel: string;
   readonly emailLabel: string;
+  readonly identityLabel: string;
   readonly saveLabel: string;
   readonly savingLabel: string;
   readonly saveSuccessLabel: string;
+  readonly initials: string;
+  readonly displayName: string;
   readonly register: UseFormRegister<IProfileFormInput>;
   readonly errors: FieldErrors<IProfileFormInput>;
   readonly isSubmitting: boolean;

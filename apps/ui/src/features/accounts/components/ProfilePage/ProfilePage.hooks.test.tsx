@@ -63,19 +63,35 @@ const baseMe: IMe = {
 };
 
 describe("useProfilePage", () => {
-  it("returns email from useMe", () => {
+  it("returns email and derives initials from first + last name", () => {
     const { result } = renderHook(() => useProfilePage(), {
       wrapper: makeWrapper(baseMe)
     });
 
     expect(result.current.email).toBe("demo@example.com");
+    expect(result.current.initials).toBe("AL");
+    expect(result.current.displayName).toBe("Ada Lovelace");
   });
 
-  it("returns empty email when useMe has no data yet", () => {
+  it("falls back to email-derived initials when name is empty", () => {
+    const { result } = renderHook(() => useProfilePage(), {
+      wrapper: makeWrapper({
+        ...baseMe,
+        user: { ...baseMe.user, firstName: "", lastName: "" }
+      })
+    });
+
+    expect(result.current.initials).toBe("DE");
+    expect(result.current.displayName).toBe("demo@example.com");
+  });
+
+  it("returns empty fields when useMe has no data yet", () => {
     const { result } = renderHook(() => useProfilePage(), {
       wrapper: makeWrapper(null)
     });
 
     expect(result.current.email).toBe("");
+    expect(result.current.initials).toBe("");
+    expect(result.current.displayName).toBe("");
   });
 });

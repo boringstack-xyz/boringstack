@@ -19,6 +19,24 @@ const ProfilePage: FC<IProfilePageProps> = () => {
       title={view.pageTitle}
       subtitle={view.pageSubtitle}
     >
+      <section
+        aria-label={view.identityLabel}
+        className='border-border-strong/40 bg-panel flex items-center gap-5 rounded-2xl border p-6'
+      >
+        <span
+          aria-hidden='true'
+          className='bg-primary text-primary-ink flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-bold tracking-tight'
+        >
+          {view.initials}
+        </span>
+        <div className='flex flex-col gap-1 min-w-0'>
+          <p className='text-foreground text-base font-semibold tracking-tight'>
+            {view.displayName}
+          </p>
+          <p className='text-muted-foreground text-sm truncate'>{view.email}</p>
+        </div>
+      </section>
+
       <form
         onSubmit={view.submit}
         noValidate

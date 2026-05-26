@@ -366,7 +366,8 @@
         "lastName": "Last name",
         "email": "Email",
         "emailHint": "Linked email for sign-in. Change in Security."
-      }
+      },
+      "identityLabel": "Identity"
     },
     "switcher": {
       "ariaLabel": "Switch active account",

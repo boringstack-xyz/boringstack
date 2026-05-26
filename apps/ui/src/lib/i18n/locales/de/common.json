@@ -387,7 +387,8 @@
         "lastName": "Nachname",
         "email": "E-Mail",
         "emailHint": "Verknüpfte E-Mail zur Anmeldung. Änderung unter Sicherheit."
-      }
+      },
+      "identityLabel": "Identität"
     },
     "switcher": {
       "ariaLabel": "Aktives Konto wechseln",
