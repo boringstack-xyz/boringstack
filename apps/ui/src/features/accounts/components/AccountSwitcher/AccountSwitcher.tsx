@@ -40,7 +40,7 @@ const AccountSwitcher: FC<IAccountSwitcherProps> = (props) => {
       className='py-2'
     >
       <span className='flex-1 truncate'>{membership.accountName}</span>
-      <span className='text-muted-foreground mx-2 text-xs tracking-[0.18em] uppercase'>
+      <span className='text-primary mx-2 text-xs font-bold tracking-[0.18em] uppercase'>
         {membership.role}
       </span>
       {membership.accountId === activeAccountId ? (

@@ -41,7 +41,7 @@ const WidgetRow: FC<IWidgetRowProps> = ({
     });
 
   return (
-    <tr className='border-border border-b last:border-0'>
+    <tr className='border-border-strong/30 hover:bg-primary-low/20 border-b transition-colors last:border-0'>
       <td className='px-4 py-3'>
         {isEditing ? (
           <Input
@@ -158,7 +158,7 @@ const WidgetsPage: FC = () => {
       subtitle={t("widgets.subtitle")}
     >
       <Can I='create' a='Widget'>
-        <article className='border-border bg-background rounded-2xl border p-6'>
+        <article className='border-border-strong/40 bg-panel rounded-2xl border p-6'>
           <form
             onSubmit={onCreateSubmit}
             className='grid gap-4 md:grid-cols-[1fr_auto] md:items-end'
@@ -189,7 +189,7 @@ const WidgetsPage: FC = () => {
         </article>
       </Can>
 
-      <article className='border-border bg-background overflow-hidden rounded-2xl border'>
+      <article className='border-border-strong/40 bg-panel overflow-hidden rounded-2xl border'>
         {isLoading ? (
           <p className='text-muted-foreground p-6 text-sm' role='status'>
             {t("common.loading")}
@@ -205,7 +205,7 @@ const WidgetsPage: FC = () => {
         {widgets.length > 0 ? (
           <div className='overflow-x-auto'>
             <table className='w-full text-left'>
-              <thead className='text-muted-foreground border-border border-b text-xs tracking-[0.18em] uppercase'>
+              <thead className='text-muted-foreground border-border border-b text-xs font-medium tracking-[0.18em] uppercase'>
                 <tr>
                   <th className='px-4 py-3 font-medium'>
                     {t("widgets.columns.name")}

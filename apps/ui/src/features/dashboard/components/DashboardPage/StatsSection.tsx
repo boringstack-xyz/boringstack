@@ -25,7 +25,7 @@ const StatsSection: FC<IStatsSectionProps> = ({ isLoading, summary, t }) => {
 
   return (
     <div className='flex flex-wrap gap-4'>
-      <article className='border-border bg-background flex min-w-[12rem] flex-col gap-3 rounded-2xl border p-6'>
+      <article className='border-border bg-panel flex min-w-[12rem] flex-col gap-3 rounded-2xl border p-6'>
         <span className='text-muted-foreground text-xs font-medium tracking-[0.18em] uppercase'>
           {t("dashboard.stats.events")}
         </span>

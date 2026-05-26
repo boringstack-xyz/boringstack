@@ -21,7 +21,7 @@ const SettingsDetailRows: FC<ISettingsDetailRowsProps> = ({ rows }) => {
   const renderedRows = rows.map((row) => (
     <div
       key={row.id}
-      className='border-border bg-muted/30 rounded-xl border px-4 py-3'
+      className='border-border-strong/40 bg-panel-strong rounded-xl border px-4 py-3'
     >
       <dt className='text-muted-foreground text-xs font-medium tracking-[0.16em] uppercase'>
         {row.label}
@@ -39,7 +39,7 @@ const SettingsSectionCard: FC<ISettingsSectionCardProps> = ({
   section,
   children
 }) => (
-  <article className='border-border bg-background flex flex-col gap-4 rounded-2xl border p-6'>
+  <article className='border-border-strong/40 bg-panel flex flex-col gap-4 rounded-2xl border p-6'>
     <header className='flex flex-col gap-1'>
       <h2 className='text-foreground text-lg font-semibold tracking-tight'>
         {section.title}
@@ -208,7 +208,7 @@ const OAuthSection: FC<{
           oauthRows.map((provider) => (
             <div
               key={provider.provider}
-              className='border-border bg-muted/20 flex items-center justify-between rounded-xl border px-4 py-3'
+              className='border-border-strong/40 bg-panel-strong flex items-center justify-between rounded-xl border px-4 py-3'
             >
               <div className='flex flex-col'>
                 <p className='text-sm font-medium'>

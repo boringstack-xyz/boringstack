@@ -36,7 +36,7 @@ const InvitationsPage: FC<IInvitationsPageProps> = () => {
       key={row.id}
       data-testid='invitation-row'
       data-invitation-id={row.id}
-      className='border-border border-b last:border-0'
+      className='border-border-strong/30 hover:bg-primary-low/20 border-b transition-colors last:border-0'
     >
       <td className='text-foreground px-4 py-3 text-sm'>{row.email}</td>
       <td className='text-muted-foreground px-4 py-3 text-xs tracking-[0.18em] uppercase'>
@@ -75,7 +75,7 @@ const InvitationsPage: FC<IInvitationsPageProps> = () => {
       subtitle={t("accounts.invitations.pageSubtitle")}
     >
       <Can I='invite' a='TeamMember'>
-        <article className='border-border bg-background flex flex-col gap-4 rounded-2xl border p-6'>
+        <article className='border-border-strong/40 bg-panel flex flex-col gap-4 rounded-2xl border p-6'>
           <header className='flex flex-col gap-1'>
             <h2 className='text-foreground text-lg font-semibold tracking-tight'>
               {t("accounts.invitations.form.title")}
@@ -115,7 +115,7 @@ const InvitationsPage: FC<IInvitationsPageProps> = () => {
               </Label>
               <select
                 id='invite-role'
-                className='border-input bg-background h-10 w-full rounded-xl border px-3 text-sm'
+                className='border-border-strong/40 bg-panel-strong/60 hover:border-primary/60 focus:border-primary/60 focus:bg-panel focus:ring-primary/20 h-10 w-full rounded-xl border px-3 text-sm transition-[color,box-shadow,border-color] outline-none focus:ring-[3px]'
                 {...form.register("roleToAssign")}
               >
                 <option value={ROLE.admin}>
@@ -152,7 +152,7 @@ const InvitationsPage: FC<IInvitationsPageProps> = () => {
         </article>
       </Can>
 
-      <article className='border-border bg-background flex flex-col gap-4 rounded-2xl border p-6'>
+      <article className='border-border-strong/40 bg-panel flex flex-col gap-4 rounded-2xl border p-6'>
         <header>
           <h2 className='text-foreground text-lg font-semibold tracking-tight'>
             {t("accounts.invitations.tableHeading")}
@@ -165,7 +165,7 @@ const InvitationsPage: FC<IInvitationsPageProps> = () => {
         ) : (
           <div className='-mx-6 overflow-x-auto'>
             <table className='w-full text-left'>
-              <thead className='text-muted-foreground border-border border-b text-xs tracking-[0.18em] uppercase'>
+              <thead className='text-muted-foreground border-border border-b text-xs font-medium tracking-[0.18em] uppercase'>
                 <tr>
                   <th className='px-4 py-3 font-medium'>
                     {t("accounts.invitations.columns.email")}

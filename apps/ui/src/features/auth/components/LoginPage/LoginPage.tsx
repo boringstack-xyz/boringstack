@@ -55,7 +55,7 @@ const LoginPage: FC<ILoginPageProps> = (props) => {
       <form
         onSubmit={submit}
         noValidate
-        className='flex w-full max-w-md flex-col gap-8'
+        className='bg-panel border-border-strong/40 flex w-full max-w-md flex-col gap-8 rounded-2xl border p-8'
         aria-labelledby='login-title'
       >
         <header className='flex flex-col gap-3'>

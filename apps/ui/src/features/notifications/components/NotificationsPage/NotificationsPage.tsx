@@ -48,7 +48,7 @@ const NotificationsPage: FC = () => {
     <TabsContent
       key={tab.value}
       value={tab.value}
-      className='border-border bg-background mt-6 overflow-hidden rounded-2xl border'
+      className='border-border-strong/40 bg-panel mt-6 overflow-hidden rounded-2xl border'
     >
       {isLoading ? (
         <p className='text-muted-foreground p-6 text-sm'>
@@ -65,7 +65,7 @@ const NotificationsPage: FC = () => {
       {renderedItems}
 
       {hasNextPage ? (
-        <div className='border-border flex justify-center border-t p-4'>
+        <div className='border-border-strong/30 flex justify-center border-t p-4'>
           <Button
             type='button'
             variant='outline'

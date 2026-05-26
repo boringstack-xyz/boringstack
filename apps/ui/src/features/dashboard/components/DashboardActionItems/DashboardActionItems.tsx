@@ -21,7 +21,7 @@ const DashboardActionItems: FC<IDashboardActionItemsProps> = (props) => {
   const renderedItems = items.map((item) => (
     <li
       key={item.id}
-      className='border-border bg-background flex flex-col gap-3 rounded-2xl border p-5'
+      className='border-border bg-panel-strong hover:border-border-strong/60 flex flex-col gap-3 rounded-xl border p-5 transition-colors'
     >
       <div className='flex flex-col gap-1'>
         <h3 className='text-foreground text-base font-semibold tracking-tight'>
@@ -40,13 +40,10 @@ const DashboardActionItems: FC<IDashboardActionItemsProps> = (props) => {
   return (
     <article
       data-testid='dashboard-action-items'
-      className={cn(
-        "border-border bg-background rounded-2xl border p-6",
-        className
-      )}
+      className={cn("border-border bg-panel rounded-2xl border p-6", className)}
     >
       <header className='mb-4 flex flex-col gap-1'>
-        <span className='text-muted-foreground text-xs font-medium tracking-[0.18em] uppercase'>
+        <span className='text-muted-foreground text-xs font-medium tracking-[0.16em] uppercase'>
           {t("dashboard.actions.eyebrow")}
         </span>
         <h2 className='text-foreground text-lg font-semibold tracking-tight'>

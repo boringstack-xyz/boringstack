@@ -23,10 +23,8 @@ const NotificationListItem: FC<INotificationListItemProps> = (props) => {
       data-testid='notification-list-item'
       data-status={notification.status}
       className={cn(
-        "border-border flex flex-col gap-1 border-b px-4 py-4 text-sm last:border-b-0",
-        isUnread
-          ? "bg-accent/10 border-l-primary border-l-2 pl-[14px]"
-          : undefined
+        "border-border hover:bg-primary-low/20 flex flex-col gap-1 border-b px-4 py-4 text-sm transition-colors last:border-b-0",
+        isUnread ? "bg-primary-low/20" : undefined
       )}
     >
       <div className='flex items-start justify-between gap-2'>

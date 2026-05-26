@@ -19,27 +19,10 @@ const ProfilePage: FC<IProfilePageProps> = () => {
       title={view.pageTitle}
       subtitle={view.pageSubtitle}
     >
-      <article className='border-border bg-background flex items-center gap-5 rounded-2xl border p-6'>
-        <span
-          aria-hidden='true'
-          className='bg-primary text-primary-foreground flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-bold tracking-tight'
-        >
-          {view.initials}
-        </span>
-        <div className='flex flex-col gap-1'>
-          <h2 className='text-foreground text-lg font-semibold tracking-tight'>
-            {view.avatarLabel}
-          </h2>
-          <p className='text-muted-foreground text-sm'>
-            {view.avatarPlaceholder}
-          </p>
-        </div>
-      </article>
-
       <form
         onSubmit={view.submit}
         noValidate
-        className='border-border bg-background flex flex-col gap-5 rounded-2xl border p-6'
+        className='border-border-strong/40 bg-panel flex flex-col gap-5 rounded-2xl border p-6'
         aria-labelledby='profile-form-title'
       >
         <h2 id='profile-form-title' className='sr-only'>
@@ -104,7 +87,7 @@ const ProfilePage: FC<IProfilePageProps> = () => {
             value={view.email}
             readOnly
             aria-readonly='true'
-            className='bg-muted/30 font-mono'
+            className='bg-panel-strong font-mono'
           />
           <p className='text-muted-foreground text-xs'>{view.emailHint}</p>
         </div>

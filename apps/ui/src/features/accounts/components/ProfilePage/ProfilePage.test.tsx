@@ -93,7 +93,6 @@ describe("ProfilePage", () => {
         name: "accounts.profile.pageTitle"
       })
     ).toBeInTheDocument();
-    expect(screen.getByText("AL")).toBeInTheDocument();
     expect(
       screen.getByLabelText("accounts.profile.fields.firstName")
     ).toHaveValue("Ada");

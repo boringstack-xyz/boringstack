@@ -27,7 +27,7 @@ const ResetPasswordPage: FC<IResetPasswordPageProps> = (props) => {
             {t("auth.resetPassword.invalidTokenTitle")} · {t("app.name")}
           </title>
         </Helmet>
-        <div className='flex w-full max-w-md flex-col gap-6'>
+        <div className='bg-panel border-border-strong/40 flex w-full max-w-md flex-col gap-6 rounded-2xl border p-8'>
           <span className='text-primary text-xs font-medium tracking-[0.18em] uppercase'>
             {t("app.name")}
           </span>
@@ -55,7 +55,7 @@ const ResetPasswordPage: FC<IResetPasswordPageProps> = (props) => {
             {t("auth.resetPassword.successTitle")} · {t("app.name")}
           </title>
         </Helmet>
-        <div className='flex w-full max-w-md flex-col gap-6'>
+        <div className='bg-panel border-border-strong/40 flex w-full max-w-md flex-col gap-6 rounded-2xl border p-8'>
           <span className='text-primary text-xs font-medium tracking-[0.18em] uppercase'>
             {t("app.name")}
           </span>
@@ -86,7 +86,7 @@ const ResetPasswordPage: FC<IResetPasswordPageProps> = (props) => {
       <form
         onSubmit={submit}
         noValidate
-        className='flex w-full max-w-md flex-col gap-8'
+        className='bg-panel border-border-strong/40 flex w-full max-w-md flex-col gap-8 rounded-2xl border p-8'
         aria-labelledby='reset-password-title'
       >
         <header className='flex flex-col gap-3'>

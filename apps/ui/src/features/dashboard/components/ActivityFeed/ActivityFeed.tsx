@@ -26,7 +26,7 @@ const ActivityFeed: FC<IActivityFeedProps> = (props) => {
   const renderedItems = items.map((item) => (
     <li
       key={item.id}
-      className='border-border flex items-baseline justify-between gap-4 border-b py-3 last:border-b-0'
+      className='border-border hover:bg-primary-low/20 flex items-baseline justify-between gap-4 border-b py-3 transition-colors last:border-b-0'
     >
       <span className='text-foreground text-sm'>{item.title}</span>
       <time
@@ -59,12 +59,12 @@ const ActivityFeed: FC<IActivityFeedProps> = (props) => {
     <article
       data-testid='activity-feed'
       className={cn(
-        "border-border bg-background flex flex-col gap-4 rounded-2xl border p-6",
+        "border-border bg-panel flex flex-col gap-4 rounded-2xl border p-6",
         className
       )}
     >
       <header className='flex flex-col gap-1'>
-        <span className='text-muted-foreground text-xs font-medium tracking-[0.18em] uppercase'>
+        <span className='text-muted-foreground text-xs font-medium tracking-[0.16em] uppercase'>
           {t("dashboard.activity.eyebrow")}
         </span>
         <h2 className='text-foreground text-lg font-semibold tracking-tight'>

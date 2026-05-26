@@ -365,9 +365,7 @@
         "firstName": "First name",
         "lastName": "Last name",
         "email": "Email",
-        "emailHint": "Linked email for sign-in. Change in Security.",
-        "avatar": "Avatar",
-        "avatarPlaceholder": "Avatar upload coming soon."
+        "emailHint": "Linked email for sign-in. Change in Security."
       }
     },
     "switcher": {

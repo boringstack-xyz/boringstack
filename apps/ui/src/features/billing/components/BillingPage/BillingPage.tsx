@@ -16,19 +16,22 @@ const BillingPlanRow: FC<IBillingPlanRowProps> = ({ plan, view }) => {
   );
 
   return (
-    <article className='border-border bg-muted/30 flex flex-col gap-3 rounded-xl border px-4 py-4 sm:flex-row sm:items-center sm:justify-between'>
+    <article
+      data-current={isCurrent}
+      className='border-border bg-panel data-[current=true]:border-primary/50 data-[current=true]:bg-primary-low/20 flex flex-col gap-3 rounded-xl border px-4 py-4 transition-colors sm:flex-row sm:items-center sm:justify-between'
+    >
       <div className='flex flex-col gap-1'>
         <div className='flex flex-wrap items-center gap-2'>
           <h3 className='text-foreground text-base font-semibold'>
             {plan.name}
           </h3>
           {plan.isDefault ? (
-            <span className='bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-xs font-medium'>
+            <span className='bg-panel-strong text-muted-foreground border-border-strong/40 rounded-md border px-2 py-0.5 text-xs font-medium'>
               {view.defaultBadge}
             </span>
           ) : null}
           {isCurrent ? (
-            <span className='bg-primary/10 text-primary rounded-md px-2 py-0.5 text-xs font-medium'>
+            <span className='bg-primary-low text-primary-strong border-primary/30 rounded-md border px-2 py-0.5 text-xs font-bold tracking-wide uppercase'>
               {view.currentBadge}
             </span>
           ) : null}
@@ -86,13 +89,13 @@ const BillingPage: FC<IBillingPageProps> = () => {
 
       {view.state === "ready" ? (
         <div className='flex flex-col gap-6'>
-          <article className='border-border bg-background flex flex-col gap-2 rounded-2xl border p-6'>
-            <h2 className='text-foreground text-lg font-semibold tracking-tight'>
+          <article className='border-border-strong/40 bg-panel flex flex-col gap-2 rounded-2xl border p-6'>
+            <span className='text-muted-foreground text-xs font-medium tracking-[0.16em] uppercase'>
               {view.currentPlanLabel}
-            </h2>
-            <p className='text-foreground text-sm font-medium'>
+            </span>
+            <h2 className='text-foreground text-2xl font-bold tracking-tight'>
               {view.currentPlanName}
-            </p>
+            </h2>
             {view.hasActiveSubscription ? (
               <Button
                 type='button'

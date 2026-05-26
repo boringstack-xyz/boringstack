@@ -34,8 +34,8 @@ const SignUpPage: FC<ISignUpPageProps> = (props) => {
             {t("auth.checkEmail.title")} · {t("app.name")}
           </title>
         </Helmet>
-        <div className='flex w-full max-w-md flex-col gap-6'>
-          <span className='text-primary text-xs font-medium tracking-[0.18em] uppercase'>
+        <div className='bg-panel border-border-strong/40 flex w-full max-w-md flex-col gap-6 rounded-2xl border p-8'>
+          <span className='text-muted-foreground text-xs font-medium tracking-[0.16em] uppercase'>
             {t("app.name")}
           </span>
           <h1 className='text-foreground text-4xl leading-[1.05] font-bold tracking-tight md:text-5xl'>
@@ -77,7 +77,7 @@ const SignUpPage: FC<ISignUpPageProps> = (props) => {
       <form
         onSubmit={submit}
         noValidate
-        className='flex w-full max-w-md flex-col gap-8'
+        className='bg-panel border-border-strong/40 flex w-full max-w-md flex-col gap-8 rounded-2xl border p-8'
         aria-labelledby='signup-title'
       >
         <header className='flex flex-col gap-3'>

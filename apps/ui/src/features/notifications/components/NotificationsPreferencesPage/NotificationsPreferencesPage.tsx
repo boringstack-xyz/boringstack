@@ -43,7 +43,7 @@ const NotificationsPreferencesPage: FC = () => {
   const renderedHeaders = channels.map((channel) => (
     <th
       key={channel}
-      className='px-4 py-3 text-center text-xs font-medium tracking-[0.18em] uppercase'
+      className='px-4 py-3 text-center text-xs font-bold tracking-[0.18em] uppercase'
     >
       {t(channelHeaderKey(channel))}
     </th>
@@ -64,11 +64,11 @@ const NotificationsPreferencesPage: FC = () => {
       title={t("notifications.preferences.title")}
       subtitle={t("notifications.preferences.subtitle")}
     >
-      <div className='border-border bg-background overflow-hidden rounded-2xl border'>
+      <div className='border-border-strong/40 bg-panel overflow-hidden rounded-2xl border'>
         <table className='text-foreground w-full text-sm'>
-          <thead className='text-muted-foreground border-border border-b'>
+          <thead className='text-primary border-border-strong/30 border-b'>
             <tr>
-              <th className='px-4 py-3 text-left text-xs font-medium tracking-[0.18em] uppercase'>
+              <th className='px-4 py-3 text-left text-xs font-bold tracking-[0.18em] uppercase'>
                 {t("notifications.preferences.columns.event")}
               </th>
               {renderedHeaders}

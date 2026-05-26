@@ -386,9 +386,7 @@
         "firstName": "Vorname",
         "lastName": "Nachname",
         "email": "E-Mail",
-        "emailHint": "Verknüpfte E-Mail zur Anmeldung. Änderung unter Sicherheit.",
-        "avatar": "Avatar",
-        "avatarPlaceholder": "Avatar-Upload bald verfügbar."
+        "emailHint": "Verknüpfte E-Mail zur Anmeldung. Änderung unter Sicherheit."
       }
     },
     "switcher": {

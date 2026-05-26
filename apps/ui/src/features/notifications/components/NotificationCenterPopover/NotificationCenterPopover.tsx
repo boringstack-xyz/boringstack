@@ -37,7 +37,7 @@ const NotificationCenterPopover: FC<INotificationCenterPopoverProps> = (
     <Popover>
       <PopoverTrigger asChild>{props.trigger}</PopoverTrigger>
       <PopoverContent align='end' className='w-80 p-0'>
-        <PopoverHeader className='border-border border-b px-4 py-3'>
+        <PopoverHeader className='border-border-strong/30 border-b px-4 py-3'>
           <PopoverTitle className='text-sm font-semibold tracking-tight'>
             {t("notifications.title")}
           </PopoverTitle>
@@ -65,7 +65,7 @@ const NotificationCenterPopover: FC<INotificationCenterPopoverProps> = (
           {renderedItems}
         </ScrollArea>
 
-        <div className='border-border flex justify-end border-t px-3 py-2'>
+        <div className='border-border-strong/30 flex justify-end border-t px-3 py-2'>
           <Button asChild type='button' variant='ghost' size='sm'>
             <Link to={NOTIFICATIONS_ROUTES.index}>
               {t("notifications.seeAll")}

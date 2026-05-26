@@ -14,7 +14,7 @@ const WebPushCard: FC<IWebPushCardProps> = ({ className }) => {
     <article
       data-testid='web-push-card'
       className={cn(
-        "border-border bg-background flex flex-col gap-4 rounded-2xl border p-6",
+        "border-border-strong/40 bg-panel flex flex-col gap-4 rounded-2xl border p-6",
         className
       )}
     >

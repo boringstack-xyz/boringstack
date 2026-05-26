@@ -6,7 +6,7 @@ export const APP_PAGE_CONTENT_CLASS_NAME = "flex w-full flex-col gap-8";
 export const APP_PAGE_SHELL_HEADER_TEST_ID = "app-page-shell-header";
 
 export const APP_PAGE_SHELL_EYEBROW_CLASS_NAME =
-  "text-primary text-[10px] font-medium tracking-[0.18em] uppercase";
+  "text-muted-foreground text-[10px] font-medium tracking-[0.16em] uppercase";
 
 export const APP_PAGE_SHELL_TITLE_CLASS_NAME =
   "text-foreground truncate text-base font-semibold leading-tight";
