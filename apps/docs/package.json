@@ -27,7 +27,7 @@
     "@astrojs/cloudflare": "12",
     "@astrojs/react": "^5.0.5",
     "@astrojs/sitemap": "^3.7.2",
-    "@astrojs/starlight": "^0.36.0",
+    "@astrojs/starlight": "^0.39.2",
     "@tailwindcss/vite": "^4.3.0",
     "astro": "^5.16.0",
     "astro-mermaid": "^2.0.1",
