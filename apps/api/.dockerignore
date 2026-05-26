@@ -7,6 +7,9 @@ yarn-error.log*
 # Build outputs
 dist
 build
+# Exception: precompiled email templates ship inside the source tree at
+# src/templates/email/dist/ and the runtime loads them from there.
+!src/templates/email/dist
 
 # Environment files
 .env
