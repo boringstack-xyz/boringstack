@@ -152,13 +152,13 @@
         "command": "test",
         "script": "quality/run-tests-clean.ts",
         "description": "Runs bun test and fails when the suite prints warning noise to stdout/stderr.",
-        "invocation": "NODE_ENV=test bun run scripts/quality/run-tests-clean.ts"
+        "invocation": "bun run build:templates && NODE_ENV=test bun run scripts/quality/run-tests-clean.ts"
       },
       {
         "command": "test:coverage",
         "script": "quality/check-coverage.ts",
         "description": "",
-        "invocation": "NODE_ENV=test bun run scripts/quality/check-coverage.ts"
+        "invocation": "bun run build:templates && NODE_ENV=test bun run scripts/quality/check-coverage.ts"
       },
       {
         "command": "dev",

@@ -16,8 +16,8 @@ rules:
       - pattern: Stripe.webhooks.constructEvent(...)
     paths:
       exclude:
-        - "tests/**"
-        - "node_modules/**"
+        - "**/tests/**"
+        - "**/node_modules/**"
 
   - id: no-child-process-outside-scripts
     message: |
@@ -33,9 +33,9 @@ rules:
       - pattern: import $Z from 'node:child_process'
     paths:
       exclude:
-        - "scripts/**"
-        - "tests/**"
-        - "node_modules/**"
+        - "**/scripts/**"
+        - "**/tests/**"
+        - "**/node_modules/**"
 
   - id: no-eval
     message: |
@@ -48,7 +48,7 @@ rules:
       - pattern: new Function(...)
     paths:
       exclude:
-        - "node_modules/**"
+        - "**/node_modules/**"
 
   - id: no-inline-sql-string-concat
     message: |
@@ -62,8 +62,8 @@ rules:
       - pattern: db.execute(`...${$X}...`)
     paths:
       exclude:
-        - "tests/**"
-        - "node_modules/**"
+        - "**/tests/**"
+        - "**/node_modules/**"
 
   - id: no-raw-jwt-sign-without-iss
     message: |
@@ -76,5 +76,5 @@ rules:
       - pattern: jose.SignJWT({...})
     paths:
       include:
-        - "src/api/auth/**"
-        - "src/lib/auth/**"
+        - "**/src/api/auth/**"
+        - "**/src/lib/auth/**"

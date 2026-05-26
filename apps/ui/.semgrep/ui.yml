@@ -15,7 +15,7 @@ rules:
     pattern: dangerouslySetInnerHTML={...}
     paths:
       exclude:
-        - "node_modules/**"
+        - "**/node_modules/**"
 
   - id: no-raw-fetch-outside-openapi
     message: |
@@ -27,12 +27,12 @@ rules:
     pattern: fetch(...)
     paths:
       include:
-        - "src/**"
+        - "**/src/**"
       exclude:
-        - "src/lib/api/openapi.ts"
+        - "**/src/lib/api/openapi.ts"
         - "**/*.test.ts"
         - "**/*.test.tsx"
-        - "node_modules/**"
+        - "**/node_modules/**"
 
   - id: no-eval
     message: |
@@ -45,7 +45,7 @@ rules:
       - pattern: new Function(...)
     paths:
       exclude:
-        - "node_modules/**"
+        - "**/node_modules/**"
 
   - id: no-window-open-without-noopener
     message: |
@@ -69,4 +69,4 @@ rules:
       - pattern: localStorage.setItem("jwt", $X)
     paths:
       exclude:
-        - "node_modules/**"
+        - "**/node_modules/**"
