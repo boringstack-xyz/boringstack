@@ -13,6 +13,7 @@ import { spawnSync } from "node:child_process";
 
 const MIN_LINE = 0.65;
 const MIN_FUNCTION = 0.7;
+const MAX_TEST_OUTPUT_BUFFER_BYTES = 64 * 1024 * 1024;
 
 const FORBIDDEN_OUTPUT = [
   /^\{"level":"WARN"/u,
@@ -30,7 +31,11 @@ interface ICoverageResult {
   functionPct: number;
 }
 
-const runCoverage = (): { combined: string; exitCode: number } => {
+const runCoverage = (): {
+  combined: string;
+  exitCode: number;
+  spawnError?: Error;
+} => {
   /*
    * Bun emits the coverage table on stderr; the test result on stdout.
    * Capture both into the same buffer so the gate's row-parser sees the
@@ -38,6 +43,7 @@ const runCoverage = (): { combined: string; exitCode: number } => {
    */
   const result = spawnSync("bun", ["test", "--coverage"], {
     encoding: "utf8",
+    maxBuffer: MAX_TEST_OUTPUT_BUFFER_BYTES,
     env: {
       ...process.env,
       NODE_ENV: "test",
@@ -49,6 +55,7 @@ const runCoverage = (): { combined: string; exitCode: number } => {
   return {
     combined: result.stdout + result.stderr,
     exitCode: result.status ?? 1,
+    spawnError: result.error,
   };
 };
 
@@ -74,9 +81,16 @@ const parseAllFilesRow = (output: string): ICoverageResult | null => {
 
 const formatPct = (value: number): string => `${(value * 100).toFixed(2)}%`;
 
-const { combined, exitCode } = runCoverage();
+const { combined, exitCode, spawnError } = runCoverage();
 
 process.stdout.write(combined);
+
+if (spawnError !== undefined) {
+  console.error(
+    `\n[check-coverage] bun test --coverage did not complete: ${spawnError.message}`
+  );
+  process.exit(1);
+}
 
 const warningLines = combined
   .split("\n")

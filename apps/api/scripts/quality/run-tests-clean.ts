@@ -4,6 +4,8 @@
  */
 import { spawnSync } from "node:child_process";
 
+const MAX_TEST_OUTPUT_BUFFER_BYTES = 64 * 1024 * 1024;
+
 const FORBIDDEN_OUTPUT = [
   /^\{"level":"WARN"/u,
   /^warn: /u,
@@ -19,6 +21,7 @@ const bunArgs = ["test", ...process.argv.slice(2)];
 
 const result = spawnSync("bun", bunArgs, {
   encoding: "utf8",
+  maxBuffer: MAX_TEST_OUTPUT_BUFFER_BYTES,
   env: {
     ...process.env,
     NODE_ENV: "test",
@@ -33,6 +36,13 @@ const combined = stdout + stderr;
 
 process.stdout.write(stdout);
 process.stderr.write(stderr);
+
+if (result.error !== undefined) {
+  console.error(
+    `\n[test:clean] bun test did not complete: ${result.error.message}`
+  );
+  process.exit(1);
+}
 
 const violations = combined
   .split("\n")
