@@ -101,7 +101,7 @@ describe("useSettingsPage", () => {
       mutate: vi.fn()
     });
     useCapabilitiesMock.mockReturnValue({
-      data: { oauth: { providers: ["google", "github"] } }
+      data: { oauth: { providers: ["google", "github", "linkedin"] } }
     });
   });
 
@@ -151,7 +151,21 @@ describe("useSettingsPage", () => {
     });
     expect(result.current.oauthProviders).toEqual([
       { provider: "google", isLinked: true },
-      { provider: "github", isLinked: false }
+      { provider: "github", isLinked: false },
+      { provider: "linkedin", isLinked: false }
     ]);
+  });
+
+  it("marks linkedin as linked when it is in authProviders", () => {
+    useMeMock.mockReturnValue({
+      data: { ...baseMe, authProviders: ["linkedin"] }
+    });
+
+    const { result } = renderHook(() => useSettingsPage(), { wrapper });
+
+    expect(result.current.oauthProviders).toContainEqual({
+      provider: "linkedin",
+      isLinked: true
+    });
   });
 });

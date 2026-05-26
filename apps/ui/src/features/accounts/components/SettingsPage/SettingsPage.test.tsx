@@ -73,7 +73,11 @@ describe("SettingsPage", () => {
           value: "demo@example.com"
         }
       ],
-      oauthProviders: [{ provider: "google", isLinked: true }],
+      oauthProviders: [
+        { provider: "google", isLinked: true },
+        { provider: "github", isLinked: false },
+        { provider: "linkedin", isLinked: true }
+      ],
       registerAccountName: vi.fn(() => ({})),
       accountNameErrors: {},
       registerPassword: vi.fn(() => ({})),
@@ -129,5 +133,17 @@ describe("SettingsPage", () => {
     expect(screen.getByText("Personal")).toBeInTheDocument();
     expect(screen.getByText("demo@example.com")).toBeInTheDocument();
     expect(screen.getByTestId("web-push-card")).toBeInTheDocument();
+
+    expect(screen.getByText("auth.oauth.google")).toBeInTheDocument();
+    expect(screen.getByText("auth.oauth.github")).toBeInTheDocument();
+    expect(screen.getByText("auth.oauth.linkedin")).toBeInTheDocument();
+
+    const linkedinRow = screen
+      .getByText("auth.oauth.linkedin")
+      .closest("div")?.parentElement;
+    expect(linkedinRow).not.toBeNull();
+    expect(linkedinRow?.textContent).toContain(
+      "accounts.settings.oauth.disconnect"
+    );
   });
 });
