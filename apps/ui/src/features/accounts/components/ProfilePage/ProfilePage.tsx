@@ -29,11 +29,11 @@ const ProfilePage: FC<IProfilePageProps> = () => {
         >
           {view.initials}
         </span>
-        <div className='flex flex-col gap-1 min-w-0'>
+        <div className='flex min-w-0 flex-col gap-1'>
           <p className='text-foreground text-base font-semibold tracking-tight'>
             {view.displayName}
           </p>
-          <p className='text-muted-foreground text-sm truncate'>{view.email}</p>
+          <p className='text-muted-foreground truncate text-sm'>{view.email}</p>
         </div>
       </section>
 

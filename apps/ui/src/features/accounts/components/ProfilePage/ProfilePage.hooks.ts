@@ -104,7 +104,9 @@ export function useProfilePage(): IProfilePageView {
   const initials =
     user !== undefined ? deriveInitials(firstName, lastName, user.email) : "";
   const displayName =
-    user !== undefined ? deriveDisplayName(firstName, lastName, user.email) : "";
+    user !== undefined
+      ? deriveDisplayName(firstName, lastName, user.email)
+      : "";
 
   return {
     pageTitle: t("accounts.profile.pageTitle"),
