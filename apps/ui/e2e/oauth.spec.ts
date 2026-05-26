@@ -1,4 +1,27 @@
+import type { Page } from "@playwright/test";
+
 import { expect, test } from "./fixtures/auth";
+
+const OAUTH_ENABLED_CAPABILITIES = {
+  features: {
+    notifications: { sse: false, webPush: false },
+    billing: { enabled: false },
+    ai: { enabled: false }
+  },
+  oauth: {
+    providers: ["google", "github", "linkedin"]
+  }
+} as const;
+
+async function mockOAuthCapabilities(page: Page): Promise<void> {
+  await page.route(/\/api\/v1\/capabilities\/?$/u, (route) => {
+    void route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(OAUTH_ENABLED_CAPABILITIES)
+    });
+  });
+}
 
 /**
  * OAuth flow E2E — server-side flow.
@@ -18,6 +41,7 @@ test.describe("OAuth flow", () => {
     page,
     login
   }) => {
+    await mockOAuthCapabilities(page);
     await login.goto();
 
     /*
@@ -39,6 +63,7 @@ test.describe("OAuth flow", () => {
     page,
     login
   }) => {
+    await mockOAuthCapabilities(page);
     await login.goto();
 
     await page.route("**/api/v1/auth/oauth/github", (route) => {
@@ -55,6 +80,7 @@ test.describe("OAuth flow", () => {
     page,
     login
   }) => {
+    await mockOAuthCapabilities(page);
     await login.goto();
 
     await page.route("**/api/v1/auth/oauth/linkedin", (route) => {
