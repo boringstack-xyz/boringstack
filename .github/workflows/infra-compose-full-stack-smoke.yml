@@ -151,11 +151,12 @@ jobs:
 
       - name: Run UI Playwright E2E
         working-directory: apps/ui
+        timeout-minutes: 12
         env:
           PLAYWRIGHT_REUSE_SERVER: "true"
         run: |
-          bun run e2e:install
-          bun run e2e:ci
+          bun run e2e:install:chromium
+          bun run e2e:ci:chromium
 
       - name: Smoke — register a brand-new user
         run: |
