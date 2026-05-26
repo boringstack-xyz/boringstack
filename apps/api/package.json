@@ -9,8 +9,8 @@
     "bun": "1.3.14"
   },
   "scripts": {
-    "test": "NODE_ENV=test bun run scripts/quality/run-tests-clean.ts",
-    "test:coverage": "NODE_ENV=test bun run scripts/quality/check-coverage.ts",
+    "test": "bun run build:templates && NODE_ENV=test bun run scripts/quality/run-tests-clean.ts",
+    "test:coverage": "bun run build:templates && NODE_ENV=test bun run scripts/quality/check-coverage.ts",
     "dev": "./scripts/dev/preflight-host-dev.sh && bun run --watch src/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -63,7 +63,7 @@
     "drizzle-orm": "0.45.2",
     "elysia": "1.4.28",
     "elysia-rate-limit": "4.6.2",
-    "fs-extra": "11.3.4",
+    "fs-extra": "11.3.5",
     "handlebars": "4.7.9",
     "ioredis": "5.10.1",
     "nodemailer": "8.0.7",
@@ -89,7 +89,7 @@
     "@boring-stack-pkg/eslint-plugin-jwt-cookies": "0.1.1",
     "@boring-stack-pkg/eslint-plugin-module-boundaries": "0.1.1",
     "@boring-stack-pkg/eslint-plugin-oauth-security": "0.1.1",
-    "@boring-stack-pkg/eslint-plugin-resource-architecture": "0.1.1",
+    "@boring-stack-pkg/eslint-plugin-resource-architecture": "0.2.0",
     "@boring-stack-pkg/eslint-plugin-stripe-webhooks": "0.1.1",
     "@boring-stack-pkg/eslint-plugin-structured-logging": "0.1.1",
     "@boring-stack-pkg/eslint-plugin-test-conventions": "0.1.1",
@@ -111,9 +111,12 @@
     "eslint-plugin-unicorn": "64.0.0",
     "globals": "17.6.0",
     "husky": "9.1.7",
-    "knip": "6.11.0",
+    "knip": "6.14.1",
     "prettier": "3.8.3",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.59.4"
+    "typescript-eslint": "8.60.0"
+  },
+  "overrides": {
+    "@typescript-eslint/utils": "8.60.0"
   }
 }

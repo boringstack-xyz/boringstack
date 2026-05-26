@@ -14,4 +14,18 @@ minimumReleaseAgeExcludes = [
   "@boring-stack-pkg/eslint-plugin-structured-logging",
   "@boring-stack-pkg/eslint-plugin-tanstack-query-cache",
   "@boring-stack-pkg/eslint-plugin-test-conventions",
+  # ESLint 10 support landed in typescript-eslint 8.60.0 (2026-05-25); the
+  # earlier 8.59.4 imports `LegacyESLint` which ESLint 10 removed. Exempt
+  # the family from the 7-day quarantine for this one upgrade window.
+  "typescript-eslint",
+  "@typescript-eslint/eslint-plugin",
+  "@typescript-eslint/parser",
+  "@typescript-eslint/scope-manager",
+  "@typescript-eslint/type-utils",
+  "@typescript-eslint/types",
+  "@typescript-eslint/typescript-estree",
+  "@typescript-eslint/utils",
+  "@typescript-eslint/visitor-keys",
+  "@typescript-eslint/project-service",
+  "@typescript-eslint/tsconfig-utils",
 ]

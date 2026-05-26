@@ -1,4 +1,8 @@
 import { Redis } from "ioredis";
+import type {
+  Context as RateLimitContext,
+  Options as RateLimitOptions,
+} from "elysia-rate-limit";
 
 import { getValkeyAppClientOptions } from "../../clients/valkey";
 import { logger } from "../../config/logger";
@@ -27,13 +31,10 @@ import { getErrorMessage } from "../errors";
  * cache doesn't lock real users out.
  */
 
-interface IInitOptions {
-  duration: number;
-}
-
 interface IIncrementResult {
   count: number;
   nextReset: Date;
+  start: number;
 }
 
 const RATE_LIMIT_KEY_PREFIX = "rl:";
@@ -41,7 +42,7 @@ const RATE_LIMIT_KEY_PREFIX = "rl:";
 const buildKey = (rawKey: string): string =>
   `${RATE_LIMIT_KEY_PREFIX}${rawKey}`;
 
-export class ValkeyRateLimitContext {
+export class ValkeyRateLimitContext implements RateLimitContext {
   private readonly client: Redis;
   private durationMs = 0;
 
@@ -56,57 +57,71 @@ export class ValkeyRateLimitContext {
     });
   }
 
-  init(options: IInitOptions): void {
-    this.durationMs = options.duration;
+  init(options: Omit<RateLimitOptions, "context">): void {
+    this.durationMs =
+      typeof options.duration === "number" ? options.duration : 0;
   }
 
-  async increment(key: string): Promise<IIncrementResult> {
+  async increment(
+    key: string,
+    duration?: number,
+    requestTime?: number
+  ): Promise<IIncrementResult> {
     const fullKey = buildKey(key);
+    const now = requestTime ?? Date.now();
+    const durationMs = duration ?? this.durationMs;
+
+    if (durationMs <= 0) {
+      return this.permissiveFallback(now, durationMs);
+    }
 
     try {
       const result = await this.client
         .multi()
         .incr(fullKey)
-        .pexpire(fullKey, this.durationMs, "NX")
+        .pexpire(fullKey, durationMs, "NX")
         .pttl(fullKey)
         .exec();
 
       if (result === null) {
-        return this.permissiveFallback();
+        return this.permissiveFallback(now, durationMs);
       }
 
       const countCmd = result[0];
       const ttlCmd = result[2];
 
       if (!countCmd || !ttlCmd) {
-        return this.permissiveFallback();
+        return this.permissiveFallback(now, durationMs);
       }
 
       const [countErr, countRaw] = countCmd;
       const [ttlErr, ttlRaw] = ttlCmd;
 
       if (countErr !== null || ttlErr !== null) {
-        return this.permissiveFallback();
+        return this.permissiveFallback(now, durationMs);
       }
 
       const count = typeof countRaw === "number" ? countRaw : Number(countRaw);
       const ttlMs = typeof ttlRaw === "number" ? ttlRaw : Number(ttlRaw);
 
       if (Number.isNaN(count)) {
-        return this.permissiveFallback();
+        return this.permissiveFallback(now, durationMs);
       }
 
-      const nextResetMs =
-        ttlMs > 0 ? Date.now() + ttlMs : Date.now() + this.durationMs;
+      const nextResetMs = ttlMs > 0 ? now + ttlMs : now + durationMs;
 
-      return { count, nextReset: new Date(nextResetMs) };
+      return {
+        count,
+        nextReset: new Date(nextResetMs),
+        start: nextResetMs - durationMs,
+      };
     } catch (error: unknown) {
       logger.warn("Rate-limit Valkey increment failed; allowing request", {
         event: "cache_valkey_error",
         error: getErrorMessage(error),
       });
 
-      return this.permissiveFallback();
+      return this.permissiveFallback(now, durationMs);
     }
   }
 
@@ -160,10 +175,14 @@ export class ValkeyRateLimitContext {
    * (`api-ratelimit` middleware) still protects against runaway abuse
    * even when Valkey is unhappy.
    */
-  private permissiveFallback(): IIncrementResult {
+  private permissiveFallback(
+    requestTime = Date.now(),
+    durationMs = this.durationMs
+  ): IIncrementResult {
     return {
       count: 1,
-      nextReset: new Date(Date.now() + this.durationMs),
+      nextReset: new Date(requestTime + durationMs),
+      start: requestTime,
     };
   }
 }

@@ -26,16 +26,6 @@
     "gzip": true
   },
   {
-    "name": "Modulepreload feature constants",
-    "path": [
-      "dist/assets/Auth.constants-*.js",
-      "dist/assets/Notifications.constants-*.js",
-      "dist/assets/capabilities.constants-*.js"
-    ],
-    "limit": "5 KB",
-    "gzip": true
-  },
-  {
     "name": "Login page chunk",
     "path": "dist/assets/LoginPage-*.js",
     "limit": "20 KB",

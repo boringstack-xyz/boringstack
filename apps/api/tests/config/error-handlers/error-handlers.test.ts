@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import { createApp } from "../../../src/config/app";
 import { initializeErrorHandlers } from "../../../src/config/error-handlers";
 import { cacheService } from "../../../src/lib/cache";
 import { postgresClient } from "../../helpers/db";
@@ -8,22 +7,19 @@ import { postgresClient } from "../../helpers/db";
 describe("error-handlers", () => {
   test("SIGTERM stops HTTP listener before cache and database teardown", async () => {
     const order: string[] = [];
-    const app = createApp();
-    const server = app.listen(0);
+    const server = {
+      stop: async (): Promise<void> => {
+        order.push("http");
+        await Promise.resolve();
+      },
+    };
 
-    const originalStop = server.stop.bind(server);
     const originalCacheClose = cacheService.close.bind(cacheService);
     const originalDbEnd = postgresClient.end.bind(postgresClient);
     const originalExitDescriptor = Object.getOwnPropertyDescriptor(
       process,
       "exit"
     );
-
-    server.stop = async () => {
-      order.push("http");
-
-      return originalStop();
-    };
 
     cacheService.close = async (): Promise<void> => {
       order.push("cache");
@@ -76,7 +72,6 @@ describe("error-handlers", () => {
       expect(order.indexOf("db")).toBeGreaterThan(order.indexOf("cache"));
       expect(exitCode).toBe(0);
     } finally {
-      server.stop = originalStop;
       cacheService.close = originalCacheClose;
       postgresClient.end = originalDbEnd;
 
