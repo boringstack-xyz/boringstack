@@ -62,7 +62,7 @@
     "dotenv": "17.4.2",
     "drizzle-orm": "0.45.2",
     "elysia": "1.4.28",
-    "elysia-rate-limit": "4.6.1",
+    "elysia-rate-limit": "4.6.2",
     "fs-extra": "11.3.4",
     "handlebars": "4.7.9",
     "ioredis": "5.10.1",
