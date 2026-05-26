@@ -123,17 +123,27 @@ The module derives `IMAGE_OWNER`, `API_IMAGE_NAME=<repo>-api`, and `UI_IMAGE_NAM
 
 Use this once, after Quickstart and before the first production boot:
 
+<Aside type="caution" title="Secrets do not live on the box">
+  Production runs **`op run --env-file=.env.production`** (or the equivalent
+  Vault / Infisical / Doppler / SOPS CLI). The file on disk holds `op://`
+  references, not raw values. See [Secrets management](/infra/secrets/)
+  before working through the checklist below — every `compose/.env` mention
+  is a manifest of references, not a place to paste plaintext.
+</Aside>
+
 - [ ] Repo created from the BoringStack template (**Use this template** on [`boringstack-xyz/boringstack`](https://github.com/boringstack-xyz/boringstack)) under your org/user.
+- [ ] **Secret manager wired:** 1Password (or chosen alternative) has a `Production` vault populated with every secret in [`compose/.env.example`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/.env.example); a scoped service-account token is on the VPS as `OP_SERVICE_ACCOUNT_TOKEN`.
+- [ ] `compose/.env.production` on the VPS holds `op://` references only — no raw values.
 - [ ] First API and UI images published to GHCR (push to `main`, then watch each Actions tab).
 - [ ] GHCR packages set to **Public**, or the VPS has a pull credential.
-- [ ] `compose/.env` has `IMAGE_OWNER` and any renamed `API_IMAGE_NAME` / `UI_IMAGE_NAME`.
-- [ ] `JWT_SECRET` regenerated for production (`openssl rand -base64 48`).
-- [ ] `FRONTEND_URL`, `PUBLIC_API_URL`, `PUBLIC_UI_HOST`, and `ACME_EMAIL` match the production origin.
+- [ ] `compose/.env.production` has `IMAGE_OWNER` and any renamed `API_IMAGE_NAME` / `UI_IMAGE_NAME` (inline values — these aren't secrets).
+- [ ] `JWT_SECRET` generated (`openssl rand -base64 48`), stored in the 1Password vault, referenced as `op://Production/Auth/jwt_secret`.
+- [ ] `FRONTEND_URL`, `PUBLIC_API_URL`, `PUBLIC_UI_HOST`, and `ACME_EMAIL` match the production origin (inline — not secrets).
 - [ ] `SUPERUSER_PASSWORD` rotated through the password-reset flow after first login.
 - [ ] [Firewall & TLS](/runbooks/firewall-and-tls/) verified: Cloudflare can reach the origin, direct requests cannot.
 - [ ] [Backups](/runbooks/backups/) configured and at least one restore drill run.
 - [ ] [Cloudflare Email setup](/runbooks/cloudflare-email-setup/) completed if Cloudflare is your outbound mail provider.
-- [ ] Optional OpenTofu path: `terraform.tfvars` has your repo URL, real `domain`, and production secrets.
+- [ ] Optional OpenTofu path: `terraform.tfvars` has your repo URL, real `domain`, and `op://` references for every sensitive var (`tfvars` itself is plaintext on disk — keep it short-lived and gitignored).
 
 ## First-time deploy
 

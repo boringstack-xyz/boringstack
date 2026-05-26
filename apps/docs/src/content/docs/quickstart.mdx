@@ -143,6 +143,19 @@ chmod +x dev.sh ../scripts/*.sh
 
 First boot pulls base images, builds the api/ui dev images, and runs migrations. If you set `SUPERUSER_EMAIL` + `SUPERUSER_PASSWORD` in `compose/.env`, an admin user is also created. About 3 minutes on a fast laptop.
 
+<DocCallout
+  eyebrow="For production"
+  title="Do not run prod off a raw compose/.env"
+  variant="caution"
+>
+  The `compose/.env` flow above is for **local development**. Production
+  secrets belong in a secret manager — 1Password, Vault, Infisical, Doppler,
+  or SOPS — resolved at boot via `op run --env-file=.env.production` (or the
+  equivalent CLI). One compromised dev dependency on the box scrapes raw
+  `.env` files; `op://` references stay inert. See
+  [Secrets management](/infra/secrets/) before you deploy.
+</DocCallout>
+
 ## Step 3. Sign in
 
 Open **http://localhost:3001**.
