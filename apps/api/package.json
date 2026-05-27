@@ -11,7 +11,7 @@
   "scripts": {
     "test": "bun run build:templates && NODE_ENV=test bun run scripts/quality/run-tests-clean.ts",
     "test:coverage": "bun run build:templates && NODE_ENV=test bun run scripts/quality/check-coverage.ts",
-    "dev": "./scripts/dev/preflight-host-dev.sh && bun run --watch src/index.ts",
+    "dev": "./scripts/dev/preflight-host-dev.sh && bun run build:templates && bun run --watch src/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",

@@ -184,7 +184,12 @@ services:
     volumes:
       - ../../../apps/api:/app
       - api_dev_node_modules:/app/node_modules
-    command: ["bun", "run", "--watch", "src/index.ts"]
+    command:
+      [
+        "sh",
+        "-c",
+        "bun run build:templates && bun run --watch src/index.ts",
+      ]
     env_file:
       - path: ./api.dev.env
         required: false
