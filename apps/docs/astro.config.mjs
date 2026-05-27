@@ -93,10 +93,13 @@ function lastmodForUrl(absoluteUrl) {
 export default defineConfig({
   site: "https://boringstack.xyz",
   /*
-   * Fully static build — every page in this Starlight site is
+   * Fully static build. Every page in this Starlight site is
    * prerendered at build time and served by Cloudflare Pages as
-   * assets. Setting `output: "static"` keeps the @astrojs/cloudflare
-   * v13 adapter from spinning up a server prerender worker.
+   * static assets. There is no Cloudflare adapter (no SSR), so
+   * Astro emits HTML/JS/CSS into `dist/` and wrangler uploads it
+   * as an assets-only deploy (see `wrangler.jsonc`). `output:
+   * "static"` is the documented default for adapter-less sites
+   * and we pin it explicitly so the intent is unmistakable.
    */
   output: "static",
   redirects: {
