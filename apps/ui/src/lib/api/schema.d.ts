@@ -689,9 +689,43 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Transfer ownership of an account to another member */
+        /** Initiate a two-step ownership transfer (target must accept) */
         post: operations["postApiV1AccountsByIdTransfer-ownership"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/{id}/transfer-ownership/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the pending ownership transfer offer, if any */
+        get: operations["getApiV1AccountsByIdTransfer-ownershipPending"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/{id}/transfer-ownership/{transferId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Cancel a pending ownership transfer offer */
+        delete: operations["deleteApiV1AccountsByIdTransfer-ownershipByTransferId"];
         options?: never;
         head?: never;
         patch?: never;
@@ -714,6 +748,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/accounts/{id}/join-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List pending domain-claim join requests */
+        get: operations["getApiV1AccountsByIdJoin-requests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/{id}/join-requests/{requestId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve a pending join request (creates a member seat) */
+        post: operations["postApiV1AccountsByIdJoin-requestsByRequestIdApprove"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/{id}/join-requests/{requestId}/deny": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deny a pending join request */
+        post: operations["postApiV1AccountsByIdJoin-requestsByRequestIdDeny"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/invitations/accept": {
         parameters: {
             query?: never;
@@ -725,6 +810,40 @@ export interface paths {
         put?: never;
         /** Accept an invitation by its raw token */
         post: operations["postApiV1InvitationsAccept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/ownership-transfer/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept an ownership transfer offer by its raw token */
+        post: operations["postApiV1InvitationsOwnership-transferAccept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/ownership-transfer/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline an ownership transfer offer by its raw token */
+        post: operations["postApiV1InvitationsOwnership-transferDecline"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3056,25 +3175,137 @@ export interface operations {
                     "application/json": {
                         success: boolean;
                         data: {
-                            transferred: boolean;
+                            transfer: {
+                                id: string;
+                                accountId: string;
+                                fromUserId: string;
+                                toUserId: string;
+                                expiresAt: string;
+                                acceptedAt: string | null;
+                                declinedAt: string | null;
+                                cancelledAt: string | null;
+                                createdAt: string;
+                            };
+                            rawToken?: string;
                         };
                         timestamp: string;
                     };
                     "multipart/form-data": {
                         success: boolean;
                         data: {
-                            transferred: boolean;
+                            transfer: {
+                                id: string;
+                                accountId: string;
+                                fromUserId: string;
+                                toUserId: string;
+                                expiresAt: string;
+                                acceptedAt: string | null;
+                                declinedAt: string | null;
+                                cancelledAt: string | null;
+                                createdAt: string;
+                            };
+                            rawToken?: string;
                         };
                         timestamp: string;
                     };
                     "text/plain": {
                         success: boolean;
                         data: {
-                            transferred: boolean;
+                            transfer: {
+                                id: string;
+                                accountId: string;
+                                fromUserId: string;
+                                toUserId: string;
+                                expiresAt: string;
+                                acceptedAt: string | null;
+                                declinedAt: string | null;
+                                cancelledAt: string | null;
+                                createdAt: string;
+                            };
+                            rawToken?: string;
                         };
                         timestamp: string;
                     };
                 };
+            };
+        };
+    };
+    "getApiV1AccountsByIdTransfer-ownershipPending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        pending: {
+                            id: string;
+                            accountId: string;
+                            fromUserId: string;
+                            toUserId: string;
+                            expiresAt: string;
+                            acceptedAt: string | null;
+                            declinedAt: string | null;
+                            cancelledAt: string | null;
+                            createdAt: string;
+                        } | null;
+                    };
+                    "multipart/form-data": {
+                        pending: {
+                            id: string;
+                            accountId: string;
+                            fromUserId: string;
+                            toUserId: string;
+                            expiresAt: string;
+                            acceptedAt: string | null;
+                            declinedAt: string | null;
+                            cancelledAt: string | null;
+                            createdAt: string;
+                        } | null;
+                    };
+                    "text/plain": {
+                        pending: {
+                            id: string;
+                            accountId: string;
+                            fromUserId: string;
+                            toUserId: string;
+                            expiresAt: string;
+                            acceptedAt: string | null;
+                            declinedAt: string | null;
+                            cancelledAt: string | null;
+                            createdAt: string;
+                        } | null;
+                    };
+                };
+            };
+        };
+    };
+    "deleteApiV1AccountsByIdTransfer-ownershipByTransferId": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                transferId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -3095,6 +3326,182 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    "getApiV1AccountsByIdJoin-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: string;
+                        accountId: string;
+                        userId: string;
+                        email: string;
+                        status: "pending" | "approved" | "denied";
+                        createdAt: string;
+                        decidedAt: string | null;
+                        decidedByUserId: string | null;
+                    }[];
+                    "multipart/form-data": {
+                        id: string;
+                        accountId: string;
+                        userId: string;
+                        email: string;
+                        status: "pending" | "approved" | "denied";
+                        createdAt: string;
+                        decidedAt: string | null;
+                        decidedByUserId: string | null;
+                    }[];
+                    "text/plain": {
+                        id: string;
+                        accountId: string;
+                        userId: string;
+                        email: string;
+                        status: "pending" | "approved" | "denied";
+                        createdAt: string;
+                        decidedAt: string | null;
+                        decidedByUserId: string | null;
+                    }[];
+                };
+            };
+        };
+    };
+    "postApiV1AccountsByIdJoin-requestsByRequestIdApprove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            id: string;
+                            accountId: string;
+                            userId: string;
+                            email: string;
+                            status: "pending" | "approved" | "denied";
+                            createdAt: string;
+                            decidedAt: string | null;
+                            decidedByUserId: string | null;
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            id: string;
+                            accountId: string;
+                            userId: string;
+                            email: string;
+                            status: "pending" | "approved" | "denied";
+                            createdAt: string;
+                            decidedAt: string | null;
+                            decidedByUserId: string | null;
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            id: string;
+                            accountId: string;
+                            userId: string;
+                            email: string;
+                            status: "pending" | "approved" | "denied";
+                            createdAt: string;
+                            decidedAt: string | null;
+                            decidedByUserId: string | null;
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    "postApiV1AccountsByIdJoin-requestsByRequestIdDeny": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            id: string;
+                            accountId: string;
+                            userId: string;
+                            email: string;
+                            status: "pending" | "approved" | "denied";
+                            createdAt: string;
+                            decidedAt: string | null;
+                            decidedByUserId: string | null;
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            id: string;
+                            accountId: string;
+                            userId: string;
+                            email: string;
+                            status: "pending" | "approved" | "denied";
+                            createdAt: string;
+                            decidedAt: string | null;
+                            decidedByUserId: string | null;
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            id: string;
+                            accountId: string;
+                            userId: string;
+                            email: string;
+                            status: "pending" | "approved" | "denied";
+                            createdAt: string;
+                            decidedAt: string | null;
+                            decidedByUserId: string | null;
+                        };
+                        timestamp: string;
+                    };
+                };
             };
         };
     };
@@ -3142,6 +3549,156 @@ export interface operations {
                         success: boolean;
                         data: {
                             accepted: boolean;
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    "postApiV1InvitationsOwnership-transferAccept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                };
+                "multipart/form-data": {
+                    token: string;
+                };
+                "text/plain": {
+                    token: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            id: string;
+                            accountId: string;
+                            fromUserId: string;
+                            toUserId: string;
+                            expiresAt: string;
+                            acceptedAt: string | null;
+                            declinedAt: string | null;
+                            cancelledAt: string | null;
+                            createdAt: string;
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            id: string;
+                            accountId: string;
+                            fromUserId: string;
+                            toUserId: string;
+                            expiresAt: string;
+                            acceptedAt: string | null;
+                            declinedAt: string | null;
+                            cancelledAt: string | null;
+                            createdAt: string;
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            id: string;
+                            accountId: string;
+                            fromUserId: string;
+                            toUserId: string;
+                            expiresAt: string;
+                            acceptedAt: string | null;
+                            declinedAt: string | null;
+                            cancelledAt: string | null;
+                            createdAt: string;
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    "postApiV1InvitationsOwnership-transferDecline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    token: string;
+                };
+                "multipart/form-data": {
+                    token: string;
+                };
+                "text/plain": {
+                    token: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            id: string;
+                            accountId: string;
+                            fromUserId: string;
+                            toUserId: string;
+                            expiresAt: string;
+                            acceptedAt: string | null;
+                            declinedAt: string | null;
+                            cancelledAt: string | null;
+                            createdAt: string;
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            id: string;
+                            accountId: string;
+                            fromUserId: string;
+                            toUserId: string;
+                            expiresAt: string;
+                            acceptedAt: string | null;
+                            declinedAt: string | null;
+                            cancelledAt: string | null;
+                            createdAt: string;
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            id: string;
+                            accountId: string;
+                            fromUserId: string;
+                            toUserId: string;
+                            expiresAt: string;
+                            acceptedAt: string | null;
+                            declinedAt: string | null;
+                            cancelledAt: string | null;
+                            createdAt: string;
                         };
                         timestamp: string;
                     };

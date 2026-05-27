@@ -1,46 +1,33 @@
 ---
 title: First feature in 10 minutes
-description: From a fresh BoringStack fork to a deployed end-to-end feature — driven by the /add-full-feature skill. Real timings, real commands.
+description: Build a working account-scoped resource end-to-end from a fresh BoringStack fork using the /add-full-feature skill.
 ---
 
-This is the smoke test of the whole template: from a clean clone to a
-new account-scoped resource, surfaced in the UI, with audit-log and
-notification wiring, and the lint-meta sibling-test bar satisfied.
+End-to-end means: a database table, an API route, a typed UI page, tests on both sides, all of it green through `bun run validate`. The agent writes most of the code. You read diffs and check the validate output.
 
-The agent does most of the typing. You watch the diff and read the
-trailing `bun run validate` report.
+## What you need first
 
-## Before you start
+A fresh fork from [boringstack-xyz/boringstack](https://github.com/boringstack-xyz/boringstack) on GitHub (click **Use this template**), Docker (or OrbStack) running, and an agent open in the repo root.
 
-You should already have:
+From the cloned repo:
 
-- A fresh fork from
-  [`boringstack-xyz/boringstack`](https://github.com/boringstack-xyz/boringstack)
-  via **Use this template** on GitHub.
-- Docker (or OrbStack) running.
-- The standard one-liner from
-  [Quickstart](/quickstart/) completed:
-  ```sh
-  bun install
-  cd infra/compose/compose && ./dev.sh up -d
-  cd ../../../apps/api && bun run dev   # tab 1
-  cd apps/ui && bun run dev             # tab 2
-  ```
-- Claude Code (or your agent) open in the repo root.
+```sh
+./setup.sh --up
+```
 
-## Step 1 — Pick the slice
+That copies `.env`, generates the GlitchTip secret, and brings the full Compose stack up: Postgres, Valkey, api-dev with migrations applied, ui-dev on `localhost:3001`, OpenAPI client generated. No local Bun or Postgres needed.
 
-Pretend you're building **support tickets**: each account can list
-tickets, create one, and close it. That's an api resource (model +
-routes + service) plus a ui page (list + create form).
+Sign in at `http://localhost:3001` as `demo@example.com / password123`.
 
-The right skill is `/add-full-feature` — it drives the api template's
-`/build-feature` first, regenerates the openapi-typed client, then
-drives the ui template's `/build-feature` against the new endpoint.
+## 1. Pick something to build
 
-## Step 2 — Invoke the skill
+Say you want **support tickets**. Each account lists tickets, creates them, closes them. That's a backend resource (table + service + routes) and a UI page (list + create form).
 
-In Claude Code, type:
+The skill to use is `/add-full-feature`. It runs the API loop first, regenerates the OpenAPI client, then runs the UI loop against the new endpoint.
+
+## 2. Run the skill
+
+In your agent, type:
 
 ```
 /add-full-feature
@@ -51,60 +38,38 @@ Fields: subject (text, required), body (text, optional), status (open/closed, de
 UI: list page + create form
 ```
 
-The agent now spec'd the resource and confirms what it's about to
-build. Read it. If anything's wrong, say so before it starts writing —
-the spec is cheap to amend, the implementation is not.
+The agent writes a spec and asks you to confirm. Read it before approving. The spec is cheap to amend; ripping out half-built code is not.
 
-## Step 3 — Approve & watch
+## 3. Approve, then watch the diff
 
-Once you approve, the skill runs the canonical loop on the api side:
+On the API side the agent:
 
-1. **Schema** — adds the `tickets` table to
-   `apps/api/src/clients/postgres/schema/app.schema.ts` (account-scoped
-   FK, indexes, the `@account-scoped accountId` comment the
-   `drizzle-conventions` rule reads).
-2. **Migration** — runs `bun run db:generate` and stages the resulting
-   `drizzle/000X_*.sql` file.
-3. **Service + routes + utils + constants + types + schemas** — the
-   five-file resource quintet enforced by `module-boundaries`. Each
-   one ships with a sibling test under `tests/api/tickets/` —
-   `lint:meta` will fail the PR otherwise.
-4. **Audit + notification wiring** — calls `auditLogService.record(...)`
-   at every mutation and (if you asked) wires a notification event.
-5. **`bun run validate`** — types, lint, lint:meta, lint:meta docs,
-   knip, tests. Anything red goes back into the loop. You don't
-   intervene; the agent self-corrects.
+1. Adds the `tickets` table to `apps/api/src/clients/postgres/schema/app.schema.ts` with an `accountId` FK, indexes, and the `@account-scoped accountId` marker that the `drizzle-conventions` ESLint rule reads.
+2. Runs `bun run db:generate`. A new `drizzle/000X_*.sql` lands.
+3. Writes the five-file resource quintet (`service`, `routes`, `utils`, `constants`, `types`, `schemas`) that `module-boundaries` enforces. Each one gets a sibling test under `tests/api/tickets/`. `lint:meta` fails the PR otherwise.
+4. Wires `auditLogService.record(...)` on every mutation. If you asked for one, a notification event too.
+5. Runs `bun run validate`. If anything goes red, it loops back and fixes. You don't have to step in unless it gets stuck.
 
-Then the openapi schema is regenerated (`bun run generate:api` in
-`apps/ui/`) so the typed client has `apiClient.GET("/api/v1/tickets")`
-on it.
+Then it regenerates the OpenAPI types in `apps/ui/` so `apiClient.GET("/api/v1/tickets")` is typed against the new route.
 
-Then the ui side runs the same loop:
+On the UI side, the same kind of pass:
 
-1. **Feature folder** —
-   `apps/ui/src/features/tickets/{components,Tickets.queries.ts,Tickets.mutations.ts,Tickets.schemas.ts,...}`.
-2. **TanStack Query** wiring against `apiClient`. No raw `fetch`
-   anywhere — the lint rule blocks it.
-3. **shadcn components** — list page, create form (RHF + Zod via the
-   regenerated openapi schemas), error states.
-4. **i18n keys** — every JSX string lifted to
-   `apps/ui/src/lib/i18n/locales/en/common.json` (and the parallel
-   `de/common.json`). The `no-hardcoded-jsx-strings` rule blocks
-   anything else.
-5. **Tests** — RTL coverage for the page and the form.
-6. **`bun run validate`** — same merge bar.
+1. New feature folder: `apps/ui/src/features/tickets/{components,Tickets.queries.ts,Tickets.mutations.ts,Tickets.schemas.ts,...}`.
+2. TanStack Query against `apiClient`. The lint rule blocks raw `fetch` anywhere outside `openapi.ts`.
+3. shadcn components for the list and a create form (React Hook Form + Zod via the regenerated schemas), plus error states.
+4. Every JSX string lifts to `apps/ui/src/lib/i18n/locales/en/common.json` and the German parallel. The `no-hardcoded-jsx-strings` rule won't let anything else compile.
+5. RTL tests for the page and form.
+6. `bun run validate` again.
 
-## Step 4 — See it work
+## 4. See it work
+
+Open `http://localhost:3001/tickets`. The page renders, the create form posts, the list updates. From the terminal:
 
 ```sh
-# In the api tab, the new route is live:
 curl http://localhost:3000/api/v1/tickets
-
-# In the ui tab, your browser opens /tickets automatically; the page
-# renders, the create form posts, the list reflects new rows.
 ```
 
-## Step 5 — Ship
+## 5. Ship it
 
 ```sh
 git checkout -b feat/tickets
@@ -114,28 +79,17 @@ git push -u origin feat/tickets
 gh pr create --fill
 ```
 
-CI runs the same `bun run validate` as your local loop. If it passed
-locally, it passes on the runner. Squash-merge.
+CI runs the same `bun run validate`. Local green means CI green. Squash-merge.
 
-## Why this works in 10 minutes
+## Why this fits in 10 minutes
 
-- **The skill encodes the loop**, not just the prompt. The agent
-  knows which files to touch, in what order, and what `lint:meta`
-  will reject if it skips a sibling test.
-- **The contract is enforced at lint time.** No half-built service
-  with a missing test merges. No raw `fetch` slips into the UI. No
-  un-translated JSX string makes it past `bun run check`.
-- **`bun run validate` is the merge gate.** Same script locally and in
-  CI; if green locally, green on the runner.
-- **The openapi handshake is generated, not hand-rolled.** The api
-  emits the schema, the ui consumes the typed client — adding a field
-  on either side reliably lights up the other.
+Most of the work isn't writing code, it's holding the project's conventions in your head while you write it. The skill holds them for you: which files to touch, in what order, which sibling tests `lint:meta` will demand, which lint rules block which patterns.
 
-## What's next
+The merge gate is `bun run validate`, the same script in CI. The OpenAPI client is generated from the running API, so a missing field on one side shows up as a type error on the other. Nothing in this loop is hand-wired.
 
-- Add an audit event the agent didn't think of:
-  [/skills](/skills/) → `/add-audit-event`.
-- Wire a notification when a ticket closes: `/add-notification-event`.
-- Run a security pass: `/security-review`.
-- Stripe-gate the resource: see
-  [Add Stripe Checkout](/recipes/add-stripe/).
+## After the first one
+
+- `/add-audit-event` to instrument something the agent didn't.
+- `/add-notification-event` to fire a notification when a ticket closes.
+- `/security-review` before opening the PR.
+- [Add Stripe Checkout](/recipes/add-stripe/) to put the feature behind a paid plan.

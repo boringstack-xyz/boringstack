@@ -1,93 +1,53 @@
 ---
 title: Agent skills
-description: Paste-ready prompts and skill bundles shipped with BoringStack. Drop into Claude Code or your agent of choice — each skill is invoked by a slash command and encodes the canonical workflow for one task.
+description: The slash-command skills shipped with BoringStack. Each one encodes one task, the conventions it needs to respect, and a paste-ready prompt.
 ---
 
-BoringStack ships **slash-command skills** in both
-`apps/api/.claude/skills/` and `apps/ui/.claude/skills/`. Each one is a
-markdown file with a frontmatter `name` + `description` plus the body
-the agent follows. Type the command in Claude Code and the agent picks
-up the canonical workflow for that task — no copy-pasting prompt
-snippets across projects.
+BoringStack ships slash-command skills in `apps/api/.claude/skills/` and `apps/ui/.claude/skills/`. Each one is a markdown file with frontmatter (`name`, `description`) plus the prompt the agent follows. Type the command in Claude Code, the agent runs the workflow. A fresh fork inherits all of them.
 
-## Workflow skills
+## Full-stack and vertical-slice skills
 
-These are the "do this end-to-end" skills. Each one drives the
-spec → plan → scaffold → tests-first → implement → `bun run validate`
-loop with the conventions baked in.
+### `/build-feature`
 
-### `/build-feature` — single-template feature
+Builds a feature inside one template. In `apps/api/` that's an endpoint, a CRUD resource, a BullMQ job, an audit-log event, a notification event, or an ACL flag. In `apps/ui/` it's a page, a component, a vertical UI slice, or wiring an existing API endpoint into the SPA.
 
-Implement a new feature end-to-end inside one template. In `apps/api/`
-it adds an endpoint, a CRUD resource, a BullMQ job, an audit-log
-event, a notification event, or an ACL feature flag. In `apps/ui/` it
-adds a page, a component, a vertical UI slice, or wires an existing
-API endpoint into the SPA.
+Triggers: "add a feature", "add an endpoint", "scaffold a resource", "build X", "wire up X", "new route".
 
-**Prompts that trigger it**: "add a feature", "add an endpoint",
-"scaffold a resource", "build [X]", "wire up [X]", "new route".
+### `/add-full-feature`
 
-### `/add-full-feature` — full-stack vertical slice
+For resources that need both an API endpoint and a UI page. Runs `/build-feature` on the API, regenerates the OpenAPI client, runs `/build-feature` on the UI against the new endpoint. Use it when the feature crosses the api/ui boundary.
 
-Coordinates a new resource that needs **both** an API endpoint and a UI
-page consuming it. Runs api `/build-feature` → regenerates the
-openapi-typed client → ui `/build-feature` for the consumer. Use this
-when the feature crosses the api/ui boundary.
+Triggers: "add a full feature", "build X end to end", "new feature, api + ui", "full vertical slice for X", "wire X from db to screen".
 
-**Prompts that trigger it**: "add a full feature", "build [X] end to
-end", "new feature, api + ui", "full vertical slice for [X]", "wire
-[X] from db to screen".
+## Focused skills
 
-## Surface-area skills
-
-Small, focused skills for a single concern. They exist because the
-end-to-end skills above delegate to them — and so an agent can be
-asked to do "just this part" without re-running the whole loop.
+Each of these does one thing. The full-stack skills above delegate to them. You can call them directly when you only want that one thing.
 
 ### `/add-audit-event` (api)
 
-Adds a single audit-log entry to an existing service. Picks an action
-name, decides what metadata is safe (no PII), wires
-`auditLogService.record(...)` into the right place, and adds the
-sibling test.
+Adds a single `auditLogService.record(...)` call to an existing service. Picks an action name from the constants, decides what metadata is safe (no PII), wires it into the right place, writes the sibling test.
 
 ### `/add-email-template` (api)
 
-There is no `bun run new:email-template` scaffolder; this skill is the
-manual workflow — create the Handlebars files, regenerate the
-precompiled JSON, call `sendTemplate(...)` at the site that needs it,
-inspect in Mailpit.
+No scaffolder for this one. The skill walks the manual flow: write the Handlebars files, regenerate the precompiled JSON, call `sendTemplate(...)` from the right site, inspect in Mailpit.
 
 ### `/add-notification-event` (api)
 
-Wraps `bun run new:notification-event` with the dedup-strategy
-decision, the render functions, and the dispatcher call. Use when a
-new event type belongs in the notifications system.
+Wraps `bun run new:notification-event` with the dedup-strategy decision, the render functions, and the dispatcher call. Use it when a new event type belongs in the notifications system.
 
 ## Review skills
 
 ### `/security-review` (api / ui)
 
-Reviews a branch or PR for security regressions. Replays Layer 1 CI
-scanners locally (gitleaks, osv-scanner, bun audit), invokes Layer 2
-agent skills in parallel (differential-review, insecure-defaults,
-sharp-edges, supply-chain-risk-auditor), then runs BoringStack-specific
-invariants:
+Reviews a branch or PR for security regressions. Runs the Layer 1 CI scanners locally (gitleaks, osv-scanner, bun audit), kicks off Layer 2 agent skills in parallel (differential-review, insecure-defaults, sharp-edges, supply-chain-risk-auditor), then checks BoringStack-specific invariants.
 
-- **api**: ACL ability checks on routes, multi-tenant accountId
-  scoping, Stripe webhook signature handling, rate limits on
-  credential routes, audit-log coverage on mutations, idempotent
-  BullMQ jobs.
-- **ui**: no raw `fetch` outside `openapi.ts`, no
-  `dangerouslySetInnerHTML`, no `import.meta.env` outside
-  `src/lib/env/`, no localStorage token storage, no
-  JSX-level user-supplied strings without i18n, CSRF + content-type
-  validation on user-data flows.
+On the API: ACL ability checks on every route, multi-tenant `accountId` scoping, Stripe webhook signature handling, rate limits on credential routes, audit-log coverage on mutations, idempotent BullMQ jobs.
 
-**Prompts that trigger it**: "security review", "any vulnerabilities
-in this branch", "audit this PR", "is this safe to merge".
+On the UI: no raw `fetch` outside `openapi.ts`, no `dangerouslySetInnerHTML`, no `import.meta.env` outside `src/lib/env/`, no token storage in `localStorage`, no JSX-level user-supplied strings without i18n, CSRF + content-type validation on user-data flows.
 
-## Where the files live
+Triggers: "security review", "any vulnerabilities in this branch", "audit this PR", "is this safe to merge".
+
+## Files
 
 ```
 apps/api/.claude/skills/
@@ -104,13 +64,8 @@ apps/ui/.claude/skills/
 └── security-review.md
 ```
 
-A fresh fork inherits all of them — including the trigger phrases — so
-the agent in your IDE picks them up automatically the moment the repo
-is cloned.
+Open the file to read the exact workflow the agent runs. Editing any of them is editing the prompt the next agent in your fork will follow.
 
 ## See also
 
-- [First feature in 10 minutes](/skills/first-feature-tutorial/) —
-  end-to-end walkthrough using `/add-full-feature`.
-- Each skill's source is the doc: open the `.md` file to read the
-  exact loop the agent follows.
+- [First feature in 10 minutes](/skills/first-feature-tutorial/), an end-to-end walkthrough using `/add-full-feature`.
