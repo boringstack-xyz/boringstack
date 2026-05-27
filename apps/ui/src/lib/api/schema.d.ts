@@ -647,6 +647,40 @@ export interface paths {
         patch: operations["patchApiV1WidgetsById"];
         trace?: never;
     };
+    "/api/v1/webhooks/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resend deliverability webhook receiver */
+        post: operations["postApiV1WebhooksResend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/webhooks/sendgrid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** SendGrid deliverability webhook receiver */
+        post: operations["postApiV1WebhooksSendgrid"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/accounts/switch": {
         parameters: {
             query?: never;
@@ -3047,6 +3081,90 @@ export interface operations {
                         name: string;
                         createdAt: string;
                         updatedAt: string;
+                    };
+                };
+            };
+        };
+    };
+    postApiV1WebhooksResend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            received: boolean;
+                            recorded: number;
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            received: boolean;
+                            recorded: number;
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            received: boolean;
+                            recorded: number;
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    postApiV1WebhooksSendgrid: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            received: boolean;
+                            recorded: number;
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            received: boolean;
+                            recorded: number;
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            received: boolean;
+                            recorded: number;
+                        };
+                        timestamp: string;
                     };
                 };
             };

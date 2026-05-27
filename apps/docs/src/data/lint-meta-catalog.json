@@ -55,6 +55,12 @@
       "description": ".size-limit.json must include globs for all modulepreload entry chunks."
     },
     {
+      "id": "canonical-helpers-single-home",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Helpers in the canonical registry must only be declared in their single source-of-truth file."
+    },
+    {
       "id": "forbidden-text",
       "category": "source-text",
       "ciCritical": false,
@@ -193,6 +199,12 @@
       "category": "source-text",
       "ciCritical": false,
       "description": "TypeScript suppression comments are not allowed."
+    },
+    {
+      "id": "canonical-helpers-single-home",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Helpers in the canonical registry must only be declared in their single source-of-truth file."
     },
     {
       "id": "no-raw-role-literal",
