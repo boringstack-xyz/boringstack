@@ -467,6 +467,9 @@ export default defineConfig({
               label: "Security pipeline",
               link: "/topics/security/",
             },
+            { label: "Cookie consent", link: "/topics/cookie-consent/" },
+            { label: "Privacy policy template", link: "/topics/privacy/" },
+            { label: "Terms of service template", link: "/topics/terms/" },
           ],
         },
         {

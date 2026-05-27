@@ -426,5 +426,35 @@
       "retry": "Try again",
       "home": "Take me home"
     }
+  },
+  "consent": {
+    "banner": {
+      "ariaLabel": "Cookie consent",
+      "title": "Cookies and your privacy",
+      "body": "We use a small set of essential cookies to keep you signed in. Analytics and marketing cookies stay off until you say otherwise.",
+      "acceptAll": "Accept all",
+      "reject": "Reject non-essential",
+      "configure": "Configure"
+    },
+    "configure": {
+      "title": "Cookie preferences",
+      "body": "Toggle the categories you're comfortable with. Essential cookies stay on because the app can't sign you in without them. You can change this any time from settings.",
+      "save": "Save preferences",
+      "cancel": "Cancel"
+    },
+    "categories": {
+      "essential": {
+        "title": "Essential",
+        "body": "Authentication, CSRF tokens, language preference. Always on — the app cannot function without these."
+      },
+      "analytics": {
+        "title": "Analytics",
+        "body": "First-party product analytics: which pages get used, where users drop off. Never sent to a third party without your consent."
+      },
+      "marketing": {
+        "title": "Marketing",
+        "body": "Cross-site identifiers used by ad / campaign tooling. Off by default; most forks won't need this category."
+      }
+    }
   }
 }

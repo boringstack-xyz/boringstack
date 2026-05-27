@@ -1,0 +1,84 @@
+---
+title: Terms of service template
+description: Starting point for the terms of service your BoringStack fork needs at /terms. Replace the TODO blocks with values specific to your business and jurisdiction.
+---
+
+This is a **template**, not legal advice. Replace every `TODO:` block
+with values specific to your company. Have a lawyer review the result
+before going to production.
+
+## Files to wire up
+
+The UI template doesn't ship a `/terms` route — same pattern as
+[privacy](/topics/privacy/):
+
+1. Create `apps/ui/src/features/legal/TermsPage/TermsPage.tsx`.
+2. Register the route.
+3. Link from the sign-up form ("by signing up, you agree to our
+   [terms](/terms)").
+
+## Template content
+
+> **TODO:** the legal name of the company offering the service,
+> jurisdiction whose law governs the contract, dispute-resolution
+> forum (court, arbitration), and effective date.
+
+### Acceptance
+
+By creating an account or using the service, you agree to these
+terms. If you do not agree, do not use the service.
+
+### Account and security
+
+- You provide accurate contact information.
+- You're responsible for keeping your password and OAuth-connected
+  accounts secure.
+- You notify us promptly of any suspected breach.
+
+### Acceptable use
+
+> **TODO:** list prohibited behaviour — automated scraping, security
+> probes without permission, abuse, illegal content, attempts to
+> exfiltrate other users' data, etc.
+
+### Service availability
+
+> **TODO:** if you're offering a paid plan, state your SLA in plain
+> English (or "best effort, no SLA" if you're not). Mention scheduled
+> maintenance windows and how outages are communicated.
+
+### Subscriptions and billing
+
+> **TODO:** describe billing cadence (monthly / annual), refund policy,
+> auto-renewal behaviour, taxes, and what happens on payment failure
+> (BoringStack's Stripe wiring suspends the account after a configurable
+> dunning window — keep the wording aligned with that flow).
+
+### Termination
+
+> **TODO:** state your right to terminate for cause (acceptable-use
+> violation, non-payment) and the user's right to cancel. BoringStack
+> default: soft-delete with 30-day grace before hard-delete; user can
+> re-activate during the grace window.
+
+### Disclaimers and liability
+
+> **TODO:** "as-is" disclaimer, exclusion of consequential damages, cap
+> on direct damages (typically 12 months of fees paid). These clauses
+> are jurisdiction-sensitive; a generic copy-paste is a footgun.
+
+### Changes to these terms
+
+> **TODO:** how you communicate changes (banner on next sign-in /
+> email / both), and the grace period before the new terms take
+> effect.
+
+### Contact
+
+> **TODO:** legal / contract contact address.
+
+## Related
+
+- [Privacy policy](/topics/privacy/) — the companion document.
+- [Cookie consent](/topics/cookie-consent/) — what consent the banner
+  records.

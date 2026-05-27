@@ -1,0 +1,90 @@
+---
+title: Privacy policy template
+description: Starting point for the privacy policy your BoringStack fork needs at /privacy. Replace the TODO blocks with values specific to your business and jurisdiction.
+---
+
+This is a **template**, not legal advice. Replace every `TODO:` block
+with values specific to your company. Have a lawyer review the result
+before going to production — privacy law is jurisdiction-dependent and
+the wording matters.
+
+## Files to wire up
+
+The UI template doesn't ship a `/privacy` route — adding one is a
+single-page lift:
+
+1. Create `apps/ui/src/features/legal/PrivacyPage/PrivacyPage.tsx`
+   with the content below, translated through `t(...)` per the
+   `no-hardcoded-jsx-strings` rule.
+2. Register the route in `apps/ui/src/app/router/routes.tsx`.
+3. Link to it from the cookie banner ("by accepting, you agree to
+   our [privacy policy](/privacy)") and the footer.
+
+## Template content
+
+> **TODO:** company name, registered address, EU representative if any,
+> data protection officer if required (EU/EEA over a certain
+> processing volume), supervisory authority for complaints.
+
+### What we collect
+
+We collect the minimum data needed to operate the service:
+
+- **Account data** — email, hashed password (argon2id), first and last
+  name when provided.
+- **Authentication metadata** — IP address of recent sign-ins, session
+  rotation history (used to detect refresh-token replay).
+- **Audit log** — a record of security-relevant actions (sign-in,
+  password change, ownership transfer, OAuth disconnect, billing
+  events). No request bodies or PII beyond user IDs.
+- **Billing data** — Stripe customer ID and the subscription state we
+  cache locally; the card itself never touches our servers (Stripe
+  Checkout handles it).
+- **Diagnostic logs** — structured logs with request IDs; PII
+  fields (`email`, `token`, `password`, …) are redacted at the lint
+  level so they never reach disk.
+
+We do **not** collect:
+
+- Card numbers (Stripe's domain).
+- Cross-site identifiers (no third-party ad pixels).
+- Analytics by default — first-party product analytics ship off, and
+  only run if you tick the "Analytics" category in the cookie banner.
+
+### What we share
+
+> **TODO:** list each subprocessor — Postgres provider, hosted Valkey
+> if applicable, Stripe, email provider (SendGrid / Resend /
+> Cloudflare Email), error tracking (Sentry / GlitchTip), and any
+> hosting provider.
+
+### How long we keep it
+
+> **TODO:** retention windows for each data class. BoringStack
+> defaults: 30-day grace window on soft-deleted accounts; audit log
+> retained for 365 days; refresh sessions 30 days from issuance.
+
+### Your rights
+
+> **TODO:** under the laws of your jurisdiction (GDPR / CCPA /
+> equivalents), this section enumerates the rights the user has
+> against your processing — typically access, rectification, erasure,
+> portability, and objection. Link to a contact form / email.
+
+### How to contact us
+
+> **TODO:** privacy contact email and (for EU users) the address of
+> your EU representative if you have one.
+
+### Changes to this policy
+
+> **TODO:** describe how policy changes are communicated. BoringStack
+> assumption: a banner on next sign-in plus the cookie-consent
+> versioning bumps from `.v1` to `.v2` to re-prompt for analytics
+> consent when the data model changes materially.
+
+## Related
+
+- [Cookie consent](/topics/cookie-consent/) — what the banner stores
+  and how to gate code on it.
+- [Terms of service](/topics/terms/) — the companion document.

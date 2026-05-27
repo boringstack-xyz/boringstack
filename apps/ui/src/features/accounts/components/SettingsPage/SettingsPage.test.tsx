@@ -141,6 +141,7 @@ describe("SettingsPage", () => {
     const linkedinRow = screen
       .getByText("auth.oauth.linkedin")
       .closest("div")?.parentElement;
+
     expect(linkedinRow).not.toBeNull();
     expect(linkedinRow?.textContent).toContain(
       "accounts.settings.oauth.disconnect"

@@ -426,5 +426,35 @@
         "viewer": "Betrachter"
       }
     }
+  },
+  "consent": {
+    "banner": {
+      "ariaLabel": "Cookie-Einwilligung",
+      "title": "Cookies und Ihre Privatsphäre",
+      "body": "Wir verwenden eine kleine Anzahl essenzieller Cookies, um Sie angemeldet zu halten. Analyse- und Marketing-Cookies bleiben deaktiviert, bis Sie zustimmen.",
+      "acceptAll": "Alle akzeptieren",
+      "reject": "Nicht-essenzielle ablehnen",
+      "configure": "Anpassen"
+    },
+    "configure": {
+      "title": "Cookie-Einstellungen",
+      "body": "Aktivieren Sie die Kategorien, mit denen Sie einverstanden sind. Essenzielle Cookies bleiben an, weil die App Sie sonst nicht anmelden kann. Sie können dies jederzeit in den Einstellungen ändern.",
+      "save": "Einstellungen speichern",
+      "cancel": "Abbrechen"
+    },
+    "categories": {
+      "essential": {
+        "title": "Essenziell",
+        "body": "Authentifizierung, CSRF-Token, Spracheinstellung. Immer aktiv — ohne diese funktioniert die App nicht."
+      },
+      "analytics": {
+        "title": "Analyse",
+        "body": "Eigene Produktanalysen: welche Seiten genutzt werden, wo Nutzer abbrechen. Werden ohne Ihre Zustimmung nie an Dritte gesendet."
+      },
+      "marketing": {
+        "title": "Marketing",
+        "body": "Geräteübergreifende Kennungen für Werbe-/Kampagnentools. Standardmäßig aus; die meisten Forks benötigen diese Kategorie nicht."
+      }
+    }
   }
 }

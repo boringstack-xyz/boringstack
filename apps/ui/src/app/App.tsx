@@ -2,6 +2,8 @@ import type { FC } from "react";
 
 import { HelmetProvider } from "react-helmet-async";
 
+import { CookieConsentBanner } from "@/features/consent";
+
 import { AbilityProvider } from "./providers/AbilityProvider";
 import { ErrorBoundaryProvider } from "./providers/ErrorBoundaryProvider";
 import { I18nProvider } from "./providers/I18nProvider";
@@ -18,6 +20,7 @@ export const App: FC = () => {
             <AbilityProvider>
               <ToastProvider>
                 <AppRoutes />
+                <CookieConsentBanner />
               </ToastProvider>
             </AbilityProvider>
           </QueryProvider>
