@@ -205,6 +205,14 @@ services:
       ALLOWED_ORIGINS: ${API_DEV_ALLOWED_ORIGINS:-}
       PUBLIC_API_URL: ${API_DEV_PUBLIC_API_URL:-http://localhost:3001/api}
       E2E_TEST_ENDPOINTS_ENABLED: ${API_DEV_E2E_TEST_ENDPOINTS_ENABLED:-true}
+      # The Playwright e2e suite registers + logs in dozens of times from a
+      # single runner IP, blowing through the production 10 req/min default
+      # on every CI run and turning every test failure into a misleading
+      # "locator timeout" because the React app rendered an unauth blank
+      # page after the api returned 429. Dev gets a generous ceiling;
+      # production keeps the strict default.
+      RATE_LIMIT_MAX: ${API_DEV_RATE_LIMIT_MAX:-10000}
+      AUTH_RATE_LIMIT_MAX: ${API_DEV_AUTH_RATE_LIMIT_MAX:-10000}
     depends_on:
       postgres:
         condition: service_healthy

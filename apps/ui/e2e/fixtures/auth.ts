@@ -26,6 +26,25 @@ interface ITestUser {
  * the default `test` from "@playwright/test" or pass garbage strings; the
  * fixture user is only for happy-path auth.
  */
+/*
+ * Cookie-consent banner sits at fixed bottom-4 z-50 in the real app.
+ * In tests we don't want it intercepting clicks on OAuth buttons or
+ * footer links, so every fresh page gets a pre-seeded "already
+ * configured" entry in localStorage before the React app boots. Keys
+ * + shape mirror the persist middleware in
+ * apps/ui/src/features/consent/CookieConsent.store.ts; the schema is
+ * versioned (`.v1`) so an intentional re-prompt later won't break this.
+ */
+const CONSENT_STORAGE_KEY = "bs.cookie-consent.v1";
+const CONSENT_DISMISSED_STATE = {
+  state: {
+    status: "configured",
+    categories: { essential: true, analytics: false, marketing: false },
+    configuredAt: "2026-01-01T00:00:00.000Z",
+  },
+  version: 0,
+};
+
 export const test = base.extend<
   {
     login: LoginPage;
@@ -34,6 +53,20 @@ export const test = base.extend<
   },
   { testUser: ITestUser }
 >({
+  page: async ({ page }, use) => {
+    await page.addInitScript(
+      ({ key, value }: { key: string; value: string }) => {
+        try {
+          window.localStorage.setItem(key, value);
+        } catch {
+          // localStorage can be unavailable in restricted contexts; ignore.
+        }
+      },
+      { key: CONSENT_STORAGE_KEY, value: JSON.stringify(CONSENT_DISMISSED_STATE) }
+    );
+
+    await use(page);
+  },
   testUser: [
     async ({}, use, workerInfo) => {
       const baseURL = "http://localhost:3001";
