@@ -1,5 +1,5 @@
 import { cors } from "@elysiajs/cors";
-import { rateLimit } from "elysia-rate-limit";
+import { rateLimit, type Generator } from "elysia-rate-limit";
 import { env } from "../env";
 import { ValkeyRateLimitContext } from "../../lib/rate-limit/valkey-context";
 import {
@@ -50,6 +50,51 @@ const buildRateLimitContext = (): ValkeyRateLimitContext | undefined => {
 };
 
 /**
+ * Rate-limit key generator. The plugin's default uses `server.requestIP`,
+ * which behind a reverse proxy is the proxy's IP — every client shares
+ * one bucket and a single bad actor locks the whole deployment out.
+ *
+ * When `TRUST_PROXY=true`, prefer the leftmost entry of
+ * `X-Forwarded-For` (closest to the originating client). Without a
+ * trusted proxy in front, this header is spoofable, so we only honour
+ * it when the operator declared the deploy sits behind one.
+ */
+interface IIpExtractionInput {
+  readonly forwardedFor: string | null;
+  readonly socketAddress: string | undefined;
+}
+
+/**
+ * Picks the leftmost (client-closest) entry of `X-Forwarded-For` when
+ * present, otherwise falls back to the socket peer address. Exported
+ * for unit testing — production callers go through `buildKeyGenerator`
+ * which gates on `TRUST_PROXY`.
+ */
+export const extractTrustedClientIp = (input: IIpExtractionInput): string => {
+  if (input.forwardedFor !== null && input.forwardedFor !== "") {
+    const first = input.forwardedFor.split(",")[0]?.trim();
+
+    if (first !== undefined && first !== "") {
+      return first;
+    }
+  }
+
+  return input.socketAddress ?? "";
+};
+
+const buildKeyGenerator = (): Generator | undefined => {
+  if (!env.TRUST_PROXY) {
+    return undefined;
+  }
+
+  return (request, server) =>
+    extractTrustedClientIp({
+      forwardedFor: request.headers.get("x-forwarded-for"),
+      socketAddress: server?.requestIP(request)?.address,
+    });
+};
+
+/**
  * Per-IP rate limit. Storage is in-memory by default and Valkey-backed
  * when the cache provider is set to Valkey (see
  * `buildRateLimitContext`).
@@ -60,16 +105,19 @@ const buildRateLimitContext = (): ValkeyRateLimitContext | undefined => {
  */
 export const buildRateLimit = () => {
   const context = buildRateLimitContext();
+  const generator = buildKeyGenerator();
 
   return rateLimit({
     max: env.RATE_LIMIT_MAX,
     duration: env.RATE_LIMIT_WINDOW_MS,
     ...(context !== undefined && { context }),
+    ...(generator !== undefined && { generator }),
   });
 };
 
 export const buildAuthRateLimit = () => {
   const context = buildRateLimitContext();
+  const generator = buildKeyGenerator();
 
   return rateLimit({
     max: env.AUTH_RATE_LIMIT_MAX,
@@ -77,5 +125,6 @@ export const buildAuthRateLimit = () => {
     scoping: "scoped",
     countFailedRequest: true,
     ...(context !== undefined && { context }),
+    ...(generator !== undefined && { generator }),
   });
 };

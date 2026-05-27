@@ -774,7 +774,23 @@ describe("GET /api/v1/auth/oauth/:provider/callback — credentials not configur
     );
 
     expect(res.status).toBe(302);
-    expect(res.headers.get("location")).toMatch(/error=/u);
+    expect(res.headers.get("location")).toMatch(/error=access_denied/u);
+  });
+
+  test("maps unknown provider error codes to the generic provider_error bucket", async () => {
+    const app = createApp();
+    const res = await app.handle(
+      new Request(
+        "http://localhost/api/v1/auth/oauth/google/callback?error=consent_required_xyz"
+      )
+    );
+
+    expect(res.status).toBe(302);
+
+    const location = res.headers.get("location") ?? "";
+
+    expect(location).toMatch(/error=provider_error/u);
+    expect(location).not.toMatch(/consent_required_xyz/u);
   });
 });
 

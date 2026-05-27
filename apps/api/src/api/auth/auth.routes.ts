@@ -1,5 +1,6 @@
 import { Elysia, t } from "elysia";
 import { env } from "../../config/env";
+import { logger } from "../../config/logger";
 import { buildAuthRateLimit } from "../../config/security";
 import {
   AUTH_COOKIE_CONFIG,
@@ -354,7 +355,33 @@ const sessionAndOAuthRoutes = new Elysia()
       }
 
       if (typeof query.error === "string" && query.error !== "") {
-        const safeError = encodeURIComponent(query.error);
+        /*
+         * Map provider error strings to a closed set before forwarding
+         * to the SPA. The raw value can contain provider-specific detail
+         * (IdP internals, allowlist hints) that we don't want on the
+         * client URL bar. The SPA only needs to distinguish "user
+         * cancelled" from "everything else" for its toast copy; the
+         * forensic detail stays in our logs.
+         */
+        const RFC6749_ERRORS = new Set([
+          "access_denied",
+          "invalid_request",
+          "unauthorized_client",
+          "unsupported_response_type",
+          "invalid_scope",
+          "server_error",
+          "temporarily_unavailable",
+        ]);
+        const safeError = RFC6749_ERRORS.has(query.error)
+          ? query.error
+          : "provider_error";
+
+        logger.warn("OAuth callback returned provider error", {
+          event: "oauth.callback.provider_error",
+          provider: params.provider,
+          rawError: query.error,
+          mappedError: safeError,
+        });
 
         return redirect(
           `${env.FRONTEND_URL}/oauth/success?error=${safeError}`,

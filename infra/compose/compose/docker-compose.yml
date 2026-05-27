@@ -329,6 +329,10 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
       PUBLIC_API_URL: ${PUBLIC_API_URL:-}
+      # Traefik sits in front of the prod api on this profile, so the
+      # rate limiter must key on X-Forwarded-For — otherwise every
+      # client looks like the proxy IP and shares one bucket.
+      TRUST_PROXY: ${TRUST_PROXY:-true}
     security_opt:
       - no-new-privileges:true
     deploy:

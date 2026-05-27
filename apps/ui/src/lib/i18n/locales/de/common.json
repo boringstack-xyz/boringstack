@@ -3,6 +3,9 @@
     "name": "BoringStack",
     "tagline": "Produktionsreifes SPA-Starter"
   },
+  "a11y": {
+    "skipToContent": "Zum Hauptinhalt springen"
+  },
   "common": {
     "loading": "Wird geladen…",
     "loadingAria": "Wird geladen"
@@ -105,6 +108,8 @@
         "errors": {
           "access_denied": "Du hast die Anmeldung abgebrochen oder den Zugriff verweigert.",
           "invalid_request": "Die Anmeldeanfrage war ungültig. Bitte erneut versuchen.",
+          "invalid_scope": "Die angeforderten Berechtigungen sind nicht verfügbar. Bitte erneut versuchen oder eine andere Methode wählen.",
+          "provider_error": "Der Anmeldeanbieter hat einen Fehler gemeldet. Bitte erneut versuchen oder eine andere Methode wählen.",
           "server_error": "Der Anmeldeanbieter hat einen Fehler gemeldet. Bitte später erneut versuchen.",
           "temporarily_unavailable": "Der Anmeldeanbieter ist vorübergehend nicht erreichbar. Bitte später erneut versuchen.",
           "unauthorized_client": "Diese App ist für diesen Anmeldeanbieter nicht autorisiert.",

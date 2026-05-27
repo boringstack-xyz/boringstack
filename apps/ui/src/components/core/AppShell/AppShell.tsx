@@ -99,6 +99,12 @@ const AppShellFrame: FC<IAppShellProps> = (props) => {
 
   return (
     <Sheet open={isMobileNavOpen} onOpenChange={onMobileNavOpenChange}>
+      <a
+        href='#main-content'
+        className='bg-primary text-primary-foreground focus:ring-ring sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-md focus:ring-2 focus:ring-offset-2 focus:outline-none'
+      >
+        {t("a11y.skipToContent")}
+      </a>
       <div
         className={cn("bg-background flex min-h-screen", className)}
         data-testid='appshell'
@@ -177,7 +183,13 @@ const AppShellFrame: FC<IAppShellProps> = (props) => {
             {renderedMobilePageHeader}
           </header>
 
-          <main className='flex-1'>{props.children}</main>
+          <main
+            id='main-content'
+            tabIndex={-1}
+            className='flex-1 focus:outline-none'
+          >
+            {props.children}
+          </main>
         </div>
       </div>
     </Sheet>

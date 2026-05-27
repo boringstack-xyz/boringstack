@@ -130,6 +130,7 @@ describe("validateEnv", () => {
     testEnv.ALLOWED_ORIGINS = "";
     testEnv.EMAIL_PROVIDER = "resend";
     testEnv.RESEND_API_KEY = "rk_test";
+    testEnv.VALKEY_PASSWORD = "secret";
     expect(() => validateEnv(testEnv)).not.toThrow();
   });
 
@@ -241,6 +242,17 @@ describe("validateEnv", () => {
     expect(() => validateEnv(testEnv)).toThrow(/VALKEY_PASSWORD/);
   });
 
+  it("rejects production with QUEUES_ENABLED=false (transactional email must retry)", () => {
+    testEnv.NODE_ENV = "production";
+    testEnv.ALLOWED_ORIGINS = "";
+    testEnv.EMAIL_PROVIDER = "resend";
+    testEnv.RESEND_API_KEY = "rk_test";
+    testEnv.EMAIL_FROM = "noreply@boringstack.test";
+    testEnv.QUEUES_ENABLED = "false";
+    testEnv.VALKEY_PASSWORD = "secret";
+    expect(() => validateEnv(testEnv)).toThrow(/QUEUES_ENABLED/);
+  });
+
   it("coerces booleans from string env values", () => {
     testEnv.RESEND_API_KEY = "rk_test";
     testEnv.BILLING_ENABLED = "false";
@@ -290,6 +302,7 @@ describe("validateEnv", () => {
     testEnv.EMAIL_PROVIDER = "smtp";
     testEnv.SMTP_HOST = "mailpit";
     testEnv.SMTP_PORT = "1025";
+    testEnv.VALKEY_PASSWORD = "secret";
     expect(() => validateEnv(testEnv)).not.toThrow();
   });
 

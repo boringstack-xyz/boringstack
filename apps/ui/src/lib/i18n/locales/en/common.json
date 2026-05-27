@@ -3,6 +3,9 @@
     "name": "BoringStack",
     "tagline": "Production-grade SPA starter"
   },
+  "a11y": {
+    "skipToContent": "Skip to main content"
+  },
   "common": {
     "loading": "Loading…",
     "loadingAria": "Loading"
@@ -105,6 +108,8 @@
         "errors": {
           "access_denied": "You cancelled sign in or denied access.",
           "invalid_request": "The sign-in request was invalid. Try again.",
+          "invalid_scope": "The requested permissions are not available. Try again or use another method.",
+          "provider_error": "The sign-in provider returned an error. Try again or use another method.",
           "server_error": "The sign-in provider returned an error. Try again shortly.",
           "temporarily_unavailable": "The sign-in provider is temporarily unavailable. Try again shortly.",
           "unauthorized_client": "This app is not authorized for that sign-in provider.",

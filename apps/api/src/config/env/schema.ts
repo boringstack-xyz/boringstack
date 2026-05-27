@@ -51,6 +51,13 @@ export const envSchema = t.Object({
   RATE_LIMIT_WINDOW_MS: t.Integer({ minimum: 1000, default: 60_000 }),
   AUTH_RATE_LIMIT_MAX: t.Integer({ minimum: 1, default: 10 }),
   AUTH_RATE_LIMIT_WINDOW_MS: t.Integer({ minimum: 1000, default: 60_000 }),
+  /*
+   * When true, the rate limiter reads the leftmost IP from
+   * X-Forwarded-For instead of the socket peer. Required behind any
+   * reverse proxy (Traefik, nginx, Cloudflare). Spoofable without a
+   * trusted proxy in front, so leave off for direct-exposed deploys.
+   */
+  TRUST_PROXY: t.Boolean({ default: false }),
 
   /*
    * Error tracking — Sentry-compatible. Point at GlitchTip's project DSN for
@@ -135,7 +142,7 @@ export const envSchema = t.Object({
   STRIPE_PRICE_ID_FREE: t.String({ default: "" }),
   STRIPE_PRICE_ID_PRO: t.String({ default: "" }),
 
-  QUEUES_ENABLED: t.Boolean({ default: false }),
+  QUEUES_ENABLED: t.Boolean({ default: true }),
   CACHE_ENABLED: t.Boolean({ default: false }),
   CACHE_PROVIDER: t.Union([t.Literal("memory"), t.Literal("valkey")], {
     default: "memory",

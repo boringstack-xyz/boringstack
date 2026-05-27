@@ -716,7 +716,21 @@ export default tseslint.config(
       // Audit log — mutating service methods must record an audit event,
       // audit writes must be fire-and-forget, no PII in metadata.
       // ---------------------------------------------------------------------
-      "audit-log/mutating-service-must-audit": "error",
+      "audit-log/mutating-service-must-audit": [
+        "error",
+        {
+          /*
+           * Plugin default catches create/update/delete/insert/register/
+           * approve/reject/activate/deactivate/enable/disable/complete/
+           * cancel/grant/revoke. Extend with domain verbs we actually
+           * use so a future `subscribe`/`accept`/`link` lands with an
+           * audit trail by default.
+           */
+          mutatingPrefixes: [
+            "^(create|update|delete|insert|register|approve|reject|activate|deactivate|enable|disable|complete|cancel|grant|revoke|subscribe|unsubscribe|accept|decline|link|unlink|reset|change|invite|leave|mark|rotate|switch)",
+          ],
+        },
+      ],
       "audit-log/audit-write-must-be-fire-and-forget": [
         "error",
         { allowAwaitInsidePatterns: ["tests/**/*.ts"] },

@@ -105,6 +105,7 @@ const readRateLimit = (source: EnvSource) => ({
   RATE_LIMIT_WINDOW_MS: toInt(source.RATE_LIMIT_WINDOW_MS, 60_000),
   AUTH_RATE_LIMIT_MAX: toInt(source.AUTH_RATE_LIMIT_MAX, 10),
   AUTH_RATE_LIMIT_WINDOW_MS: toInt(source.AUTH_RATE_LIMIT_WINDOW_MS, 60_000),
+  TRUST_PROXY: toBool(source.TRUST_PROXY),
 });
 
 const readSentry = (source: EnvSource) => ({
@@ -157,7 +158,13 @@ const readBilling = (source: EnvSource) => ({
 });
 
 const readBackground = (source: EnvSource) => ({
-  QUEUES_ENABLED: toBool(source.QUEUES_ENABLED),
+  /*
+   * QUEUES_ENABLED defaults to true so transactional email retries on
+   * provider failure without the operator having to opt in. Explicitly
+   * set to "false" to disable (dev-only deployments without Valkey).
+   */
+  QUEUES_ENABLED:
+    source.QUEUES_ENABLED === undefined ? true : toBool(source.QUEUES_ENABLED),
   CACHE_ENABLED: toBool(source.CACHE_ENABLED),
   CACHE_PROVIDER: source.CACHE_PROVIDER ?? "memory",
   NOTIFICATIONS_SSE_ENABLED: toBool(source.NOTIFICATIONS_SSE_ENABLED),
@@ -419,6 +426,25 @@ const checkOAuth = (env: Env): string[] => {
     );
 };
 
+/**
+ * Production must run with QUEUES_ENABLED=true so transactional email
+ * (password reset, verification, account events) goes through BullMQ
+ * with retries instead of a single inline attempt. Without it, a
+ * provider blip silently drops the message and the user sees a
+ * "we sent it" toast for an email that never arrived.
+ */
+const checkQueuesEnabledInProd = (env: Env): string[] => {
+  if (env.NODE_ENV !== "production") {
+    return [];
+  }
+
+  return env.QUEUES_ENABLED
+    ? []
+    : [
+        "QUEUES_ENABLED must be true in production so transactional email retries on transient failure",
+      ];
+};
+
 const checkValkeyPassword = (env: Env): string[] => {
   if (env.NODE_ENV !== "production" || env.VALKEY_PASSWORD !== "") {
     return [];
@@ -477,6 +503,7 @@ const checkInvariants = (env: Env): string[] => [
   ...checkAIProvider(env),
   ...checkBilling(env),
   ...checkOAuth(env),
+  ...checkQueuesEnabledInProd(env),
   ...checkValkeyPassword(env),
   ...checkWebPushVapid(env),
 ];

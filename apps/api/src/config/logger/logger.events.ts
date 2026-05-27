@@ -112,6 +112,7 @@ export const LOG_EVENTS = [
   "notifications.web_push.job_failed",
   "notifications.web_push.subscription_expired",
   "notifications.web_push.worker_error",
+  "oauth.callback.provider_error",
   "oauth_callback_failed",
   "oauth_state_valkey_error",
   "process_warning",

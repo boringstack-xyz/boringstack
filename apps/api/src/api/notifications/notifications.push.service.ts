@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../../clients/postgres";
 import { pushSubscription } from "../../clients/postgres/schema";
+import { AUDIT_ACTIONS, auditLogService } from "../../lib/audit-log";
 import { ApiErrors } from "../../lib/errors";
 import { now } from "../../lib/time/now";
 import { PUSH_SUBSCRIPTIONS_MAX_PER_USER } from "./notifications.push.constants";
@@ -86,6 +87,12 @@ export class NotificationsPushService {
         throw ApiErrors.internal("Failed to insert push subscription");
       }
 
+      void auditLogService.record({
+        userId: input.userId,
+        action: AUDIT_ACTIONS.NOTIFICATION_PUSH_SUBSCRIBED,
+        metadata: { subscriptionId: created.id },
+      });
+
       return toPublicPushSubscription(created);
     });
   }
@@ -102,6 +109,14 @@ export class NotificationsPushService {
         )
       )
       .returning({ id: pushSubscription.id });
+
+    if (deleted.length > 0) {
+      void auditLogService.record({
+        userId: input.userId,
+        action: AUDIT_ACTIONS.NOTIFICATION_PUSH_UNSUBSCRIBED,
+        metadata: { removed: deleted.length },
+      });
+    }
 
     return { removed: deleted.length };
   }

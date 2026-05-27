@@ -119,6 +119,14 @@ export class OwnershipTransfersService {
     const tokenHash = hashOpaqueToken(token);
 
     return db.transaction(async (tx) => {
+      /*
+       * `FOR UPDATE` row-locks the transfer for the duration of the
+       * transaction. Two concurrent accepts on the same token serialise
+       * here: the second waits for the first commit, then re-reads with
+       * `acceptedAt` populated and fails the `isNull(acceptedAt)`
+       * filter, returning a clean 404 instead of double-firing the role
+       * swap and audit writes.
+       */
       const [transfer] = await tx
         .select()
         .from(accountOwnershipTransfers)
@@ -131,7 +139,8 @@ export class OwnershipTransfersService {
             gt(accountOwnershipTransfers.expiresAt, now())
           )
         )
-        .limit(1);
+        .limit(1)
+        .for("update");
 
       if (!transfer) {
         throw ApiErrors.notFound("Ownership transfer");

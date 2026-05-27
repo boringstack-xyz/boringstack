@@ -10,6 +10,10 @@ and the production checklist.
   email-provider key matching `EMAIL_PROVIDER`, complete OAuth credential
   pairs, or Stripe secret/webhook/price IDs (when `BILLING_ENABLED`) are
   missing.
+- Production additionally requires `QUEUES_ENABLED=true` so
+  transactional email (password reset, verification, account events)
+  runs through BullMQ with retries. Inline email send has no retry
+  envelope, so a provider blip silently drops the message.
 - Production Valkey-backed features (queues, Valkey cache, SSE, OAuth
   state) require `VALKEY_PASSWORD`.
 - `ALLOWED_ORIGINS` is **optional**. Empty = same-origin deployment
@@ -89,7 +93,10 @@ See `AGENTS.md` → "Security skill set" for the full skill reference.
   (same-origin via Traefik path routing). Cross-origin deployments set
   this with HTTPS origins.
 - **Rate limit** — per-IP via `elysia-rate-limit`. Defense in depth on
-  top of Traefik's edge rate limit.
+  top of Traefik's edge rate limit. Behind a reverse proxy, set
+  `TRUST_PROXY=true` so the limiter keys on the client's IP via
+  `X-Forwarded-For`; without it, every request shares the proxy's
+  socket IP and a single bad actor locks the whole deploy out.
 - **Auth** — short-lived JWT (15 min) + opaque refresh session
   (30 days, rotated on use, hashed at rest) in HTTP-only cookies
   (`secure`, `sameSite: strict` in prod). Refresh tokens are
@@ -147,6 +154,10 @@ See `AGENTS.md` → "Security skill set" for the full skill reference.
 - [ ] `ALLOWED_ORIGINS` — leave empty for same-origin (default); when
       set, real HTTPS hosts only, no wildcards
 - [ ] `POSTGRES_PASSWORD` strong + unique
+- [ ] `QUEUES_ENABLED=true` so transactional email retries on transient
+      failure (the validator enforces this in `NODE_ENV=production`)
+- [ ] `TRUST_PROXY=true` when behind a reverse proxy so per-IP rate
+      limits actually key on the client IP, not the proxy's
 - [ ] DB backups scheduled
 - [ ] Logs shipped somewhere queryable
 - [ ] HTTPS terminated by reverse proxy / ingress

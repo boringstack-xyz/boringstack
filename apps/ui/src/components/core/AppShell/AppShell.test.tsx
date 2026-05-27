@@ -89,6 +89,28 @@ describe("AppShell", () => {
     expect(screen.getByText("Page content")).toBeInTheDocument();
   });
 
+  it("exposes a skip-to-content link that targets #main-content", () => {
+    routeGet(null);
+    const Wrapper = wrapper();
+
+    render(
+      <Wrapper>
+        <AppShell>
+          <p>Page content</p>
+        </AppShell>
+      </Wrapper>
+    );
+
+    const link = screen.getByRole("link", { name: /a11y\.skipToContent/i });
+
+    expect(link).toHaveAttribute("href", "#main-content");
+
+    const main = screen.getByRole("main");
+
+    expect(main).toHaveAttribute("id", "main-content");
+    expect(main).toHaveAttribute("tabIndex", "-1");
+  });
+
   it("shows the user's display name once /me resolves", async () => {
     routeGet({
       user: {
