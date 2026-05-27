@@ -7,6 +7,7 @@
 export const LOG_EVENTS = [
   "accounts.invitation.email_failed",
   "accounts.join_request.email_failed",
+  "accounts.ownership_transfer.email_failed",
   "account_maintenance.sweep.completed",
   "account_maintenance_completed",
   "account_maintenance_failed",

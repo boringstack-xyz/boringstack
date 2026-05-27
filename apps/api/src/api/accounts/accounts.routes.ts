@@ -19,10 +19,14 @@ import {
   AcceptInvitationSchema,
   AccountResponse,
   CreateInvitationSchema,
+  InitiateOwnershipTransferResponse,
   InvitationResponse,
   JoinRequestResponse,
+  OwnershipTransferResponse,
+  OwnershipTransferTokenSchema,
   PendingInvitationsResponse,
   PendingJoinRequestsResponse,
+  PendingOwnershipTransferResponse,
   SwitchAccountResponse,
   SwitchAccountSchema,
   TransferOwnershipSchema,
@@ -30,6 +34,7 @@ import {
 } from "./accounts.schemas";
 import { invitationsService } from "./invitations.service";
 import { joinRequestsService } from "./join-requests.service";
+import { ownershipTransfersService } from "./ownership-transfers.service";
 
 const accountsRoutes = createAuthMiddleware()
   .onError(({ code, error, set }) =>
@@ -210,26 +215,84 @@ const accountsRoutes = createAuthMiddleware()
         );
       }
 
-      await accountsService.transferOwnership(
-        membership.accountId,
-        user.id,
-        body.toUserId,
-        user.id
-      );
+      const { transfer, rawToken } = await ownershipTransfersService.initiate({
+        accountId: membership.accountId,
+        fromUserId: user.id,
+        toUserId: body.toUserId,
+        actorUserId: user.id,
+      });
 
-      return createSuccessResponse({ transferred: true });
+      return createSuccessResponse({
+        transfer,
+        ...(env.isProduction ? {} : { rawToken }),
+      });
     },
     {
       params: t.Object({ id: t.String() }),
       body: TransferOwnershipSchema,
-      response: t.Object({
-        success: t.Boolean(),
-        data: t.Object({ transferred: t.Boolean() }),
-        timestamp: t.String(),
-      }),
+      response: InitiateOwnershipTransferResponse,
       detail: {
         tags: ["Accounts"],
-        summary: "Transfer ownership of an account to another member",
+        summary: "Initiate a two-step ownership transfer (target must accept)",
+      },
+    }
+  )
+  .get(
+    "/:id/transfer-ownership/pending",
+    async ({ membership, params }) => {
+      if (params.id !== membership.accountId) {
+        throw ApiErrors.forbidden();
+      }
+
+      if (!isOwnerRole(membership.role) && !isAdminRole(membership.role)) {
+        throw ApiErrors.forbidden();
+      }
+
+      const pending = await ownershipTransfersService.getPending(
+        membership.accountId
+      );
+
+      return { pending };
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      response: PendingOwnershipTransferResponse,
+      detail: {
+        tags: ["Accounts"],
+        summary: "Get the pending ownership transfer offer, if any",
+      },
+    }
+  )
+  .delete(
+    "/:id/transfer-ownership/:transferId",
+    async ({ membership, params, user, set }) => {
+      if (params.id !== membership.accountId) {
+        throw ApiErrors.forbidden();
+      }
+
+      const fresh = await resolveFreshMembership(user.id, membership.accountId);
+
+      if (!isOwnerRole(fresh.role)) {
+        throw ApiErrors.forbidden(
+          "Only the current owner can cancel an outstanding transfer"
+        );
+      }
+
+      await ownershipTransfersService.cancel(
+        membership.accountId,
+        params.transferId,
+        user.id
+      );
+      set.status = 204;
+
+      return null;
+    },
+    {
+      params: t.Object({ id: t.String(), transferId: t.String() }),
+      response: t.Null(),
+      detail: {
+        tags: ["Accounts"],
+        summary: "Cancel a pending ownership transfer offer",
       },
     }
   )
@@ -392,6 +455,45 @@ const invitationAcceptRoutes = createAuthMiddleware()
       detail: {
         tags: ["Accounts"],
         summary: "Accept an invitation by its raw token",
+      },
+    }
+  )
+  .post(
+    "/ownership-transfer/accept",
+    async ({ body, user }) => {
+      const transfer = await ownershipTransfersService.accept(
+        body.token,
+        user.id,
+        user.email
+      );
+
+      return createSuccessResponse(transfer);
+    },
+    {
+      body: OwnershipTransferTokenSchema,
+      response: OwnershipTransferResponse,
+      detail: {
+        tags: ["Accounts"],
+        summary: "Accept an ownership transfer offer by its raw token",
+      },
+    }
+  )
+  .post(
+    "/ownership-transfer/decline",
+    async ({ body, user }) => {
+      const transfer = await ownershipTransfersService.decline(
+        body.token,
+        user.id
+      );
+
+      return createSuccessResponse(transfer);
+    },
+    {
+      body: OwnershipTransferTokenSchema,
+      response: OwnershipTransferResponse,
+      detail: {
+        tags: ["Accounts"],
+        summary: "Decline an ownership transfer offer by its raw token",
       },
     }
   );

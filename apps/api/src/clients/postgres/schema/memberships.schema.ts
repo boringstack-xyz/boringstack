@@ -10,7 +10,6 @@ import {
 
 import { accounts } from "./app.schema";
 import { users } from "./auth.schema";
-import { ROLE } from "../../../lib/acl/acl.constants";
 import { auth } from "./pg-schemas";
 
 /*
@@ -57,7 +56,7 @@ export const accountMemberships = auth.table(
       .where(sql`revoked_at IS NULL`),
     uniqueIndex("uniq_account_memberships_active_owner")
       .on(table.accountId)
-      .where(sql`role = ${ROLE.owner} AND revoked_at IS NULL`),
+      .where(sql`role = 'owner' AND revoked_at IS NULL`),
     foreignKey({
       columns: [table.accountId],
       foreignColumns: [accounts.id],

@@ -4,6 +4,7 @@ import {
   accountFeatureOverrides,
   accountInvitations,
   accountJoinRequests,
+  accountOwnershipTransfers,
   accounts,
   widgets,
 } from "./app.schema";
@@ -39,10 +40,29 @@ export const accountsRelations = relations(accounts, ({ many }) => ({
   memberships: many(accountMemberships),
   invitations: many(accountInvitations),
   joinRequests: many(accountJoinRequests),
+  ownershipTransfers: many(accountOwnershipTransfers),
   featureOverrides: many(accountFeatureOverrides),
   plans: many(accountPlans),
   widgets: many(widgets),
 }));
+
+export const accountOwnershipTransfersRelations = relations(
+  accountOwnershipTransfers,
+  ({ one }) => ({
+    account: one(accounts, {
+      fields: [accountOwnershipTransfers.accountId],
+      references: [accounts.id],
+    }),
+    fromUser: one(users, {
+      fields: [accountOwnershipTransfers.fromUserId],
+      references: [users.id],
+    }),
+    toUser: one(users, {
+      fields: [accountOwnershipTransfers.toUserId],
+      references: [users.id],
+    }),
+  })
+);
 
 export const accountJoinRequestsRelations = relations(
   accountJoinRequests,

@@ -213,6 +213,76 @@ export const accountFeatureOverrides = app.table(
 );
 
 /*
+ * Two-step ownership transfer. The current owner initiates a transfer,
+ * which inserts a pending row + hashed token; the email recipient
+ * accepts or declines. Acceptance atomically demotes the current owner
+ * and promotes the target, mirroring the single-step service's
+ * invariant ("one active owner per account"). Tokens are opaque,
+ * single-use, and TTL-bounded.
+ *
+ * Partial unique on (account_id) WHERE pending enforces at-most-one
+ * outstanding offer per account — a follow-up "transfer again" surfaces
+ * the existing offer instead of stacking.
+ */
+export const accountOwnershipTransfers = app.table(
+  "account_ownership_transfers",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    accountId: uuid("account_id").notNull(),
+    fromUserId: uuid("from_user_id").notNull(),
+    toUserId: uuid("to_user_id").notNull(),
+    tokenHash: varchar("token_hash", { length: 64 }).notNull(),
+    expiresAt: timestamp("expires_at", {
+      withTimezone: true,
+      mode: "string",
+    }).notNull(),
+    acceptedAt: timestamp("accepted_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+    declinedAt: timestamp("declined_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+    cancelledAt: timestamp("cancelled_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("idx_account_ownership_transfers_account_id").on(table.accountId),
+    index("idx_account_ownership_transfers_token_hash").on(table.tokenHash),
+    uniqueIndex("uniq_account_ownership_transfers_pending")
+      .on(table.accountId)
+      .where(
+        sql`accepted_at IS NULL AND declined_at IS NULL AND cancelled_at IS NULL`
+      ),
+    unique("account_ownership_transfers_token_hash_key").on(table.tokenHash),
+    foreignKey({
+      columns: [table.accountId],
+      foreignColumns: [accounts.id],
+      name: "account_ownership_transfers_account_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.fromUserId],
+      foreignColumns: [users.id],
+      name: "account_ownership_transfers_from_user_id_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.toUserId],
+      foreignColumns: [users.id],
+      name: "account_ownership_transfers_to_user_id_fkey",
+    }).onDelete("cascade"),
+  ]
+);
+
+/*
  * @account-scoped accountId
  *
  * Sample account-scoped domain resource shipped with the template.

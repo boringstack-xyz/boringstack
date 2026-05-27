@@ -96,3 +96,45 @@ export const JoinRequestResponse = t.Object({
   data: JoinRequestSchema,
   timestamp: t.String(),
 });
+
+export const OwnershipTransferSchema = t.Object({
+  id: t.String(),
+  accountId: t.String(),
+  fromUserId: t.String(),
+  toUserId: t.String(),
+  expiresAt: t.String(),
+  acceptedAt: t.Union([t.String(), t.Null()]),
+  declinedAt: t.Union([t.String(), t.Null()]),
+  cancelledAt: t.Union([t.String(), t.Null()]),
+  createdAt: t.String(),
+});
+
+export const InitiateOwnershipTransferResponse = t.Object({
+  success: t.Boolean(),
+  data: t.Object({
+    transfer: OwnershipTransferSchema,
+    /*
+     * `rawToken` is the unhashed acceptance secret. In production it
+     * ONLY travels via the transfer email; the API response omits it
+     * so it never lands in proxy logs / browser network panels.
+     * Kept in non-prod responses so the integration test suite can
+     * drive the accept flow without a configured email provider.
+     */
+    rawToken: t.Optional(t.String()),
+  }),
+  timestamp: t.String(),
+});
+
+export const OwnershipTransferTokenSchema = t.Object({
+  token: t.String({ minLength: 16, maxLength: 255 }),
+});
+
+export const OwnershipTransferResponse = t.Object({
+  success: t.Boolean(),
+  data: OwnershipTransferSchema,
+  timestamp: t.String(),
+});
+
+export const PendingOwnershipTransferResponse = t.Object({
+  pending: t.Union([OwnershipTransferSchema, t.Null()]),
+});

@@ -9,6 +9,14 @@ const ROLE_LITERAL_FILE_ALLOWLIST = [
   /[/\\]acl\.types\.generated\.ts$/u,
   /[/\\]schema\.d\.ts$/u,
   /[/\\]lint-meta[/\\]fixtures[/\\]/u,
+  /*
+   * Drizzle schema files render the literal value into the partial
+   * unique index DDL (`role = 'owner'`). Interpolating ROLE.owner via
+   * `sql\`role = ${ROLE.owner}\`` makes drizzle-kit emit a `$1`
+   * placeholder it can't bind at apply time, so the schema must use
+   * the literal here.
+   */
+  /(?:^|[/\\])src[/\\]clients[/\\]postgres[/\\]schema[/\\][^/\\]+\.schema\.ts$/u,
 ];
 
 const ROLE_LITERAL_PATH_SKIP = [/\.test\.(ts|tsx)$/u, /\.stories\.(tsx|ts)$/u];

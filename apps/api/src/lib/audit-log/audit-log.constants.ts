@@ -41,6 +41,10 @@ export const AUDIT_ACTIONS = {
   ACCOUNT_JOIN_REQUEST_CREATED: "account.join_request_created",
   ACCOUNT_JOIN_REQUEST_APPROVED: "account.join_request_approved",
   ACCOUNT_JOIN_REQUEST_DENIED: "account.join_request_denied",
+  ACCOUNT_OWNERSHIP_TRANSFER_INITIATED: "account.ownership_transfer_initiated",
+  ACCOUNT_OWNERSHIP_TRANSFER_ACCEPTED: "account.ownership_transfer_accepted",
+  ACCOUNT_OWNERSHIP_TRANSFER_DECLINED: "account.ownership_transfer_declined",
+  ACCOUNT_OWNERSHIP_TRANSFER_CANCELLED: "account.ownership_transfer_cancelled",
 
   MEMBERSHIP_INVITED: "membership.invited",
   MEMBERSHIP_ACCEPTED: "membership.accepted",

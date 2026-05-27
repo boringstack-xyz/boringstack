@@ -15,6 +15,20 @@
       "when": 1779529698810,
       "tag": "0001_purple_satana",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779836915830,
+      "tag": "0002_awesome_hiroim",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779837018824,
+      "tag": "0003_pale_chamber",
+      "breakpoints": true
     }
   ]
 }
