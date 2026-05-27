@@ -18,6 +18,7 @@
       "dist/assets/logger-*.js",
       "dist/assets/client-*.js",
       "dist/assets/button-*.js",
+      "dist/assets/classnames-*.js",
       "dist/assets/index.esm-*.js",
       "dist/assets/createLucideIcon-*.js",
       "dist/assets/dist-*.js"
