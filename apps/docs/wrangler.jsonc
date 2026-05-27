@@ -1,4 +1,4 @@
-// Cloudflare Pages — assets-only deployment.
+// Cloudflare Pages: assets-only deployment.
 //
 // The docs site is fully static (Astro Starlight, `output: "static"`,
 // no SSR adapter). Wrangler uploads the prerendered `dist/` directory

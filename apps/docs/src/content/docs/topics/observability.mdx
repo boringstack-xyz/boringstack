@@ -76,7 +76,7 @@ flowchart LR
     Postgres metrics: connections, transactions, table sizes.
   </FaqItem>
   <FaqItem title="Alertmanager">
-    Internal. Receivers are not wired by default — paging strategy is
+    Internal. Receivers are not wired by default, paging strategy is
     project-specific, so the template ships the plumbing and you add the
     routes.
   </FaqItem>
@@ -87,10 +87,10 @@ flowchart LR
 `apps/api` exposes Prometheus exposition format at `/metrics` via
 `prom-client`. Out of the box:
 
-- Node.js runtime metrics — event loop lag, GC, heap, FDs, process
+- Node.js runtime metrics, event loop lag, GC, heap, FDs, process
   CPU/memory (via `collectDefaultMetrics`).
-- `http_requests_total{method,route,status}` — counter per route.
-- `http_request_duration_seconds{...}` — histogram with buckets from
+- `http_requests_total{method,route,status}`, counter per route.
+- `http_request_duration_seconds{...}`, histogram with buckets from
   50 ms to 10 s.
 
 The `metrics-observer` middleware folds dynamic path params to the

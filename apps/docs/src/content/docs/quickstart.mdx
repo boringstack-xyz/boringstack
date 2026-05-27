@@ -30,13 +30,12 @@ import FaqItem from "../../components/FaqItem.tsx";
 </PageIntro>
 
 <DocCallout eyebrow="After boot" title="Local services" variant="tip">
-  - Dashboard at **`http://localhost:7331`** with register, login, and JWT
-  cookies. - API at `http://localhost:7330/api/*`; OpenAPI at `/swagger`. -
-  Postgres with migrations applied; Valkey for cache and BullMQ. - Generated
-  TypeScript client in `apps/ui`; compile fails when the API contract drifts. -
-  Overlays via env flags: Mailpit, Bull Board, observability, GlitchTip,
-  image-update notifications. - No local Node, Bun, or Postgres installs;
-  Compose runs every runtime.
+  - Dashboard at **`http://localhost:7331`** with register, login, and JWT cookies.
+  - API at `http://localhost:7330/api/*`; OpenAPI at `/swagger`.
+  - Postgres with migrations applied; Valkey for cache and BullMQ.
+  - Generated TypeScript client in `apps/ui`; compile fails when the API contract drifts.
+  - Overlays via env flags: Mailpit, Bull Board, observability, GlitchTip, image-update notifications.
+  - No local Node, Bun, or Postgres installs; Compose runs every runtime.
 </DocCallout>
 
 ## TL;DR
@@ -149,8 +148,8 @@ First boot pulls base images, builds the api/ui dev images, and runs migrations.
   variant="caution"
 >
   The `compose/.env` flow above is for **local development**. Production
-  secrets belong in a secret manager — 1Password, Vault, Infisical, Doppler,
-  or SOPS — resolved at boot via `op run --env-file=.env.production` (or the
+  secrets belong in a secret manager, 1Password, Vault, Infisical, Doppler,
+  or SOPS, resolved at boot via `op run --env-file=.env.production` (or the
   equivalent CLI). One compromised dev dependency on the box scrapes raw
   `.env` files; `op://` references stay inert. See
   [Secrets management](/infra/secrets/) before you deploy.

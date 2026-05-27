@@ -30,8 +30,8 @@ import SignalGrid from "../../../components/docs-kit/SignalGrid";
 
 The repo defines two flags in `codecov.yml`:
 
-- `api` — paths under `apps/api/`. Floor: 65% project, 70% patch.
-- `ui` — paths under `apps/ui/`. Floor: 70% project, 70% patch.
+- `api`, paths under `apps/api/`. Floor: 65% project, 70% patch.
+- `ui`, paths under `apps/ui/`. Floor: 70% project, 70% patch.
 
 `apps/docs/` is excluded entirely; the site has no executable code worth
 measuring. Templates, build artifacts, migrations, and the generated
@@ -97,7 +97,7 @@ a token:
 />
 
 `fail_ci_if_error: false` keeps the workflow green when the Codecov
-service is degraded — coverage tracking is observability, not a merge
+service is degraded, coverage tracking is observability, not a merge
 gate. The PR-status thresholds in `codecov.yml` are the actual gate.
 
 ## Why this and not something else
@@ -114,10 +114,10 @@ We considered the alternatives:
 
 ## Source
 
-- `codecov.yml` at the repo root — flags, thresholds, ignore patterns.
-- `.github/workflows/apps-api-ci.yml` — api upload step.
-- `.github/workflows/apps-ui-validate.yml` — ui upload step.
-- `apps/api/scripts/quality/check-coverage.ts` — local coverage gate
+- `codecov.yml` at the repo root, flags, thresholds, ignore patterns.
+- `.github/workflows/apps-api-ci.yml`, api upload step.
+- `.github/workflows/apps-ui-validate.yml`, ui upload step.
+- `apps/api/scripts/quality/check-coverage.ts`, local coverage gate
   the api test suite runs in CI before the Codecov upload.
 
 ## Related

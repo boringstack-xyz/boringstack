@@ -70,7 +70,7 @@ provider is active.
 Cloudflare is the default for the API template. Its API refuses sends to
 addresses on Cloudflare's own list, so the local mirror is a performance
 hint, not a correctness requirement. Resend and SendGrid leave the
-blocklist entirely to the application — the webhooks are how their
+blocklist entirely to the application, the webhooks are how their
 verdict reaches us.
 
 ## How the dispatch path uses it
@@ -85,7 +85,7 @@ flowchart LR
 ```
 
 `sendTemplateNow` consults the blocklist before every send. A match returns
-`{ status: "suppressed", reason }` and the provider is never contacted —
+`{ status: "suppressed", reason }` and the provider is never contacted , 
 the queued worker writes the `notification_delivery` row as `suppressed`
 with the reason inlined, and the channel does the same when running
 inline.
@@ -107,7 +107,7 @@ CREATE TABLE "notifications"."email_suppression" (
 CREATE UNIQUE INDEX idx_email_suppression_email ON ... (email);
 ```
 
-`email` is the unique key. The first verdict wins — once `alice@…` is
+`email` is the unique key. The first verdict wins, once `alice@…` is
 suppressed by Resend, a later complaint from SendGrid for the same
 address is a no-op insert (the original row stays). This keeps the
 strongest signal we observed and avoids losing a complaint by
@@ -141,7 +141,7 @@ downgrading it to a bounce later.
 
 ## Configuring the webhooks
 
-Cloudflare needs no wiring — its rejection at send time triggers the
+Cloudflare needs no wiring, its rejection at send time triggers the
 local mirror automatically. Resend and SendGrid each expose a signed
 endpoint when their secret is set; without it, the route returns `501`
 and the provider's retries park until you configure it.
@@ -168,7 +168,7 @@ and the provider's retries park until you configure it.
 />
 
 The verification timestamp tolerance is 5 minutes (Resend) / 10 minutes
-(SendGrid) — outside that window the route returns `401`. Both routes
+(SendGrid), outside that window the route returns `401`. Both routes
 parse and verify on the raw request body, so reverse proxies must not
 mutate the payload.
 
@@ -184,9 +184,9 @@ historical event stream lives in Cloudflare's own UI.
 
 ## What the operator gets out of the box
 
-- `POST /api/v1/webhooks/resend` — svix-signed bounce / complaint receiver.
-- `POST /api/v1/webhooks/sendgrid` — ECDSA-signed event-webhook receiver.
-- Suppression check inside `sendTemplateNow` — every send path inherits it.
+- `POST /api/v1/webhooks/resend`, svix-signed bounce / complaint receiver.
+- `POST /api/v1/webhooks/sendgrid`, ECDSA-signed event-webhook receiver.
+- Suppression check inside `sendTemplateNow`, every send path inherits it.
 - Local mirror when the active provider's `send()` returns a
   recipient-level suppression error (Cloudflare today; works the same
   for Resend / SendGrid if their API returns one before a webhook does).

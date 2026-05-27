@@ -103,7 +103,7 @@ useUpdateNotificationPreferences()
 
 ## Realtime
 
-`useNotificationStream` is mounted once in `AppShell.hooks.ts`. It opens a credentialed `EventSource` against `${VITE_API_URL}/api/v1/notifications/stream` only when `capabilities.features.notifications.sse === true` (from `GET /api/v1/capabilities/`). When SSE is disabled on the API (`NOTIFICATIONS_SSE_ENABLED=false`, the default), notifications still work through the paginated feed and mutations — just without live push.
+`useNotificationStream` is mounted once in `AppShell.hooks.ts`. It opens a credentialed `EventSource` against `${VITE_API_URL}/api/v1/notifications/stream` only when `capabilities.features.notifications.sse === true` (from `GET /api/v1/capabilities/`). When SSE is disabled on the API (`NOTIFICATIONS_SSE_ENABLED=false`, the default), notifications still work through the paginated feed and mutations, just without live push.
 
 ```ts
 mergeStreamNotificationIntoCache(qc, notification);

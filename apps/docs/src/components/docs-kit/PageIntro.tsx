@@ -2,9 +2,13 @@ import clsx from "clsx";
 import { Children } from "react";
 import type { ReactNode } from "react";
 
+import { LinkedInIcon } from "../landing/LandingPrimitives";
+
 interface PageIntroAction {
   label: string;
   href: string;
+  icon?: "linkedin";
+  primary?: boolean;
 }
 
 interface PageIntroFact {
@@ -21,6 +25,7 @@ interface PageIntroProps {
 
 export default function PageIntro({ eyebrow, children, actions = [], facts = [] }: PageIntroProps) {
   const content = Children.toArray(children);
+  const primaryIndex = actions.findIndex((action) => action.primary) ?? 0;
 
   return (
     <section className="not-content my-8 overflow-hidden rounded-xl border border-transparent bg-[linear-gradient(var(--bs-doc-panel),var(--bs-doc-panel))_padding-box,linear-gradient(135deg,color-mix(in_srgb,var(--sl-color-accent)_66%,transparent),color-mix(in_srgb,var(--bs-doc-cyan)_24%,transparent),color-mix(in_srgb,var(--bs-doc-pink)_30%,transparent))_border-box] shadow-[0_24px_72px_color-mix(in_srgb,var(--bs-doc-glow)_58%,transparent)]">
@@ -39,14 +44,19 @@ export default function PageIntro({ eyebrow, children, actions = [], facts = [] 
               {actions.map((action, index) => (
                 <a
                   className={clsx(
-                    "inline-flex min-h-10 items-center justify-center rounded-md border px-4 text-sm font-extrabold no-underline transition-colors",
-                    index === 0
+                    "inline-flex min-h-10 items-center justify-center gap-2 rounded-md border px-4 text-sm font-extrabold no-underline transition-colors",
+                    index === (primaryIndex >= 0 ? primaryIndex : 0)
                       ? "border-transparent bg-[var(--sl-color-accent)] text-[var(--sl-color-accent-ink)] hover:bg-[var(--sl-color-accent-high)]"
                       : "border-[var(--bs-doc-line-strong)] bg-white/[0.025] text-[var(--sl-color-white)] hover:border-[var(--sl-color-accent)]",
                   )}
                   href={action.href}
                   key={`${action.label}-${action.href}`}
+                  rel={action.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                  target={action.href.startsWith("http") ? "_blank" : undefined}
                 >
+                  {action.icon === "linkedin" ? (
+                    <LinkedInIcon className="h-[1rem] w-[1rem]" />
+                  ) : null}
                   {action.label}
                 </a>
               ))}

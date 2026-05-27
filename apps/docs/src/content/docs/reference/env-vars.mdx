@@ -181,7 +181,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
     **Repo:** api. **Required:** no (default `false` in apps/api
     `.env.example`). When `true`, exposes `/api/v1/auth/__test/*` helpers
     outside `NODE_ENV=test`. Docker Compose dev defaults this to `true` via
-    `API_DEV_E2E_TEST_ENDPOINTS_ENABLED` for Playwright — keep `false` in prod.
+    `API_DEV_E2E_TEST_ENDPOINTS_ENABLED` for Playwright, keep `false` in prod.
   </FaqItem>
 </FaqGroup>
 
@@ -306,7 +306,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
   </FaqItem>
   <FaqItem title="VITE_VAPID_PUBLIC_KEY">
     **Repo:** ui. **Required:** no (default empty). Web Push public key. Must be
-    the same value as API `WEB_PUSH_VAPID_PUBLIC` — generate both sides together
+    the same value as API `WEB_PUSH_VAPID_PUBLIC`, generate both sides together
     with `bun run vapid:generate` in apps/api. Empty hides the subscribe UI;
     the API also exposes `capabilities.features.notifications.webPush`.
   </FaqItem>

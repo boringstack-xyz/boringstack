@@ -1,6 +1,6 @@
 ---
 title: Why BoringStack
-description: Proven pieces wired with clear layers and lint that holds the architecture in place.
+description: Standard parts wired with clear layers and lint that holds the architecture in place.
 ---
 
 import CostCalculator from "../../../components/landing/CostCalculator.tsx";
@@ -53,11 +53,11 @@ import SignalGrid from "../../../components/docs-kit/SignalGrid";
 
 | BoringStack is a good fit if...                                                                         | It is probably the wrong fit if...                                                              |
 | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| You need accounts, auth, billing, email, and background jobs with Postgres + Valkey on your own VPS. | You only need a static site or a no-code prototype with no custom backend.                     |
-| You want Postgres, Valkey, Traefik, and Docker Compose under your control.                   | You want a serverless-first Vercel/Netlify path where the platform owns runtime decisions. |
+| You need accounts, auth, billing, email, and background jobs as real product infra, not a prototype shell. | You only need a static site or a no-code prototype with no custom backend.                     |
+| You want to own the runtime: open-source, self-hostable, cheap to run, and free to move off any vendor. | You want a serverless-first Vercel/Netlify path where the platform owns runtime decisions. |
 | You want API and UI as separate deployable apps with an OpenAPI contract between them.                             | You prefer a single full-stack framework with one app boundary.      |
 | You want ESLint rules and validate CI to enforce architecture, including agent edits.       | You rely on conventions, README prose, and review alone.          |
-| You want Compose on one VPS now, with an optional path to managed Postgres or Kubernetes later.        | You need Kubernetes, multi-region, or managed-everything infrastructure on day one.             |
+| You can start on one capable VPS and add managed services only where the trade-off is worth it.        | You need Kubernetes, multi-region, or managed-everything infrastructure on day one.             |
 
 ## Problems it solves
 

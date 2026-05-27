@@ -16,7 +16,7 @@ accounts to set up, and zero ability for your stack's lint rules to
 catch a mis-wired analytics call.
 
 A 100-line zustand store + a banner component does the same job at
-~2 KB without sending anything to a third party — and the lint
+~2 KB without sending anything to a third party, and the lint
 plugin can refuse to merge a `posthog.capture(...)` outside a
 `useIsConsentCategoryEnabled('analytics')` gate.
 
@@ -29,9 +29,9 @@ Three categories, persisted in `localStorage` under
 | --- | --- | --- |
 | `essential` | always on (locked) | Auth, CSRF, session, language preference. The app can't sign you in without these. |
 | `analytics` | off | First-party product analytics (page views, feature usage). Never sent to a third party without explicit consent. |
-| `marketing` | off | Cross-site identifiers used by ad / campaign tooling. Most forks won't need this category — strip the row in `CookieConsentBanner.tsx` if so. |
+| `marketing` | off | Cross-site identifiers used by ad / campaign tooling. Most forks won't need this category, strip the row in `CookieConsentBanner.tsx` if so. |
 
-The store also persists `configuredAt` — the ISO timestamp of the
+The store also persists `configuredAt`, the ISO timestamp of the
 choice, useful for compliance audits ("when did this user consent?").
 The key is versioned (`.v1`) so a future model change re-prompts
 existing users instead of silently inheriting a stale answer.
@@ -56,25 +56,25 @@ function AnalyticsHook() {
 ```
 
 `useIsConsentCategoryEnabled` returns `false` until the user has
-explicitly configured consent — opt-in, not opt-out — so callers can
+explicitly configured consent, opt-in, not opt-out, so callers can
 safely gate analytics / marketing scripts on it without leaking before
 the banner is dismissed.
 
 ## How to change a user's choice
 
 Surface a "Cookie preferences" entry in your settings menu that calls
-`useCookieConsentStore.getState().reset()` — the next page render
+`useCookieConsentStore.getState().reset()`, the next page render
 shows the banner again with the previous categories pre-selected.
 
 ## Files
 
-- `apps/ui/src/features/consent/CookieConsent.store.ts` — zustand
+- `apps/ui/src/features/consent/CookieConsent.store.ts`, zustand
   store with `persist` middleware
-- `apps/ui/src/features/consent/CookieConsent.types.ts` — category
+- `apps/ui/src/features/consent/CookieConsent.types.ts`, category
   definitions
-- `apps/ui/src/features/consent/CookieConsentBanner/` — banner + modal
+- `apps/ui/src/features/consent/CookieConsentBanner/`, banner + modal
   components, hooks, and tests
-- `apps/ui/src/app/App.tsx` — banner mounted at the root
+- `apps/ui/src/app/App.tsx`, banner mounted at the root
 
 ## Related
 

@@ -32,18 +32,18 @@ Run from the repository root (`boringstack/`):
 
 <FaqGroup>
   <FaqItem title="Regenerate all cross-app artifacts" open>
-    `bun run regen` — ACL types, OpenAPI schema (needs api on :7330), lint-meta
+    `bun run regen`, ACL types, OpenAPI schema (needs api on :7330), lint-meta
     RULES.md, docs JSON catalogs.
   </FaqItem>
   <FaqItem title="Drift checks before push">
-    `bun run check` — same gates as CI for contracts across apps/docs.
+    `bun run check`, same gates as CI for contracts across apps/docs.
   </FaqItem>
   <FaqItem title="Full validate">
-    `bun run check:full` — check plus `apps/api` validate, `apps/ui` validate, and
+    `bun run check:full`, check plus `apps/api` validate, `apps/ui` validate, and
     `apps/docs` `build:ci`.
   </FaqItem>
   <FaqItem title="First-time local setup">
-    `./setup.sh` or `./setup.sh --up` — seed compose `.env` and optionally boot
+    `./setup.sh` or `./setup.sh --up`, seed compose `.env` and optionally boot
     the dev stack.
   </FaqItem>
 </FaqGroup>

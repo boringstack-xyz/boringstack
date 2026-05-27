@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Local mirror of docs CI. Runs what docs-linkcheck.yml runs so a pre-push
-# failure matches CI — using the monorepo apps/ui and apps/api checkouts.
+# failure matches CI, using the monorepo apps/ui and apps/api checkouts.
 #
 # Stages:
 #   1. Docs data : bun run check:docs-data against local apps
@@ -30,7 +30,7 @@ ok()      { c_green "✓ $*"; }
 step "1/4 Docs data (monorepo apps)"
 BORINGSTACK_UI_DIR="$BORINGSTACK_UI_DIR" \
 BORINGSTACK_API_DIR="$BORINGSTACK_API_DIR" \
-  bun run check:docs-data || fail "docs data drift — run bun run generate:docs-data from apps/docs"
+  bun run check:docs-data || fail "docs data drift: run bun run generate:docs-data from apps/docs"
 ok "docs data matches apps/ui + apps/api"
 
 step "2/4 Dependency vulnerability scan"
@@ -43,7 +43,7 @@ ok "osv-scanner clean"
 step "3/4 Production build"
 BORINGSTACK_UI_DIR="$BORINGSTACK_UI_DIR" \
 BORINGSTACK_API_DIR="$BORINGSTACK_API_DIR" \
-  bun run build:ci || fail "build failed — run bun run generate:docs-data from apps/docs"
+  bun run build:ci || fail "build failed: run bun run generate:docs-data from apps/docs"
 ok "build passed"
 
 step "4/4 Internal link check (lychee)"

@@ -33,7 +33,7 @@
   <a href="https://github.com/boringstack-xyz/eslint-plugins"><img src="https://img.shields.io/badge/eslint--plugins-4ade80?style=for-the-badge&labelColor=090909" alt="eslint-plugins"></a>
 </p>
 
-Documentation lives at [boringstack.xyz](https://boringstack.xyz) — start with the [Quickstart](https://boringstack.xyz/quickstart/).
+Documentation lives at [boringstack.xyz](https://boringstack.xyz). Start with the [Quickstart](https://boringstack.xyz/quickstart/).
 
 ## License
 
