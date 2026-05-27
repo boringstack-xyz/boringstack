@@ -61,8 +61,8 @@ jobs:
       NODE_ENV: test
       DATABASE_URL: postgresql://app:app_dev_password@localhost:5432/app
       JWT_SECRET: ci-only-jwt-secret-padded-to-thirty-two-chars
-      FRONTEND_URL: http://localhost:3001
-      ALLOWED_ORIGINS: http://localhost:3001
+      FRONTEND_URL: http://localhost:7331
+      ALLOWED_ORIGINS: http://localhost:7331
       APP_NAME: API Template
       LOG_LEVEL: error
       # Use `resend` without a key so `buildEmailService()` picks

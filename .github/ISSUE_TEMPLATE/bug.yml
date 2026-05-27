@@ -36,7 +36,7 @@ body:
       description: Be specific — exact URL, inputs, browser version.
       placeholder: |
         1. `./setup.sh --up`
-        2. Open http://localhost:3001/login
+        2. Open http://localhost:7331/login
         3. Sign in with demo credentials
     validations:
       required: true

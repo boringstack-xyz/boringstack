@@ -122,9 +122,9 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app_dev_password}@postgres:5432/${POSTGRES_DB:-app}
       NODE_ENV: development
       JWT_SECRET: api-migrate-placeholder-secret-padded-to-thirty-two
-      FRONTEND_URL: http://localhost:3001
+      FRONTEND_URL: http://localhost:7331
       ALLOWED_ORIGINS: ""
-      PUBLIC_API_URL: http://localhost:3001/api
+      PUBLIC_API_URL: http://localhost:7331/api
       SUPERUSER_EMAIL: ${SUPERUSER_EMAIL:-}
       SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD:-}
     depends_on:
@@ -199,11 +199,11 @@ services:
       VALKEY_PORT: "6379"
       NODE_ENV: development
       BUN_ENV: development
-      PORT: "3000"
+      PORT: "7330"
       JWT_SECRET: ${API_DEV_JWT_SECRET:-docker-compose-api-dev-jwt-secret-keys}
-      FRONTEND_URL: ${API_DEV_FRONTEND_URL:-http://localhost:3001}
+      FRONTEND_URL: ${API_DEV_FRONTEND_URL:-http://localhost:7331}
       ALLOWED_ORIGINS: ${API_DEV_ALLOWED_ORIGINS:-}
-      PUBLIC_API_URL: ${API_DEV_PUBLIC_API_URL:-http://localhost:3001/api}
+      PUBLIC_API_URL: ${API_DEV_PUBLIC_API_URL:-http://localhost:7331/api}
       E2E_TEST_ENDPOINTS_ENABLED: ${API_DEV_E2E_TEST_ENDPOINTS_ENABLED:-true}
       # The Playwright e2e suite registers + logs in dozens of times from a
       # single runner IP, blowing through the production 10 req/min default
@@ -228,7 +228,7 @@ services:
           "--no-verbose",
           "--tries=1",
           "--spider",
-          "http://localhost:3000/health",
+          "http://localhost:7330/health",
         ]
       interval: 5s
       timeout: 3s
@@ -238,7 +238,7 @@ services:
       - backend
       - frontend
     ports:
-      - "3000:3000"
+      - "7330:7330"
     deploy:
       resources:
         limits:
@@ -263,14 +263,14 @@ services:
     environment:
       CI: "true"
       VITE_API_URL: ""
-      VITE_API_PROXY_TARGET: http://api-dev:3000
+      VITE_API_PROXY_TARGET: http://api-dev:7330
     depends_on:
       api-dev:
         condition: service_healthy
     networks:
       - frontend
     ports:
-      - "3001:3001"
+      - "7331:7331"
     deploy:
       resources:
         limits:
@@ -308,7 +308,7 @@ services:
           "--no-verbose",
           "--tries=1",
           "--spider",
-          "http://localhost:3000/health",
+          "http://localhost:7330/health",
         ]
       interval: 5s
       timeout: 3s
@@ -324,7 +324,7 @@ services:
       VALKEY_PASSWORD: ${VALKEY_PASSWORD:-}
       NODE_ENV: production
       BUN_ENV: production
-      PORT: "3000"
+      PORT: "7330"
       JWT_SECRET: ${JWT_SECRET:-}
       FRONTEND_URL: ${FRONTEND_URL:-}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}

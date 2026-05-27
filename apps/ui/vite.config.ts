@@ -109,7 +109,7 @@ export default defineConfig(({ mode }) => {
       ? env.VITE_API_PROXY_TARGET
       : env.VITE_API_URL !== undefined && env.VITE_API_URL !== ""
         ? env.VITE_API_URL
-        : "http://localhost:3000";
+        : "http://localhost:7330";
 
   // Sentry source-map upload runs only when explicitly enabled in CI and all
   // three secrets are present. Local machines often have Sentry env vars set
@@ -157,7 +157,7 @@ export default defineConfig(({ mode }) => {
       // Bind to every interface so the dev server is reachable from outside
       // a Docker container as well as from the host.
       host: true,
-      port: 3001,
+      port: 7331,
       strictPort: true,
       proxy: {
         "/api": {
@@ -169,7 +169,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     preview: {
-      port: 3001
+      port: 7331
     },
     build: {
       target: "es2023",

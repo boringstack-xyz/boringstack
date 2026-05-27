@@ -70,7 +70,7 @@ cd ../../infra/compose
 ./scripts/compose-up.sh
 ```
 
-Open the ui at `http://localhost:3001/`, sign in (or use seed creds), navigate to the new feature route. Confirm:
+Open the ui at `http://localhost:7331/`, sign in (or use seed creds), navigate to the new feature route. Confirm:
 
 - The list renders without errors
 - A create form (if added) posts and the new row appears

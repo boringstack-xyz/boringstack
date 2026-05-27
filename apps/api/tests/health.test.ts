@@ -1,7 +1,7 @@
 import assert from "assert";
 import { test } from "bun:test";
 
-const BASE_URL = process.env.TEST_BASE_URL ?? "http://127.0.0.1:3000";
+const BASE_URL = process.env.TEST_BASE_URL ?? "http://127.0.0.1:7330";
 
 const isApiReachable = async (): Promise<boolean> => {
   try {

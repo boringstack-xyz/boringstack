@@ -29,10 +29,10 @@ require_dir() {
 probe_tcp() { nc -z "$1" "$2" 2>/dev/null; }
 
 require_api_swagger() {
-  if probe_tcp localhost 3000; then
+  if probe_tcp localhost 7330; then
     return 0
   fi
-  c_yellow "  api-dev not reachable on :3000 — OpenAPI regen/check skipped"
+  c_yellow "  api-dev not reachable on :7330 — OpenAPI regen/check skipped"
   c_yellow "  start stack: cd infra/compose/compose && ./dev.sh up -d api-dev"
   return 1
 }

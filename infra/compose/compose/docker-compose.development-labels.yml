@@ -1,7 +1,7 @@
 # Dev overlay — merged by dev.sh when STACK=dev.
 #
 # Routing model: no Traefik in default dev. Browser hits Vite directly on
-# http://localhost:3001; Vite's dev-server proxy forwards /api/* to api-dev
+# http://localhost:7331; Vite's dev-server proxy forwards /api/* to api-dev
 # over the docker network. Same-origin from the browser's perspective, so
 # no CORS preflights happen in dev.
 #

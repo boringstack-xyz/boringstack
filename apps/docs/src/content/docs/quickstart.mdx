@@ -1,6 +1,6 @@
 ---
 title: Quickstart
-description: "Use the BoringStack template on GitHub, clone your new repo, run setup.sh, sign in at localhost:3001."
+description: "Use the BoringStack template on GitHub, clone your new repo, run setup.sh, sign in at localhost:7331."
 ---
 
 import CommandRun from "../../components/docs-kit/CommandRun";
@@ -25,13 +25,13 @@ import FaqItem from "../../components/FaqItem.tsx";
 >
   Click **Use this template** on the [BoringStack monorepo](https://github.com/boringstack-xyz/boringstack),
   clone your new repo, run `./setup.sh --up`, and Compose starts Postgres, Valkey, api-dev (migrations +
-  OpenAPI), and ui-dev (Vite on :3001 with generated client). Optional overlays:
+  OpenAPI), and ui-dev (Vite on :7331 with generated client). Optional overlays:
   Mailpit, Bull Board, observability, GlitchTip.
 </PageIntro>
 
 <DocCallout eyebrow="After boot" title="Local services" variant="tip">
-  - Dashboard at **`http://localhost:3001`** with register, login, and JWT
-  cookies. - API at `http://localhost:3000/api/*`; OpenAPI at `/swagger`. -
+  - Dashboard at **`http://localhost:7331`** with register, login, and JWT
+  cookies. - API at `http://localhost:7330/api/*`; OpenAPI at `/swagger`. -
   Postgres with migrations applied; Valkey for cache and BullMQ. - Generated
   TypeScript client in `apps/ui`; compile fails when the API contract drifts. -
   Overlays via env flags: Mailpit, Bull Board, observability, GlitchTip,
@@ -57,7 +57,7 @@ import FaqItem from "../../components/FaqItem.tsx";
     {
       label: "03",
       title: "Sign in",
-      body: "Open http://localhost:3001; use SUPERUSER_* from compose/.env or register.",
+      body: "Open http://localhost:7331; use SUPERUSER_* from compose/.env or register.",
     },
     {
       label: "04",
@@ -158,7 +158,7 @@ First boot pulls base images, builds the api/ui dev images, and runs migrations.
 
 ## Step 3. Sign in
 
-Open **http://localhost:3001**.
+Open **http://localhost:7331**.
 
 If you set `SUPERUSER_EMAIL` + `SUPERUSER_PASSWORD` in `compose/.env` before booting, sign in with those credentials. Otherwise hit "Sign up" on the form and register a new account; that user is the first user in the system. You land on the dashboard, which is minimal on purpose. Start building from here.
 
@@ -172,10 +172,10 @@ If you set `SUPERUSER_EMAIL` + `SUPERUSER_PASSWORD` in `compose/.env` before boo
   <FaqItem title="api-migrate (one-shot)">
     `db:push` and optional superuser seed, then exits.
   </FaqItem>
-  <FaqItem title="api-dev (port 3000)">
+  <FaqItem title="api-dev (port 7330)">
     Bun + Elysia API with hot reload via bind mount.
   </FaqItem>
-  <FaqItem title="ui-dev (port 3001)">
+  <FaqItem title="ui-dev (port 7331)">
     Vite dev server; proxies `/api/*` to `api-dev`.
   </FaqItem>
 </FaqGroup>
@@ -184,7 +184,7 @@ Traefik runs only in the prod profile. In prod it terminates TLS and path-routes
 
 ## Common next steps
 
-- Regenerate cross-app contracts: `bun run regen` from repo root (api must be on :3000 for OpenAPI).
+- Regenerate cross-app contracts: `bun run regen` from repo root (api must be on :7330 for OpenAPI).
 - Observability: `WITH_OBSERVABILITY=1 ./scripts/compose-up.sh` from `infra/compose/compose`. [Details](/topics/observability/).
 - Self-hosted error tracking: `WITH_GLITCHTIP=1 ./scripts/compose-up.sh`. [Details](/topics/error-tracking/).
 - Local email testing: `WITH_MAILPIT=1 ./scripts/compose-up.sh`. [Details](/topics/email-in-dev/).

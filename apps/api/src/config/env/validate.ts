@@ -58,7 +58,7 @@ export const toCsv = (raw: string | undefined): string[] => {
 
 const readCore = (source: EnvSource) => ({
   NODE_ENV: source.NODE_ENV ?? "development",
-  PORT: toInt(source.PORT, 3000),
+  PORT: toInt(source.PORT, 7330),
   LOG_LEVEL: source.LOG_LEVEL ?? "info",
   APP_NAME: source.APP_NAME ?? "API Template",
 });
@@ -96,7 +96,7 @@ const readUrls = (source: EnvSource) => ({
   ALLOWED_ORIGINS: toCsv(source.ALLOWED_ORIGINS),
   PUBLIC_API_URL:
     source.PUBLIC_API_URL ??
-    `http://localhost:${String(toInt(source.PORT, 3000))}`,
+    `http://localhost:${String(toInt(source.PORT, 7330))}`,
   NOTIFICATION_SETTINGS_URL: source.NOTIFICATION_SETTINGS_URL ?? "",
 });
 

@@ -81,25 +81,25 @@ jobs:
         if: steps.filter.outputs.code == 'true'
         run: |
           for i in {1..60}; do
-            if curl -fsS http://localhost:3000/health > /dev/null 2>&1; then
+            if curl -fsS http://localhost:7330/health > /dev/null 2>&1; then
               echo "API healthy after ${i}s"
               break
             fi
             sleep 1
           done
-          curl -fsS http://localhost:3000/health
+          curl -fsS http://localhost:7330/health
 
       - name: Wait for UI
         if: steps.filter.outputs.code == 'true'
         run: |
           for i in {1..60}; do
-            if curl -fsS http://localhost:3001/ > /dev/null 2>&1; then
+            if curl -fsS http://localhost:7331/ > /dev/null 2>&1; then
               echo "UI ready after ${i}s"
               break
             fi
             sleep 1
           done
-          curl -fsSI http://localhost:3001/ | head -1
+          curl -fsSI http://localhost:7331/ | head -1
 
       - name: Smoke — demo user can log in (seeded by api-migrate)
         if: steps.filter.outputs.code == 'true'
@@ -136,7 +136,7 @@ jobs:
           }
 
           LOGIN_BODY=$(run_curl "login" \
-            "http://localhost:3001/api/v1/auth/login" 200 \
+            "http://localhost:7331/api/v1/auth/login" 200 \
             -c /tmp/cookie.jar \
             -X POST -H "Content-Type: application/json" \
             -d '{"email":"demo@example.com","password":"password123"}')
@@ -146,7 +146,7 @@ jobs:
           }
 
           ME_BODY=$(run_curl "me" \
-            "http://localhost:3001/api/v1/users/me" 200 \
+            "http://localhost:7331/api/v1/users/me" 200 \
             -b /tmp/cookie.jar)
           echo "$ME_BODY" | grep -q "demo@example.com" || {
             echo "❌ /me body missing demo@example.com — got: $ME_BODY" >&2
@@ -186,7 +186,7 @@ jobs:
           set -e
           BODY='{"email":"ci-smoke@example.com","password":"Hunter2Strong!","firstName":"CI","lastName":"Smoke"}'
           OUT=$(curl -fsS -X POST -H "Content-Type: application/json" -d "$BODY" \
-            http://localhost:3001/api/v1/auth/register)
+            http://localhost:7331/api/v1/auth/register)
           echo "$OUT" | grep -q '"success":true'
 
       - name: Smoke — dashboard endpoints return real data
@@ -196,9 +196,9 @@ jobs:
           # Log in to get a cookie:
           curl -fsS -c /tmp/cookie.jar -X POST -H "Content-Type: application/json" \
             -d '{"email":"demo@example.com","password":"password123"}' \
-            http://localhost:3001/api/v1/auth/login > /dev/null
+            http://localhost:7331/api/v1/auth/login > /dev/null
           # Summary should now reflect >=1 user + >=1 widget after seed/register.
-          SUM=$(curl -fsS -b /tmp/cookie.jar http://localhost:3001/api/v1/dashboard/summary)
+          SUM=$(curl -fsS -b /tmp/cookie.jar http://localhost:7331/api/v1/dashboard/summary)
           echo "$SUM" | grep -q '"totalEvents"'
           echo "$SUM" | grep -q '"recentActivity"'
 

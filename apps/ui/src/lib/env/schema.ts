@@ -19,7 +19,7 @@ export const envSchema = z.object({
    * same in prod. Any non-empty value must be a full URL (cross-origin API).
    */
   VITE_API_URL: z.union([z.literal(""), z.url()]).default(""),
-  VITE_PUBLIC_URL: z.url().default("http://localhost:3001"),
+  VITE_PUBLIC_URL: z.url().default("http://localhost:7331"),
   VITE_SENTRY_DSN: z.string().optional().default(""),
   VITE_AUTH_NAMESPACE: z.string().min(1).default("apps/ui"),
   /*

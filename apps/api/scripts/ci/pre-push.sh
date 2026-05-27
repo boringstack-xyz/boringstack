@@ -13,7 +13,7 @@
 #   8. ACL drift     : if apps/ui exists, ensure acl.types.generated.ts is in sync
 #
 # Set ALLOW_OPENAPI_DRIFT_SKIP=false to fail instead of skip when api-dev is not
-# running on :3000 (strict mode for release pushes).
+# running on :7330 (strict mode for release pushes).
 # Skipped stages are tracked and reported in the final summary so the
 # success message can never imply more than what actually ran.
 #
@@ -106,18 +106,18 @@ RAN=$((RAN + 1))
 step "7/${TOTAL} OpenAPI schema drift"
 if [ ! -d "$UI_DIR" ]; then
   skip "apps/ui not present"
-elif ! probe_tcp localhost 3000; then
+elif ! probe_tcp localhost 7330; then
   if [ "${ALLOW_OPENAPI_DRIFT_SKIP:-true}" = "false" ]; then
-    fail "api-dev not running on :3000 (run 'compose/dev.sh up -d api-dev' or set ALLOW_OPENAPI_DRIFT_SKIP=true)"
+    fail "api-dev not running on :7330 (run 'compose/dev.sh up -d api-dev' or set ALLOW_OPENAPI_DRIFT_SKIP=true)"
   else
-    skip "api-dev not running on :3000 (run 'compose/dev.sh up -d api-dev' to enable)"
+    skip "api-dev not running on :7330 (run 'compose/dev.sh up -d api-dev' to enable)"
   fi
 else
   if [ ! -d "$UI_DIR/node_modules" ]; then
     c_blue "  installing apps/ui deps for schema check…"
     (cd "$UI_DIR" && bun install --frozen-lockfile >/dev/null)
   fi
-  (cd "$UI_DIR" && OPENAPI_URL=http://localhost:3000/swagger/json node_modules/.bin/tsx scripts/codegen/generate-api.ts --check)
+  (cd "$UI_DIR" && OPENAPI_URL=http://localhost:7330/swagger/json node_modules/.bin/tsx scripts/codegen/generate-api.ts --check)
   ok "apps/ui schema is fresh"
   RAN=$((RAN + 1))
 fi

@@ -2,7 +2,7 @@
 
 This template runs **Traefik v3** in the **prod profile only**, where it terminates TLS via Let's Encrypt ACME (HTTP-01) and **path-routes a single domain**: `/api/*` and `/health` go to the api container, everything else goes to the ui container. One TLS cert, one host, no CORS, no `api.` subdomain.
 
-In dev there's **no Traefik** — Vite's dev-server proxy forwards `/api/*` to `api-dev` over the docker network, so the browser only ever sees `http://localhost:3001`.
+In dev there's **no Traefik** — Vite's dev-server proxy forwards `/api/*` to `api-dev` over the docker network, so the browser only ever sees `http://localhost:7331`.
 
 If you lock down **port 80** on the origin, HTTP-01 renewal can fail; prefer **DNS-01** for ACME in that case (see [runbooks/firewall-and-tls](../docs/runbooks/firewall-and-tls.md)).
 
@@ -26,9 +26,9 @@ If you lock down **port 80** on the origin, HTTP-01 renewal can fail; prefer **D
    ./scripts/compose-up.sh
    ```
 
-4. Open `http://localhost:3001` in your browser.
+4. Open `http://localhost:7331` in your browser.
 
-The SPA runs on Vite's dev server. Any request to `/api/*` is proxied server-side by Vite to `api-dev:3000` inside the docker network. From the browser's perspective everything is same-origin, so no CORS preflights happen.
+The SPA runs on Vite's dev server. Any request to `/api/*` is proxied server-side by Vite to `api-dev:7330` inside the docker network. From the browser's perspective everything is same-origin, so no CORS preflights happen.
 
 ## Prod stack (`STACK=prod`)
 

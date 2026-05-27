@@ -14,7 +14,7 @@ When `apps/api` changes a route shape:
 1. Boot the API app (typically via
    `../../../../infra/compose/compose/dev.sh up -d`).
 2. From `apps/ui`:
-   `OPENAPI_URL=http://localhost:3000/swagger/json bun run generate:api`.
+   `OPENAPI_URL=http://localhost:7330/swagger/json bun run generate:api`.
 3. Commit the diff.
 
 ## Drift gates
@@ -23,7 +23,7 @@ Drift between the checked-in `schema.d.ts` and the live API is enforced
 in three places:
 
 - **apps/ui pre-push hook**: runs `generate:api:check` if api is
-  reachable on `:3000` at push time.
+  reachable on `:7330` at push time.
 - **apps/api `openapi-drift` CI workflow**: boots the API app, then runs
   `bun run generate:api:check` in `apps/ui`. Fails the PR that introduced the
   drift.

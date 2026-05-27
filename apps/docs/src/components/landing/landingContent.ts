@@ -24,7 +24,7 @@ export const codeTabs: CodeTab[] = [
       { kind: "ok", text: "ui-dev generated client and started Vite" },
       { kind: "ok", text: "mailpit, queues, logs, and metrics are overlays" },
       { kind: "spacer" },
-      { kind: "muted", text: "# open http://localhost:3001 and sign in" },
+      { kind: "muted", text: "# open http://localhost:7331 and sign in" },
     ],
   },
   {

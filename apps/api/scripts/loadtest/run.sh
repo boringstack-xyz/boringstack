@@ -7,7 +7,7 @@
 #   - api has E2E_TEST_ENDPOINTS_ENABLED=true (default in docker dev)
 #
 # Tune via env:
-#   LOADTEST_BASE_URL=http://localhost:3001   # SPA proxy by default
+#   LOADTEST_BASE_URL=http://localhost:7331   # SPA proxy by default
 #   E2E_TEST_ENDPOINTS_ENABLED=true           # mirror the api flag
 
 set -euo pipefail
@@ -19,7 +19,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-BASE_URL="${LOADTEST_BASE_URL:-http://localhost:3001}"
+BASE_URL="${LOADTEST_BASE_URL:-http://localhost:7331}"
 
 # Probe the api before kicking off a 4-minute test. If the API is not
 # reachable, k6's first iteration fails and the operator wastes the

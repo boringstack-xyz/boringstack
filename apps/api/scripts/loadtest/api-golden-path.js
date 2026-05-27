@@ -1,7 +1,7 @@
 // k6 load test — golden-path API smoke at sustained load.
 //
 // Exercises register → force-verify → login → dashboard summary → widget
-// create → list, all over the SPA's Vite proxy at :3001 (same path your
+// create → list, all over the SPA's Vite proxy at :7331 (same path your
 // real users hit). Run against the local dev stack:
 //
 //   ./scripts/loadtest/run.sh
@@ -15,7 +15,7 @@ import http from "k6/http";
 import { check, group, sleep } from "k6";
 import { Trend, Counter } from "k6/metrics";
 
-const BASE = __ENV.LOADTEST_BASE_URL || "http://localhost:3001";
+const BASE = __ENV.LOADTEST_BASE_URL || "http://localhost:7331";
 const E2E_TOKEN_REQUIRED = __ENV.E2E_TEST_ENDPOINTS_ENABLED === "true";
 
 const registerLatency = new Trend("register_latency", true);

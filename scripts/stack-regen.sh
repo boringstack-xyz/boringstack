@@ -19,7 +19,7 @@ if require_api_swagger; then
   step "OpenAPI types (api swagger → ui)"
   (
     cd "$BORINGSTACK_UI_DIR"
-    OPENAPI_URL="${OPENAPI_URL:-http://localhost:3000/swagger/json}" bun run generate:api
+    OPENAPI_URL="${OPENAPI_URL:-http://localhost:7330/swagger/json}" bun run generate:api
   )
   ok "OpenAPI schema regenerated"
 fi

@@ -14,7 +14,7 @@ A self-contained metrics + logs stack, gated behind a single env flag. Stays off
 | **postgres-exporter** | (internal only)       | Postgres metrics for Prometheus                |
 | **node-exporter**     | (internal only)       | host metrics for Prometheus                    |
 
-Grafana on **:3010** to avoid clashing with the API on **:3000** and the UI on **:3001**.
+Grafana on **:3010** to avoid clashing with the API on **:7330** and the UI on **:7331**.
 
 ## Start
 

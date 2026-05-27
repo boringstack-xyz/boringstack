@@ -8,7 +8,7 @@ RUN bun install --frozen-lockfile
 
 COPY . .
 
-EXPOSE 3000
+EXPOSE 7330
 
 # nosemgrep: dockerfile.security.missing-user.missing-user
 CMD ["bun", "run", "dev"]

@@ -104,7 +104,7 @@ const seedValid = (): TestEnv => ({
   DATABASE_URL: "postgresql://x:y@localhost:5432/db",
   JWT_SECRET: "x".repeat(40),
   FRONTEND_URL: "http://localhost:5173",
-  PUBLIC_API_URL: "http://localhost:3000",
+  PUBLIC_API_URL: "http://localhost:7330",
   ALLOWED_ORIGINS: "",
   EMAIL_PROVIDER: "resend",
   EMAIL_FROM: "noreply@acme.test",

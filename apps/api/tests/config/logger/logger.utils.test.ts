@@ -5,7 +5,7 @@ import { logStartup } from "../../../src/config/logger/logger.utils";
 describe("logStartup", () => {
   test("does not throw when called (log output goes to console)", () => {
     expect(() => {
-      logStartup("localhost", 3000);
+      logStartup("localhost", 7330);
     }).not.toThrow();
   });
 
@@ -17,7 +17,7 @@ describe("logStartup", () => {
 
   test("accepts ipv4 address", () => {
     expect(() => {
-      logStartup("127.0.0.1", 3000);
+      logStartup("127.0.0.1", 7330);
     }).not.toThrow();
   });
 });

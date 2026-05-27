@@ -3,7 +3,7 @@ import { type APIRequestContext, request } from "@playwright/test";
 import { expect, test } from "./fixtures/auth";
 import { LoginPage } from "./pages/LoginPage";
 
-const BASE_URL = "http://localhost:3001";
+const BASE_URL = "http://localhost:7331";
 
 interface IPendingUser {
   readonly email: string;

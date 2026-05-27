@@ -87,7 +87,7 @@ The two-pass split matters: running invariants on an already-shape-validated obj
 A shape rule expresses "this field must be a positive int between 1 and 65535." TypeBox does that:
 
 ```ts
-PORT: t.Integer({ minimum: 1, maximum: 65535, default: 3000 }),
+PORT: t.Integer({ minimum: 1, maximum: 65535, default: 7330 }),
 PUBLIC_API_URL: t.String({ minLength: 1 }),
 JWT_SECRET: t.String({ minLength: 32 }),
 EMAIL_PROVIDER: t.Union([t.Literal("cloudflare"), t.Literal("resend"), t.Literal("sendgrid"), t.Literal("smtp")]),

@@ -5,7 +5,7 @@
  *   bun run generate:api            # writes the file in place
  *   bun run generate:api:check      # exit 1 if regeneration would change the file
  *
- * URL comes from env (`OPENAPI_URL`, then `VITE_API_URL`, then localhost:3000).
+ * URL comes from env (`OPENAPI_URL`, then `VITE_API_URL`, then localhost:7330).
  * The API app's Elysia swagger plugin serves the JSON at /swagger/json.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -29,7 +29,7 @@ function resolveOpenApiUrl(): string {
     return `${api.replace(/\/$/, "")}/swagger/json`;
   }
 
-  return "http://localhost:3000/swagger/json";
+  return "http://localhost:7330/swagger/json";
 }
 
 const URL_FROM_ENV = resolveOpenApiUrl();
@@ -50,7 +50,7 @@ async function generate(): Promise<string> {
 
 /*
  * Strip the banner before drift comparison: the banner embeds the source
- * URL, which varies by environment (dev :3000, alt port for CI smoke,
+ * URL, which varies by environment (dev :7330, alt port for CI smoke,
  * staging URL, etc). Two regenerations that hit different URLs but the
  * same spec produce identical bodies but different banners — that is
  * not real drift and must not fail the check.

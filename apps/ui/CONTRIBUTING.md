@@ -10,7 +10,7 @@ the code is shippable.
 nvm use            # respect .nvmrc
 bun install
 cp .env.example .env.local
-bun run dev           # http://localhost:3001
+bun run dev           # http://localhost:7331
 ```
 
 ## Add a component

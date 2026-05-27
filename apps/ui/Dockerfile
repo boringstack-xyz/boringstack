@@ -8,7 +8,7 @@ RUN bun install --frozen-lockfile
 
 COPY . .
 
-EXPOSE 3001
+EXPOSE 7331
 
 # nosemgrep: dockerfile.security.missing-user.missing-user
 CMD ["bun", "--no-install", "./node_modules/.bin/vite"]

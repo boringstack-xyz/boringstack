@@ -9,7 +9,7 @@
 #
 # full-stack-smoke is intentionally NOT run here — it's a 3–5 minute end-to-end
 # stack boot. CI runs it on push. Run it locally with `compose/dev.sh up -d`
-# and `curl http://localhost:3000/health` if you want the full e2e signal.
+# and `curl http://localhost:7330/health` if you want the full e2e signal.
 #
 # Bypass: `git push --no-verify`.
 

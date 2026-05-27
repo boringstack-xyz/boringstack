@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 3001;
+const PORT = 7331;
 const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
@@ -30,7 +30,7 @@ export default defineConfig({
       use: { ...devices["Desktop Safari"] }
     }
   ],
-  // Playwright expects a running stack: the UI on :3001 AND apps/api
+  // Playwright expects a running stack: the UI on :7331 AND apps/api
   // reachable through the Vite proxy. Locally: `cd ../../infra/compose/compose && ./dev.sh up -d`.
   // In CI: the full-stack-smoke workflow boots the stack before running these.
   webServer: {

@@ -72,7 +72,7 @@ export const test = base.extend<
   },
   testUser: [
     async ({}, use, workerInfo) => {
-      const baseURL = "http://localhost:3001";
+      const baseURL = "http://localhost:7331";
       const user: ITestUser = {
         email: `e2e-${String(workerInfo.workerIndex)}-${String(Date.now())}-${String(Math.floor(Math.random() * 1_000_000))}@e2e.test`,
         password: "E2EPassword123!"

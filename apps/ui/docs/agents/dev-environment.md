@@ -17,7 +17,7 @@ Two ways to run the SPA in dev — `bun run dev` on the host, or the
 
 The container bind-mounts the apps/ui tree into `/app` so source
 edits hot-reload. A host-side Vite while the container's also running
-fights it for port 3001 and writes to the same `.vite` cache —
+fights it for port 7331 and writes to the same `.vite` cache —
 symptoms range from stale modules to blank-page boots.
 
 `bun run dev` runs `scripts/dev/preflight-host-dev.sh` first and refuses to

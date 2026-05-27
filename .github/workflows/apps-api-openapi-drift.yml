@@ -61,8 +61,8 @@ jobs:
       NODE_ENV: development
       DATABASE_URL: postgresql://app:app_dev_password@localhost:5432/app
       JWT_SECRET: ci-only-jwt-secret-padded-to-thirty-two-chars
-      FRONTEND_URL: http://localhost:3001
-      ALLOWED_ORIGINS: http://localhost:3001
+      FRONTEND_URL: http://localhost:7331
+      ALLOWED_ORIGINS: http://localhost:7331
       APP_NAME: API Template
       LOG_LEVEL: warn
       EMAIL_PROVIDER: resend
@@ -97,7 +97,7 @@ jobs:
           bun run src/index.ts &
           echo "API_PID=$!" >> "$GITHUB_ENV"
           for i in {1..30}; do
-            if curl -fsS http://localhost:3000/swagger/json > /dev/null 2>&1; then
+            if curl -fsS http://localhost:7330/swagger/json > /dev/null 2>&1; then
               echo "✓ api ready after ${i}s"
               exit 0
             fi
@@ -118,11 +118,11 @@ jobs:
       - name: Check apps/ui schema is up-to-date
         working-directory: apps/ui
         env:
-          OPENAPI_URL: http://localhost:3000/swagger/json
+          OPENAPI_URL: http://localhost:7330/swagger/json
         run: |
           if ! bun run generate:api:check; then
             echo "::error::apps/ui/src/lib/api/schema.d.ts is stale against this API change."
-            echo "::error::To fix: boot api on :3000, then from repo root run 'bun run regen' and commit apps/ui in the same PR."
+            echo "::error::To fix: boot api on :7330, then from repo root run 'bun run regen' and commit apps/ui in the same PR."
             exit 1
           fi
 

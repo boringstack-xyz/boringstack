@@ -15,9 +15,9 @@ From the cloned repo:
 ./setup.sh --up
 ```
 
-That copies `.env`, generates the GlitchTip secret, and brings the full Compose stack up: Postgres, Valkey, api-dev with migrations applied, ui-dev on `localhost:3001`, OpenAPI client generated. No local Bun or Postgres needed.
+That copies `.env`, generates the GlitchTip secret, and brings the full Compose stack up: Postgres, Valkey, api-dev with migrations applied, ui-dev on `localhost:7331`, OpenAPI client generated. No local Bun or Postgres needed.
 
-Sign in at `http://localhost:3001` as `demo@example.com / password123`.
+Sign in at `http://localhost:7331` as `demo@example.com / password123`.
 
 ## 1. Pick something to build
 
@@ -63,10 +63,10 @@ On the UI side, the same kind of pass:
 
 ## 4. See it work
 
-Open `http://localhost:3001/tickets`. The page renders, the create form posts, the list updates. From the terminal:
+Open `http://localhost:7331/tickets`. The page renders, the create form posts, the list updates. From the terminal:
 
 ```sh
-curl http://localhost:3000/api/v1/tickets
+curl http://localhost:7330/api/v1/tickets
 ```
 
 ## 5. Ship it

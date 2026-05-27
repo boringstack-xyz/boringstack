@@ -73,7 +73,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
     **Repo:** api. **Required:** yes. Values `development`, `production`, or
     `test`; gates prod-only invariants.
   </FaqItem>
-  <FaqItem title="PORT">**Repo:** api. **Required:** no. Default 3000.</FaqItem>
+  <FaqItem title="PORT">**Repo:** api. **Required:** no. Default 7330.</FaqItem>
   <FaqItem title="APP_NAME">
     **Repo:** api. **Required:** no (default `API Template`). Public-facing
     identity used in email From-names, OAuth consent metadata, and the OpenAPI
@@ -299,7 +299,7 @@ import FaqItem from "../../../components/FaqItem.tsx";
     fallback.
   </FaqItem>
   <FaqItem title="VITE_PUBLIC_URL">
-    **Repo:** ui. **Required:** yes (default `http://localhost:3001`). Public SPA
+    **Repo:** ui. **Required:** yes (default `http://localhost:7331`). Public SPA
     origin used for billing return URLs, SEO, and share links. In same-origin
     deploys this matches the browser origin; cross-origin setups still need the
     UI's public URL here (not the API host).

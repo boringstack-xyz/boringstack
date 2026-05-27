@@ -10,12 +10,12 @@ The full sequence — boot docker → wait for `/swagger/json` → run `generate
 
 Confirm the agent is operating in the ui-template repo root by checking that `package.json` contains `"name": "ui-template"`. If not, stop and tell the user to `cd` into ui-template first.
 
-## Step 2 — Is api-template already running on :3000?
+## Step 2 — Is api-template already running on :7330?
 
-Probe `http://localhost:3000/swagger/json`:
+Probe `http://localhost:7330/swagger/json`:
 
 ```bash
-curl -fsS http://localhost:3000/swagger/json -o /dev/null
+curl -fsS http://localhost:7330/swagger/json -o /dev/null
 ```
 
 If it succeeds, skip Step 3 and go straight to Step 4.
@@ -32,13 +32,13 @@ cd ../../infra/compose/compose
 
 Verify the docker daemon is running first (`docker ps`); if it isn't, ask the user to start OrbStack / Docker Desktop and stop. Don't try to start the daemon yourself.
 
-Then wait up to 60 s for `http://localhost:3000/swagger/json` to be reachable. Poll once per second; bail if it doesn't come up.
+Then wait up to 60 s for `http://localhost:7330/swagger/json` to be reachable. Poll once per second; bail if it doesn't come up.
 
 ## Step 4 — Regenerate the schema
 
 ```bash
 # From ui-template:
-OPENAPI_URL=http://localhost:3000/swagger/json bun run generate:api
+OPENAPI_URL=http://localhost:7330/swagger/json bun run generate:api
 ```
 
 The script writes to `src/lib/api/schema.d.ts`. See that file's `AGENTS.md` for the contract.

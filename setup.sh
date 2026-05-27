@@ -38,7 +38,7 @@ case "${1:-}" in
     echo
     echo "[setup] Done. Next:"
     echo "  cd infra/compose/compose && ./dev.sh up -d --build"
-    echo "  open http://localhost:3001"
+    echo "  open http://localhost:7331"
     echo "  sign in as demo@example.com / password123"
     ;;
 esac

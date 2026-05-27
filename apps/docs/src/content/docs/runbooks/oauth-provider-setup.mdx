@@ -45,19 +45,19 @@ Where `{provider}` is `google`, `github`, or `linkedin`.
 
 ## Local development
 
-For the Docker Compose dev stack (`api-dev` on port 3000, Vite UI on 3001), register **additional** redirect URIs in each provider console:
+For the Docker Compose dev stack (`api-dev` on port 7330, Vite UI on 7331), register **additional** redirect URIs in each provider console:
 
 ```
-http://localhost:3000/api/v1/auth/oauth/google/callback
-http://localhost:3000/api/v1/auth/oauth/github/callback
-http://localhost:3000/api/v1/auth/oauth/linkedin/callback
+http://localhost:7330/api/v1/auth/oauth/google/callback
+http://localhost:7330/api/v1/auth/oauth/github/callback
+http://localhost:7330/api/v1/auth/oauth/linkedin/callback
 ```
 
 API secrets go in `infra/compose/compose/.env` (same `GOOGLE_OAUTH_*` / `GITHUB_OAUTH_*` / `LINKEDIN_OAUTH_*` keys as production).
 
 OAuth login buttons render when the API has credentials for a provider — the UI reads `GET /api/v1/capabilities/` and shows buttons for each entry in `oauth.providers`. No UI-side OAuth client IDs are required. After changing env, restart `api-dev` and the Vite dev server.
 
-When `VITE_API_URL` is empty, the browser uses same-origin relative `/api` paths and Vite proxies to `VITE_API_PROXY_TARGET` (default `http://localhost:3000`). Callback URLs still hit the API on port 3000, not the Vite port.
+When `VITE_API_URL` is empty, the browser uses same-origin relative `/api` paths and Vite proxies to `VITE_API_PROXY_TARGET` (default `http://localhost:7330`). Callback URLs still hit the API on port 7330, not the Vite port.
 
 ---
 

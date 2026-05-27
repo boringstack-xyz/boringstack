@@ -16,7 +16,7 @@ import CommandRun from "../../../components/docs-kit/CommandRun";
   totalTime="PT45M"
   steps={[
     "Flip BILLING_ENABLED=true and capture STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ID_FREE, STRIPE_PRICE_ID_PRO in compose/.env.",
-    "Forward webhooks locally with stripe listen --forward-to localhost:3000/api/v1/billing/stripe/webhooks.",
+    "Forward webhooks locally with stripe listen --forward-to localhost:7330/api/v1/billing/stripe/webhooks.",
     "Extend the existing UI billing feature and POST to /api/v1/billing/stripe/checkout-session.",
     "Add a Manage subscription mutation that calls /api/v1/billing/stripe/portal-session.",
     "Declare your plan and feature flags in the ACL feature resolver.",
@@ -69,7 +69,7 @@ Finish with a paid plan a user can subscribe to via Stripe Checkout, manage from
 2. Forward webhooks to your local API:
 
    ```bash
-   stripe listen --forward-to localhost:3000/api/v1/billing/stripe/webhooks
+   stripe listen --forward-to localhost:7330/api/v1/billing/stripe/webhooks
    ```
 
    Copy the `whsec_...` signing secret printed on first connect into `STRIPE_WEBHOOK_SECRET`. Then restart:

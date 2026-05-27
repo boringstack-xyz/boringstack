@@ -8,7 +8,7 @@
 #   3. Tests         : vitest run --coverage (no services needed)
 #   4. Build         : vite build (catches type-level regressions through routes)
 #   5. Size          : size-limit budget
-#   6. OpenAPI drift : if apps/api is reachable on :3000, ensure schema is fresh
+#   6. OpenAPI drift : if apps/api is reachable on :7330, ensure schema is fresh
 #
 # Set ALLOW_OPENAPI_DRIFT_SKIP=false to fail instead of skip when the API is
 # unreachable (strict mode for release pushes).
@@ -71,14 +71,14 @@ RAN=$((RAN + 1))
 
 step "6/${TOTAL} OpenAPI schema drift"
 probe_tcp() { nc -z "$1" "$2" 2>/dev/null; }
-if probe_tcp localhost 3000 && curl -fsS http://localhost:3000/swagger/json >/dev/null 2>&1; then
-  OPENAPI_URL=http://localhost:3000/swagger/json bun run generate:api:check
+if probe_tcp localhost 7330 && curl -fsS http://localhost:7330/swagger/json >/dev/null 2>&1; then
+  OPENAPI_URL=http://localhost:7330/swagger/json bun run generate:api:check
   ok "schema is fresh"
   RAN=$((RAN + 1))
 elif [ "${ALLOW_OPENAPI_DRIFT_SKIP:-true}" = "false" ]; then
-  fail "apps/api not reachable on :3000 (start api-dev or set ALLOW_OPENAPI_DRIFT_SKIP=true)"
+  fail "apps/api not reachable on :7330 (start api-dev or set ALLOW_OPENAPI_DRIFT_SKIP=true)"
 else
-  skip "apps/api not reachable on :3000"
+  skip "apps/api not reachable on :7330"
 fi
 
 printf '\n'

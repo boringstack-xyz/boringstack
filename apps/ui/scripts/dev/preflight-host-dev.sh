@@ -17,7 +17,7 @@ if docker ps --format '{{.Names}}' 2>/dev/null \
  The ui-dev compose container is running.
 
  You're about to start `bun run dev` on the host. The container is
- already serving Vite on http://localhost:3001 via the bind-mounted
+ already serving Vite on http://localhost:7331 via the bind-mounted
  source tree; a second dev server on the host fights it for ports
  and writes to the same .vite cache.
 

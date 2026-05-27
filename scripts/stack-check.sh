@@ -28,9 +28,9 @@ run_check "api lint-meta docs" bash -c "cd \"$BORINGSTACK_API_DIR\" && bun run c
 run_check "api scripts docs" bash -c "cd \"$BORINGSTACK_API_DIR\" && bun run check:scripts-docs"
 
 if require_api_swagger; then
-  run_check "OpenAPI drift" bash -c "cd \"$BORINGSTACK_UI_DIR\" && OPENAPI_URL=http://localhost:3000/swagger/json bun run generate:api:check"
+  run_check "OpenAPI drift" bash -c "cd \"$BORINGSTACK_UI_DIR\" && OPENAPI_URL=http://localhost:7330/swagger/json bun run generate:api:check"
 else
-  c_yellow "  skipped OpenAPI drift — api-dev not on :3000"
+  c_yellow "  skipped OpenAPI drift — api-dev not on :7330"
 fi
 
 run_check "ui lint-meta docs" bash -c "cd \"$BORINGSTACK_UI_DIR\" && bun run check:lint-meta-docs"
