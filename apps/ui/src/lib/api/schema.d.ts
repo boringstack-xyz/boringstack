@@ -59,6 +59,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Prometheus scrape endpoint
+         * @description Plain-text Prometheus exposition format. Scraped by the observability overlay; no auth.
+         */
+        get: operations["getMetrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/capabilities/": {
         parameters: {
             query?: never;
@@ -731,6 +751,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/accounts/{id}/audit-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recent audit-log entries scoped to the account (owner/admin only) */
+        get: operations["getApiV1AccountsByIdAudit-log"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/accounts/{id}/transfer-ownership/{transferId}": {
         parameters: {
             query?: never;
@@ -944,6 +981,27 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    getMetrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                    "multipart/form-data": string;
+                    "text/plain": string;
+                };
             };
         };
     };
@@ -3402,6 +3460,67 @@ export interface operations {
                             cancelledAt: string | null;
                             createdAt: string;
                         } | null;
+                    };
+                };
+            };
+        };
+    };
+    "getApiV1AccountsByIdAudit-log": {
+        parameters: {
+            query?: {
+                limit?: string | number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        entries: {
+                            id: string;
+                            action: string;
+                            resource: string | null;
+                            metadata: unknown;
+                            createdAt: string;
+                            actorUserId: string | null;
+                            actorEmail: string | null;
+                            actorFirstName: string | null;
+                            actorLastName: string | null;
+                        }[];
+                    };
+                    "multipart/form-data": {
+                        entries: {
+                            id: string;
+                            action: string;
+                            resource: string | null;
+                            metadata: unknown;
+                            createdAt: string;
+                            actorUserId: string | null;
+                            actorEmail: string | null;
+                            actorFirstName: string | null;
+                            actorLastName: string | null;
+                        }[];
+                    };
+                    "text/plain": {
+                        entries: {
+                            id: string;
+                            action: string;
+                            resource: string | null;
+                            metadata: unknown;
+                            createdAt: string;
+                            actorUserId: string | null;
+                            actorEmail: string | null;
+                            actorFirstName: string | null;
+                            actorLastName: string | null;
+                        }[];
                     };
                 };
             };

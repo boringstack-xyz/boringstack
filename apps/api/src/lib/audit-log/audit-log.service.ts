@@ -1,8 +1,15 @@
+import { desc, eq, like, or } from "drizzle-orm";
+
 import { db } from "../../clients/postgres";
-import { auditLog } from "../../clients/postgres/schema";
+import { auditLog, users } from "../../clients/postgres/schema";
 import { logger } from "../../config/logger";
 import { getErrorMessage } from "../errors";
-import type { IAuditEventInput, IAuditWriteResult } from "./audit-log.types";
+import type {
+  IAuditEventInput,
+  IAuditWriteResult,
+  IListForAccountInput,
+  IListForAccountResult,
+} from "./audit-log.types";
 
 /**
  * Append-only audit log writes. Fire-and-forget by design — a failed
@@ -37,6 +44,44 @@ export class AuditLogService {
 
       return { success: false };
     }
+  }
+
+  /**
+   * Read-side: return the most recent audit entries scoped to a given
+   * account. Filter matches either `targetAccountId = accountId` or
+   * `resource = 'account:{accountId}'` since the write side uses both
+   * conventions across services. Pages newest-first.
+   */
+  async listForAccount(
+    input: IListForAccountInput
+  ): Promise<IListForAccountResult> {
+    const limit = Math.min(Math.max(input.limit ?? 50, 1), 100);
+    const resourceMatch = `account:${input.accountId}`;
+    const rows = await db
+      .select({
+        id: auditLog.id,
+        action: auditLog.action,
+        resource: auditLog.resource,
+        metadata: auditLog.metadata,
+        createdAt: auditLog.createdAt,
+        actorUserId: auditLog.userId,
+        actorEmail: users.email,
+        actorFirstName: users.firstName,
+        actorLastName: users.lastName,
+      })
+      .from(auditLog)
+      .leftJoin(users, eq(users.id, auditLog.userId))
+      .where(
+        or(
+          eq(auditLog.targetAccountId, input.accountId),
+          eq(auditLog.resource, resourceMatch),
+          like(auditLog.resource, `${resourceMatch}:%`)
+        )
+      )
+      .orderBy(desc(auditLog.createdAt), desc(auditLog.id))
+      .limit(limit);
+
+    return { entries: rows };
   }
 }
 

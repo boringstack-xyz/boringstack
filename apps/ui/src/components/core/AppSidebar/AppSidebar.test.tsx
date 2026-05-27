@@ -35,11 +35,11 @@ function renderSidebar(onNavigate?: () => void) {
 }
 
 describe("AppSidebar", () => {
-  it("renders the brand lockup + all six nav links", () => {
+  it("renders the brand lockup + all non-billing nav links", () => {
     renderSidebar();
 
     expect(screen.getByText("app.name")).toBeInTheDocument();
-    expect(screen.getAllByRole("link")).toHaveLength(6);
+    expect(screen.getAllByRole("link")).toHaveLength(7);
     expect(
       screen.getByRole("link", { name: /nav\.dashboard/i })
     ).toHaveAttribute("href", "/dashboard");

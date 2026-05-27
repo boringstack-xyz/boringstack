@@ -76,6 +76,12 @@ const InvitationsPage = lazy(() =>
   }))
 );
 
+const AuditLogPage = lazy(() =>
+  import("@/features/accounts/components/AuditLogPage").then((m) => ({
+    default: m.AuditLogPage
+  }))
+);
+
 const SettingsPage = lazy(() =>
   import("@/features/accounts/components/SettingsPage").then((m) => ({
     default: m.SettingsPage
@@ -227,6 +233,19 @@ const router = createBrowserRouter([
         <AppShell>
           <Suspense fallback={<Fallback />}>
             <InvitationsPage />
+          </Suspense>
+        </AppShell>
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/account/audit-log",
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <ProtectedRoute>
+        <AppShell>
+          <Suspense fallback={<Fallback />}>
+            <AuditLogPage />
           </Suspense>
         </AppShell>
       </ProtectedRoute>

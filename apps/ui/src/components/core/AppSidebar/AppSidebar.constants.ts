@@ -20,6 +20,11 @@ export const APP_SIDEBAR_NAV_ITEMS = [
     labelKey: "nav.team"
   },
   {
+    id: "auditLog",
+    path: "/account/audit-log",
+    labelKey: "nav.auditLog"
+  },
+  {
     id: "settings",
     path: "/account/settings",
     labelKey: "nav.settings"

@@ -203,6 +203,7 @@
     "notifications": "Benachrichtigungen",
     "widgets": "Widgets",
     "team": "Team",
+    "auditLog": "Audit-Log",
     "settings": "Einstellungen",
     "billing": "Abrechnung",
     "profile": "Profil"
@@ -404,6 +405,15 @@
       "ariaLabel": "Aktives Konto wechseln",
       "currentBadge": "Aktiv",
       "rolePrefix": "Rolle"
+    },
+    "auditLog": {
+      "pageTitle": "Audit-Log",
+      "pageSubtitle": "Aktivität dieses Kontos — nur Eigentümer und Admins.",
+      "loading": "Audit-Einträge werden geladen",
+      "error": "Audit-Log konnte nicht geladen werden. Bitte erneut versuchen.",
+      "empty": "Noch keine Audit-Einträge für dieses Konto.",
+      "systemActor": "System",
+      "navLabel": "Audit-Log"
     },
     "invitations": {
       "pageTitle": "Team",

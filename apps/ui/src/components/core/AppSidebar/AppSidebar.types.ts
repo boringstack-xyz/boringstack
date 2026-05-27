@@ -5,6 +5,7 @@ export type IAppSidebarNavId =
   | "notifications"
   | "widgets"
   | "team"
+  | "auditLog"
   | "settings"
   | "billing"
   | "profile";

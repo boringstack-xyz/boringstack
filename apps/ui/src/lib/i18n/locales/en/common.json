@@ -203,6 +203,7 @@
     "notifications": "Notifications",
     "widgets": "Widgets",
     "team": "Team",
+    "auditLog": "Audit log",
     "settings": "Settings",
     "billing": "Billing",
     "profile": "Profile"
@@ -383,6 +384,15 @@
       "ariaLabel": "Switch active account",
       "currentBadge": "Active",
       "rolePrefix": "Role"
+    },
+    "auditLog": {
+      "pageTitle": "Audit log",
+      "pageSubtitle": "Account-scoped activity — owners and admins only.",
+      "loading": "Loading audit entries",
+      "error": "Could not load the audit log. Try again.",
+      "empty": "No audit entries for this account yet.",
+      "systemActor": "System",
+      "navLabel": "Audit log"
     },
     "invitations": {
       "pageTitle": "Team",

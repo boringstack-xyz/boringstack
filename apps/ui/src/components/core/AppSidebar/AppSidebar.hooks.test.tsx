@@ -74,7 +74,7 @@ const ownerMe: IMe = {
 };
 
 describe("useAppSidebar", () => {
-  it("returns six nav items when billing is hidden", () => {
+  it("returns the non-billing nav items in canonical order", () => {
     const { result } = renderHook(() => useAppSidebar({}), {
       wrapper: makeWrapper(ownerMe, false)
     });
@@ -84,6 +84,7 @@ describe("useAppSidebar", () => {
       "notifications",
       "widgets",
       "team",
+      "auditLog",
       "settings",
       "profile"
     ]);
@@ -99,6 +100,7 @@ describe("useAppSidebar", () => {
       "notifications",
       "widgets",
       "team",
+      "auditLog",
       "settings",
       "billing",
       "profile"
