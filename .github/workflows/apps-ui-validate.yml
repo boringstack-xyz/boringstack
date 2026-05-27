@@ -60,6 +60,18 @@ jobs:
         if: steps.filter.outputs.code == 'true'
         run: bun run test:ci
 
+      - name: Upload coverage to Codecov
+        if: steps.filter.outputs.code == 'true'
+        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
+        with:
+          files: apps/ui/coverage/lcov.info
+          flags: ui
+          name: ui-coverage
+          fail_ci_if_error: false
+          # CODECOV_TOKEN is required for private repos; for public repos
+          # uploads work tokenless.
+          token: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Build
         if: steps.filter.outputs.code == 'true'
         run: bun run build

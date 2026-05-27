@@ -23,7 +23,19 @@ export const metricsObserver = new Elysia({ name: "metrics-observer" })
   .onAfterResponse(
     { as: "global" },
     ({ request, route, set, metricsStart }) => {
+      /*
+       * Every guard returns silently — `onAfterResponse` runs on the
+       * tail of the response and any throw here bubbles up as an
+       * unhandled rejection that the bun test runner treats as a
+       * "between tests" abort, killing the entire suite. The metrics
+       * counters are best-effort observability; missing one
+       * data-point is fine, a dead test process is not.
+       */
       if (route === METRICS_PATH) {
+        return;
+      }
+
+      if (typeof route !== "string" || typeof request.method !== "string") {
         return;
       }
 
@@ -31,17 +43,25 @@ export const metricsObserver = new Elysia({ name: "metrics-observer" })
         return;
       }
 
-      const status = String(set.status ?? 200);
-      const labels = {
-        method: request.method,
-        route,
-        status,
-      };
+      try {
+        const status = String(set.status ?? 200);
+        const labels = {
+          method: request.method,
+          route,
+          status,
+        };
 
-      const durationSeconds =
-        Number(process.hrtime.bigint() - metricsStart) / 1_000_000_000;
+        const durationSeconds =
+          Number(process.hrtime.bigint() - metricsStart) / 1_000_000_000;
 
-      httpRequestsTotal.inc(labels);
-      httpRequestDurationSeconds.observe(labels, durationSeconds);
+        httpRequestsTotal.inc(labels);
+        httpRequestDurationSeconds.observe(labels, durationSeconds);
+      } catch {
+        /*
+         * Defensive belt-and-suspenders: prom-client validation
+         * errors (cardinality overflow, label-set mismatch) must not
+         * propagate out of the response hook.
+         */
+      }
     }
   );

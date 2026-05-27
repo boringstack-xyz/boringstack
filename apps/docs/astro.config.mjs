@@ -525,6 +525,7 @@ export default defineConfig({
               label: "OAuth provider setup",
               link: "/runbooks/oauth-provider-setup/",
             },
+            { label: "Codecov setup", link: "/runbooks/codecov-setup/" },
           ],
         },
       ],

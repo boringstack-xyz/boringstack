@@ -1,0 +1,69 @@
+# Codecov configuration. https://docs.codecov.com/docs/codecovyml-reference
+#
+# The monorepo ships separate coverage uploads per app (api / ui) using
+# flags. Each app's CI job points `codecov-action` at its own lcov.info
+# and tags the upload with its flag — Codecov tracks coverage trends
+# per-flag rather than blending them into a meaningless monorepo
+# average. Documentation site is excluded (no executable code).
+
+codecov:
+  require_ci_to_pass: true
+  notify:
+    wait_for_ci: true
+
+coverage:
+  precision: 2
+  round: down
+  range: "65...95"
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        informational: false
+      api:
+        target: 65%
+        threshold: 1%
+        flags:
+          - api
+      ui:
+        target: 70%
+        threshold: 1%
+        flags:
+          - ui
+    patch:
+      default:
+        target: 70%
+        threshold: 1%
+        only_pulls: true
+
+flags:
+  api:
+    paths:
+      - apps/api/
+    carryforward: true
+  ui:
+    paths:
+      - apps/ui/
+    carryforward: true
+
+ignore:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.stories.tsx"
+  - "**/dist/**"
+  - "**/node_modules/**"
+  - "**/scripts/**"
+  - "**/coverage/**"
+  - "apps/docs/**"
+  - "apps/api/src/templates/**"
+  - "apps/api/drizzle/**"
+  - "apps/ui/src/lib/api/schema.ts"
+
+comment:
+  layout: "header, diff, flags, components, footer"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+  show_carryforward_flags: true
