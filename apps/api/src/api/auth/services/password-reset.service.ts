@@ -11,7 +11,6 @@ import { logger } from "../../../config/logger";
 import { AUDIT_ACTIONS, auditLogService } from "../../../lib/audit-log";
 import { sendTemplate } from "../../../lib/email";
 import { ApiErrors, getErrorMessage } from "../../../lib/errors";
-import { jwtRevocationService } from "../../../lib/jwt";
 import { passwordService } from "../../../lib/password";
 import { generateOpaqueToken, hashOpaqueToken } from "../../../lib/tokens";
 import {
@@ -124,14 +123,11 @@ export class PasswordResetService {
         .where(eq(passwordResetTokens.userId, record.userId));
     });
 
-    await sessionService.revokeAllForUser(record.userId);
-
     /*
-     * Kill access JWTs alongside refresh sessions — session revocation
-     * alone leaves up to 15 min of pre-reset access tokens valid, which
-     * is the whole point of having a reset flow.
+     * Bulk session revoke now also bumps the per-user JWT cutoff, so
+     * pre-reset access tokens die with the refresh sessions.
      */
-    await jwtRevocationService.revokeAllForUser(record.userId);
+    await sessionService.revokeAllForUser(record.userId);
 
     const user = await db.query.users.findFirst({
       where: eq(users.id, record.userId),

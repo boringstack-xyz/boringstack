@@ -149,7 +149,9 @@ export class BillingService {
 
     const [plan, account] = await Promise.all([
       db.query.plans.findFirst({ where: eq(plans.id, planId) }),
-      db.query.accounts.findFirst({ where: eq(accounts.id, accountId) }),
+      db.query.accounts.findFirst({
+        where: and(eq(accounts.id, accountId), isNull(accounts.deletedAt)),
+      }),
     ]);
 
     if (!plan) {
@@ -472,7 +474,7 @@ export class BillingService {
     assertAllowedBillingRedirectUrl(returnUrl, "returnUrl");
 
     const account = await db.query.accounts.findFirst({
-      where: eq(accounts.id, accountId),
+      where: and(eq(accounts.id, accountId), isNull(accounts.deletedAt)),
     });
     const stripeCustomerId = account?.stripeCustomerId;
 

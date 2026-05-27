@@ -15,7 +15,7 @@ import { AccountSwitcher } from "./AccountSwitcher";
 
 const switchMock = vi.hoisted(() => vi.fn());
 
-vi.mock("../../Accounts.mutations", () => ({
+vi.mock("../../Memberships.mutations", () => ({
   useSwitchAccount: () => ({ mutate: switchMock, isPending: false })
 }));
 

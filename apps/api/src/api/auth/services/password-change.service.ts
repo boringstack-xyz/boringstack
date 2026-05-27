@@ -6,7 +6,6 @@ import { logger } from "../../../config/logger";
 import { AUDIT_ACTIONS, auditLogService } from "../../../lib/audit-log";
 import { sendTemplate } from "../../../lib/email";
 import { ApiErrors, getErrorMessage } from "../../../lib/errors";
-import { jwtRevocationService } from "../../../lib/jwt";
 import { passwordService } from "../../../lib/password";
 import {
   EMAIL_PROVIDER_KEY,
@@ -14,6 +13,7 @@ import {
   TEMPLATE_PATHS,
 } from "../auth.constants";
 import type { IMessageResult } from "../auth.types";
+import { sessionService } from "./session.service";
 
 export class PasswordChangeService {
   async change(
@@ -67,11 +67,12 @@ export class PasswordChangeService {
       );
 
     /*
-     * Kill every JWT issued to this user before now. Combined with
-     * sessionService cookie revocation on the next refresh, a leaked
-     * pre-change token can no longer be used to act as the user.
+     * Force re-auth across every device. `sessionService.revokeAllForUser`
+     * deletes the refresh-session rows AND bumps the per-user JWT
+     * cutoff in one step, so a pre-change access token can't be used
+     * to act as the user even before its 15 min TTL elapses.
      */
-    await jwtRevocationService.revokeAllForUser(userId);
+    await sessionService.revokeAllForUser(userId);
 
     void sendTemplate({
       to: row.user.email,

@@ -7,6 +7,9 @@ patterns and lint rules specific to that surface:
   Drizzle schemas, audit log requirements, the `bun run check` contract.
 - [apps/ui/CONTRIBUTING.md](apps/ui/CONTRIBUTING.md) — feature folders,
   TanStack Query patterns, i18n, RTL tests.
+- [apps/docs/DEPLOY.md](apps/docs/DEPLOY.md) — how the
+  [boringstack.xyz](https://boringstack.xyz) docs site is wired up on
+  Cloudflare Pages (build settings, custom domain, rollback flow).
 
 This document covers what's true for any change anywhere in the repo.
 

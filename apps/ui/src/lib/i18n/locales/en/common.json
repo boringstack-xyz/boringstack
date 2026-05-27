@@ -328,7 +328,11 @@
           "delete": "Delete account",
           "deleting": "Deleting…",
           "ownerOnly": "Only the account owner can delete this account.",
-          "error": "Account deletion failed. Try again."
+          "error": "Account deletion failed. Try again.",
+          "leaveBody": "Leaving this account revokes your membership. You can rejoin only via a fresh invite.",
+          "leave": "Leave account",
+          "leaving": "Leaving…",
+          "leaveError": "Couldn't leave the account. Try again."
         }
       },
       "account": {

@@ -325,6 +325,28 @@ const accountsRoutes = createAuthMiddleware()
     }
   )
   .delete(
+    "/:id/memberships/me",
+    async ({ membership, params, user, set }) => {
+      if (params.id !== membership.accountId) {
+        throw ApiErrors.forbidden();
+      }
+
+      await accountsService.leaveAccount(user.id, membership.accountId);
+      set.status = 204;
+
+      return null;
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      response: t.Null(),
+      detail: {
+        tags: ["Accounts"],
+        summary:
+          "Leave the account (revokes the caller's own membership; owner must transfer first)",
+      },
+    }
+  )
+  .delete(
     "/:id/invitations/:invitationId",
     async ({ membership, params, user, set }) => {
       if (params.id !== membership.accountId) {

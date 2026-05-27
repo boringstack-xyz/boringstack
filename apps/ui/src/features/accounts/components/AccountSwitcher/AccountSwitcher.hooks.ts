@@ -2,7 +2,7 @@ import { useCallback } from "react";
 
 import { useMe } from "@/features/auth/Auth.queries";
 
-import { useSwitchAccount } from "../../Accounts.mutations";
+import { useSwitchAccount } from "../../Memberships.mutations";
 import type { IAccountSwitcherView } from "./AccountSwitcher.types";
 
 export function useAccountSwitcher(): IAccountSwitcherView {

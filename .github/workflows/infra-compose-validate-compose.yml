@@ -166,6 +166,64 @@ jobs:
           # Strict: error on warnings, follow `source` directives.
           shellcheck -x -S warning infra/compose/compose/dev.sh infra/compose/scripts/*.sh
 
+  prod-image-build:
+    name: build prod images (sanity)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Cheaper than booting the prod profile end-to-end, but still
+    # exercises the actual prod Dockerfiles. Catches broken
+    # multi-stage builds, missing build deps, or registry-auth
+    # changes before main, instead of leaving the first breakage to
+    # the post-merge release workflow.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'apps/api/Dockerfile.prod'
+              - 'apps/api/package.json'
+              - 'apps/api/bun.lock'
+              - 'apps/ui/Dockerfile.prod'
+              - 'apps/ui/package.json'
+              - 'apps/ui/bun.lock'
+              - 'infra/compose/**'
+              - '.github/workflows/infra-compose-validate-compose.yml'
+
+      - name: Set up Docker Buildx
+        if: steps.filter.outputs.code == 'true'
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Build apps/api prod image
+        if: steps.filter.outputs.code == 'true'
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: apps/api
+          file: apps/api/Dockerfile.prod
+          push: false
+          load: true
+          tags: boringstack-api:pr-build
+          cache-from: type=gha,scope=apps-api-prod
+          cache-to: type=gha,scope=apps-api-prod,mode=max
+
+      - name: Build apps/ui prod image
+        if: steps.filter.outputs.code == 'true'
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        with:
+          context: apps/ui
+          file: apps/ui/Dockerfile.prod
+          push: false
+          load: true
+          tags: boringstack-ui:pr-build
+          cache-from: type=gha,scope=apps-ui-prod
+          cache-to: type=gha,scope=apps-ui-prod,mode=max
+          build-args: |
+            VITE_API_URL=https://api.example.test
+
   yamllint:
     name: yamllint (compose + workflows)
     runs-on: ubuntu-latest

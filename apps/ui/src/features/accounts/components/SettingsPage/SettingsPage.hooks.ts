@@ -30,6 +30,7 @@ import { changePasswordInputSchema } from "@/features/auth/Auth.schemas";
 import { applyServerErrors } from "@/features/auth/Auth.utils";
 
 import { useDeleteAccount, useUpdateAccount } from "../../Accounts.mutations";
+import { useLeaveAccount } from "../../Memberships.mutations";
 import { SETTINGS_SECTION_KEYS } from "./SettingsPage.constants";
 import { renameAccountSchema } from "./SettingsPage.schemas";
 import type {
@@ -73,6 +74,10 @@ interface ISettingsPageView {
     event: ChangeEvent<HTMLInputElement>
   ) => void;
   readonly onDeleteAccount: () => void;
+  readonly canLeaveAccount: boolean;
+  readonly isLeavingAccount: boolean;
+  readonly leaveError: string | null;
+  readonly onLeaveAccount: () => void;
 }
 
 export function useSettingsPage(): ISettingsPageView {
@@ -86,6 +91,7 @@ export function useSettingsPage(): ISettingsPageView {
   const changePassword = useChangePassword();
   const disconnectOAuth = useDisconnectOAuth();
   const deleteAccount = useDeleteAccount(accountId);
+  const leaveAccount = useLeaveAccount(accountId);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [disconnectingProvider, setDisconnectingProvider] = useState<
     string | null
@@ -118,6 +124,13 @@ export function useSettingsPage(): ISettingsPageView {
   const isDeleteConfirmationMatch = meData?.account.name === deleteConfirmation;
   const isDeleteDisabled =
     !canDeleteAccount || !isDeleteConfirmationMatch || deleteAccount.isPending;
+  /*
+   * Owner cannot leave — the API rejects it because an account must
+   * always have an owner. Owner uses the delete + transfer flows
+   * instead.
+   */
+  const canLeaveAccount =
+    meData !== undefined && meData !== null && meData.role !== ROLE.owner;
   const isPasswordLoginEnabled = meData?.hasPasswordLogin === true;
 
   const oauthProviderSet = useMemo(
@@ -314,6 +327,23 @@ export function useSettingsPage(): ISettingsPageView {
     []
   );
 
+  const onLeaveAccount = useCallback((): void => {
+    if (!canLeaveAccount || leaveAccount.isPending) {
+      return;
+    }
+
+    leaveAccount.mutate(undefined, {
+      onSuccess: () => {
+        /*
+         * After leaving, the user's JWT still points at the now-revoked
+         * membership. The next /me refetch fails authz, so route them
+         * to /login and let the next sign-in pick a remaining account.
+         */
+        void navigate("/login", { replace: true });
+      }
+    });
+  }, [canLeaveAccount, leaveAccount, navigate]);
+
   return {
     pageTitle: t("accounts.settings.pageTitle"),
     pageSubtitle: t("accounts.settings.pageSubtitle"),
@@ -342,6 +372,12 @@ export function useSettingsPage(): ISettingsPageView {
     onConnectProvider,
     onDisconnectProvider,
     onDeleteConfirmationInputChange,
-    onDeleteAccount
+    onDeleteAccount,
+    canLeaveAccount,
+    isLeavingAccount: leaveAccount.isPending,
+    leaveError: leaveAccount.isError
+      ? t("accounts.settings.sections.danger.leaveError")
+      : null,
+    onLeaveAccount
   };
 }

@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 
 import { db } from "../../clients/postgres";
 import {
@@ -221,7 +221,7 @@ export class JoinRequestsService {
     const [account] = await db
       .select({ name: accounts.name })
       .from(accounts)
-      .where(eq(accounts.id, accountId))
+      .where(and(eq(accounts.id, accountId), isNull(accounts.deletedAt)))
       .limit(1);
 
     if (!account) {

@@ -1,0 +1,28 @@
+# Repo-wide gitleaks configuration. Every per-package security-secrets
+# workflow points here, so a single source of truth covers api, ui,
+# docs, and infra scans.
+#
+# Extends the default rule set with a narrow allowlist for known false
+# positives in tests and lint-meta source:
+#
+# - Web Push test fixtures construct push subscription objects with
+#   hand-rolled `p256dhKey` / `authKey` values like "secret-p256dh-key".
+#   Real keys are base64url-encoded P-256 EC public points from the
+#   browser; the `generic-api-key` rule misclassifies the literal
+#   strings as leaked secrets.
+# - One lint-meta rule file embeds the literal workspace marker
+#   `infra/compose`, which the same default rule misclassifies in
+#   git history.
+#
+# Production code with the same pattern still fails the scan.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Web Push test fixtures use placeholder p256dhKey / authKey strings; never real secrets."
+paths = [
+  '''apps/api/tests/api/notifications/notifications\.push\.utils\.test\.ts''',
+  '''apps/api/tests/api/notifications/notifications\.push\.service\.test\.ts''',
+  '''apps/ui/scripts/lint-meta/rules/source-text/no-cross-repo-import\.ts''',
+]

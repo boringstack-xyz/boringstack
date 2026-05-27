@@ -349,7 +349,11 @@
           "delete": "Konto löschen",
           "deleting": "Wird gelöscht…",
           "ownerOnly": "Nur der Kontoeigentümer kann dieses Konto löschen.",
-          "error": "Konto konnte nicht gelöscht werden. Bitte erneut versuchen."
+          "error": "Konto konnte nicht gelöscht werden. Bitte erneut versuchen.",
+          "leaveBody": "Beim Verlassen wird deine Mitgliedschaft widerrufen. Ein erneuter Beitritt ist nur über eine neue Einladung möglich.",
+          "leave": "Konto verlassen",
+          "leaving": "Wird verlassen…",
+          "leaveError": "Konto konnte nicht verlassen werden. Bitte erneut versuchen."
         }
       },
       "account": {

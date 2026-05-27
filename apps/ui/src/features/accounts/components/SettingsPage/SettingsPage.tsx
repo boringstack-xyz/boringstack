@@ -244,52 +244,99 @@ const OAuthSection: FC<{
   );
 };
 
+const DeleteAccountControls: FC<{
+  readonly view: ReturnType<typeof useSettingsPage>;
+  readonly t: (key: string, options?: Record<string, unknown>) => string;
+}> = ({ view, t }) => (
+  <div className='flex flex-col gap-4'>
+    <div className='flex flex-col gap-2'>
+      <Label htmlFor='delete-account-confirmation'>
+        {t("accounts.settings.sections.danger.confirmLabel", {
+          accountName: view.deleteConfirmationTarget
+        })}
+      </Label>
+      <Input
+        id='delete-account-confirmation'
+        value={view.deleteConfirmation}
+        onChange={view.onDeleteConfirmationInputChange}
+        autoComplete='off'
+      />
+    </div>
+    {view.deleteError !== null ? (
+      <p className='text-destructive text-sm' role='alert'>
+        {view.deleteError}
+      </p>
+    ) : null}
+    <Button
+      type='button'
+      variant='destructive'
+      className='w-fit'
+      onClick={view.onDeleteAccount}
+      disabled={view.isDeleteDisabled}
+    >
+      <Trash2 className='size-4' aria-hidden='true' />
+      <span>
+        {view.isDeletingAccount
+          ? t("accounts.settings.sections.danger.deleting")
+          : t("accounts.settings.sections.danger.delete")}
+      </span>
+    </Button>
+  </div>
+);
+
+const LeaveAccountControls: FC<{
+  readonly view: ReturnType<typeof useSettingsPage>;
+  readonly t: (key: string, options?: Record<string, unknown>) => string;
+}> = ({ view, t }) => (
+  <div className='flex flex-col gap-3'>
+    <p className='text-muted-foreground text-sm'>
+      {t("accounts.settings.sections.danger.leaveBody")}
+    </p>
+    {view.leaveError !== null ? (
+      <p className='text-destructive text-sm' role='alert'>
+        {view.leaveError}
+      </p>
+    ) : null}
+    <Button
+      type='button'
+      variant='outline'
+      className='w-fit'
+      onClick={view.onLeaveAccount}
+      disabled={view.isLeavingAccount}
+    >
+      {view.isLeavingAccount
+        ? t("accounts.settings.sections.danger.leaving")
+        : t("accounts.settings.sections.danger.leave")}
+    </Button>
+  </div>
+);
+
+const DangerBody: FC<{
+  readonly view: ReturnType<typeof useSettingsPage>;
+  readonly t: (key: string, options?: Record<string, unknown>) => string;
+}> = ({ view, t }) => {
+  if (view.canDeleteAccount) {
+    return <DeleteAccountControls view={view} t={t} />;
+  }
+
+  if (view.canLeaveAccount) {
+    return <LeaveAccountControls view={view} t={t} />;
+  }
+
+  return (
+    <p className='text-muted-foreground text-sm'>
+      {t("accounts.settings.sections.danger.ownerOnly")}
+    </p>
+  );
+};
+
 const DangerSection: FC<{
   readonly section: ISettingsSectionView;
   readonly view: ReturnType<typeof useSettingsPage>;
   readonly t: (key: string, options?: Record<string, unknown>) => string;
 }> = ({ section, view, t }) => (
   <SettingsSectionCard section={section}>
-    {view.canDeleteAccount ? (
-      <div className='flex flex-col gap-4'>
-        <div className='flex flex-col gap-2'>
-          <Label htmlFor='delete-account-confirmation'>
-            {t("accounts.settings.sections.danger.confirmLabel", {
-              accountName: view.deleteConfirmationTarget
-            })}
-          </Label>
-          <Input
-            id='delete-account-confirmation'
-            value={view.deleteConfirmation}
-            onChange={view.onDeleteConfirmationInputChange}
-            autoComplete='off'
-          />
-        </div>
-        {view.deleteError !== null ? (
-          <p className='text-destructive text-sm' role='alert'>
-            {view.deleteError}
-          </p>
-        ) : null}
-        <Button
-          type='button'
-          variant='destructive'
-          className='w-fit'
-          onClick={view.onDeleteAccount}
-          disabled={view.isDeleteDisabled}
-        >
-          <Trash2 className='size-4' aria-hidden='true' />
-          <span>
-            {view.isDeletingAccount
-              ? t("accounts.settings.sections.danger.deleting")
-              : t("accounts.settings.sections.danger.delete")}
-          </span>
-        </Button>
-      </div>
-    ) : (
-      <p className='text-muted-foreground text-sm'>
-        {t("accounts.settings.sections.danger.ownerOnly")}
-      </p>
-    )}
+    <DangerBody view={view} t={t} />
   </SettingsSectionCard>
 );
 

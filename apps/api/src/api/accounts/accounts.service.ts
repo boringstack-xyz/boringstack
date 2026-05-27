@@ -258,6 +258,49 @@ export class AccountsService {
   }
 
   /**
+   * Soft-revokes the calling user's own membership in the given
+   * account. Owner cannot leave — they must transfer ownership first,
+   * which prevents an account from ending up ownerless. Returns the
+   * id of the revoked membership so the caller can audit/log.
+   */
+  async leaveAccount(userId: string, accountId: string): Promise<void> {
+    const membership = await this.getActiveMembership(userId, accountId);
+
+    if (!membership) {
+      throw ApiErrors.notFound("Membership");
+    }
+
+    if (membership.role === ROLE.owner) {
+      throw ApiErrors.validation(
+        "Transfer ownership before leaving the account"
+      );
+    }
+
+    const [revoked] = await db
+      .update(accountMemberships)
+      .set({ revokedAt: now(), updatedAt: now() })
+      .where(
+        and(
+          eq(accountMemberships.id, membership.id),
+          eq(accountMemberships.accountId, accountId),
+          isNull(accountMemberships.revokedAt)
+        )
+      )
+      .returning({ id: accountMemberships.id });
+
+    if (!revoked) {
+      throw ApiErrors.notFound("Membership");
+    }
+
+    void auditLogService.record({
+      userId,
+      action: AUDIT_ACTIONS.MEMBERSHIP_REVOKED,
+      resource: `account:${accountId}`,
+      metadata: { membershipId: revoked.id, reason: "left" },
+    });
+  }
+
+  /**
    * Verifies the user holds an active membership in the target
    * account and returns it so the route handler can re-issue the JWT
    * with the new `aid`. Records an audit row so cross-account hops

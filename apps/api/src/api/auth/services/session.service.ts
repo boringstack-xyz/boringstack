@@ -4,6 +4,7 @@ import { db } from "../../../clients/postgres";
 import { authSessions, users } from "../../../clients/postgres/schema";
 import { AUDIT_ACTIONS, auditLogService } from "../../../lib/audit-log";
 import { ApiErrors } from "../../../lib/errors";
+import { jwtRevocationService } from "../../../lib/jwt";
 import { generateOpaqueToken, hashOpaqueToken } from "../../../lib/tokens";
 import { REFRESH_SESSION_TTL_MS } from "../auth.constants";
 import type {
@@ -159,6 +160,16 @@ export class SessionService {
 
   async revokeAllForUser(userId: string): Promise<void> {
     await db.delete(authSessions).where(eq(authSessions.userId, userId));
+
+    /*
+     * Refresh sessions and access JWTs are coupled: a refresh session
+     * lasts 30 days, an access JWT 15 min. Without this second call,
+     * "revoke all sessions" would leave up to 15 min of pre-revocation
+     * access tokens alive — defeating the point. Bumping the per-user
+     * revoke-before-iat cutoff kills every previously issued access
+     * token without enumerating their JTIs.
+     */
+    await jwtRevocationService.revokeAllForUser(userId);
 
     void auditLogService.record({
       userId,

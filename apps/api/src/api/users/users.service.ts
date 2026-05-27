@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
 import { db } from "../../clients/postgres";
 import { accounts, users } from "../../clients/postgres/schema";
@@ -53,7 +53,9 @@ export class UsersService {
     const [user, account, activeMembership, allMemberships] = await Promise.all(
       [
         this.getById(userId),
-        db.query.accounts.findFirst({ where: eq(accounts.id, accountId) }),
+        db.query.accounts.findFirst({
+          where: and(eq(accounts.id, accountId), isNull(accounts.deletedAt)),
+        }),
         accountsService.getActiveMembership(userId, accountId),
         accountsService.getMembershipsForUser(userId),
       ]
@@ -63,7 +65,7 @@ export class UsersService {
       throw ApiErrors.notFound("User");
     }
 
-    if (account?.deletedAt !== null) {
+    if (!account) {
       throw ApiErrors.notFound("Account");
     }
 
@@ -82,7 +84,8 @@ export class UsersService {
       accountIds.length === 0
         ? []
         : await db.query.accounts.findMany({
-            where: (table, { inArray }) => inArray(table.id, accountIds),
+            where: (table, { and: andOp, inArray, isNull: isNullOp }) =>
+              andOp(inArray(table.id, accountIds), isNullOp(table.deletedAt)),
           });
     const accountNameMap = new Map(
       accountRows.map((row) => [row.id, row.name])

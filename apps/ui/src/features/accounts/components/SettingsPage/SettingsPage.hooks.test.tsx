@@ -13,6 +13,7 @@ const useUpdateAccountMock = vi.hoisted(() => vi.fn());
 const useChangePasswordMock = vi.hoisted(() => vi.fn());
 const useDisconnectOAuthMock = vi.hoisted(() => vi.fn());
 const useCapabilitiesMock = vi.hoisted(() => vi.fn());
+const useLeaveAccountMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/features/auth/Auth.queries", () => ({
   useMe: useMeMock
@@ -21,6 +22,10 @@ vi.mock("@/features/auth/Auth.queries", () => ({
 vi.mock("../../Accounts.mutations", () => ({
   useDeleteAccount: useDeleteAccountMock,
   useUpdateAccount: useUpdateAccountMock
+}));
+
+vi.mock("../../Memberships.mutations", () => ({
+  useLeaveAccount: useLeaveAccountMock
 }));
 
 vi.mock("@/features/auth/Auth.password.mutations", () => ({
@@ -102,6 +107,11 @@ describe("useSettingsPage", () => {
     });
     useCapabilitiesMock.mockReturnValue({
       data: { oauth: { providers: ["google", "github", "linkedin"] } }
+    });
+    useLeaveAccountMock.mockReturnValue({
+      isPending: false,
+      isError: false,
+      mutate: vi.fn()
     });
   });
 

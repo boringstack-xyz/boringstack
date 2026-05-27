@@ -9,38 +9,6 @@ import { apiClient } from "@/lib/api/client";
 
 import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
 
-export function useSwitchAccount(): UseMutationResult<
-  { accountId: string },
-  unknown,
-  { accountId: string }
-> {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (input: { accountId: string }) => {
-      const { data } = await apiClient.POST("/api/v1/accounts/switch", {
-        body: { accountId: input.accountId }
-      });
-
-      if (!data?.data) {
-        throw new ApiError(0, { message: "Empty switch response" });
-      }
-
-      return data.data;
-    },
-    onSuccess: async () => {
-      /*
-       * The new active account is on the server (JWT cookie was rotated).
-       * Drop ALL cached data so account-scoped queries (widgets, dashboard,
-       * invitations) refetch under the new aid, then refetch /me last so
-       * the AbilityProvider rebuilds with the new role + features.
-       */
-      qc.clear();
-      await qc.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me });
-    }
-  });
-}
-
 export function useTransferOwnership(
   accountId: string | undefined
 ): UseMutationResult<unknown, unknown, { toUserId: string }> {

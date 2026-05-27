@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useDeleteAccount, useTransferOwnership } from "./Accounts.mutations";
+import { useLeaveAccount, useSwitchAccount } from "./Memberships.mutations";
 
 const apiMock = vi.hoisted(() => ({
   GET: vi.fn(),
@@ -35,53 +35,53 @@ beforeEach(() => {
   apiMock.DELETE.mockReset();
 });
 
-describe("useTransferOwnership", () => {
-  it("rejects synchronously when no accountId is supplied", async () => {
+describe("useSwitchAccount", () => {
+  it("POSTs /api/v1/accounts/switch and resolves with the new accountId", async () => {
+    apiMock.POST.mockResolvedValueOnce({
+      data: { success: true, data: { accountId: "acc-2" }, timestamp: "t" }
+    });
+
     const { Wrapper } = makeWrapper();
-    const { result } = renderHook(() => useTransferOwnership(undefined), {
+    const { result } = renderHook(() => useSwitchAccount(), {
+      wrapper: Wrapper
+    });
+
+    let response: { accountId: string } | undefined;
+
+    await act(async () => {
+      response = await result.current.mutateAsync({ accountId: "acc-2" });
+    });
+
+    expect(apiMock.POST).toHaveBeenCalledWith("/api/v1/accounts/switch", {
+      body: { accountId: "acc-2" }
+    });
+    expect(response).toEqual({ accountId: "acc-2" });
+  });
+
+  it("throws when the server returns no data envelope", async () => {
+    apiMock.POST.mockResolvedValueOnce({ data: null });
+
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useSwitchAccount(), {
       wrapper: Wrapper
     });
 
     await act(async () => {
       await result.current
-        .mutateAsync({ toUserId: "u-2" })
+        .mutateAsync({ accountId: "acc-2" })
         .catch(() => undefined);
     });
 
     await waitFor(() => {
       expect(result.current.isError).toBe(true);
     });
-    expect(apiMock.POST).not.toHaveBeenCalled();
-  });
-
-  it("POSTs to /api/v1/accounts/{id}/transfer-ownership when an accountId is supplied", async () => {
-    apiMock.POST.mockResolvedValueOnce({
-      data: { success: true, data: { transferred: true }, timestamp: "t" }
-    });
-
-    const { Wrapper } = makeWrapper();
-    const { result } = renderHook(() => useTransferOwnership("acc-1"), {
-      wrapper: Wrapper
-    });
-
-    await act(async () => {
-      await result.current.mutateAsync({ toUserId: "u-2" });
-    });
-
-    expect(apiMock.POST).toHaveBeenCalledWith(
-      "/api/v1/accounts/{id}/transfer-ownership",
-      {
-        params: { path: { id: "acc-1" } },
-        body: { toUserId: "u-2" }
-      }
-    );
   });
 });
 
-describe("useDeleteAccount", () => {
-  it("rejects when no accountId is supplied", async () => {
+describe("useLeaveAccount", () => {
+  it("rejects synchronously when no accountId is supplied", async () => {
     const { Wrapper } = makeWrapper();
-    const { result } = renderHook(() => useDeleteAccount(undefined), {
+    const { result } = renderHook(() => useLeaveAccount(undefined), {
       wrapper: Wrapper
     });
 
@@ -95,11 +95,11 @@ describe("useDeleteAccount", () => {
     expect(apiMock.DELETE).not.toHaveBeenCalled();
   });
 
-  it("DELETEs /api/v1/accounts/{id} for the configured account", async () => {
+  it("DELETEs /api/v1/accounts/{id}/memberships/me for the configured account", async () => {
     apiMock.DELETE.mockResolvedValueOnce({ data: null });
 
     const { Wrapper } = makeWrapper();
-    const { result } = renderHook(() => useDeleteAccount("acc-1"), {
+    const { result } = renderHook(() => useLeaveAccount("acc-1"), {
       wrapper: Wrapper
     });
 
@@ -107,8 +107,11 @@ describe("useDeleteAccount", () => {
       await result.current.mutateAsync();
     });
 
-    expect(apiMock.DELETE).toHaveBeenCalledWith("/api/v1/accounts/{id}", {
-      params: { path: { id: "acc-1" } }
-    });
+    expect(apiMock.DELETE).toHaveBeenCalledWith(
+      "/api/v1/accounts/{id}/memberships/me",
+      {
+        params: { path: { id: "acc-1" } }
+      }
+    );
   });
 });
