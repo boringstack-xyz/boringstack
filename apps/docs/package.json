@@ -24,12 +24,11 @@
     "a11y": "bash scripts/a11y.sh"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "12",
     "@astrojs/react": "^5.0.5",
     "@astrojs/sitemap": "^3.7.2",
-    "@astrojs/starlight": "^0.36.0",
+    "@astrojs/starlight": "^0.39.2",
     "@tailwindcss/vite": "^4.3.0",
-    "astro": "^5.16.0",
+    "astro": "^6.3.5",
     "astro-mermaid": "^2.0.1",
     "clsx": "^2.1.1",
     "mermaid": "11.15.0",
@@ -38,7 +37,7 @@
     "reading-time": "^1.5.0",
     "sharp": "^0.34.0",
     "tailwindcss": "^4.3.0",
-    "ws": "^8.21.0"
+    "ws": "8.20.1"
   },
   "devDependencies": {
     "@axe-core/cli": "^4.11.3",
@@ -47,6 +46,9 @@
     "wrangler": "4.93.0"
   },
   "overrides": {
-    "ws@<8.20.1": "^8.20.1"
+    "ws": "8.20.1",
+    "devalue": "5.8.1",
+    "qs": "6.15.2",
+    "tmp": "0.2.6"
   }
 }

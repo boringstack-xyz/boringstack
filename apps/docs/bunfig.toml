@@ -4,4 +4,5 @@ minimumReleaseAgeExcludes = [
   "yaml",
   "@tailwindcss/oxide",
   "@tailwindcss/oxide*",
+  "tmp",
 ]

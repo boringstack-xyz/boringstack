@@ -7,8 +7,6 @@ import tailwindcss from "@tailwindcss/vite";
 import mermaid from "astro-mermaid";
 import starlightLlmsTxt from "starlight-llms-txt";
 
-import cloudflare from "@astrojs/cloudflare";
-
 // Wrap every <table> so wide content stays keyboard-scrollable in Safari/Firefox.
 // Without this, axe-core flags "scrollable-region-focusable" on horizontally
 // overflowing tables (comparison tables, env tables, cost methodology).
@@ -94,6 +92,13 @@ function lastmodForUrl(absoluteUrl) {
 // https://astro.build/config
 export default defineConfig({
   site: "https://boringstack.xyz",
+  /*
+   * Fully static build — every page in this Starlight site is
+   * prerendered at build time and served by Cloudflare Pages as
+   * assets. Setting `output: "static"` keeps the @astrojs/cloudflare
+   * v13 adapter from spinning up a server prerender worker.
+   */
+  output: "static",
   redirects: {
     "/architecture/three-repos/": "/architecture/monorepo-layout/",
   },
@@ -524,7 +529,5 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss()],
-  },
-
-  adapter: cloudflare()
+  }
 });
