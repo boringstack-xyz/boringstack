@@ -168,12 +168,6 @@ export const githubOrg = {
   url: "https://github.com/boringstack-xyz",
 } as const;
 
-export const startupHelp = {
-  href: "/for-startups/",
-  label: "For startups",
-  linkedin: "https://www.linkedin.com/in/aleksandar-grbic-74670263/",
-} as const;
-
 export const proofRows = [
   {
     label: "tenant model",
