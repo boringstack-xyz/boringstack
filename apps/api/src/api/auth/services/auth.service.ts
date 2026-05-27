@@ -159,6 +159,41 @@ export class AuthService {
     }
 
     /*
+     * Opportunistic rehash: silently upgrade legacy bcrypt hashes to
+     * argon2id on the next successful login. Awaited so a crash mid-flow
+     * cannot leave the user authenticated but with a stale hash; the
+     * cost is amortised across every login that's already paying a
+     * full argon2id verify. Failures are non-fatal — the user is still
+     * authenticated, we just retry the upgrade next time.
+     */
+    if (passwordService.needsRehash(row.authProvider.passwordHash)) {
+      try {
+        const upgradedHash = await passwordService.hash(data.password);
+
+        await db
+          .update(userAuthProviders)
+          .set({ passwordHash: upgradedHash })
+          .where(
+            and(
+              eq(userAuthProviders.userId, row.user.id),
+              eq(userAuthProviders.provider, EMAIL_PROVIDER_KEY)
+            )
+          );
+
+        logger.info("Password hash upgraded to argon2id", {
+          event: "auth.login.password_rehashed",
+          userId: row.user.id,
+        });
+      } catch (error: unknown) {
+        logger.warn("Failed to upgrade legacy password hash", {
+          event: "auth.login.password_rehash_failed",
+          userId: row.user.id,
+          error: getErrorMessage(error),
+        });
+      }
+    }
+
+    /*
      * Password ok but email never verified — surface a distinct error
      * code so the UI can offer a resend-verification CTA. Safe to
      * reveal: the caller already proved they hold the password.

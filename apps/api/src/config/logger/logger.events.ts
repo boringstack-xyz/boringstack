@@ -17,6 +17,8 @@ export const LOG_EVENTS = [
   "audit_log_write_failed",
   "auth.login.email_not_verified",
   "auth.login.invalid_password",
+  "auth.login.password_rehash_failed",
+  "auth.login.password_rehashed",
   "auth.login.success",
   "auth.pending_user.cleaned",
   "auth.password_reset_requested.email_failed",

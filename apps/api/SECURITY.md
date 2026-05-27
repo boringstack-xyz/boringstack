@@ -22,7 +22,7 @@ and the production checklist.
 
 | Surface | Plugin |
 | --- | --- |
-| Auth cookies set `httpOnly` + `secure`; bcrypt ≥ 12 rounds | `jwt-cookies` |
+| Auth cookies set `httpOnly` + `secure`; passwords hashed with argon2id (m=19 MiB, t=2); legacy bcrypt rehashed on next login | `jwt-cookies` |
 | OAuth state in Valkey (not cookies); PKCE for OIDC; bounded TTL | `oauth-security` |
 | Stripe webhooks verify signature, no parsed body before verify, idempotent | `stripe-webhooks` |
 | No PII (`email`, `token`, `password`, ...) in logger payloads | `structured-logging/mask-pii-fields` |
