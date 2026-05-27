@@ -82,27 +82,43 @@ flowchart LR
   </FaqItem>
 </FaqGroup>
 
-## What you still need to wire
+## Application metrics
 
-The overlay is a substrate, not a finished product. Two things are
-deliberately left empty:
+`apps/api` exposes Prometheus exposition format at `/metrics` via
+`prom-client`. Out of the box:
 
-- **Application `/metrics` endpoint.** The api does not expose
-  Prometheus metrics by default. Add `prom-client` to `apps/api`, mount
-  a `/metrics` route, and append an `api` job to
-  `compose/prometheus/prometheus.yml`. The convention is one metric
-  domain per file under `src/lib/metrics/` (e.g. `http-metrics.ts`,
-  `queue-metrics.ts`).
-- **Grafana dashboards.** `compose/grafana/dashboards/` only contains
-  `.gitkeep`. Drop dashboard JSON exports in there and Grafana auto-loads
-  them within 30s — the dashboard provider is already wired in
-  `compose/grafana/provisioning/`. Community dashboards for postgres
-  (id `9628`) and node-exporter (id `1860`) work well as a starting
-  point.
+- Node.js runtime metrics — event loop lag, GC, heap, FDs, process
+  CPU/memory (via `collectDefaultMetrics`).
+- `http_requests_total{method,route,status}` — counter per route.
+- `http_request_duration_seconds{...}` — histogram with buckets from
+  50 ms to 10 s.
 
-If you want a turnkey "BoringStack default dashboards" pack, that's on
-the [roadmap](https://github.com/boringstack-xyz/boringstack/issues),
-not in this release.
+The `metrics-observer` middleware folds dynamic path params to the
+matched route (`/api/v1/users/:id`, not `/api/v1/users/abc-123`) to
+keep cardinality bounded. Add new domain metrics by creating
+`src/lib/metrics/<domain>-metrics.ts`, registering them on the shared
+`metricsRegistry`, and updating them from your service code.
+
+Prometheus scrapes the api on the `boringstack-api` job (dev profile
+hits `api-dev:7330`, prod profile hits `api:7330`); each target is
+labelled with its `profile`.
+
+## Default dashboard
+
+`compose/grafana/dashboards/boringstack-api.json` ships with the
+overlay and auto-loads via the provisioning provider. Panels:
+
+- Request rate per route
+- Request latency p95 per route
+- 5xx error rate (stat)
+- Memory (RSS + heap used)
+- Event-loop lag (p50, p99)
+- Process CPU
+- Requests by status (stacked)
+
+Drop additional dashboards into the same directory and Grafana picks
+them up within 30 s. Good community starting points: Node Exporter
+Full (id `1860`), PostgreSQL exporter quickstart (id `9628`).
 
 ## Design choices
 

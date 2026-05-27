@@ -9,6 +9,7 @@ import billingRoutes from "../../api/billing/billing.routes";
 import capabilitiesRoutes from "../../api/capabilities/capabilities.routes";
 import dashboardRoutes from "../../api/dashboard/dashboard.routes";
 import healthRoutes from "../../api/health/health.routes";
+import metricsRoutes from "../../api/health/metrics.routes";
 import notificationsRoutes from "../../api/notifications/notifications.routes";
 import usersRoutes from "../../api/users/users.routes";
 import widgetsRoutes from "../../api/widgets/widgets.routes";
@@ -26,4 +27,5 @@ export const routes = {
   notifications: notificationsRoutes,
   widgets: widgetsRoutes,
   health: healthRoutes,
+  metrics: metricsRoutes,
 };

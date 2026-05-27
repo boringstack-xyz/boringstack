@@ -33,3 +33,19 @@ scrape_configs:
   - job_name: node
     static_configs:
       - targets: ["node-exporter:9100"]
+
+  # apps/api exposes /metrics via prom-client (Node defaults + per-route
+  # HTTP counter and duration histogram). Internal docker DNS — the
+  # `api-dev` hostname resolves under the `frontend` network when the
+  # dev profile is up; `api` (prod) is reachable on the same name when
+  # the prod profile is up. Each target is labelled with its profile
+  # so a Grafana dashboard can split or filter as the operator likes.
+  - job_name: boringstack-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["api-dev:7330"]
+        labels:
+          profile: dev
+      - targets: ["api:7330"]
+        labels:
+          profile: prod

@@ -8,7 +8,8 @@
   },
   "common": {
     "loading": "Loading…",
-    "loadingAria": "Loading"
+    "loadingAria": "Loading",
+    "close": "Close"
   },
   "auth": {
     "login": {

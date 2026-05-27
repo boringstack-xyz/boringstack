@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { AUTH_COOKIE_NAME } from "../../lib/cookies";
 import { bodyLimit } from "../../middleware/body-limit";
+import { metricsObserver } from "../../middleware/metrics-observer";
 import { requestLogger } from "../../middleware/request-logger";
 import { env } from "../env";
 import { routes } from "../routes";
@@ -27,7 +28,7 @@ export const createApp = () => {
    */
   const cors = buildCors();
 
-  let configured = app.use(bodyLimit).use(requestLogger);
+  let configured = app.use(bodyLimit).use(requestLogger).use(metricsObserver);
 
   if (cors !== undefined) {
     configured = configured.use(cors);
@@ -37,10 +38,12 @@ export const createApp = () => {
     configured
       .use(buildRateLimit())
       /*
-       * Health probes mounted at root (no /api/v1 prefix) so orchestrators
-       * hit the conventional URLs.
+       * Health probes + Prometheus metrics mounted at root (no /api/v1
+       * prefix) so orchestrators and the scrape pipeline hit the
+       * conventional URLs.
        */
       .use(routes.health)
+      .use(routes.metrics)
       .group("/api/v1/capabilities", (group) => group.use(routes.capabilities))
       .group("/api/v1/auth", (group) => group.use(routes.auth))
       .group("/api/v1/users", (group) => group.use(routes.users))

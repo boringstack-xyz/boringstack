@@ -1,7 +1,12 @@
 apiVersion: 1
 
+# Datasource UIDs are pinned so any provisioned dashboard JSON can
+# reference them by a stable identifier instead of relying on the
+# random UID Grafana would otherwise mint per-environment.
+
 datasources:
   - name: Prometheus
+    uid: prometheus
     type: prometheus
     access: proxy
     url: http://prometheus:9090
@@ -9,6 +14,7 @@ datasources:
     editable: false
 
   - name: Loki
+    uid: loki
     type: loki
     access: proxy
     url: http://loki:3100

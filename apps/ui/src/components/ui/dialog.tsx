@@ -51,9 +51,16 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  closeLabel = "Close",
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
+  /*
+   * Screen-reader label for the auto-rendered X close button. Defaults
+   * to English so the primitive is usable standalone; callers in this
+   * app pass `t("common.close")` to honour the user's language.
+   */
+  closeLabel?: string;
 }) {
   return (
     <DialogPortal data-slot='dialog-portal'>
@@ -73,7 +80,7 @@ function DialogContent({
             className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
           >
             <XIcon />
-            <span className='sr-only'>Close</span>
+            <span className='sr-only'>{closeLabel}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>
@@ -94,10 +101,18 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
 function DialogFooter({
   className,
   showCloseButton = false,
+  closeLabel = "Close",
   children,
   ...props
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean;
+  /*
+   * Label for the optional auto-rendered close button. Defaults to
+   * English so the primitive can be used standalone, but every call
+   * site inside this app passes `t("common.close")` so the dialog
+   * follows the user's language.
+   */
+  closeLabel?: string;
 }) {
   return (
     <div
@@ -111,7 +126,7 @@ function DialogFooter({
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close asChild>
-          <Button variant='outline'>Close</Button>
+          <Button variant='outline'>{closeLabel}</Button>
         </DialogPrimitive.Close>
       )}
     </div>

@@ -18,7 +18,9 @@ function uniqueEmail(prefix: string): string {
 }
 
 async function registerAndVerify(user: IUser): Promise<void> {
-  const ctx: APIRequestContext = await request.newContext({ baseURL: BASE_URL });
+  const ctx: APIRequestContext = await request.newContext({
+    baseURL: BASE_URL
+  });
 
   const registerRes = await ctx.post("/api/v1/auth/register", {
     data: {
