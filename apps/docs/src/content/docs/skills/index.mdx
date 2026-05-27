@@ -1,0 +1,116 @@
+---
+title: Agent skills
+description: Paste-ready prompts and skill bundles shipped with BoringStack. Drop into Claude Code or your agent of choice — each skill is invoked by a slash command and encodes the canonical workflow for one task.
+---
+
+BoringStack ships **slash-command skills** in both
+`apps/api/.claude/skills/` and `apps/ui/.claude/skills/`. Each one is a
+markdown file with a frontmatter `name` + `description` plus the body
+the agent follows. Type the command in Claude Code and the agent picks
+up the canonical workflow for that task — no copy-pasting prompt
+snippets across projects.
+
+## Workflow skills
+
+These are the "do this end-to-end" skills. Each one drives the
+spec → plan → scaffold → tests-first → implement → `bun run validate`
+loop with the conventions baked in.
+
+### `/build-feature` — single-template feature
+
+Implement a new feature end-to-end inside one template. In `apps/api/`
+it adds an endpoint, a CRUD resource, a BullMQ job, an audit-log
+event, a notification event, or an ACL feature flag. In `apps/ui/` it
+adds a page, a component, a vertical UI slice, or wires an existing
+API endpoint into the SPA.
+
+**Prompts that trigger it**: "add a feature", "add an endpoint",
+"scaffold a resource", "build [X]", "wire up [X]", "new route".
+
+### `/add-full-feature` — full-stack vertical slice
+
+Coordinates a new resource that needs **both** an API endpoint and a UI
+page consuming it. Runs api `/build-feature` → regenerates the
+openapi-typed client → ui `/build-feature` for the consumer. Use this
+when the feature crosses the api/ui boundary.
+
+**Prompts that trigger it**: "add a full feature", "build [X] end to
+end", "new feature, api + ui", "full vertical slice for [X]", "wire
+[X] from db to screen".
+
+## Surface-area skills
+
+Small, focused skills for a single concern. They exist because the
+end-to-end skills above delegate to them — and so an agent can be
+asked to do "just this part" without re-running the whole loop.
+
+### `/add-audit-event` (api)
+
+Adds a single audit-log entry to an existing service. Picks an action
+name, decides what metadata is safe (no PII), wires
+`auditLogService.record(...)` into the right place, and adds the
+sibling test.
+
+### `/add-email-template` (api)
+
+There is no `bun run new:email-template` scaffolder; this skill is the
+manual workflow — create the Handlebars files, regenerate the
+precompiled JSON, call `sendTemplate(...)` at the site that needs it,
+inspect in Mailpit.
+
+### `/add-notification-event` (api)
+
+Wraps `bun run new:notification-event` with the dedup-strategy
+decision, the render functions, and the dispatcher call. Use when a
+new event type belongs in the notifications system.
+
+## Review skills
+
+### `/security-review` (api / ui)
+
+Reviews a branch or PR for security regressions. Replays Layer 1 CI
+scanners locally (gitleaks, osv-scanner, bun audit), invokes Layer 2
+agent skills in parallel (differential-review, insecure-defaults,
+sharp-edges, supply-chain-risk-auditor), then runs BoringStack-specific
+invariants:
+
+- **api**: ACL ability checks on routes, multi-tenant accountId
+  scoping, Stripe webhook signature handling, rate limits on
+  credential routes, audit-log coverage on mutations, idempotent
+  BullMQ jobs.
+- **ui**: no raw `fetch` outside `openapi.ts`, no
+  `dangerouslySetInnerHTML`, no `import.meta.env` outside
+  `src/lib/env/`, no localStorage token storage, no
+  JSX-level user-supplied strings without i18n, CSRF + content-type
+  validation on user-data flows.
+
+**Prompts that trigger it**: "security review", "any vulnerabilities
+in this branch", "audit this PR", "is this safe to merge".
+
+## Where the files live
+
+```
+apps/api/.claude/skills/
+├── add-audit-event.md
+├── add-email-template.md
+├── add-full-feature.md
+├── add-notification-event.md
+├── build-feature.md
+└── security-review.md
+
+apps/ui/.claude/skills/
+├── add-full-feature.md
+├── build-feature.md
+└── security-review.md
+```
+
+A fresh fork inherits all of them — including the trigger phrases — so
+the agent in your IDE picks them up automatically the moment the repo
+is cloned.
+
+## See also
+
+- [First feature in 10 minutes](/skills/first-feature-tutorial/) —
+  end-to-end walkthrough using `/add-full-feature`.
+- Each skill's source is the doc: open the `.md` file to read the
+  exact loop the agent follows.

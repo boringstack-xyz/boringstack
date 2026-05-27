@@ -356,10 +356,24 @@ export default defineConfig({
         { label: "Welcome", link: "/" },
         { label: "Quickstart", link: "/quickstart/" },
         {
+          label: "First feature in 10 minutes",
+          link: "/skills/first-feature-tutorial/",
+        },
+        {
           label: "Why BoringStack",
           link: "/architecture/why-boringstack/",
         },
         { label: "Deployment", link: "/topics/deployment/" },
+        {
+          label: "Agent skills",
+          items: [
+            { label: "Overview", link: "/skills/" },
+            {
+              label: "First feature in 10 minutes",
+              link: "/skills/first-feature-tutorial/",
+            },
+          ],
+        },
         {
           label: "Architecture",
           items: [
