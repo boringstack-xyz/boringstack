@@ -6,7 +6,9 @@
     "regen": "bash scripts/stack-regen.sh",
     "check": "bash scripts/stack-check.sh",
     "check:full": "bash scripts/stack-check.sh --full",
-    "rename:project": "bash scripts/rename-project.sh"
+    "rename:project": "bash scripts/rename-project.sh",
+    "postinstall": "bash scripts/ci/install-git-hooks.sh",
+    "install:hooks": "bash scripts/ci/install-git-hooks.sh"
   },
   "packageManager": "bun@1.3.13"
 }
