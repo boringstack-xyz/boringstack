@@ -74,6 +74,7 @@ export { checkDependencyPairs } from "./rules/supply-chain/no-overlapping-libs";
 export { checkPackageJson } from "./rules/supply-chain/package-json-exact-deps";
 export { checkWorkflow } from "./rules/ci/github-actions-permissions";
 export { checkUiEnvCascadeDrift } from "./rules/env/env-cascade-drift";
+export { checkCanonicalHelpersSingleHome } from "./rules/source-text/canonical-helpers-single-home";
 export { checkNoCrossRepoImports } from "./rules/source-text/no-cross-repo-import";
 export { checkNoRawRoleLiterals } from "./rules/source-text/no-raw-role-literals";
 export { checkScriptRawFetch } from "./rules/source-text/script-raw-fetch";

@@ -25,6 +25,7 @@ import { checkEnvSchemaDrift } from "./rules/env/env-cascade-drift";
 import { checkGeneratedArtifactContracts } from "./rules/artifacts/generated-artifact-contract";
 import { checkWorkflowShas } from "./rules/ci/github-actions-permissions";
 import { checkPrePushParity } from "./rules/ci/pre-push-ci-parity";
+import { checkCanonicalHelpersSingleHome } from "./rules/source-text/canonical-helpers-single-home";
 import { checkForbiddenText } from "./rules/source-text/forbidden-text";
 import { checkNoRawRoleLiterals } from "./rules/source-text/no-raw-role-literals";
 import { checkLogicFilesHaveTests } from "./rules/testing/logic-files-require-test-sibling";
@@ -85,6 +86,7 @@ export { collectSourceFiles, findWorkflows } from "./context";
 export { parseDotenvKeys } from "./parsers/dotenv";
 export { parseTypeboxEnvSchemaKeys as parseEnvSchemaKeys } from "./parsers/typebox-env-schema";
 export {
+  checkCanonicalHelpersSingleHome,
   checkDependencyPairs,
   checkExactDependencyVersions,
   checkEslintConfigNoWarn,

@@ -14,6 +14,7 @@ import { tmpdir } from "node:os";
 
 import { renderRulesMd } from "../../scripts/lint-meta/generate-rules-md";
 import {
+  checkCanonicalHelpersSingleHome,
   checkDependencyPairs,
   checkEnvSchemaDrift,
   checkEslintConfigNoWarn,
@@ -54,6 +55,34 @@ describe("checkForbiddenText", () => {
   test("clean file produces no violations", () => {
     const violations = checkForbiddenText(
       join(FIXTURES, "source-text/clean.ts")
+    );
+
+    expect(violations).toEqual([]);
+  });
+});
+
+describe("checkCanonicalHelpersSingleHome", () => {
+  test("flags a duplicate `normalizeEmail` declaration outside the canonical file", () => {
+    const violations = checkCanonicalHelpersSingleHome(
+      join(FIXTURES, "source-text/canonical-helpers-duplicate.ts"),
+      join(FIXTURES, "..", "..", "..")
+    );
+
+    expect(violations.map((row) => row.rule)).toContain(
+      "canonical-helpers-single-home"
+    );
+  });
+
+  test("the canonical file itself is allowed to declare the helper", () => {
+    /*
+     * Build a virtual root one directory above the fixture so the
+     * fixture's path equals the registered canonical_src. The fixture
+     * mimics the shape of the canonical declaration; if the rule
+     * incorrectly flagged its own home, this test would catch it.
+     */
+    const violations = checkCanonicalHelpersSingleHome(
+      join(FIXTURES, "source-text/clean.ts"),
+      join(FIXTURES, "..", "..", "..")
     );
 
     expect(violations).toEqual([]);

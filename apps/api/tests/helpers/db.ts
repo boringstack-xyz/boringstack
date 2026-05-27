@@ -115,6 +115,7 @@ const TRUNCATE_TARGETS = [
   "notifications.notification_preference",
   "notifications.notification_dedup",
   "notifications.push_subscription",
+  "notifications.email_suppression",
   "app.accounts",
   "auth.users",
 ] as const;
@@ -150,6 +151,7 @@ export {
   accounts,
   auditLog,
   authSessions,
+  emailSuppression,
   emailVerificationTokens,
   notification,
   notificationDedup,

@@ -12,9 +12,6 @@ export const toPublicUser = (user: IUser): IPublicUser => ({
   emailVerified: user.emailVerifiedAt !== null,
 });
 
-export const normalizeEmail = (email: string): string =>
-  email.toLowerCase().trim();
-
 /**
  * Resolves the active account for JWT issuance. Picks the user's
  * first active membership in joined-at order; the JWT-claimed account

@@ -3,6 +3,7 @@ import { db } from "../../../clients/postgres";
 import { userAuthProviders, users } from "../../../clients/postgres/schema";
 import { env } from "../../../config/env";
 import { AUDIT_ACTIONS, auditLogService } from "../../../lib/audit-log";
+import { normalizeEmail } from "../../../lib/email";
 import { ApiErrors } from "../../../lib/errors";
 import { notifications } from "../../../lib/notifications";
 import { canDisconnect, type IOAuthProfile } from "../../../lib/oauth";
@@ -11,7 +12,7 @@ import { accountsService } from "../../accounts";
 import { authWelcomeEvent } from "../../notifications/events";
 import type { IOAuthLoginResult } from "../auth.types";
 import { EMAIL_PROVIDER_KEY } from "../auth.constants";
-import { normalizeEmail, toPublicUser } from "../auth.utils";
+import { toPublicUser } from "../auth.utils";
 
 /**
  * OAuth signup/login. Every branch converges on

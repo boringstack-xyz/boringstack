@@ -12,6 +12,11 @@ import {
   retryWithBackoff,
   validateEmailMessage,
 } from "../email.utils";
+import { EMAIL_SUPPRESSION_PROVIDERS } from "../suppression.constants";
+import {
+  isProviderSuppressionError,
+  mirrorProviderSuppression,
+} from "./suppression.helpers";
 import type { ISendGridMailClient } from "./sendgrid.types";
 
 export class SendGridEmailService implements IEmailService {
@@ -62,11 +67,21 @@ export class SendGridEmailService implements IEmailService {
         return { id, provider: "sendgrid" };
       });
     } catch (error: unknown) {
+      const detail = getErrorMessage(error);
+
+      if (isProviderSuppressionError(detail)) {
+        await mirrorProviderSuppression(
+          message.to,
+          EMAIL_SUPPRESSION_PROVIDERS.SENDGRID,
+          detail
+        );
+      }
+
       logger.error("Failed to send email via SendGrid", {
         event: "email_send_failed",
         provider: "sendgrid",
         to: recipient,
-        error: getErrorMessage(error),
+        error: detail,
       });
 
       throw ApiErrors.externalService("Failed to send email via SendGrid");

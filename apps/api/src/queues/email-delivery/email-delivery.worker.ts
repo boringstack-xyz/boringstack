@@ -79,11 +79,27 @@ export class EmailDeliveryWorker {
       templatePath,
     });
 
-    await sendTemplateNow({ to, subject, templatePath, variables });
+    const outcome = await sendTemplateNow({
+      to,
+      subject,
+      templatePath,
+      variables,
+    });
 
-    if (notificationDeliveryId !== undefined) {
-      await markNotificationDeliverySent(notificationDeliveryId);
+    if (notificationDeliveryId === undefined) {
+      return;
     }
+
+    if (outcome.status === "suppressed") {
+      await markNotificationDeliverySuppressed(
+        notificationDeliveryId,
+        outcome.reason
+      );
+
+      return;
+    }
+
+    await markNotificationDeliverySent(notificationDeliveryId);
   }
 
   async close(): Promise<void> {
@@ -136,6 +152,30 @@ const markNotificationDeliveryFailed = async (
   } catch (writeError: unknown) {
     logger.error("Failed to settle notification_delivery to failed", {
       event: "email_delivery.settle_failed_failed",
+      deliveryId,
+      error: getErrorMessage(writeError),
+    });
+  }
+};
+
+const markNotificationDeliverySuppressed = async (
+  deliveryId: string,
+  reason: string
+): Promise<void> => {
+  try {
+    const nowIso = now();
+
+    await db
+      .update(notificationDelivery)
+      .set({
+        status: DELIVERY_STATUS.SUPPRESSED,
+        updatedAt: nowIso,
+        error: `recipient_suppressed:${reason}`,
+      })
+      .where(eq(notificationDelivery.id, deliveryId));
+  } catch (writeError: unknown) {
+    logger.error("Failed to settle notification_delivery to suppressed", {
+      event: "email_delivery.settle_suppressed_failed",
       deliveryId,
       error: getErrorMessage(writeError),
     });

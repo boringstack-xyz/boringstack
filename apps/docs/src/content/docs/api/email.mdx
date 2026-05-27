@@ -157,8 +157,18 @@ The HTTP call should be wrapped in `retryWithBackoff` so transient 5xx responses
 
 [`src/lib/email/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/email); providers, dispatch, template service. [`src/templates/email/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/templates/email); the `.hbs` sources and build pipeline.
 
+## Bounce handling
+
+Bounces and spam complaints feed a local `email_suppression` table that
+`sendTemplateNow` consults before every send. Cloudflare manages its
+own list and the API mirrors the verdict on send-time errors;
+Resend and SendGrid push their verdicts in over signed webhooks. See
+[Bounce handling](/api/bounce-handling/) for the per-provider model
+and webhook wire-up.
+
 ## Related
 
+- [Bounce handling](/api/bounce-handling/); per-provider suppression + webhooks.
 - [Cloudflare Email Service](/topics/cloudflare-email/); why it's the default.
 - [Setup runbook](/runbooks/cloudflare-email-setup/); domain + token wire-up.
 - [Queues](/api/queues/); the `email-delivery` queue on the worker side.

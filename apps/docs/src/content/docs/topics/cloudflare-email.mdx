@@ -121,6 +121,7 @@ The [env validator](/api/env-validator/) refuses to boot in production if the ma
 - Cloudflare Email Service is in beta. Pricing may evolve; daily limits are variable and account-scoped.
 - DNS must be on Cloudflare. Auto-provisioned SPF/DKIM/DMARC are how deliverability works; you can't skip the step.
 - New accounts can only send to verified addresses until upgraded. The runbook covers the unlock.
+- No outbound webhook for bounce / complaint events. Cloudflare maintains its own suppression list and the send API rejects suppressed recipients directly; the API template mirrors that verdict into a local table so the next send short-circuits without the round-trip. Historical event detail lives in Cloudflare's GraphQL Analytics API (`emailSendingAdaptive`) and the Email Logs dashboard. See [Bounce handling](/api/bounce-handling/) for the per-provider model.
 
 ## Related
 

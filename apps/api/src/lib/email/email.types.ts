@@ -1,5 +1,7 @@
 import type Handlebars from "handlebars/runtime";
 
+import type { EmailSuppressionReason } from "./suppression.constants";
+
 /*
  * ---------------------------------------------------------------------------
  * Provider contract
@@ -43,6 +45,17 @@ export interface ISendTemplateInput {
   templatePath: string;
   variables?: Record<string, unknown>;
 }
+
+/**
+ * Outcome of a dispatch call. `sent` and `suppressed` are end-state
+ * verdicts produced inline; `queued` is returned by `sendTemplate` when
+ * the job was handed off to BullMQ and the actual verdict will be
+ * decided inside the worker.
+ */
+export type ISendOutcome =
+  | { status: "sent" }
+  | { status: "suppressed"; reason: EmailSuppressionReason }
+  | { status: "queued" };
 
 export interface IPrecompiledTemplate {
   baseTemplate: string;

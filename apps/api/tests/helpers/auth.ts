@@ -1,6 +1,6 @@
 import { accountsService } from "../../src/api/accounts";
 import { EMAIL_PROVIDER_KEY } from "../../src/api/auth/auth.constants";
-import { normalizeEmail } from "../../src/api/auth/auth.utils";
+import { normalizeEmail } from "../../src/lib/email";
 import { passwordService } from "../../src/lib/password";
 import { now } from "../../src/lib/time/now";
 

@@ -8,7 +8,11 @@ import {
 import { env } from "../../../config/env";
 import { logger } from "../../../config/logger";
 import { AUDIT_ACTIONS, auditLogService } from "../../../lib/audit-log";
-import { sendTemplate } from "../../../lib/email";
+import {
+  emailSuppressionService,
+  normalizeEmail,
+  sendTemplate,
+} from "../../../lib/email";
 import { ApiErrors, getErrorMessage } from "../../../lib/errors";
 import { notifications } from "../../../lib/notifications";
 import { now } from "../../../lib/time/now";
@@ -22,7 +26,7 @@ import {
   VERIFICATION_TTL_MS,
 } from "../auth.constants";
 import type { IAuthenticatedResult, IMessageResult } from "../auth.types";
-import { normalizeEmail, toPublicUser } from "../auth.utils";
+import { toPublicUser } from "../auth.utils";
 
 export class EmailVerificationService {
   /**
@@ -72,6 +76,14 @@ export class EmailVerificationService {
         tx
       );
     });
+
+    /*
+     * Successful verification proves the user controls this inbox right
+     * now. If the address ever landed on the suppression list (e.g. a
+     * prior signup attempt bounced before the user fixed the mailbox),
+     * clear it so transactional mail starts flowing immediately.
+     */
+    void emailSuppressionService.clear(user.email);
 
     void auditLogService.record({
       userId: user.id,

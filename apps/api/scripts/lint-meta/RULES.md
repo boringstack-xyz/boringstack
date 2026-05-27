@@ -25,6 +25,7 @@ Run `bun run lint:meta --list-rules` for the machine-readable list from the regi
 | `forbidden-text`                    | source-text  | no          | Source files must not contain inline lint/TS suppression comments.                                  |
 | `no-inline-lint-disable`            | source-text  | no          | Inline ESLint disables are not allowed.                                                             |
 | `no-ts-ignore`                      | source-text  | no          | TypeScript suppression comments are not allowed.                                                    |
+| `canonical-helpers-single-home`     | source-text  | no          | Helpers in the canonical registry must only be declared in their single source-of-truth file.       |
 | `no-raw-role-literal`               | source-text  | no          | Use ROLE.* from acl.constants.ts instead of raw owner/admin/member/viewer string literals.          |
 | `routes-require-test-sibling`       | testing      | no          | Route modules must ship with a matching HTTP-level test under tests/api/.                           |
 | `logic-files-require-test-sibling`  | testing      | no          | Logic modules must ship with a matching tests/**/*.test.ts sibling.                                 |

@@ -92,4 +92,8 @@ export const ApiErrors = {
   externalService: (
     message: string = ErrorMessages[ErrorCodes.EXTERNAL_SERVICE_ERROR]
   ): ApiError => new ApiError(ErrorCodes.EXTERNAL_SERVICE_ERROR, message, 502),
+
+  notImplemented: (
+    message: string = ErrorMessages[ErrorCodes.NOT_IMPLEMENTED]
+  ): ApiError => new ApiError(ErrorCodes.NOT_IMPLEMENTED, message, 501),
 };

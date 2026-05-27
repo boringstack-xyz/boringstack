@@ -266,6 +266,17 @@ CREATE TABLE "notifications"."push_subscription" (
 	"last_used_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "notifications"."email_suppression" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"email" varchar(320) NOT NULL,
+	"reason" varchar(32) NOT NULL,
+	"provider" varchar(32) NOT NULL,
+	"provider_message_id" varchar(255),
+	"metadata" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"suppressed_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 ALTER TABLE "app"."account_feature_overrides" ADD CONSTRAINT "account_feature_overrides_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "app"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "app"."account_feature_overrides" ADD CONSTRAINT "account_feature_overrides_granted_by_user_id_fkey" FOREIGN KEY ("granted_by_user_id") REFERENCES "auth"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "app"."account_invitations" ADD CONSTRAINT "account_invitations_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "app"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -338,4 +349,6 @@ CREATE INDEX "idx_notification_dedup_expires_at" ON "notifications"."notificatio
 CREATE INDEX "idx_notification_delivery_notification_channel" ON "notifications"."notification_delivery" USING btree ("notification_id","channel");--> statement-breakpoint
 CREATE UNIQUE INDEX "idx_notification_preference_user_event_channel" ON "notifications"."notification_preference" USING btree ("user_id","event_type","channel");--> statement-breakpoint
 CREATE UNIQUE INDEX "idx_push_subscription_user_endpoint" ON "notifications"."push_subscription" USING btree ("user_id","endpoint");--> statement-breakpoint
-CREATE INDEX "idx_push_subscription_user_id" ON "notifications"."push_subscription" USING btree ("user_id");
+CREATE INDEX "idx_push_subscription_user_id" ON "notifications"."push_subscription" USING btree ("user_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_email_suppression_email" ON "notifications"."email_suppression" USING btree ("email");--> statement-breakpoint
+CREATE INDEX "idx_email_suppression_suppressed_at" ON "notifications"."email_suppression" USING btree ("suppressed_at");

@@ -27,6 +27,19 @@ export const isValidEmail = (email: string): boolean => {
 };
 
 /**
+ * Canonicalise a recipient or actor email for storage / lookup. Lowercases
+ * the entire address (RFC 5321 local-parts are technically case-sensitive,
+ * but every mainstream MTA folds them in practice) and strips leading /
+ * trailing whitespace.
+ *
+ * This is the ONE definition. Re-deriving it inside auth services,
+ * suppression code, or tests is forbidden — see the
+ * `no-duplicate-canonical-helpers` lint-meta rule.
+ */
+export const normalizeEmail = (email: string): string =>
+  email.toLowerCase().trim();
+
+/**
  * Mask a recipient email for safe logging. Examples:
  *   "j@example.com"      -> "***@example.com"
  *   "jane@example.com"   -> "j***e@example.com"

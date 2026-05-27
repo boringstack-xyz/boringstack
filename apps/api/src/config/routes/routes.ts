@@ -12,6 +12,7 @@ import healthRoutes from "../../api/health/health.routes";
 import metricsRoutes from "../../api/health/metrics.routes";
 import notificationsRoutes from "../../api/notifications/notifications.routes";
 import usersRoutes from "../../api/users/users.routes";
+import webhookRoutes from "../../api/webhooks/webhooks.routes";
 import widgetsRoutes from "../../api/widgets/widgets.routes";
 
 export const routes = {
@@ -26,6 +27,7 @@ export const routes = {
   dashboard: dashboardRoutes,
   notifications: notificationsRoutes,
   widgets: widgetsRoutes,
+  webhooks: webhookRoutes,
   health: healthRoutes,
   metrics: metricsRoutes,
 };

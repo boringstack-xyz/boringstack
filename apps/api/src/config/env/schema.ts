@@ -93,7 +93,22 @@ export const envSchema = t.Object({
   CLOUDFLARE_ACCOUNT_ID: t.String({ default: "" }),
   CLOUDFLARE_EMAIL_API_TOKEN: t.String({ default: "" }),
   RESEND_API_KEY: t.String({ default: "" }),
+  /*
+   * Resend webhook signing secret (svix). Required for the bounce /
+   * complaint webhook at /api/v1/webhooks/resend. Format: starts with
+   * `whsec_` followed by a base64 secret. Issue from the Resend
+   * dashboard under Webhooks → endpoint signing secret. Empty disables
+   * the route (it returns 503).
+   */
+  RESEND_WEBHOOK_SECRET: t.String({ default: "" }),
   SENDGRID_API_KEY: t.String({ default: "" }),
+  /*
+   * SendGrid Event Webhook signing key. PEM-encoded ECDSA P-256 public
+   * key produced when "Signed Event Webhook Requests" is enabled in
+   * Mail Settings → Event Webhook. Required for the bounce / complaint
+   * webhook at /api/v1/webhooks/sendgrid. Empty disables the route.
+   */
+  SENDGRID_WEBHOOK_PUBLIC_KEY: t.String({ default: "" }),
   /*
    * Plain SMTP provider. Primary use case is local Mailpit at
    * mailpit:1025 (no auth) when WITH_MAILPIT=1 in the compose stack;

@@ -1,0 +1,228 @@
+---
+title: Bounce handling
+description: Per-provider suppression model. Cloudflare manages its own list; Resend and SendGrid push bounces and complaints over signed webhooks. One local blocklist short-circuits every future send.
+---
+
+import CommandRun from "../../../components/docs-kit/CommandRun";
+import DataMatrix from "../../../components/docs-kit/DataMatrix";
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import SignalGrid from "../../../components/docs-kit/SignalGrid";
+
+<PageIntro
+  eyebrow="Deliverability"
+  actions={[
+    { label: "Provider model", href: "#per-provider-model" },
+    { label: "Webhook wire-up", href: "#configuring-the-webhooks" },
+  ]}
+  facts={[
+    { value: "1 table", label: "local blocklist" },
+    { value: "2 webhooks", label: "Resend + SendGrid" },
+    { value: "0 effort", label: "Cloudflare-managed" },
+  ]}
+>
+  Sending mail to addresses that bounce or complain degrades your sender
+  reputation and burns provider credits. The API ships a deliberate
+  suppression model: providers push their verdicts in (or we mirror their
+  send-time errors), one local row blocks every future send, and a
+  verified user always starts fresh.
+</PageIntro>
+
+## Per-provider model
+
+Each provider tracks deliverability differently. The API maps all three onto
+a single local table so the dispatch path looks the same regardless of which
+provider is active.
+
+<DataMatrix
+  caption="Who tracks suppression"
+  columns={["Provider", "Suppression managed by", "Signal", "Local action"]}
+  rows={[
+    {
+      label: "Cloudflare",
+      cells: [
+        "Cloudflare",
+        "Cloudflare's internal list",
+        "Send call returns a recipient-suppressed error",
+        "Mirror the verdict into our blocklist",
+      ],
+    },
+    {
+      label: "Resend",
+      cells: [
+        "Us",
+        "Webhook (svix-signed)",
+        "email.bounced / email.complained",
+        "Insert a suppression row",
+      ],
+    },
+    {
+      label: "SendGrid",
+      cells: [
+        "Us",
+        "Event webhook (ECDSA-signed)",
+        "bounce / spamreport / dropped",
+        "Insert a suppression row",
+      ],
+    },
+  ]}
+/>
+
+Cloudflare is the default for the API template. Its API refuses sends to
+addresses on Cloudflare's own list, so the local mirror is a performance
+hint, not a correctness requirement. Resend and SendGrid leave the
+blocklist entirely to the application — the webhooks are how their
+verdict reaches us.
+
+## How the dispatch path uses it
+
+```mermaid
+flowchart LR
+  caller["sendTemplate(...)"] --> check{isSuppressed(to)?}
+  check -- yes --> short["mark delivery suppressed<br/>skip provider"]
+  check -- no --> provider["provider.send()"]
+  provider -- success --> sent["mark delivery sent"]
+  provider -- recipient suppressed --> mirror["mirror to email_suppression<br/>then raise"]
+```
+
+`sendTemplateNow` consults the blocklist before every send. A match returns
+`{ status: "suppressed", reason }` and the provider is never contacted —
+the queued worker writes the `notification_delivery` row as `suppressed`
+with the reason inlined, and the channel does the same when running
+inline.
+
+## Schema
+
+One table in the `notifications` schema:
+
+```sql
+CREATE TABLE "notifications"."email_suppression" (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  email               varchar(320) NOT NULL,
+  reason              varchar(32)  NOT NULL,  -- hard_bounce | complaint | provider_suppressed | manual
+  provider            varchar(32)  NOT NULL,  -- resend | sendgrid | cloudflare | manual
+  provider_message_id varchar(255),
+  metadata            jsonb NOT NULL DEFAULT '{}',
+  suppressed_at       timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX idx_email_suppression_email ON ... (email);
+```
+
+`email` is the unique key. The first verdict wins — once `alice@…` is
+suppressed by Resend, a later complaint from SendGrid for the same
+address is a no-op insert (the original row stays). This keeps the
+strongest signal we observed and avoids losing a complaint by
+downgrading it to a bounce later.
+
+## Lifecycle signals
+
+<SignalGrid
+  columns={3}
+  items={[
+    {
+      label: "verify",
+      title: "Successful email verification clears the row",
+      body:
+        "Proving inbox control means the address works now. The verification handler clears any prior suppression so transactional mail can flow.",
+    },
+    {
+      label: "complaint",
+      title: "Complaints are permanent",
+      body:
+        "Spam reports through Gmail / Outlook FBLs persist until the user signals otherwise (resubscribe / re-verify). We do not auto-clear them on time.",
+    },
+    {
+      label: "soft bounce",
+      title: "Soft bounces are not persisted",
+      body:
+        "Transient failures stay inside the BullMQ retry envelope. Only hard bounces and complaints land on the blocklist.",
+    },
+  ]}
+/>
+
+## Configuring the webhooks
+
+Cloudflare needs no wiring — its rejection at send time triggers the
+local mirror automatically. Resend and SendGrid each expose a signed
+endpoint when their secret is set; without it, the route returns `501`
+and the provider's retries park until you configure it.
+
+<CommandRun
+  title="Resend"
+  caption="point Resend at /api/v1/webhooks/resend with the svix signing secret"
+  command={[
+    "echo 'RESEND_WEBHOOK_SECRET=whsec_xxxxx' >> compose/.env",
+    "# in resend dashboard: Webhooks → Add → https://your-host/api/v1/webhooks/resend",
+    "# select events: email.bounced, email.complained",
+  ]}
+/>
+
+<CommandRun
+  title="SendGrid"
+  caption="enable the signed event webhook and paste the PEM public key"
+  command={[
+    "echo 'SENDGRID_WEBHOOK_PUBLIC_KEY=\"-----BEGIN PUBLIC KEY-----...\"' >> compose/.env",
+    "# in sendgrid: Settings → Mail Settings → Event Webhook",
+    "# url: https://your-host/api/v1/webhooks/sendgrid",
+    "# enable 'Signed Event Webhook Requests' and copy the public key",
+  ]}
+/>
+
+The verification timestamp tolerance is 5 minutes (Resend) / 10 minutes
+(SendGrid) — outside that window the route returns `401`. Both routes
+parse and verify on the raw request body, so reverse proxies must not
+mutate the payload.
+
+## Cloudflare visibility
+
+Cloudflare exposes bounce data via the GraphQL Analytics API and the
+Email Logs dashboard rather than a webhook. If your operator needs a
+real-time signal, point them at
+`emailSendingAdaptive` in the Cloudflare GraphQL API. The local
+`email_suppression` table covers the practical hot-path concern
+(skipping addresses that already bounced); visibility into the
+historical event stream lives in Cloudflare's own UI.
+
+## What the operator gets out of the box
+
+- `POST /api/v1/webhooks/resend` — svix-signed bounce / complaint receiver.
+- `POST /api/v1/webhooks/sendgrid` — ECDSA-signed event-webhook receiver.
+- Suppression check inside `sendTemplateNow` — every send path inherits it.
+- Local mirror when the active provider's `send()` returns a
+  recipient-level suppression error (Cloudflare today; works the same
+  for Resend / SendGrid if their API returns one before a webhook does).
+- Automatic clear on email verification.
+
+## Manual operations
+
+For a one-off block (legal request, abuse pattern), insert directly:
+
+```sql
+INSERT INTO notifications.email_suppression (email, reason, provider)
+VALUES ('user@example.com', 'manual', 'manual')
+ON CONFLICT (email) DO NOTHING;
+```
+
+To re-enable an address after a verified appeal:
+
+```sql
+DELETE FROM notifications.email_suppression WHERE email = 'user@example.com';
+```
+
+The next send to that address proceeds normally. If the underlying
+issue is unresolved on the provider side, Cloudflare or the webhook
+will land a fresh row within the next attempt.
+
+## Source
+
+[`src/lib/email/suppression.service.ts`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/email/suppression.service.ts); the service.
+[`src/api/webhooks/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/webhooks); the two signed receivers.
+[`src/lib/email/providers/suppression.helpers.ts`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/email/providers/suppression.helpers.ts); the
+provider-side mirror used when a send returns a suppression error.
+
+## Related
+
+- [Email](/api/email/); the dispatch abstraction.
+- [Cloudflare Email](/topics/cloudflare-email/); why the default provider
+  manages its own list.
+- [Queues](/api/queues/); the `email-delivery` retry envelope that
+  cooperates with the suppression check.

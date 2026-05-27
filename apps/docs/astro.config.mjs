@@ -422,6 +422,7 @@ export default defineConfig({
             { label: "Authentication", link: "/api/auth/" },
             { label: "Billing", link: "/api/billing/" },
             { label: "Email", link: "/api/email/" },
+            { label: "Bounce handling", link: "/api/bounce-handling/" },
             { label: "Queues", link: "/api/queues/" },
             { label: "Audit log", link: "/api/audit-log/" },
             { label: "Notifications", link: "/api/notifications/" },

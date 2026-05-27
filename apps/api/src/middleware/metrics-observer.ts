@@ -27,6 +27,10 @@ export const metricsObserver = new Elysia({ name: "metrics-observer" })
         return;
       }
 
+      if (typeof metricsStart !== "bigint") {
+        return;
+      }
+
       const status = String(set.status ?? 200);
       const labels = {
         method: request.method,

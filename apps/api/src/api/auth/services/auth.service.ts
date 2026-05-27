@@ -8,7 +8,11 @@ import {
 import { env } from "../../../config/env";
 import { logger } from "../../../config/logger";
 import { AUDIT_ACTIONS, auditLogService } from "../../../lib/audit-log";
-import { maskEmailForLogging, sendTemplate } from "../../../lib/email";
+import {
+  maskEmailForLogging,
+  normalizeEmail,
+  sendTemplate,
+} from "../../../lib/email";
 import { ApiErrors, getErrorMessage } from "../../../lib/errors";
 import { passwordService } from "../../../lib/password";
 import { generateOpaqueToken, hashOpaqueToken } from "../../../lib/tokens";
@@ -24,7 +28,7 @@ import type {
   IPendingRegistration,
   IRegisterInput,
 } from "../auth.types";
-import { normalizeEmail, toPublicUser } from "../auth.utils";
+import { toPublicUser } from "../auth.utils";
 
 /**
  * Password authentication. Registration writes only the `users` row,

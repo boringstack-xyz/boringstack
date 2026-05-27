@@ -11,6 +11,11 @@ import {
   retryWithBackoff,
   validateEmailMessage,
 } from "../email.utils";
+import { EMAIL_SUPPRESSION_PROVIDERS } from "../suppression.constants";
+import {
+  isProviderSuppressionError,
+  mirrorProviderSuppression,
+} from "./suppression.helpers";
 
 /**
  * Sends mail via Cloudflare Email Service (https://developers.cloudflare.com/email-service/).
@@ -90,6 +95,22 @@ export class CloudflareEmailService implements IEmailService {
 
         if (!response.ok) {
           const errBody = await response.text();
+
+          /*
+           * Cloudflare's API does not document a stable error code for
+           * recipient-level suppression yet (see Email Service docs
+           * referenced in apps/api/src/lib/email/CLAUDE.md). We
+           * fingerprint by message string. A hit mirrors the verdict
+           * into the local blocklist so the next caller skips the
+           * round-trip — the send still fails for this attempt.
+           */
+          if (isProviderSuppressionError(errBody)) {
+            await mirrorProviderSuppression(
+              message.to,
+              EMAIL_SUPPRESSION_PROVIDERS.CLOUDFLARE,
+              errBody
+            );
+          }
 
           throw ApiErrors.externalService(
             `Cloudflare Email Service HTTP ${String(response.status)}: ${errBody}`
