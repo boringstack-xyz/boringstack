@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX "uniq_account_invitations_active" ON "app"."account_invitations" USING btree ("account_id",lower("email")) WHERE accepted_at IS NULL AND revoked_at IS NULL;

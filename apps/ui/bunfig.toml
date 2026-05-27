@@ -28,4 +28,8 @@ minimumReleaseAgeExcludes = [
   "@typescript-eslint/visitor-keys",
   "@typescript-eslint/project-service",
   "@typescript-eslint/tsconfig-utils",
+  # tmp 0.2.6 patches GHSA-ph9p-34f9-6g65 (path-traversal via unsanitized
+  # prefix/postfix). Pulled in transitively by @lhci/cli; 0.15.1 is the
+  # latest @lhci/cli so we override `tmp` directly to clear `bun audit`.
+  "tmp",
 ]
