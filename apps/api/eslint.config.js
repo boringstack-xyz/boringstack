@@ -689,7 +689,19 @@ export default tseslint.config(
       // Cache layer — TTL required, prefixed keys, helper-built keys.
       // ---------------------------------------------------------------------
       "cache-keys/cache-set-must-have-ttl": "error",
-      "cache-keys/cache-key-must-be-prefixed": "error",
+      "cache-keys/cache-key-must-be-prefixed": [
+        "error",
+        {
+          prefixes: [
+            "cache:",
+            "jwt:",
+            "oauth:",
+            "rate:",
+            "session:",
+            "stripe:",
+          ],
+        },
+      ],
       // Opt-in helper rule — wire helpers as the template adds them.
       "cache-keys/cache-key-from-helper": "off",
 

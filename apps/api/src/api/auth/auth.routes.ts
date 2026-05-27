@@ -8,7 +8,12 @@ import {
   REFRESH_COOKIE_NAME,
 } from "../../lib/cookies";
 import { ApiErrors, createSuccessResponse } from "../../lib/errors";
-import { buildJWTPayload, createJWTConfig } from "../../lib/jwt";
+import {
+  buildJWTPayload,
+  createJWTConfig,
+  jwtRevocationService,
+  parseAuthJWTPayload,
+} from "../../lib/jwt";
 import { emailRateLimiter } from "../../lib/rate-limit/email-rate-limit";
 import {
   completeOAuthCallback,
@@ -241,13 +246,42 @@ const sessionAndOAuthRoutes = new Elysia()
   )
   .post(
     "/logout",
-    async ({ cookie }) => {
+    async ({ jwt, cookie }) => {
       const auth = cookie[AUTH_COOKIE_NAME];
       const refresh = cookie[REFRESH_COOKIE_NAME];
       const refreshValue = refresh?.value;
 
       if (typeof refreshValue === "string") {
         await sessionService.revoke(refreshValue);
+      }
+
+      /*
+       * Best-effort access-token revocation: parse the JWT cookie,
+       * pull jti + exp, mark it dead in cache for its remaining life.
+       * Failures (missing cookie, expired token, decode error) are
+       * swallowed — the cookies are still removed below, so the user
+       * is logged out as far as the browser is concerned.
+       */
+      const authValue = auth?.value;
+
+      if (typeof authValue === "string" && authValue !== "") {
+        try {
+          const verified = await jwt.verify(authValue);
+          const parsed = parseAuthJWTPayload(verified);
+
+          if (
+            parsed.kind === "ok" &&
+            parsed.jti !== null &&
+            verified !== false &&
+            typeof verified === "object" &&
+            "exp" in verified &&
+            typeof verified.exp === "number"
+          ) {
+            await jwtRevocationService.revokeJti(parsed.jti, verified.exp);
+          }
+        } catch {
+          // intentional: revocation is opportunistic on logout.
+        }
       }
 
       auth?.remove();

@@ -15,5 +15,14 @@ export const parseAuthJWTPayload = (raw: unknown): AuthJWTPayloadResult => {
     return { kind: "invalid" };
   }
 
-  return { kind: "ok", userId: id, accountId: aid };
+  const jti =
+    "jti" in raw && typeof raw.jti === "string" && raw.jti !== ""
+      ? raw.jti
+      : null;
+  const issuedAt =
+    "iat" in raw && typeof raw.iat === "number" && Number.isFinite(raw.iat)
+      ? raw.iat
+      : null;
+
+  return { kind: "ok", userId: id, accountId: aid, jti, issuedAt };
 };

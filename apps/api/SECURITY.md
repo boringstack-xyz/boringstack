@@ -101,13 +101,23 @@ See `AGENTS.md` → "Security skill set" for the full skill reference.
   Forgot-password / resend-verification responses don't leak whether an
   email is registered.
 
-  **Access-token revocation window.** Access JWTs are stateless and
-  valid until they expire. After logout or password reset, the session
-  row is deleted (so refresh fails immediately), but any access JWT
-  already in flight stays valid for up to 15 minutes. This is a
-  deliberate trade-off — server-side checks on every request would
-  defeat the point of JWT. For higher-stakes flows, gate them on a
-  fresh-login challenge instead of trusting the cookie alone.
+  **Access-token revocation.** Every access JWT carries a per-issuance
+  `jti` and `iat`. The auth middleware checks two cache-backed
+  blocklists after signature verification:
+
+  - per-jti (`jwt:revoked:{jti}`) — written by `POST /logout`, kills
+    the specific in-flight token
+  - per-user (`jwt:user:{userId}:revoked-before`) — written by
+    password change and password reset, kills every previously issued
+    token for that user without enumerating their JTIs
+
+  Cache lookup adds one round-trip per authenticated request. The
+  trade-off vs. pure-stateless JWT is intentional: leaked access tokens
+  are now revocable on the same cadence as refresh sessions, instead of
+  surviving up to 15 minutes after logout. If the cache layer is
+  unreachable the middleware fails open (token treated as not revoked)
+  and emits `auth.jwt.revoke_check_failed` — total auth outage is worse
+  than the bounded leaked-token window the JWT TTL still caps.
 - **Idempotency** — Stripe webhooks dedup on `stripe_event_id`
   (at-least-once delivery from an external service). User-facing
   mutations rely on natural idempotency instead of an

@@ -6,6 +6,7 @@ import { logger } from "../../../config/logger";
 import { AUDIT_ACTIONS, auditLogService } from "../../../lib/audit-log";
 import { sendTemplate } from "../../../lib/email";
 import { ApiErrors, getErrorMessage } from "../../../lib/errors";
+import { jwtRevocationService } from "../../../lib/jwt";
 import { passwordService } from "../../../lib/password";
 import {
   EMAIL_PROVIDER_KEY,
@@ -64,6 +65,13 @@ export class PasswordChangeService {
           eq(userAuthProviders.provider, EMAIL_PROVIDER_KEY)
         )
       );
+
+    /*
+     * Kill every JWT issued to this user before now. Combined with
+     * sessionService cookie revocation on the next refresh, a leaked
+     * pre-change token can no longer be used to act as the user.
+     */
+    await jwtRevocationService.revokeAllForUser(userId);
 
     void sendTemplate({
       to: row.user.email,
