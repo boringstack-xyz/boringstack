@@ -104,7 +104,10 @@ services:
           memory: "${TRAEFIK_RESERVATIONS_MEMORY:-64M}"
 
   api-migrate-dev:
-    profiles: [dev]
+    # Activated by both `dev` and `smoke` profiles — the smoke stack reuses
+    # the dev-mode API + migrator and only swaps the UI for a pre-built
+    # nginx-served bundle. See `ui-smoke` below.
+    profiles: [dev, smoke]
     build:
       context: ../../../apps/api
       dockerfile: Dockerfile
@@ -174,7 +177,7 @@ services:
           memory: "${API_MIGRATE_LIMITS_MEMORY:-512M}"
 
   api-dev:
-    profiles: [dev]
+    profiles: [dev, smoke]
     build:
       context: ../../../apps/api
       dockerfile: Dockerfile
@@ -279,6 +282,48 @@ services:
         reservations:
           cpus: "${UI_DEV_RESERVATIONS_CPUS:-0.25}"
           memory: "${UI_DEV_RESERVATIONS_MEMORY:-256M}"
+
+  ui-smoke:
+    # Used by full-stack smoke (e2e) runs. Builds the production SPA
+    # bundle with `Dockerfile.prod` and serves it through nginx with a
+    # `/api/` reverse proxy to `api-dev`. Eliminates the Vite dev-server
+    # cold-compile that pushed Playwright tests past their 30 s timeout
+    # in CI — every page navigation now hits a static asset, sub-second.
+    #
+    # Local repro: `STACK=smoke ./dev.sh up -d --build`.
+    profiles: [smoke]
+    build:
+      context: ../../../apps/ui
+      dockerfile: Dockerfile.prod
+      # Empty VITE_API_URL = same-origin: the SPA hits relative `/api/*`
+      # paths and this service's nginx proxies them to api-dev.
+      args:
+        VITE_API_URL: ""
+    restart: "no"
+    logging: *default-logging
+    volumes:
+      - ../../../apps/ui/nginx.smoke.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      api-dev:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    networks:
+      - frontend
+    ports:
+      - "7331:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "${UI_SMOKE_LIMITS_CPUS:-0.5}"
+          memory: "${UI_SMOKE_LIMITS_MEMORY:-128M}"
+        reservations:
+          cpus: "${UI_SMOKE_RESERVATIONS_CPUS:-0.1}"
+          memory: "${UI_SMOKE_RESERVATIONS_MEMORY:-32M}"
 
   api:
     profiles: [prod]

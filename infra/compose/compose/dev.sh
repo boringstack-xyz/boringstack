@@ -5,6 +5,11 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
 ENV_FILE="${ENV_FILE:-$ROOT/.env}"
+# Preserve a STACK passed in by the caller (e.g. `STACK=smoke ./dev.sh up`)
+# before sourcing .env — without this snapshot, the `.env` file's own
+# `STACK=dev` line would overwrite it and silently demote smoke runs back
+# to the dev stack.
+STACK_FROM_CALLER="${STACK:-}"
 if [[ -f "$ENV_FILE" ]]; then
   set -a
   # shellcheck source=/dev/null
@@ -12,6 +17,9 @@ if [[ -f "$ENV_FILE" ]]; then
   set +a
 fi
 
+if [[ -n "$STACK_FROM_CALLER" ]]; then
+  STACK="$STACK_FROM_CALLER"
+fi
 STACK="${STACK:-dev}"
 COMPOSE_FILES=(-f "$ROOT/docker-compose.yml")
 PROFILE_ARGS=()
@@ -20,6 +28,15 @@ case "$STACK" in
   dev)
     COMPOSE_FILES+=(-f "$ROOT/docker-compose.development-labels.yml")
     PROFILE_ARGS+=(--profile dev)
+    ;;
+  smoke)
+    # `smoke` runs the dev-mode api but swaps the Vite dev server for a
+    # production-built nginx-served UI bundle. Designed for the
+    # full-stack-smoke CI workflow and any local "test the prod build
+    # against the dev API" loop. Reuses dev data-service ports so
+    # `psql`, `valkey-cli`, and curl against :7330 still work.
+    COMPOSE_FILES+=(-f "$ROOT/docker-compose.development-labels.yml")
+    PROFILE_ARGS+=(--profile smoke)
     ;;
   prod)
     COMPOSE_FILES+=(-f "$ROOT/docker-compose.production-labels.yml")
@@ -34,7 +51,7 @@ case "$STACK" in
     : "${ACME_EMAIL:?ACME_EMAIL required in prod for ACME/Lets Encrypt. e.g. you@example.com}"
     ;;
   *)
-    echo "[ERROR] STACK must be \"dev\" or \"prod\" (got: ${STACK})" >&2
+    echo "[ERROR] STACK must be \"dev\", \"smoke\", or \"prod\" (got: ${STACK})" >&2
     exit 1
     ;;
 esac
