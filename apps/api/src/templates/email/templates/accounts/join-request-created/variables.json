@@ -1,0 +1,8 @@
+{
+    "subject": "Someone is requesting to join your account",
+    "preHeader": "A user is requesting to join your account",
+    "appName": "{{appName}}",
+    "accountName": "Acme Inc.",
+    "reviewUrl": "https://example.com/account/requests",
+    "requestId": "req_12345"
+}

@@ -17,16 +17,19 @@ import { accountsService } from "./accounts.service";
 import {
   AcceptInvitationResponse,
   AcceptInvitationSchema,
+  AccountResponse,
   CreateInvitationSchema,
   InvitationResponse,
+  JoinRequestResponse,
   PendingInvitationsResponse,
+  PendingJoinRequestsResponse,
   SwitchAccountResponse,
   SwitchAccountSchema,
   TransferOwnershipSchema,
   UpdateAccountSchema,
-  AccountResponse,
 } from "./accounts.schemas";
 import { invitationsService } from "./invitations.service";
+import { joinRequestsService } from "./join-requests.service";
 
 const accountsRoutes = createAuthMiddleware()
   .onError(({ code, error, set }) =>
@@ -282,6 +285,88 @@ const accountsRoutes = createAuthMiddleware()
       params: t.Object({ id: t.String(), invitationId: t.String() }),
       response: t.Null(),
       detail: { tags: ["Accounts"], summary: "Revoke an invitation" },
+    }
+  )
+  .get(
+    "/:id/join-requests",
+    async ({ membership, params }) => {
+      if (params.id !== membership.accountId) {
+        throw ApiErrors.forbidden(
+          "Cannot list join requests for another account"
+        );
+      }
+
+      if (!isOwnerRole(membership.role) && !isAdminRole(membership.role)) {
+        throw ApiErrors.forbidden(
+          "Only an owner or admin can review join requests"
+        );
+      }
+
+      return joinRequestsService.listPending(membership.accountId);
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      response: PendingJoinRequestsResponse,
+      detail: {
+        tags: ["Accounts"],
+        summary: "List pending domain-claim join requests",
+      },
+    }
+  )
+  .post(
+    "/:id/join-requests/:requestId/approve",
+    async ({ membership, params, user }) => {
+      if (params.id !== membership.accountId) {
+        throw ApiErrors.forbidden();
+      }
+
+      if (!isOwnerRole(membership.role) && !isAdminRole(membership.role)) {
+        throw ApiErrors.forbidden();
+      }
+
+      const request = await joinRequestsService.approve(
+        membership.accountId,
+        params.requestId,
+        user.id
+      );
+
+      return createSuccessResponse(request);
+    },
+    {
+      params: t.Object({ id: t.String(), requestId: t.String() }),
+      response: JoinRequestResponse,
+      detail: {
+        tags: ["Accounts"],
+        summary: "Approve a pending join request (creates a member seat)",
+      },
+    }
+  )
+  .post(
+    "/:id/join-requests/:requestId/deny",
+    async ({ membership, params, user }) => {
+      if (params.id !== membership.accountId) {
+        throw ApiErrors.forbidden();
+      }
+
+      if (!isOwnerRole(membership.role) && !isAdminRole(membership.role)) {
+        throw ApiErrors.forbidden();
+      }
+
+      const request = await joinRequestsService.deny(
+        membership.accountId,
+        params.requestId,
+        user.id
+      );
+
+      return createSuccessResponse(request);
+    },
+    {
+      params: t.Object({ id: t.String(), requestId: t.String() }),
+      response: JoinRequestResponse,
+      detail: {
+        tags: ["Accounts"],
+        summary: "Deny a pending join request",
+      },
     }
   );
 

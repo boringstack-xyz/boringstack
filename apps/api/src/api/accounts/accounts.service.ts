@@ -15,6 +15,7 @@ import { ApiErrors } from "../../lib/errors";
 import { now } from "../../lib/time/now";
 
 import { buildPersonalAccountName, toActiveMembership } from "./accounts.utils";
+import { joinRequestsService } from "./join-requests.service";
 import type {
   ActiveMembership,
   DbOrTx,
@@ -320,6 +321,28 @@ export class AccountsService {
       .limit(1);
 
     if (claimed) {
+      /*
+       * Domain is owned — file a pending join request so the existing
+       * owner can approve, then surface a structured error to the
+       * caller. The request is upserted (partial unique on pending
+       * status), so a retry of the verify-email flow never duplicates.
+       * Failure to create the request is logged but doesn't mask the
+       * original `domainClaimed` error — the user should still see the
+       * friendly "this domain is claimed" page either way.
+       */
+      try {
+        await joinRequestsService.createPending(
+          {
+            accountId: claimed.id,
+            userId,
+            email: user.email,
+          },
+          tx
+        );
+      } catch {
+        // Logged inside the service path; do not fail the outer flow.
+      }
+
       throw ApiErrors.domainClaimed(claimed.name, {
         accountId: claimed.id,
         domain,

@@ -73,3 +73,26 @@ export const AccountResponse = t.Object({
   id: t.String(),
   name: t.String(),
 });
+
+export const JoinRequestSchema = t.Object({
+  id: t.String(),
+  accountId: t.String(),
+  userId: t.String(),
+  email: t.String(),
+  status: t.Union([
+    t.Literal("pending"),
+    t.Literal("approved"),
+    t.Literal("denied"),
+  ]),
+  createdAt: t.String(),
+  decidedAt: t.Union([t.String(), t.Null()]),
+  decidedByUserId: t.Union([t.String(), t.Null()]),
+});
+
+export const PendingJoinRequestsResponse = t.Array(JoinRequestSchema);
+
+export const JoinRequestResponse = t.Object({
+  success: t.Boolean(),
+  data: JoinRequestSchema,
+  timestamp: t.String(),
+});

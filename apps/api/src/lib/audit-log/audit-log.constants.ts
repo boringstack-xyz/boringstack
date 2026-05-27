@@ -38,6 +38,9 @@ export const AUDIT_ACTIONS = {
   ACCOUNT_HARD_DELETED: "account.hard_deleted",
   ACCOUNT_OWNER_TRANSFERRED: "account.owner_transferred",
   ACCOUNT_SWITCHED: "account.switched",
+  ACCOUNT_JOIN_REQUEST_CREATED: "account.join_request_created",
+  ACCOUNT_JOIN_REQUEST_APPROVED: "account.join_request_approved",
+  ACCOUNT_JOIN_REQUEST_DENIED: "account.join_request_denied",
 
   MEMBERSHIP_INVITED: "membership.invited",
   MEMBERSHIP_ACCEPTED: "membership.accepted",
