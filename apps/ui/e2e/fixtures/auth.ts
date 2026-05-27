@@ -40,9 +40,9 @@ const CONSENT_DISMISSED_STATE = {
   state: {
     status: "configured",
     categories: { essential: true, analytics: false, marketing: false },
-    configuredAt: "2026-01-01T00:00:00.000Z",
+    configuredAt: "2026-01-01T00:00:00.000Z"
   },
-  version: 0,
+  version: 0
 };
 
 export const test = base.extend<
@@ -62,7 +62,10 @@ export const test = base.extend<
           // localStorage can be unavailable in restricted contexts; ignore.
         }
       },
-      { key: CONSENT_STORAGE_KEY, value: JSON.stringify(CONSENT_DISMISSED_STATE) }
+      {
+        key: CONSENT_STORAGE_KEY,
+        value: JSON.stringify(CONSENT_DISMISSED_STATE)
+      }
     );
 
     await use(page);

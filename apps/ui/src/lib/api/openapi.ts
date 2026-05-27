@@ -111,6 +111,29 @@ const tokenRefresh: Middleware = {
  * ----------------------------------------------------------------------------
  */
 
+/*
+ * The api always envelopes errors as `{ success: false, error: { code,
+ * message, fieldErrors?, timestamp } }`. The flat `IApiErrorBody` shape
+ * (no envelope) is retained as a fallback for any non-enveloped 4xx that
+ * slips through — opaque proxy errors, 502s from edge, etc. — so the
+ * caller always sees a usable code/message instead of `undefined`.
+ */
+const extractApiErrorBody = (raw: unknown): IApiErrorBody => {
+  if (typeof raw !== "object" || raw === null) {
+    return { message: "Unknown error" };
+  }
+
+  if ("error" in raw) {
+    const nested: unknown = raw.error;
+
+    if (typeof nested === "object" && nested !== null) {
+      return nested as IApiErrorBody;
+    }
+  }
+
+  return raw as IApiErrorBody;
+};
+
 const throwOnError: Middleware = {
   onResponse: async ({ response }) => {
     if (response.ok) {
@@ -124,7 +147,7 @@ const throwOnError: Middleware = {
       const text = await response.clone().text();
 
       if (text !== "") {
-        body = JSON.parse(text) as IApiErrorBody;
+        body = extractApiErrorBody(JSON.parse(text));
       }
     } catch (cause) {
       logger.warn({

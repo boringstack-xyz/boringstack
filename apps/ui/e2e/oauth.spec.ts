@@ -50,11 +50,30 @@ test.describe("OAuth flow", () => {
      * through to the (unreachable in test) IdP.
      */
     await page.route("**/api/v1/auth/oauth/google", (route) => {
-      void route.fulfill({ status: 204, body: "" });
+      /*
+       * Stub with a real HTML body, not 204. Chromium treats 204 on a
+       * top-level navigation as a no-op — the URL never commits — and
+       * page.waitForURL hangs. A 200 with an empty document commits
+       * the navigation; the SPA never sees this page because the test
+       * checks the URL and ends here.
+       */
+      void route.fulfill({
+        status: 200,
+        contentType: "text/html",
+        body: "<!doctype html><title>oauth-stub</title>"
+      });
     });
 
     await page.getByRole("button", { name: /continue with google/i }).click();
-    await page.waitForURL(/\/api\/v1\/auth\/oauth\/google/);
+    /*
+     * The route is fulfilled with 204, so the browser commits the
+     * navigation but never fires `load`. Default waitUntil="load" would
+     * hang forever; "commit" matches what we actually care about: the
+     * SPA handed the request off to the API.
+     */
+    await page.waitForURL(/\/api\/v1\/auth\/oauth\/google/, {
+      waitUntil: "commit"
+    });
 
     expect(page.url()).toContain("/api/v1/auth/oauth/google");
   });
@@ -67,11 +86,24 @@ test.describe("OAuth flow", () => {
     await login.goto();
 
     await page.route("**/api/v1/auth/oauth/github", (route) => {
-      void route.fulfill({ status: 204, body: "" });
+      /*
+       * Stub with a real HTML body, not 204. Chromium treats 204 on a
+       * top-level navigation as a no-op — the URL never commits — and
+       * page.waitForURL hangs. A 200 with an empty document commits
+       * the navigation; the SPA never sees this page because the test
+       * checks the URL and ends here.
+       */
+      void route.fulfill({
+        status: 200,
+        contentType: "text/html",
+        body: "<!doctype html><title>oauth-stub</title>"
+      });
     });
 
     await page.getByRole("button", { name: /continue with github/i }).click();
-    await page.waitForURL(/\/api\/v1\/auth\/oauth\/github/);
+    await page.waitForURL(/\/api\/v1\/auth\/oauth\/github/, {
+      waitUntil: "commit"
+    });
 
     expect(page.url()).toContain("/api/v1/auth/oauth/github");
   });
@@ -84,11 +116,24 @@ test.describe("OAuth flow", () => {
     await login.goto();
 
     await page.route("**/api/v1/auth/oauth/linkedin", (route) => {
-      void route.fulfill({ status: 204, body: "" });
+      /*
+       * Stub with a real HTML body, not 204. Chromium treats 204 on a
+       * top-level navigation as a no-op — the URL never commits — and
+       * page.waitForURL hangs. A 200 with an empty document commits
+       * the navigation; the SPA never sees this page because the test
+       * checks the URL and ends here.
+       */
+      void route.fulfill({
+        status: 200,
+        contentType: "text/html",
+        body: "<!doctype html><title>oauth-stub</title>"
+      });
     });
 
     await page.getByRole("button", { name: /continue with linkedin/i }).click();
-    await page.waitForURL(/\/api\/v1\/auth\/oauth\/linkedin/);
+    await page.waitForURL(/\/api\/v1\/auth\/oauth\/linkedin/, {
+      waitUntil: "commit"
+    });
 
     expect(page.url()).toContain("/api/v1/auth/oauth/linkedin");
   });

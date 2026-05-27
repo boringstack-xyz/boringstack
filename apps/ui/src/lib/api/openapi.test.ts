@@ -258,6 +258,48 @@ describe("throwOnError middleware", () => {
     });
   });
 
+  it("unwraps the api envelope when error fields are nested under `error`", async () => {
+    /*
+     * The api ships a `{ success: false, error: { code, message,
+     * fieldErrors?, timestamp } }` envelope. Before the fix the
+     * middleware read `body.code` from the envelope itself, so every
+     * thrown ApiError carried `code: undefined` and downstream checks
+     * like `isEmailNotVerified` were always false.
+     */
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: "EMAIL_NOT_VERIFIED",
+            message:
+              "Verify your email before signing in. Check your inbox or request a new link.",
+            timestamp: "2026-01-01T00:00:00.000Z"
+          }
+        }),
+        {
+          status: 403,
+          headers: { "content-type": "application/json" }
+        }
+      )
+    );
+    const client = await importClient();
+
+    await expect(
+      (
+        client as unknown as {
+          POST: (path: string, opts?: unknown) => Promise<unknown>;
+        }
+      ).POST("/api/v1/auth/login", { body: {} })
+    ).rejects.toMatchObject({
+      name: "ApiError",
+      status: 403,
+      code: "EMAIL_NOT_VERIFIED",
+      message:
+        "Verify your email before signing in. Check your inbox or request a new link."
+    });
+  });
+
   it("falls back to statusText when the body isn't JSON and logs the parse failure", async () => {
     fetchMock.mockResolvedValueOnce(textResponse(503, "Service Unavailable"));
     const client = await importClient();
