@@ -2,12 +2,46 @@ import type { FC } from "react";
 
 import { AppPage } from "@/components/core/AppPage";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { useBillingPage, useBillingPlanRow } from "./BillingPage.hooks";
 import type {
   IBillingPageProps,
   IBillingPlanRowProps
 } from "./BillingPage.types";
+
+const BillingPlanRowSkeleton: FC = () => (
+  <div className='border-border bg-panel flex flex-col gap-3 rounded-xl border px-4 py-4 sm:flex-row sm:items-center sm:justify-between'>
+    <div className='flex flex-col gap-2'>
+      <Skeleton className='h-5 w-32' />
+      <Skeleton className='h-3 w-24' />
+    </div>
+    <Skeleton className='h-9 w-28' />
+  </div>
+);
+
+BillingPlanRowSkeleton.displayName = "BillingPlanRowSkeleton";
+
+const BillingPageSkeleton: FC<{ readonly loadingLabel: string }> = ({
+  loadingLabel
+}) => (
+  <div className='flex flex-col gap-6' role='status' aria-label={loadingLabel}>
+    <article className='border-border-strong/40 bg-panel flex flex-col gap-3 rounded-2xl border p-6'>
+      <Skeleton className='h-3 w-32' />
+      <Skeleton className='h-7 w-48' />
+      <Skeleton className='mt-2 h-9 w-40' />
+    </article>
+    <section className='flex flex-col gap-3'>
+      <Skeleton className='h-5 w-40' />
+      <div className='flex flex-col gap-3'>
+        <BillingPlanRowSkeleton />
+        <BillingPlanRowSkeleton />
+      </div>
+    </section>
+  </div>
+);
+
+BillingPageSkeleton.displayName = "BillingPageSkeleton";
 
 const BillingPlanRow: FC<IBillingPlanRowProps> = ({ plan, view }) => {
   const { isCurrent, isUpgrading, onUpgradeClick } = useBillingPlanRow(
@@ -76,9 +110,7 @@ const BillingPage: FC<IBillingPageProps> = () => {
       ) : null}
 
       {view.state === "loading" ? (
-        <p className='text-muted-foreground text-sm' role='status'>
-          {view.loadingLabel}
-        </p>
+        <BillingPageSkeleton loadingLabel={view.loadingLabel} />
       ) : null}
 
       {view.state === "error" ? (

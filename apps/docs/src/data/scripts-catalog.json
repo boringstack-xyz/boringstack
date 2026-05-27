@@ -164,7 +164,7 @@
         "command": "dev",
         "script": "dev/preflight-host-dev.sh`",
         "description": "",
-        "invocation": "./scripts/dev/preflight-host-dev.sh && bun run --watch src/index.ts"
+        "invocation": "./scripts/dev/preflight-host-dev.sh && bun run build:templates && bun run --watch src/index.ts"
       },
       {
         "command": "db:seed",

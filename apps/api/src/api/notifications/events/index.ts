@@ -1,8 +1,16 @@
 import type { INotificationEventDefinition } from "../../../lib/notifications";
 
+import { accountInvitationAcceptedEvent } from "./account-invitation-accepted.event";
+import { accountOwnershipTransferredEvent } from "./account-ownership-transferred.event";
 import { authWelcomeEvent } from "./auth-welcome.event";
+import { passwordResetCompletedEvent } from "./password-reset-completed.event";
 
-export { authWelcomeEvent };
+export {
+  accountInvitationAcceptedEvent,
+  accountOwnershipTransferredEvent,
+  authWelcomeEvent,
+  passwordResetCompletedEvent,
+};
 
 /**
  * Notification event registry barrel. The framework registers everything
@@ -16,4 +24,7 @@ export { authWelcomeEvent };
  */
 export const allEvents: readonly INotificationEventDefinition<unknown>[] = [
   authWelcomeEvent,
+  accountInvitationAcceptedEvent,
+  accountOwnershipTransferredEvent,
+  passwordResetCompletedEvent,
 ];

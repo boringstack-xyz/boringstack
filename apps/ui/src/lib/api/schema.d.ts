@@ -161,6 +161,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/__test/issue-reset-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** TEST ONLY — issue a raw password-reset token bypassing email. Returns 404 unless NODE_ENV=test or E2E_TEST_ENDPOINTS_ENABLED=true. */
+        post: operations["postApiV1Auth__testIssue-reset-token"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/forgot-password": {
         parameters: {
             query?: never;
@@ -1341,6 +1358,90 @@ export interface operations {
                                 lastName: string;
                                 emailVerified: boolean;
                             };
+                        };
+                        timestamp: string;
+                    } | {
+                        /** @constant */
+                        success: false;
+                        error: {
+                            code: string;
+                            message: string;
+                            timestamp: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    "postApiV1Auth__testIssue-reset-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                };
+                "multipart/form-data": {
+                    /** Format: email */
+                    email: string;
+                };
+                "text/plain": {
+                    /** Format: email */
+                    email: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        success: true;
+                        data: {
+                            token: string;
+                            expiresAt: string;
+                        };
+                        timestamp: string;
+                    } | {
+                        /** @constant */
+                        success: false;
+                        error: {
+                            code: string;
+                            message: string;
+                            timestamp: string;
+                        };
+                    };
+                    "multipart/form-data": {
+                        /** @constant */
+                        success: true;
+                        data: {
+                            token: string;
+                            expiresAt: string;
+                        };
+                        timestamp: string;
+                    } | {
+                        /** @constant */
+                        success: false;
+                        error: {
+                            code: string;
+                            message: string;
+                            timestamp: string;
+                        };
+                    };
+                    "text/plain": {
+                        /** @constant */
+                        success: true;
+                        data: {
+                            token: string;
+                            expiresAt: string;
                         };
                         timestamp: string;
                     } | {

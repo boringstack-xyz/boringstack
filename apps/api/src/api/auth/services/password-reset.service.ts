@@ -11,8 +11,10 @@ import { logger } from "../../../config/logger";
 import { AUDIT_ACTIONS, auditLogService } from "../../../lib/audit-log";
 import { sendTemplate } from "../../../lib/email";
 import { ApiErrors, getErrorMessage } from "../../../lib/errors";
+import { notifications } from "../../../lib/notifications";
 import { passwordService } from "../../../lib/password";
 import { generateOpaqueToken, hashOpaqueToken } from "../../../lib/tokens";
+import { passwordResetCompletedEvent } from "../../notifications/events";
 import {
   EMAIL_PROVIDER_KEY,
   EMAIL_SUBJECTS,
@@ -87,6 +89,52 @@ export class PasswordResetService {
     return { message: ENUMERATION_SAFE_MESSAGES.REQUEST_PASSWORD_RESET };
   }
 
+  /**
+   * Test-only helper. Mirrors what `request()` does to the DB (issues
+   * an opaque reset token, hashes it, persists it with the same TTL),
+   * but returns the raw value so an e2e test can drive the reset
+   * flow without an email round-trip. Production callers go through
+   * `request()` which never exposes the raw token.
+   */
+  async issueRawTokenForTests(
+    email: string
+  ): Promise<{ token: string; expiresAt: string } | null> {
+    const normalized = normalizeEmail(email);
+    const rows = await db
+      .select({ user: users, authProvider: userAuthProviders })
+      .from(users)
+      .innerJoin(userAuthProviders, eq(users.id, userAuthProviders.userId))
+      .where(
+        and(
+          eq(users.email, normalized),
+          eq(userAuthProviders.provider, EMAIL_PROVIDER_KEY)
+        )
+      )
+      .limit(1);
+    const row = rows[0];
+
+    if (row === undefined || row.authProvider.passwordHash === "") {
+      return null;
+    }
+
+    const token = generateOpaqueToken();
+    const expiresAt = new Date(Date.now() + RESET_TTL_MS).toISOString();
+
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(passwordResetTokens)
+        .where(eq(passwordResetTokens.userId, row.user.id));
+
+      await tx.insert(passwordResetTokens).values({
+        userId: row.user.id,
+        tokenHash: hashOpaqueToken(token),
+        expiresAt,
+      });
+    });
+
+    return { token, expiresAt };
+  }
+
   async complete(token: string, newPassword: string): Promise<IMessageResult> {
     const tokenHash = hashOpaqueToken(token);
     const record = await db.query.passwordResetTokens.findFirst({
@@ -154,6 +202,13 @@ export class PasswordResetService {
     void auditLogService.record({
       userId: record.userId,
       action: AUDIT_ACTIONS.AUTH_PASSWORD_RESET_COMPLETED,
+    });
+
+    void notifications.send(passwordResetCompletedEvent, {
+      recipientUserId: record.userId,
+      payload: {
+        securityUrl: `${env.FRONTEND_URL}/account/settings`,
+      },
     });
 
     return { message: "Password updated successfully" };

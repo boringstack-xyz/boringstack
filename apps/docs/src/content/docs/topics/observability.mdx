@@ -1,56 +1,108 @@
 ---
 title: Observability
-description: Prometheus + Grafana + Loki + Promtail overlay. Pre-provisioned dashboards, structured logs labeled per container, zero per-event cost.
+description: Prometheus + Grafana + Loki + Promtail overlay. Host and infra metrics out of the box; app-side instrumentation is yours to author.
 ---
 
 import PageIntro from "../../../components/docs-kit/PageIntro";
-import CommandRun from "../../../components/docs-kit/CommandRun";
 import FaqGroup from "../../../components/FaqGroup.tsx";
 import FaqItem from "../../../components/FaqItem.tsx";
 
 <PageIntro
   eyebrow="Observability"
   actions={[
-    { label: "Design choices", href: "#design-choices" },
-    { label: "Metrics & Logs", href: "#what-you-get-out-of-the-box" },
+    { label: "What ships", href: "#what-ships-out-of-the-box" },
+    { label: "What you wire", href: "#what-you-still-need-to-wire" },
   ]}
   facts={[
     { value: "0", label: "Per-event cost" },
-    { value: "Grafana", label: "Dashboard Hub" },
-    { value: "Loki", label: "Log Storage" },
+    { value: "Grafana", label: "Dashboard hub" },
+    { value: "Loki", label: "Log store" },
   ]}
 >
-  `WITH_OBSERVABILITY=1` drops a complete metrics-and-logs stack into your local
-  environment. System, API, Postgres, and Valkey telemetry run on the same host.
+  `WITH_OBSERVABILITY=1` drops a complete metrics-and-logs stack into your
+  environment. Host and infra metrics flow out of the box; application
+  metrics and dashboards are scaffolded but unopinionated.
 </PageIntro>
 
-`WITH_OBSERVABILITY=1` adds a full metrics-and-logs stack to the infra. It runs on the same host as the app; no SaaS, no per-event billing.
-
-The default configuration covers debugging production incidents: app metrics, system metrics, container metrics, and all container logs queryable in one Grafana.
+`WITH_OBSERVABILITY=1` adds Prometheus, Grafana, Loki, Promtail, and
+exporters to the compose stack. It runs on the same host as the app; no
+SaaS, no per-event billing. The default is "credible debug environment
+for an operator who fills in their own dashboards," not "turnkey APM."
 
 ## How signals flow
 
 ```mermaid
 flowchart LR
-  api["apps/api<br/>/metrics endpoint"]
   pg["postgres-exporter"]
-  valkey_exp["valkey-exporter"]
   node["node-exporter<br/>host metrics"]
+  traefik["traefik<br/>request metrics"]
   prom["Prometheus<br/>scrape every 15s"]
   containers["every container<br/>stdout/stderr"]
   promtail["Promtail<br/>per-container labels"]
   loki["Loki<br/>log store"]
   grafana["Grafana<br/>dashboards + queries"]
   alert["Alertmanager<br/>routes alerts"]
-  api --> prom
   pg --> prom
-  valkey_exp --> prom
   node --> prom
+  traefik --> prom
   containers --> promtail --> loki
   prom --> grafana
   loki --> grafana
   prom --> alert
 ```
+
+## What ships out of the box
+
+<FaqGroup>
+  <FaqItem title="Grafana" open>
+    Host `:3010`. Default admin / change-me (override via env). Datasources
+    for Prometheus and Loki auto-provisioned.
+  </FaqItem>
+  <FaqItem title="Prometheus">
+    Internal. Scrapes itself, Alertmanager, Traefik (prod profile),
+    postgres-exporter, node-exporter. Configurable retention.
+  </FaqItem>
+  <FaqItem title="Loki">
+    Internal. Per-container labels; configurable retention.
+  </FaqItem>
+  <FaqItem title="Promtail">
+    Sidecar. Tails `/var/lib/docker/containers/*.log` so every container's
+    stdout is queryable as labeled logs.
+  </FaqItem>
+  <FaqItem title="node-exporter">
+    Host metrics: CPU, memory, disk, network.
+  </FaqItem>
+  <FaqItem title="postgres-exporter">
+    Postgres metrics: connections, transactions, table sizes.
+  </FaqItem>
+  <FaqItem title="Alertmanager">
+    Internal. Receivers are not wired by default — paging strategy is
+    project-specific, so the template ships the plumbing and you add the
+    routes.
+  </FaqItem>
+</FaqGroup>
+
+## What you still need to wire
+
+The overlay is a substrate, not a finished product. Two things are
+deliberately left empty:
+
+- **Application `/metrics` endpoint.** The api does not expose
+  Prometheus metrics by default. Add `prom-client` to `apps/api`, mount
+  a `/metrics` route, and append an `api` job to
+  `compose/prometheus/prometheus.yml`. The convention is one metric
+  domain per file under `src/lib/metrics/` (e.g. `http-metrics.ts`,
+  `queue-metrics.ts`).
+- **Grafana dashboards.** `compose/grafana/dashboards/` only contains
+  `.gitkeep`. Drop dashboard JSON exports in there and Grafana auto-loads
+  them within 30s — the dashboard provider is already wired in
+  `compose/grafana/provisioning/`. Community dashboards for postgres
+  (id `9628`) and node-exporter (id `1860`) work well as a starting
+  point.
+
+If you want a turnkey "BoringStack default dashboards" pack, that's on
+the [roadmap](https://github.com/boringstack-xyz/boringstack/issues),
+not in this release.
 
 ## Design choices
 
@@ -59,81 +111,50 @@ flowchart LR
     Zero per-event cost; data stays on your infra.
   </FaqItem>
   <FaqItem title="Prometheus + Loki, not OpenTelemetry collector">
-    Two well-known projects beat one unfamiliar abstraction.
+    Two well-known projects beat one unfamiliar abstraction. The stack
+    can grow into OTel later without re-platforming.
   </FaqItem>
   <FaqItem title="Promtail labels logs per container">
-    "Show me api-prod errors in the last hour" is one filter, not a regex.
+    "Show me api-prod errors in the last hour" is one filter, not a
+    regex against a giant text blob.
   </FaqItem>
   <FaqItem title="Grafana auto-provisions datasources">
-    Stack boots usable; no manual wiring after `up -d`.
+    Stack boots usable; no manual wiring after `up -d`. Adding a
+    dashboard is a file drop, not a UI click-through.
   </FaqItem>
   <FaqItem title="Alertmanager included but not wired by default">
-    Pager strategy is project-specific; the plumbing is there when you need it.
-  </FaqItem>
-  <FaqItem title="Bundled exporters: node, postgres, valkey">
-    Standard metrics for incident response.
+    Pager strategy is project-specific; the plumbing is there when you
+    need it.
   </FaqItem>
 </FaqGroup>
-
-## What you get out of the box
-
-<FaqGroup>
-  <FaqItem title="Grafana" open>
-    Host `:3010`. Default admin / change-me (override via env).
-  </FaqItem>
-  <FaqItem title="Prometheus">
-    Internal. Configurable retention (see `compose/prometheus/prometheus.yml`).
-  </FaqItem>
-  <FaqItem title="Loki">
-    Internal. Per-container labels; configurable retention.
-  </FaqItem>
-  <FaqItem title="Promtail">
-    Sidecar. Scrapes `/var/lib/docker/containers/*.log`.
-  </FaqItem>
-  <FaqItem title="node-exporter">
-    Host metrics: CPU, memory, disk, network.
-  </FaqItem>
-  <FaqItem title="postgres-exporter">
-    Postgres metrics: connections, transactions, table sizes.
-  </FaqItem>
-  <FaqItem title="valkey-exporter">
-    Valkey metrics: hit ratio, evictions, memory.
-  </FaqItem>
-  <FaqItem title="Alertmanager">
-    Internal. Routes defined in `alertmanager/`.
-  </FaqItem>
-</FaqGroup>
-
-Drop dashboard JSON exports into `compose/grafana/dashboards/` and Grafana auto-loads them within 30s. Datasources and the dashboard provider are already wired in `compose/grafana/provisioning/`.
 
 ## Querying
 
-**Metrics (Prometheus, PromQL):**
+**Metrics (Prometheus, PromQL).** Examples below assume you've added the
+`/metrics` endpoint and a corresponding scrape job. Out of the box, only
+node, postgres, and traefik metrics return rows:
 
 ```bash
-# 5-minute API request rate by route
-rate(http_requests_total[5m]) by (route)
+# Host CPU usage
+100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
 
 # Postgres connection count
 pg_stat_database_numbackends{datname="app"}
 
-# Worker job throughput
-rate(bullmq_jobs_completed_total[1m])
+# Once you wire /metrics on apps/api:
+rate(http_requests_total[5m]) by (route)
 ```
 
-See the [`infra/compose` PromQL cheatsheet](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/docs/promql-cheatsheet.md) for more.
-
-**Logs (Loki, LogQL):**
+**Logs (Loki, LogQL).** These work today, every container streams to
+Loki:
 
 ```bash
 # All API errors in the last hour
-{container="api-prod"} |= "level=error"
+{container=~"ai-starter-.*-api-dev-1"} |= "level=ERROR"
 
 # Worker jobs by status
-{container=~"api.*"} | json | event="email_delivery_completed"
+{container=~"ai-starter-.*-api-.*"} | json | event="email_delivery_completed"
 ```
-
-See the [LogQL cheatsheet](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/docs/logql-cheatsheet.md).
 
 ## Adding an alert
 
@@ -141,21 +162,27 @@ See the [LogQL cheatsheet](https://github.com/boringstack-xyz/boringstack/blob/m
 2. Configure routing in `compose/alertmanager/alertmanager.yml`.
 3. `docker compose restart prometheus alertmanager`.
 
-Alertmanager can route to Slack, email, PagerDuty, or a webhook. The template ships the structure; you fill in your receiver.
-
-## Adding a custom app metric
-
-The API app's `/metrics` endpoint uses the standard Prometheus client library. Define a counter / gauge / histogram in `src/lib/metrics/`, increment it from your code, and Prometheus picks it up on the next scrape. The convention is one file per metric domain (`http-metrics.ts`, `queue-metrics.ts`).
+Alertmanager can route to Slack, email, PagerDuty, or a webhook. The
+template ships the structure; you fill in your receiver.
 
 ## Cost
 
-The overlay is light on memory at the default sizing; see [Resource limits](/infra/resource-limits/) for the per-service knobs. Disk grows with retention windows; tune them in `compose/prometheus/prometheus.yml` and `compose/docker-compose.observability.yml` if storage matters.
+The overlay is light on memory at the default sizing; see
+[Resource limits](/infra/resource-limits/) for the per-service knobs.
+Disk grows with retention windows; tune them in
+`compose/prometheus/prometheus.yml` and
+`compose/docker-compose.observability.yml` if storage matters.
 
 ## Source
 
-[`compose/docker-compose.observability.yml`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/docker-compose.observability.yml) · [`compose/prometheus/`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/compose/compose/prometheus) · [`compose/grafana/`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/compose/compose/grafana) · [`compose/promtail/`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/compose/compose/promtail).
+[`compose/docker-compose.observability.yml`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/docker-compose.observability.yml) ·
+[`compose/prometheus/`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/compose/compose/prometheus) ·
+[`compose/grafana/`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/compose/compose/grafana) ·
+[`compose/promtail/`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/compose/compose/promtail).
 
 ## Related
 
-- [Error tracking](/topics/error-tracking/); Sentry/GlitchTip for exceptions specifically.
-- [Resource limits](/infra/resource-limits/); what you'll watch with these dashboards.
+- [Error tracking](/topics/error-tracking/): Sentry/GlitchTip for
+  exceptions specifically.
+- [Resource limits](/infra/resource-limits/): what you'll watch with
+  these dashboards.

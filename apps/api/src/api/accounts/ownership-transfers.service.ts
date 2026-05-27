@@ -12,8 +12,10 @@ import { logger } from "../../config/logger";
 import { ROLE } from "../../lib/acl";
 import { AUDIT_ACTIONS, auditLogService } from "../../lib/audit-log";
 import { ApiErrors, getErrorMessage } from "../../lib/errors";
+import { notifications } from "../../lib/notifications";
 import { now } from "../../lib/time/now";
 import { generateOpaqueToken, hashOpaqueToken } from "../../lib/tokens";
+import { accountOwnershipTransferredEvent } from "../notifications/events";
 
 import {
   computeOwnershipTransferExpiresAt,
@@ -233,12 +235,21 @@ export class OwnershipTransfersService {
         },
       });
 
-      /*
-       * Quieting unused warning for acceptingUserEmail — kept in
-       * signature so callers don't need to wonder about email matching
-       * later.
-       */
-      void acceptingUserEmail;
+      const [accountRow] = await tx
+        .select({ name: accounts.name })
+        .from(accounts)
+        .where(eq(accounts.id, transfer.accountId))
+        .limit(1);
+
+      void notifications.send(accountOwnershipTransferredEvent, {
+        recipientUserId: transfer.fromUserId,
+        payload: {
+          accountId: transfer.accountId,
+          accountName: accountRow?.name ?? "",
+          newOwnerEmail: acceptingUserEmail,
+          settingsUrl: `${env.FRONTEND_URL}/account/settings`,
+        },
+      });
 
       return toOwnershipTransfer(accepted);
     });

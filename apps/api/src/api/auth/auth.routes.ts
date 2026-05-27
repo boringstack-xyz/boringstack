@@ -205,6 +205,59 @@ const credentialingRoutes = new Elysia()
     }
   )
   .post(
+    "/__test/issue-reset-token",
+    async ({ body, set }) => {
+      if (env.NODE_ENV !== "test" && !env.E2E_TEST_ENDPOINTS_ENABLED) {
+        set.status = 404;
+
+        return {
+          success: false as const,
+          error: {
+            code: "NOT_FOUND",
+            message: "Resource not found",
+            timestamp: now(),
+          },
+        };
+      }
+
+      const issued = await passwordResetService.issueRawTokenForTests(
+        body.email
+      );
+
+      if (issued === null) {
+        throw ApiErrors.notFound("User");
+      }
+
+      return createSuccessResponse(issued);
+    },
+    {
+      body: t.Object({ email: t.String({ format: "email" }) }),
+      response: t.Union([
+        t.Object({
+          success: t.Literal(true),
+          data: t.Object({
+            token: t.String(),
+            expiresAt: t.String(),
+          }),
+          timestamp: t.String(),
+        }),
+        t.Object({
+          success: t.Literal(false),
+          error: t.Object({
+            code: t.String(),
+            message: t.String(),
+            timestamp: t.String(),
+          }),
+        }),
+      ]),
+      detail: {
+        tags: ["Authentication"],
+        summary:
+          "TEST ONLY — issue a raw password-reset token bypassing email. Returns 404 unless NODE_ENV=test or E2E_TEST_ENDPOINTS_ENABLED=true.",
+      },
+    }
+  )
+  .post(
     "/forgot-password",
     async ({ body }) => {
       if (!emailRateLimiter.check(body.email)) {
