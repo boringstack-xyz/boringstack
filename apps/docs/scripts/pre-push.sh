@@ -37,7 +37,7 @@ step "2/4 Dependency vulnerability scan"
 if ! command -v osv-scanner >/dev/null 2>&1; then
   fail "osv-scanner not installed. Install with: brew install osv-scanner"
 fi
-osv-scanner --config="$ROOT/osv-scanner.toml" --lockfile="$DOCS_DIR/bun.lock"
+osv-scanner --config="$DOCS_DIR/osv-scanner.toml" --lockfile="$DOCS_DIR/bun.lock"
 ok "osv-scanner clean"
 
 step "3/4 Production build"
