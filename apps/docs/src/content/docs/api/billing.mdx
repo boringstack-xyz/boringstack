@@ -4,7 +4,6 @@ description: Stripe subscriptions with configured plans, cookie-protected custom
 ---
 
 import { Aside } from "@astrojs/starlight/components";
-import DataMatrix from "../../../components/docs-kit/DataMatrix";
 import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
 import PageIntro from "../../../components/docs-kit/PageIntro";
 
@@ -82,39 +81,6 @@ The customer portal follows the same pattern: authenticated user, `returnUrl` al
       eyebrow: "idempotent",
       title: "Postgres-backed idempotency",
       body: "Every Stripe event id is claimed in the same transaction as the side effect.",
-    },
-  ]}
-/>
-
-## HTTP surface
-
-<DataMatrix
-  caption="Billing HTTP surface"
-  columns={["Endpoint", "Auth", "Purpose"]}
-  rows={[
-    {
-      cells: ["GET /api/v1/billing/plans", "cookie", "List configured plans."],
-    },
-    {
-      cells: [
-        "POST /api/v1/billing/stripe/checkout-session",
-        "cookie",
-        "Create a Stripe Checkout session for the active account.",
-      ],
-    },
-    {
-      cells: [
-        "POST /api/v1/billing/stripe/portal-session",
-        "cookie",
-        "Create a Stripe Customer Portal session for the active account.",
-      ],
-    },
-    {
-      cells: [
-        "POST /api/v1/billing/stripe/webhooks",
-        "Stripe signature",
-        "Receive Stripe events using the raw request body.",
-      ],
     },
   ]}
 />

@@ -2,7 +2,6 @@ import clsx from "clsx";
 import type { ReactNode } from "react";
 
 interface DataMatrixRow {
-  label?: string;
   cells: ReactNode[];
 }
 
@@ -54,7 +53,7 @@ export default function DataMatrix({ columns, rows, caption, highlightColumn }: 
                   highlightColumn === cellIndex &&
                     "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--sl-color-accent)_12%,transparent),color-mix(in_srgb,var(--sl-color-accent)_6%,transparent))]",
                 )}
-                key={`${row.label ?? rowIndex}-${cellIndex}`}
+                key={`${rowIndex}-${cellIndex}`}
               >
                 {cell}
               </div>

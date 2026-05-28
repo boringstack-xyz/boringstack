@@ -60,32 +60,32 @@ What each file does:
 
 <DataMatrix
   caption="Wired by bun run spec:init"
-  columns={["File", "Purpose"]}
+  columns={["File", "Role", "Purpose"]}
   rows={[
     {
-      label: ".specs/next.md",
       cells: [
+        ".specs/next.md",
         "The living spec",
         "Frontmatter (`status`, `slice`, `approved_at`) + Problem, Slice, Verification contract. One file per project; this is the only living spec in the loop.",
       ],
     },
     {
-      label: ".claude/commands/spec.md",
       cells: [
+        ".claude/commands/spec.md",
         "Slash command",
         "Defines `/spec init`, `/spec explore`, `/spec slice`, `/spec approve`, `/spec build`, `/spec ship`, `/spec learn`, `/spec status`, `/spec reset`.",
       ],
     },
     {
-      label: ".claude/settings.json",
       cells: [
+        ".claude/settings.json",
         "Claude Code PreToolUse hook",
         "Runs `bun tools/spec-loop/hooks/gate.ts` before every `Write` / `Edit` / `MultiEdit`. Merges with existing settings; never clobbers.",
       ],
     },
     {
-      label: ".cursor/hooks.json",
       cells: [
+        ".cursor/hooks.json",
         "Cursor preToolUse hook",
         "Same gate, same TypeScript file. Cursor and Claude Code share one enforcement point.",
       ],
@@ -192,39 +192,42 @@ Tight, runnable, outcome-oriented:
 
 <DataMatrix
   caption="One-line acceptance commands you can drop into Verification contract"
-  columns={["Slice shape", "Command"]}
+  columns={["Slice shape", "Example", "Command"]}
   rows={[
     {
-      label: "Pure unit logic",
       cells: [
+        "Pure unit logic",
         "New util in `apps/api/src/lib/<x>/`",
         "`cd apps/api && bun test src/lib/<x>`",
       ],
     },
     {
-      label: "API endpoint",
       cells: [
+        "API endpoint",
         "New `*.routes.ts` + service",
         '`cd apps/api && bun test src/api/<x> --test-name-pattern "creates the resource"`',
       ],
     },
     {
-      label: "UI feature",
       cells: [
+        "UI feature",
         "New page + queries",
         "`cd apps/ui && bun test src/features/<x>`",
       ],
     },
     {
-      label: "Contract change",
       cells: [
+        "Contract change",
         "API schema affects UI types",
         "`bun run regen && bun run check` (from repo root)",
       ],
     },
     {
-      label: "Full vertical slice",
-      cells: ["Cross-app slice", "`bun run check:full` (heavy; use sparingly)"],
+      cells: [
+        "Full vertical slice",
+        "Cross-app slice",
+        "`bun run check:full` (heavy; use sparingly)",
+      ],
     },
   ]}
 />

@@ -38,7 +38,6 @@ provider is active.
   columns={["Provider", "Suppression managed by", "Signal", "Local action"]}
   rows={[
     {
-      label: "Cloudflare",
       cells: [
         "Cloudflare",
         "Cloudflare's internal list",
@@ -47,20 +46,18 @@ provider is active.
       ],
     },
     {
-      label: "Resend",
       cells: [
+        "Resend",
         "Us",
-        "Webhook (svix-signed)",
-        "email.bounced / email.complained",
+        "Webhook (svix-signed): email.bounced / email.complained",
         "Insert a suppression row",
       ],
     },
     {
-      label: "SendGrid",
       cells: [
+        "SendGrid",
         "Us",
-        "Event webhook (ECDSA-signed)",
-        "bounce / spamreport / dropped",
+        "Event webhook (ECDSA-signed): bounce / spamreport / dropped",
         "Insert a suppression row",
       ],
     },
@@ -90,28 +87,15 @@ the queued worker writes the `notification_delivery` row as `suppressed`
 with the reason inlined, and the channel does the same when running
 inline.
 
-## Schema
+## Strongest-signal-wins
 
-One table in the `notifications` schema:
-
-```sql
-CREATE TABLE "notifications"."email_suppression" (
-  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  email               varchar(320) NOT NULL,
-  reason              varchar(32)  NOT NULL,  -- hard_bounce | complaint | provider_suppressed | manual
-  provider            varchar(32)  NOT NULL,  -- resend | sendgrid | cloudflare | manual
-  provider_message_id varchar(255),
-  metadata            jsonb NOT NULL DEFAULT '{}',
-  suppressed_at       timestamptz NOT NULL DEFAULT now()
-);
-CREATE UNIQUE INDEX idx_email_suppression_email ON ... (email);
-```
-
-`email` is the unique key. The first verdict wins, once `alice@…` is
-suppressed by Resend, a later complaint from SendGrid for the same
-address is a no-op insert (the original row stays). This keeps the
-strongest signal we observed and avoids losing a complaint by
-downgrading it to a bounce later.
+The local `email_suppression` table keys on the recipient address. The
+first verdict wins: once `alice@…` is suppressed by Resend, a later
+complaint from SendGrid for the same address is a no-op insert (the
+original row stays). The reason this matters: a hard bounce and a spam
+complaint should never overwrite each other in either direction. We
+keep the strongest signal we already observed and never downgrade a
+complaint to a bounce because a later event arrived.
 
 ## Lifecycle signals
 

@@ -4,7 +4,6 @@ description: Vite + React 19 + TanStack Query + shadcn/ui + Zustand. A typed Ope
 ---
 
 import DocFileTree from "../../../components/DocFileTree";
-import DataMatrix from "../../../components/docs-kit/DataMatrix";
 import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
 import PageIntro from "../../../components/docs-kit/PageIntro";
 import SignalGrid from "../../../components/docs-kit/SignalGrid";
@@ -97,67 +96,7 @@ Components only ever see the [**view object**](/reference/glossary#view-object) 
 
 Every authenticated route renders inside `AppShell`: a brand-marked left sidebar (`AppSidebar` with `NavLink` + `aria-[current=page]:` Tailwind active styling), a sticky header (account switcher · notification bell · theme toggle · logout), and the page content. On mobile the sidebar collapses into a `Sheet` drawer triggered from the header.
 
-<DataMatrix
-  caption="Route map"
-  columns={["Route", "Page", "Auth"]}
-  rows={[
-    { cells: ["/ and /login", "LoginPage", "public"] },
-    {
-      cells: [
-        "/signup",
-        "SignUpPage with form and check-your-inbox confirmation",
-        "public",
-      ],
-    },
-    {
-      cells: [
-        "/verify-email",
-        "VerifyEmailPage with verifying, success, and token-error states",
-        "public",
-      ],
-    },
-    { cells: ["/oauth/success", "OAuthCallbackPage", "public"] },
-    {
-      cells: [
-        "/dashboard",
-        "DashboardPage with welcome, stats, and activity feed",
-        "protected",
-      ],
-    },
-    { cells: ["/notifications", "NotificationsPage", "protected"] },
-    {
-      cells: [
-        "/notifications/preferences",
-        "NotificationsPreferencesPage",
-        "protected",
-      ],
-    },
-    {
-      cells: [
-        "/account/invitations",
-        "InvitationsPage for team invites",
-        "protected",
-      ],
-    },
-    {
-      cells: [
-        "/account/settings",
-        "SettingsPage placeholder sections",
-        "protected",
-      ],
-    },
-    {
-      cells: [
-        "/account/profile",
-        "ProfilePage with read-only useMe fields",
-        "protected",
-      ],
-    },
-    { cells: ["*", "NotFoundPage", "public"] },
-  ]}
-/>
-
-`SettingsPage` ships with an explicit "placeholder, fill this in" copy block so a fork knows the page is wired into the nav but the form is yours to write.
+Out of the box the shell covers the full auth surface (login, signup, verify-email, OAuth callback), the dashboard, the notifications feed and preferences, and the account pages (profile, invitations, settings). `SettingsPage` ships with an explicit "placeholder, fill this in" copy block so a fork knows the page is wired into the nav but the form is yours to write.
 
 ## File layout
 

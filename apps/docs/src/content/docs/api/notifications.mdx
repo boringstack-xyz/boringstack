@@ -171,17 +171,6 @@ void notifications.send(commentRepliedEvent, {
 
 The `payload` is TypeScript-checked at the call site against `commentRepliedEvent.schema`. A bad shape fails to compile.
 
-## HTTP surface
-
-| Endpoint | Purpose |
-| --- | --- |
-| `GET /api/v1/notifications` | List the current user's notifications with stable cursor pagination and an optional `status` filter. |
-| `PATCH /api/v1/notifications/:id` | Mark read / archived. |
-| `POST /api/v1/notifications/mark-all-read` | Bulk mark every unread row read. |
-| `GET /api/v1/notifications/preferences` | List per-event-type, per-channel toggles. |
-| `PUT /api/v1/notifications/preferences` | Bulk upsert preferences (UI submits the full settings page at once). |
-| `GET /api/v1/notifications/stream` | Server-Sent Events stream for the current user. |
-
 ## Realtime: SSE + Valkey pub/sub
 
 SSE is disabled unless `NOTIFICATIONS_SSE_ENABLED=true`. When enabled, the SSE endpoint subscribes to `notifications:user:<userId>` on Valkey. When the SSE channel implementation publishes after persistence, the message is forwarded to every connected client of that user, including clients on different API instances.

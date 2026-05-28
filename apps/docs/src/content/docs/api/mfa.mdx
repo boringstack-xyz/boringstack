@@ -30,39 +30,39 @@ import SignalGrid from "../../../components/docs-kit/SignalGrid";
 
 <DataMatrix
   caption="What MFA defends against"
-  columns={["Threat", "Coverage"]}
+  columns={["Threat", "Vector", "Coverage"]}
   rows={[
     {
-      label: "Stolen password",
       cells: [
+        "Stolen password",
         "Phished or reused on a breached site",
         "TOTP step + replay guard block sign-in without the second factor",
       ],
     },
     {
-      label: "Stolen session cookie",
       cells: [
+        "Stolen session cookie",
         "Browser session token extracted client-side",
         "Out of scope — already authenticated. Mitigated separately by session rotation, 15-minute access JWT, and the JTI revocation cache",
       ],
     },
     {
-      label: "Stolen DB snapshot",
       cells: [
+        "Stolen DB snapshot",
         "Encrypted secret column + argon2id recovery hashes",
         "Attacker cannot enrol a clone without `MFA_ENCRYPTION_KEY`",
       ],
     },
     {
-      label: "Replay of a captured TOTP code",
       cells: [
+        "Replay of a captured TOTP code",
         "Code reuse inside the verification window",
         "`users.mfa_last_totp_step` blocks any step the user has already consumed",
       ],
     },
     {
-      label: "Recovery-code brute force",
       cells: [
+        "Recovery-code brute force",
         "Attacker hammers `/auth/mfa/verify-recovery`",
         "Each challenge token allows 5 attempts then self-destructs; codes are argon2id-hashed",
       ],
@@ -164,71 +164,6 @@ apply by hand.
         "used_at",
         "timestamptz",
         "Set when a code redeems a login. A used code can never authenticate again; the row stays for audit",
-      ],
-    },
-  ]}
-/>
-
-## Endpoints
-
-<DataMatrix
-  caption="The seven MFA endpoints under /api/v1/auth/mfa"
-  columns={["Endpoint", "Auth", "Body", "On success"]}
-  rows={[
-    {
-      cells: [
-        "POST /mfa/setup",
-        "session + step-up password",
-        "{ password }",
-        "Returns otpauthUri + secretBase32 + recoveryCodes (plaintext, once)",
-      ],
-    },
-    {
-      cells: [
-        "POST /mfa/verify-setup",
-        "session",
-        "{ code }",
-        "Persists encrypted secret + recovery code hashes; sets mfaEnabledAt",
-      ],
-    },
-    {
-      cells: [
-        "POST /mfa/verify-login",
-        "challenge token in body",
-        "{ challengeToken, code }",
-        "Issues session + refresh cookies",
-      ],
-    },
-    {
-      cells: [
-        "POST /mfa/verify-recovery",
-        "challenge token in body",
-        "{ challengeToken, code }",
-        "Marks the recovery row used; issues session cookies",
-      ],
-    },
-    {
-      cells: [
-        "POST /mfa/regenerate-recovery-codes",
-        "session + step-up password",
-        "{ password }",
-        "Returns 10 fresh codes; invalidates every previous one",
-      ],
-    },
-    {
-      cells: [
-        "POST /mfa/disable",
-        "session + step-up password",
-        "{ password }",
-        "Clears MFA columns + recovery rows; sends 'MFA disabled' email",
-      ],
-    },
-    {
-      cells: [
-        "GET /mfa/status",
-        "session",
-        "—",
-        "`{ enabled }` for SPA state",
       ],
     },
   ]}
