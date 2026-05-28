@@ -20,11 +20,20 @@
 useDefault = true
 
 [allowlist]
-description = "Web Push test fixtures use placeholder p256dhKey / authKey strings; never real secrets."
+description = "Test fixtures and placeholder lookup tables that the env validator rejects in production are never real secrets."
 paths = [
   '''apps/api/tests/api/notifications/notifications\.push\.utils\.test\.ts''',
   '''apps/api/tests/api/notifications/notifications\.push\.service\.test\.ts''',
   '''apps/ui/scripts/lint-meta/rules/source-text/no-cross-repo-import\.ts''',
+  # validate.ts ships a PLACEHOLDER_SECRET_EXACT_MATCHES list of strings
+  # the boot-time guard rejects in production (test JWT, compose
+  # placeholders, the well-known test MFA encryption key). The list is
+  # the deny-list, not a secret store.
+  '''apps/api/src/config/env/validate\.ts''',
+  # The validateEnv suite exercises every rejected placeholder + a real
+  # synthetic MFA key as the "good" baseline. No live secret reaches
+  # this file.
+  '''apps/api/tests/config/env/validate\.test\.ts''',
 ]
 # Historical finding from an MFA test stub that used a 16-char hex
 # string as a placeholder `challengeToken` value. The working tree was

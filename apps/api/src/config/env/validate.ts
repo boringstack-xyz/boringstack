@@ -354,6 +354,81 @@ const checkEmailFromDomain = (env: Env): string[] => {
   ];
 };
 
+/**
+ * Rejects placeholder secrets in production. The env-example files ship
+ * obviously-fake values long enough to pass the schema's minLength check
+ * (e.g. JWT_SECRET=replace-with-openssl-rand-base64-48), and Docker
+ * Compose has hardcoded migration-task placeholders that exist only to
+ * satisfy schema validation in containers that never sign tokens.
+ * Without this check, an operator who copies the example file verbatim
+ * boots production with a known string. The patterns below cover every
+ * placeholder string that ships in the template today.
+ */
+const PLACEHOLDER_SECRET_EXACT_MATCHES = [
+  "test-only-jwt-secret-padded-to-thirty-two-chars",
+  "migrate-placeholder-secret-padded-to-thirty-two-chars",
+  "api-migrate-placeholder-secret-padded-to-thirty-two",
+  "docker-compose-api-dev-jwt-secret-keys",
+  "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+] as const;
+
+/*
+ * Precomputed lowercase denylist so the exact-match check uses the
+ * same case-folding as the prefix and substring checks below. Without
+ * this, an attacker (or a careless deploy) could bypass the guard by
+ * uppercasing the placeholder.
+ */
+const PLACEHOLDER_SECRET_EXACT_MATCHES_LOWER =
+  PLACEHOLDER_SECRET_EXACT_MATCHES.map((value) => value.toLowerCase());
+
+const PLACEHOLDER_SECRET_PREFIXES = [
+  "replace-with-",
+  "change-me-",
+  "your-",
+  "example-",
+] as const;
+
+const isPlaceholderSecret = (value: string): boolean => {
+  const lower = value.toLowerCase();
+
+  if (PLACEHOLDER_SECRET_EXACT_MATCHES_LOWER.includes(lower)) {
+    return true;
+  }
+
+  if (PLACEHOLDER_SECRET_PREFIXES.some((prefix) => lower.startsWith(prefix))) {
+    return true;
+  }
+
+  return lower.includes("placeholder");
+};
+
+const PLACEHOLDER_SECRET_FIELDS: readonly {
+  readonly name: keyof Env;
+  readonly generator: string;
+}[] = [
+  { name: "JWT_SECRET", generator: "openssl rand -base64 48" },
+  { name: "MFA_ENCRYPTION_KEY", generator: "openssl rand -base64 32" },
+];
+
+const checkPlaceholderSecrets = (env: Env): string[] => {
+  if (env.NODE_ENV !== "production") {
+    return [];
+  }
+
+  return PLACEHOLDER_SECRET_FIELDS.flatMap(({ name, generator }) => {
+    const value = env[name];
+
+    if (typeof value !== "string" || !isPlaceholderSecret(value)) {
+      return [];
+    }
+
+    return [
+      `${name} looks like a placeholder ("${value}"). ` +
+        `Generate a real value with \`${generator}\` and set it before boot.`,
+    ];
+  });
+};
+
 const checkAIProvider = (env: Env): string[] => {
   if (!env.AI_ENABLED || env.NODE_ENV === "test") {
     return [];
@@ -519,6 +594,7 @@ const checkInvariants = (env: Env): string[] => [
   ...checkQueuesEnabledInProd(env),
   ...checkValkeyPassword(env),
   ...checkWebPushVapid(env),
+  ...checkPlaceholderSecrets(env),
 ];
 
 const formatSchemaErrors = (raw: Record<string, unknown>): string[] => {

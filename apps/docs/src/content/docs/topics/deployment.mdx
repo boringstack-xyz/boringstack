@@ -80,6 +80,53 @@ Push to `main` with changes under `apps/api` or `apps/ui`. Path-filtered release
   </FaqItem>
 </FaqGroup>
 
+## Boot-time guardrails
+
+The api enforces a set of rules at startup before it binds the port. A
+misconfigured deploy fails loud here, not silently with a known-weak
+secret. Every rejection comes with the exact command that fixes it.
+
+<FaqGroup>
+  <FaqItem title="Empty or placeholder secrets" open>
+    `JWT_SECRET` and `MFA_ENCRYPTION_KEY` must be set and must not look
+    like a placeholder. The validator rejects empty strings, anything
+    starting with `replace-with-` / `change-me-` / `your-` / `example-`,
+    anything containing `placeholder`, and a short allow-list of
+    well-known test/migration defaults shipped with the template. Fix:
+    `openssl rand -base64 48` (JWT) / `openssl rand -base64 32` (MFA),
+    store in your secret manager, set on the vps.
+  </FaqItem>
+  <FaqItem title="Placeholder EMAIL_FROM domain">
+    `EMAIL_FROM` on `example.com` / `example.org` / `example.net` /
+    `localhost` is rejected in production — every email provider drops
+    sends from unverified domains, the validator catches it before the
+    first send instead of in a queue worker's logs. Fix: set it to an
+    address on a domain you control and verified with the provider.
+  </FaqItem>
+  <FaqItem title="QUEUES_ENABLED=false">
+    Rejected in production because transactional email (verify, reset,
+    notifications) would attempt one inline send per request and lose
+    the message on any provider blip. Fix: leave the default (`true`)
+    or omit the variable.
+  </FaqItem>
+  <FaqItem title="Missing VALKEY_PASSWORD when Valkey is in use">
+    Required when queues, the Valkey cache provider, the notification
+    SSE channel, or any OAuth provider is on — those subsystems read or
+    publish through Valkey. Fix: set a password on the Valkey instance
+    and reference it in your secret manager.
+  </FaqItem>
+  <FaqItem title="OAuth client id without secret (or vice-versa)">
+    Configuring half of a pair is always a mistake. Fix: set both
+    `*_CLIENT_ID` and `*_CLIENT_SECRET` for each enabled provider, or
+    leave both empty.
+  </FaqItem>
+  <FaqItem title="ALLOWED_ORIGINS with http:// or wildcards">
+    Production CORS must be HTTPS-only and explicit. Empty is fine
+    (same-origin deploy). Fix: list the exact SPA origin(s), HTTPS,
+    no `*`.
+  </FaqItem>
+</FaqGroup>
+
 ## First-time wiring
 
 Three things need configuring before the first deploy. The release workflows handle everything else from your repo URL.
@@ -138,6 +185,7 @@ Use this once, after Quickstart and before the first production boot:
 - [ ] GHCR packages set to **Public**, or the VPS has a pull credential.
 - [ ] `compose/.env.production` has `IMAGE_OWNER` and any renamed `API_IMAGE_NAME` / `UI_IMAGE_NAME` (inline values, these aren't secrets).
 - [ ] `JWT_SECRET` generated (`openssl rand -base64 48`), stored in the 1Password vault, referenced as `op://Production/Auth/jwt_secret`.
+- [ ] `MFA_ENCRYPTION_KEY` generated (`openssl rand -base64 32`), stored in the vault, referenced as `op://Production/Auth/mfa_encryption_key`. **This key cannot be rotated after users enrol in MFA** — losing it means re-enrolling every MFA user, so back the vault entry up.
 - [ ] `FRONTEND_URL`, `PUBLIC_API_URL`, `PUBLIC_UI_HOST`, and `ACME_EMAIL` match the production origin (inline, not secrets).
 - [ ] `SUPERUSER_PASSWORD` rotated through the password-reset flow after first login.
 - [ ] [Firewall & TLS](/runbooks/firewall-and-tls/) verified: Cloudflare can reach the origin, direct requests cannot.

@@ -329,4 +329,128 @@ describe("validateEnv", () => {
 
     expect(env.E2E_TEST_ENDPOINTS_ENABLED).toBe(true);
   });
+
+  describe("placeholder secrets in production", () => {
+    const realJwt = "x".repeat(40);
+    const realMfaKey = "RGdmRXJVbmlrV3VqWUFwR2VVZkdLUlBmYWxsa2VBQ08=";
+
+    const seedProd = (): TestEnv => ({
+      NODE_ENV: "production",
+      DATABASE_URL: "postgresql://x:y@localhost:5432/db",
+      JWT_SECRET: realJwt,
+      MFA_ENCRYPTION_KEY: realMfaKey,
+      FRONTEND_URL: "https://app.example.test",
+      PUBLIC_API_URL: "https://app.example.test/api",
+      ALLOWED_ORIGINS: "",
+      EMAIL_PROVIDER: "resend",
+      EMAIL_FROM: "noreply@app.example.test",
+      RESEND_API_KEY: "rk_test",
+      VALKEY_PASSWORD: "secret",
+    });
+
+    it("baseline: production accepts real JWT_SECRET + MFA_ENCRYPTION_KEY", () => {
+      expect(() => validateEnv(seedProd())).not.toThrow();
+    });
+
+    it("rejects the api.prod.env.example JWT placeholder", () => {
+      const env = seedProd();
+
+      env.JWT_SECRET = "replace-with-openssl-rand-base64-48";
+      expect(() => validateEnv(env)).toThrow(/JWT_SECRET.*placeholder/);
+    });
+
+    it("rejects the apps/api/.env.example JWT placeholder", () => {
+      const env = seedProd();
+
+      env.JWT_SECRET = "change-me-to-a-long-random-secret-at-least-32-chars";
+      expect(() => validateEnv(env)).toThrow(/JWT_SECRET.*placeholder/);
+    });
+
+    it("rejects the compose api-migrate-prod JWT placeholder leaking into prod", () => {
+      const env = seedProd();
+
+      env.JWT_SECRET = "migrate-placeholder-secret-padded-to-thirty-two-chars";
+      expect(() => validateEnv(env)).toThrow(/JWT_SECRET.*placeholder/);
+    });
+
+    it("rejects the compose api-migrate-dev JWT placeholder leaking into prod", () => {
+      const env = seedProd();
+
+      env.JWT_SECRET = "api-migrate-placeholder-secret-padded-to-thirty-two";
+      expect(() => validateEnv(env)).toThrow(/JWT_SECRET.*placeholder/);
+    });
+
+    it("rejects the well-known test JWT secret in prod", () => {
+      const env = seedProd();
+
+      env.JWT_SECRET = "test-only-jwt-secret-padded-to-thirty-two-chars";
+      expect(() => validateEnv(env)).toThrow(/JWT_SECRET.*placeholder/);
+    });
+
+    it("rejects uppercased exact-match placeholders (case-insensitive)", () => {
+      const env = seedProd();
+
+      env.JWT_SECRET = "TEST-ONLY-JWT-SECRET-PADDED-TO-THIRTY-TWO-CHARS";
+      expect(() => validateEnv(env)).toThrow(/JWT_SECRET.*placeholder/);
+    });
+
+    it("rejects mixed-case exact-match placeholders", () => {
+      const env = seedProd();
+
+      env.JWT_SECRET = "Migrate-Placeholder-Secret-Padded-To-Thirty-Two-Chars";
+      expect(() => validateEnv(env)).toThrow(/JWT_SECRET.*placeholder/);
+    });
+
+    it("rejects the well-known test MFA encryption key in prod", () => {
+      const env = seedProd();
+
+      env.MFA_ENCRYPTION_KEY = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
+      expect(() => validateEnv(env)).toThrow(/MFA_ENCRYPTION_KEY.*placeholder/);
+    });
+
+    it("rejects any value containing 'placeholder' substring", () => {
+      const env = seedProd();
+
+      env.JWT_SECRET = "totally-legit-but-has-placeholder-in-it-padded";
+      expect(() => validateEnv(env)).toThrow(/JWT_SECRET.*placeholder/);
+    });
+
+    it("rejects 'your-' prefixed placeholder", () => {
+      const env = seedProd();
+
+      env.JWT_SECRET = "your-jwt-secret-here-keep-padded-thirty-two-cha";
+      expect(() => validateEnv(env)).toThrow(/JWT_SECRET.*placeholder/);
+    });
+
+    it("error message names the generator command", () => {
+      const env = seedProd();
+
+      env.JWT_SECRET = "replace-with-openssl-rand-base64-48";
+      expect(() => validateEnv(env)).toThrow(/openssl rand -base64 48/);
+    });
+
+    it("error message for MFA names the 32-byte generator", () => {
+      const env = seedProd();
+
+      env.MFA_ENCRYPTION_KEY = "replace-with-openssl-rand-base64-32";
+      expect(() => validateEnv(env)).toThrow(/openssl rand -base64 32/);
+    });
+
+    it("allows placeholder strings in development (dev compose uses them on purpose)", () => {
+      testEnv.JWT_SECRET =
+        "migrate-placeholder-secret-padded-to-thirty-two-chars";
+      expect(() => validateEnv(testEnv)).not.toThrow();
+    });
+
+    it("allows the test MFA key in test mode (validator's own default)", () => {
+      testEnv.NODE_ENV = "test";
+      testEnv.MFA_ENCRYPTION_KEY =
+        "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
+      testEnv.DATABASE_URL = "";
+      testEnv.JWT_SECRET = "";
+      testEnv.FRONTEND_URL = "";
+      testEnv.RESEND_API_KEY = "";
+      expect(() => validateEnv(testEnv)).not.toThrow();
+    });
+  });
 });
