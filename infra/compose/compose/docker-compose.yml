@@ -200,6 +200,15 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app_dev_password}@postgres:5432/${POSTGRES_DB:-app}
       VALKEY_HOST: valkey
       VALKEY_PORT: "6379"
+      # MFA setup stages the encrypted secret in cache between
+      # `/auth/mfa/setup` and `/auth/mfa/verify-setup`. With the
+      # default noop cache the second call always returns "Enrollment
+      # session expired" — surfaced by the smoke + Playwright gate.
+      # Pinning Valkey here keeps every Valkey-backed feature
+      # (cache, MFA staging, OAuth state, rate limit) on one provider
+      # in dev/smoke.
+      CACHE_ENABLED: ${API_DEV_CACHE_ENABLED:-true}
+      CACHE_PROVIDER: ${API_DEV_CACHE_PROVIDER:-valkey}
       NODE_ENV: development
       BUN_ENV: development
       PORT: "7330"

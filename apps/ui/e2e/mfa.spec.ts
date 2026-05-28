@@ -82,6 +82,18 @@ const provisionEnrolledUser = async (): Promise<{
   await ctx.post("/api/v1/auth/logout");
   await ctx.dispose();
 
+  /*
+   * Verify-setup just bumped mfaLastTotpStep to the current step, so
+   * any TOTP we generate within the same 30s window would be
+   * rejected by the replay guard. Sleep across the next step
+   * boundary so the test's first verify-login call lands on a
+   * strictly greater step.
+   */
+  const STEP_MS = 30_000;
+  const msUntilNextStep = STEP_MS - (Date.now() % STEP_MS) + 200;
+
+  await new Promise((resolve) => setTimeout(resolve, msUntilNextStep));
+
   return {
     user: { email, password },
     mfa: {

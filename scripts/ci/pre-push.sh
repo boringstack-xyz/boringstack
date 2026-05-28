@@ -95,6 +95,13 @@ fi
 # `validate` saves time when a finding lands here.
 bash "$ROOT/scripts/ci/pre-push-security.sh"
 
+# Smoke + Playwright runs next, before the per-app validate fan-out.
+# Path-gated: short-circuits to a no-op when nothing in api/auth,
+# lib/crypto, compose, or the UI auth surface changed. When it does
+# fire, it reuses any already-running dev stack instead of demolishing
+# it; otherwise it boots STACK=smoke and tears it back down on exit.
+bash "$ROOT/scripts/ci/pre-push-smoke.sh"
+
 RAN_ANY=0
 
 for app in api ui docs; do
