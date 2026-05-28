@@ -108,32 +108,66 @@ same 30-second window.
 
 ## Schema
 
-Three additive columns on `auth.users`:
+Three additive columns on `auth.users`, plus one new table for recovery
+codes. The migration is baked into `0000_modern_chameleon.sql`, so this
+is reference for what the model holds at runtime — not something you
+apply by hand.
 
-```sql
-ALTER TABLE auth.users
-  ADD COLUMN mfa_enabled_at       timestamptz,
-  ADD COLUMN mfa_secret_encrypted text,
-  ADD COLUMN mfa_last_totp_step   bigint;
-```
+<DataMatrix
+  caption="auth.users — MFA columns"
+  columns={["Column", "Type", "Purpose"]}
+  rows={[
+    {
+      cells: [
+        "mfa_enabled_at",
+        "timestamptz",
+        "NULL until the user finishes enrollment; the single source of truth for 'MFA is on'",
+      ],
+    },
+    {
+      cells: [
+        "mfa_secret_encrypted",
+        "text",
+        "AES-256-GCM ciphertext as v1$<iv>$<ct>$<tag>. The v1$ prefix is the rotation handle so a future v2$ decrypter can dispatch without a column migration",
+      ],
+    },
+    {
+      cells: [
+        "mfa_last_totp_step",
+        "bigint",
+        "Highest 30-second step that has already authenticated a session. Rises monotonically and blocks replay inside the same window",
+      ],
+    },
+  ]}
+/>
 
-One new table:
-
-```sql
-CREATE TABLE auth.mfa_recovery_codes (
-  id          serial PRIMARY KEY,
-  user_id     uuid NOT NULL REFERENCES auth.users(id) ON DELETE cascade,
-  code_hash   text NOT NULL,
-  used_at     timestamptz,
-  created_at  timestamptz NOT NULL DEFAULT now()
-);
-CREATE INDEX idx_mfa_recovery_codes_user_id ON auth.mfa_recovery_codes(user_id);
-```
-
-`mfa_secret_encrypted` carries the AES-256-GCM ciphertext as
-`v1$<iv>$<ct>$<tag>`. The `v1$` prefix is the rotation handle — when
-a future deploy rotates `MFA_ENCRYPTION_KEY`, a `v2$` decrypter can
-dispatch on it without a column migration.
+<DataMatrix
+  caption="auth.mfa_recovery_codes"
+  columns={["Column", "Type", "Purpose"]}
+  rows={[
+    {
+      cells: [
+        "user_id",
+        "uuid",
+        "Owning user. ON DELETE CASCADE so account deletion sweeps the codes",
+      ],
+    },
+    {
+      cells: [
+        "code_hash",
+        "text",
+        "argon2id hash of the plaintext recovery code. Plaintext is shown to the user once at enrollment and never persisted",
+      ],
+    },
+    {
+      cells: [
+        "used_at",
+        "timestamptz",
+        "Set when a code redeems a login. A used code can never authenticate again; the row stays for audit",
+      ],
+    },
+  ]}
+/>
 
 ## Endpoints
 
@@ -142,56 +176,60 @@ dispatch on it without a column migration.
   columns={["Endpoint", "Auth", "Body", "On success"]}
   rows={[
     {
-      label: "POST /mfa/setup",
       cells: [
+        "POST /mfa/setup",
         "session + step-up password",
         "{ password }",
         "Returns otpauthUri + secretBase32 + recoveryCodes (plaintext, once)",
       ],
     },
     {
-      label: "POST /mfa/verify-setup",
       cells: [
+        "POST /mfa/verify-setup",
         "session",
         "{ code }",
         "Persists encrypted secret + recovery code hashes; sets mfaEnabledAt",
       ],
     },
     {
-      label: "POST /mfa/verify-login",
       cells: [
+        "POST /mfa/verify-login",
         "challenge token in body",
         "{ challengeToken, code }",
         "Issues session + refresh cookies",
       ],
     },
     {
-      label: "POST /mfa/verify-recovery",
       cells: [
+        "POST /mfa/verify-recovery",
         "challenge token in body",
         "{ challengeToken, code }",
         "Marks the recovery row used; issues session cookies",
       ],
     },
     {
-      label: "POST /mfa/regenerate-recovery-codes",
       cells: [
+        "POST /mfa/regenerate-recovery-codes",
         "session + step-up password",
         "{ password }",
         "Returns 10 fresh codes; invalidates every previous one",
       ],
     },
     {
-      label: "POST /mfa/disable",
       cells: [
+        "POST /mfa/disable",
         "session + step-up password",
         "{ password }",
         "Clears MFA columns + recovery rows; sends 'MFA disabled' email",
       ],
     },
     {
-      label: "GET /mfa/status",
-      cells: ["session", "—", "`{ enabled }` for SPA state"],
+      cells: [
+        "GET /mfa/status",
+        "session",
+        "—",
+        "`{ enabled }` for SPA state",
+      ],
     },
   ]}
 />
