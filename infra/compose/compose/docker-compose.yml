@@ -204,6 +204,14 @@ services:
       BUN_ENV: development
       PORT: "7330"
       JWT_SECRET: ${API_DEV_JWT_SECRET:-docker-compose-api-dev-jwt-secret-keys}
+      # AES-256-GCM key for MFA secret encryption. Base64 32 bytes.
+      # Same shape as JWT_SECRET — dev/smoke gets a deterministic
+      # placeholder so the smoke stack and Playwright e2e can enrol
+      # MFA without a real secret in the box. Production sets
+      # API_MFA_ENCRYPTION_KEY explicitly (or via secret manager
+      # template); a deploy with the placeholder is detected by the
+      # env validator's invariants check.
+      MFA_ENCRYPTION_KEY: ${API_DEV_MFA_ENCRYPTION_KEY:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
       FRONTEND_URL: ${API_DEV_FRONTEND_URL:-http://localhost:7331}
       ALLOWED_ORIGINS: ${API_DEV_ALLOWED_ORIGINS:-}
       PUBLIC_API_URL: ${API_DEV_PUBLIC_API_URL:-http://localhost:7331/api}
