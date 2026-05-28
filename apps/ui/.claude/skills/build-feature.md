@@ -1,9 +1,9 @@
 ---
 name: build-feature
-description: Use when implementing a new feature in ui-template — adding a page, scaffolding a component, building a vertical UI slice, wiring an existing API endpoint into the SPA, or creating a form. Drives the canonical loop — spec → plan → scaffold → tests-first → implement → `bun run validate` → diff summary. Triggers — "add a feature", "add a page", "scaffold a component", "build [X] UI", "wire up [X] page", "add a route", "add the [X] screen", "new component", "new feature folder", "consume the /api/[X] endpoint".
+description: Use when implementing a new feature in apps/ui — adding a page, scaffolding a component, building a vertical UI slice, wiring an existing API endpoint into the SPA, or creating a form. Drives the canonical loop — spec → plan → scaffold → tests-first → implement → `bun run validate` → diff summary. Triggers — "add a feature", "add a page", "scaffold a component", "build [X] UI", "wire up [X] page", "add a route", "add the [X] screen", "new component", "new feature folder", "consume the /api/[X] endpoint".
 ---
 
-# Build feature (ui-template)
+# Build feature (apps/ui)
 
 You are implementing a new UI feature end-to-end. The loop has six checkpoints. Don't skip ahead — each step's output informs the next. The merge gate is `bun run validate`; pre-1.0 rules apply (no `dark:` Tailwind classes, no `any`/`!`/`as`, no `dangerouslySetInnerHTML`, no `import.meta.env` outside `src/lib/env/`, no inline `eslint-disable`, no `console.*`).
 
@@ -20,7 +20,7 @@ Ask the user (or restate from context) in this order:
    - Form (RHF + Zod)
    - List view fed by TanStack Query
 3. **What does success look like?** User-visible behavior. Becomes test expectations in Checkpoint 4.
-4. **Does this need a new endpoint?** If yes — run api-template's `/build-feature` first, regenerate the OpenAPI client via `bun run openapi:types`, then come back here.
+4. **Does this need a new endpoint?** If yes — run apps/api's `/build-feature` first, regenerate the OpenAPI client via `bun run openapi:types`, then come back here.
 
 Print a one-line summary. Stop until the user confirms.
 

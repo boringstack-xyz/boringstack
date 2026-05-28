@@ -1,0 +1,18 @@
+{
+  "name": "agjs-solo-spec-loop",
+  "description": "Marketplace for agjs/solo-spec-loop (identifier matches repo namespace; use solo-spec-loop@agjs-solo-spec-loop to pin installs).",
+  "owner": {
+    "name": "agjs"
+  },
+  "plugins": [
+    {
+      "name": "solo-spec-loop",
+      "description": "Portable spec loop for solo builders: one micro-spec, optional hard gate, no ADR sprawl. Editor plugins are adapters only.",
+      "version": "0.1.0",
+      "source": "./",
+      "author": {
+        "name": "agjs"
+      }
+    }
+  ]
+}

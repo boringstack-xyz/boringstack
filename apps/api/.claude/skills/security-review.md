@@ -1,9 +1,9 @@
 ---
 name: security-review
-description: Use when reviewing a branch or PR for security regressions in api-template. Replays the Layer 1 CI scanners locally (gitleaks, osv-scanner, bun audit), invokes Layer 2 agent skills (differential-review, insecure-defaults, sharp-edges, supply-chain-risk-auditor) in parallel, then runs BoringStack-specific invariants — ACL ability checks on routes, multi-tenant accountId scoping, Stripe webhook signature handling, rate limits on credential routes, audit-log coverage on mutations, idempotent BullMQ jobs. Triggers — "security review", "review for security", "any vulnerabilities in this branch", "audit this PR", "is this safe to merge", "is the auth wired correctly", "did we leave any footguns".
+description: Use when reviewing a branch or PR for security regressions in apps/api. Replays the Layer 1 CI scanners locally (gitleaks, osv-scanner, bun audit), invokes Layer 2 agent skills (differential-review, insecure-defaults, sharp-edges, supply-chain-risk-auditor) in parallel, then runs BoringStack-specific invariants — ACL ability checks on routes, multi-tenant accountId scoping, Stripe webhook signature handling, rate limits on credential routes, audit-log coverage on mutations, idempotent BullMQ jobs. Triggers — "security review", "review for security", "any vulnerabilities in this branch", "audit this PR", "is this safe to merge", "is the auth wired correctly", "did we leave any footguns".
 ---
 
-# Security review (api-template)
+# Security review (apps/api)
 
 You are reviewing this branch for security regressions. Work through the
 five checkpoints below. Do not skip ahead. Print findings as you go; do not

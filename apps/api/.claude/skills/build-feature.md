@@ -1,9 +1,9 @@
 ---
 name: build-feature
-description: Use when implementing a new feature in api-template — adding an endpoint, scaffolding a CRUD resource, wiring a BullMQ job, adding a notification event, an ACL feature flag, an audit-log event, or a vertical backend slice. Drives the canonical loop — spec → plan → scaffold → tests-first → implement → `bun run validate` → diff summary. Triggers — "add a feature", "add an endpoint", "scaffold a resource", "build [X]", "add CRUD for", "I need an endpoint for", "wire up [X]", "add a queue", "add a job", "add a notification event", "new resource", "new route", "create the [X] service".
+description: Use when implementing a new feature in apps/api — adding an endpoint, scaffolding a CRUD resource, wiring a BullMQ job, adding a notification event, an ACL feature flag, an audit-log event, or a vertical backend slice. Drives the canonical loop — spec → plan → scaffold → tests-first → implement → `bun run validate` → diff summary. Triggers — "add a feature", "add an endpoint", "scaffold a resource", "build [X]", "add CRUD for", "I need an endpoint for", "wire up [X]", "add a queue", "add a job", "add a notification event", "new resource", "new route", "create the [X] service".
 ---
 
-# Build feature (api-template)
+# Build feature (apps/api)
 
 You are implementing a new backend feature end-to-end. The loop has six checkpoints. Don't skip ahead — each step's output informs the next. The merge gate is `bun run validate`; pre-1.0 rules apply (no deprecated code, no historical comments, no inline `eslint-disable`, no PII in audit-log `metadata`, no `process.env` outside `src/config/env/**`).
 

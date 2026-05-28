@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "command": "python3 ./hooks/solo_spec_gate.py"
+      }
+    ]
+  }
+}

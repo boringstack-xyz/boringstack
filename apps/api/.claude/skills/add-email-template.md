@@ -1,9 +1,9 @@
 ---
 name: add-email-template
-description: Use when adding a new transactional email template to api-template. There is no `bun run new:email-template` scaffolder; this skill encodes the manual workflow — create the Handlebars files, regenerate the precompiled JSON, call `sendTemplate(...)` at the site that needs it, inspect in Mailpit. Triggers — "add an email template", "new email", "send a [X] email", "wire up the [X] email", "transactional email for [X]", "send mail when [X]".
+description: Use when adding a new transactional email template to apps/api. There is no `bun run new:email-template` scaffolder; this skill encodes the manual workflow — create the Handlebars files, regenerate the precompiled JSON, call `sendTemplate(...)` at the site that needs it, inspect in Mailpit. Triggers — "add an email template", "new email", "send a [X] email", "wire up the [X] email", "transactional email for [X]", "send mail when [X]".
 ---
 
-# Add email template (api-template)
+# Add email template (apps/api)
 
 You are adding a new transactional email end-to-end. There is no scaffolder — the moving parts are too varied. Five steps.
 
