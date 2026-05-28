@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, lt, or } from "drizzle-orm";
 import { Secret } from "otpauth";
 
 import { db } from "../../../clients/postgres";
@@ -236,10 +236,36 @@ export class MfaService {
       return this.recordFailedAttempt(challengeKey, challenge, user.id);
     }
 
-    await db
+    /*
+     * Atomic consume. Two concurrent verifies with the same valid TOTP
+     * code would otherwise both clear the in-memory replay check and
+     * both UPDATE — issuing two sessions from one factor. The
+     * conditional WHERE clause ensures only one transaction commits;
+     * the loser returns `failed` without touching the challenge so it
+     * does not resurrect a key the winner is about to delete.
+     */
+    const claimed = await db
       .update(users)
       .set({ mfaLastTotpStep: matchedStep, updatedAt: now() })
-      .where(eq(users.id, user.id));
+      .where(
+        and(
+          eq(users.id, user.id),
+          or(
+            isNull(users.mfaLastTotpStep),
+            lt(users.mfaLastTotpStep, matchedStep)
+          )
+        )
+      )
+      .returning({ id: users.id });
+
+    if (claimed.length === 0) {
+      logger.warn("MFA TOTP race lost", {
+        event: "auth.mfa.totp_replay_rejected",
+        userId: user.id,
+      });
+
+      return { kind: "failed", attemptsRemaining: 0 };
+    }
 
     await cacheService.del(challengeKey);
 
@@ -306,10 +332,34 @@ export class MfaService {
       throw ApiErrors.unauthorized("MFA challenge target missing");
     }
 
-    await db
+    /*
+     * Atomic consume. The argon2id verify above is slow (~20-50ms),
+     * which is a wide window for two concurrent requests with the
+     * same valid code to both clear the in-memory check. The
+     * conditional `used_at IS NULL` clause + RETURNING make sure only
+     * one transaction commits; the loser returns failed without
+     * touching the challenge so it does not resurrect a key the
+     * winner is about to delete.
+     */
+    const claimed = await db
       .update(mfaRecoveryCodes)
       .set({ usedAt: now() })
-      .where(eq(mfaRecoveryCodes.id, matched.id));
+      .where(
+        and(
+          eq(mfaRecoveryCodes.id, matched.id),
+          isNull(mfaRecoveryCodes.usedAt)
+        )
+      )
+      .returning({ id: mfaRecoveryCodes.id });
+
+    if (claimed.length === 0) {
+      logger.warn("MFA recovery code race lost", {
+        event: "auth.mfa.recovery_used",
+        userId: challenge.userId,
+      });
+
+      return { kind: "failed", attemptsRemaining: 0 };
+    }
 
     await cacheService.del(challengeKey);
 

@@ -451,4 +451,100 @@ describe("MfaService", () => {
       expect(caught).toBeInstanceOf(ApiError);
     });
   });
+
+  /*
+   * Concurrency / TOCTOU regression tests. Each verify path used to
+   * race between SELECT-then-verify (slow argon2id or TOTP check) and
+   * an unconditional UPDATE: two concurrent requests with the same
+   * valid code could both win, issuing two sessions from one factor.
+   * The fix makes the consume conditional (UPDATE ... WHERE used_at
+   * IS NULL / WHERE last_step < new_step RETURNING) so only one
+   * caller commits.
+   */
+  describe("verifyRecoveryLogin — concurrency", () => {
+    test("N concurrent calls with the same code yield exactly one verified outcome", async () => {
+      if (!(await requireDb())) {
+        return;
+      }
+
+      const { user } = await seedVerifiedUser({
+        email: "mfa-recovery-race@example.com",
+        password: PASSWORD,
+      });
+
+      const { recoveryCodes } = await enrollMfa(user.id);
+      const code = recoveryCodes[0];
+
+      if (code === undefined) {
+        throw new Error("no recovery codes generated");
+      }
+
+      /*
+       * Argon2id verify takes long enough (~20-50ms) that multiple
+       * concurrent calls would clear the in-memory check before the
+       * row UPDATE landed. Only the conditional WHERE clause keeps
+       * the consume atomic.
+       */
+      const { challengeToken } = await mfaService.issueChallenge(user.id);
+      const concurrency = 5;
+      const outcomes = await Promise.all(
+        Array.from({ length: concurrency }, () =>
+          mfaService.verifyRecoveryLogin(challengeToken, code)
+        )
+      );
+      const verifiedCount = outcomes.filter(
+        (outcome) => outcome.kind === "verified"
+      ).length;
+
+      expect(verifiedCount).toBe(1);
+
+      // And the recovery row must be marked used exactly once.
+      const rows = await db
+        .select()
+        .from(mfaRecoveryCodes)
+        .where(eq(mfaRecoveryCodes.userId, user.id));
+      const usedRows = rows.filter((row) => row.usedAt !== null);
+
+      expect(usedRows).toHaveLength(1);
+    });
+  });
+
+  describe("verifyTotpLogin — concurrency", () => {
+    test("N concurrent calls with the same TOTP code yield exactly one verified outcome", async () => {
+      if (!(await requireDb())) {
+        return;
+      }
+
+      const { user } = await seedVerifiedUser({
+        email: "mfa-totp-race@example.com",
+        password: PASSWORD,
+      });
+
+      await enrollMfa(user.id);
+      /*
+       * Test isolation, not a security relaxation: the setup verify
+       * bumped mfaLastTotpStep to the current step, which would block
+       * every call below with same-step replay protection — masking
+       * the race we want to measure.
+       */
+      await db
+        .update(users)
+        .set({ mfaLastTotpStep: null })
+        .where(eq(users.id, user.id));
+
+      const code = await generateTotpForUser(user.id);
+      const { challengeToken } = await mfaService.issueChallenge(user.id);
+      const concurrency = 5;
+      const outcomes = await Promise.all(
+        Array.from({ length: concurrency }, () =>
+          mfaService.verifyTotpLogin(challengeToken, code)
+        )
+      );
+      const verifiedCount = outcomes.filter(
+        (outcome) => outcome.kind === "verified"
+      ).length;
+
+      expect(verifiedCount).toBe(1);
+    });
+  });
 });

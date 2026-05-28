@@ -26,3 +26,8 @@ paths = [
   '''apps/api/tests/api/notifications/notifications\.push\.service\.test\.ts''',
   '''apps/ui/scripts/lint-meta/rules/source-text/no-cross-repo-import\.ts''',
 ]
+# Historical finding from an MFA test stub that used a 16-char hex
+# string as a placeholder `challengeToken` value. The working tree was
+# updated to a clearly non-key string in a later commit; this
+# fingerprint pins the historical hit so CI doesn't re-flag it.
+commits = ["901fd55367183293112f393dbc4cb99127af3913"]

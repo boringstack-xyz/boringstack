@@ -10,7 +10,7 @@ describe("isMfaRequiredEnvelope", () => {
     expect(
       isMfaRequiredEnvelope({
         mfaRequired: true,
-        challengeToken: "abcdef1234567890"
+        challengeToken: "test-challenge-token-stub"
       })
     ).toBe(true);
   });
