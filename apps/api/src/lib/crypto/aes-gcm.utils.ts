@@ -56,7 +56,16 @@ const decodeKey = (raw: string): Buffer => {
 export const encryptString = (plaintext: string): string => {
   const key = decodeKey(env.MFA_ENCRYPTION_KEY);
   const iv = randomBytes(AES_GCM_IV_BYTES);
-  const cipher = createCipheriv(CIPHER_ALGORITHM, key, iv);
+  /*
+   * Pinning `authTagLength` matters on decrypt — a missing option lets
+   * Node accept a shorter-than-expected tag, which an attacker could
+   * use to forge ciphertext. We pass it on encrypt too so the value
+   * the cipher emits and the value the decipher will verify are the
+   * same constant.
+   */
+  const cipher = createCipheriv(CIPHER_ALGORITHM, key, iv, {
+    authTagLength: AES_GCM_TAG_BYTES,
+  });
   const ciphertext = Buffer.concat([
     cipher.update(plaintext, "utf8"),
     cipher.final(),
@@ -109,7 +118,9 @@ export const decryptString = (payload: string): string => {
   }
 
   const key = decodeKey(env.MFA_ENCRYPTION_KEY);
-  const decipher = createDecipheriv(CIPHER_ALGORITHM, key, iv);
+  const decipher = createDecipheriv(CIPHER_ALGORITHM, key, iv, {
+    authTagLength: AES_GCM_TAG_BYTES,
+  });
 
   decipher.setAuthTag(tag);
 
