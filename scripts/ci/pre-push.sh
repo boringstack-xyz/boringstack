@@ -90,6 +90,11 @@ else
   echo "$CHANGED_PATHS" | sed 's/^/    /'
 fi
 
+# Security scanners run first — gitleaks, semgrep, osv-scanner all
+# fail the entire push, so racing them ahead of the slower per-app
+# `validate` saves time when a finding lands here.
+bash "$ROOT/scripts/ci/pre-push-security.sh"
+
 RAN_ANY=0
 
 for app in api ui docs; do
