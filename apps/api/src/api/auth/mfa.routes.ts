@@ -63,7 +63,7 @@ const mfaUnauthenticatedRoutes = new Elysia()
       const session = await sessionService.create(outcome.user.id);
       const accountId = await resolveActiveAccountId(outcome.user.id);
       const token = await jwt.sign(
-        buildJWTPayload(outcome.user.id, outcome.user.email, accountId)
+        await buildJWTPayload(outcome.user.id, outcome.user.email, accountId)
       );
 
       cookie[AUTH_COOKIE_NAME]?.set({ value: token, ...AUTH_COOKIE_CONFIG });
@@ -106,7 +106,7 @@ const mfaUnauthenticatedRoutes = new Elysia()
       const session = await sessionService.create(outcome.user.id);
       const accountId = await resolveActiveAccountId(outcome.user.id);
       const token = await jwt.sign(
-        buildJWTPayload(outcome.user.id, outcome.user.email, accountId)
+        await buildJWTPayload(outcome.user.id, outcome.user.email, accountId)
       );
 
       cookie[AUTH_COOKIE_NAME]?.set({ value: token, ...AUTH_COOKIE_CONFIG });

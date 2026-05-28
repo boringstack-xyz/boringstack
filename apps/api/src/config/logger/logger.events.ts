@@ -24,6 +24,7 @@ export const LOG_EVENTS = [
   "auth.login.mfa_required",
   "auth.login.success",
   "auth.jwt.revoke_check_failed",
+  "auth.jwt.revoke_cutoff_read_failed",
   "auth.jwt.revoke_failed",
   "auth.jwt.revoke_user_check_failed",
   "auth.jwt.revoke_user_failed",

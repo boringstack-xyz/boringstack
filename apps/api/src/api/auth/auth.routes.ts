@@ -105,7 +105,7 @@ const credentialingRoutes = new Elysia()
       const accountId = await resolveActiveAccountId(result.user.id);
       const session = await sessionService.create(result.user.id);
       const token = await jwt.sign(
-        buildJWTPayload(result.user.id, result.user.email, accountId)
+        await buildJWTPayload(result.user.id, result.user.email, accountId)
       );
 
       const auth = cookie[AUTH_COOKIE_NAME];
@@ -128,7 +128,11 @@ const credentialingRoutes = new Elysia()
       const result = await emailVerificationService.verify(body.token);
       const session = await sessionService.create(result.user.id);
       const token = await jwt.sign(
-        buildJWTPayload(result.user.id, result.user.email, result.accountId)
+        await buildJWTPayload(
+          result.user.id,
+          result.user.email,
+          result.accountId
+        )
       );
 
       const auth = cookie[AUTH_COOKIE_NAME];
@@ -193,7 +197,11 @@ const credentialingRoutes = new Elysia()
       );
       const session = await sessionService.create(result.user.id);
       const token = await jwt.sign(
-        buildJWTPayload(result.user.id, result.user.email, result.accountId)
+        await buildJWTPayload(
+          result.user.id,
+          result.user.email,
+          result.accountId
+        )
       );
 
       const auth = cookie[AUTH_COOKIE_NAME];
@@ -381,7 +389,7 @@ const sessionAndOAuthRoutes = new Elysia()
       const result = await sessionService.refresh(refreshValue);
       const accountId = await resolveActiveAccountId(result.user.id);
       const token = await jwt.sign(
-        buildJWTPayload(result.user.id, result.user.email, accountId)
+        await buildJWTPayload(result.user.id, result.user.email, accountId)
       );
 
       const auth = cookie[AUTH_COOKIE_NAME];
@@ -496,7 +504,11 @@ const sessionAndOAuthRoutes = new Elysia()
       const session = await sessionService.create(result.user.id);
 
       const token = await jwt.sign(
-        buildJWTPayload(result.user.id, result.user.email, result.accountId)
+        await buildJWTPayload(
+          result.user.id,
+          result.user.email,
+          result.accountId
+        )
       );
 
       const auth = cookie[AUTH_COOKIE_NAME];

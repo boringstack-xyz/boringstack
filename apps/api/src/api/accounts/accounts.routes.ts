@@ -567,7 +567,7 @@ const accountSessionRoutes = createAuthMiddleware()
       await accountsService.switchAccount(user.id, body.accountId);
 
       const token = await jwt.sign(
-        buildJWTPayload(user.id, user.email, body.accountId)
+        await buildJWTPayload(user.id, user.email, body.accountId)
       );
       const auth = cookie[AUTH_COOKIE_NAME];
 
