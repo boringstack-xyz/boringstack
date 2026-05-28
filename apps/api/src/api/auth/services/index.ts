@@ -12,4 +12,5 @@ export {
   PasswordChangeService,
   passwordChangeService,
 } from "./password-change.service";
+export { MfaService, mfaService } from "./mfa.service";
 export { SessionService, sessionService } from "./session.service";

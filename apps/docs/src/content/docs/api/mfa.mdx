@@ -1,0 +1,276 @@
+---
+title: Two-factor authentication
+description: Optional TOTP MFA on top of password login. Encrypted secret at rest, opaque single-use challenge tokens in Valkey, hashed recovery codes in Postgres, replay-guarded by step counter.
+---
+
+import CommandRun from "../../../components/docs-kit/CommandRun";
+import DataMatrix from "../../../components/docs-kit/DataMatrix";
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import SignalGrid from "../../../components/docs-kit/SignalGrid";
+
+<PageIntro
+  eyebrow="Security"
+  actions={[
+    { label: "Enrollment flow", href: "#enrollment-flow" },
+    { label: "Login flow", href: "#login-flow" },
+  ]}
+  facts={[
+    { value: "TOTP", label: "RFC 6238, 30s step" },
+    { value: "10 codes", label: "argon2id-hashed recovery" },
+    { value: "AES-256-GCM", label: "secret at rest" },
+  ]}
+>
+  Users opt into a second factor. A 32-byte TOTP secret lives encrypted in
+  Postgres, the matched step counter blocks replay, and ten single-use recovery
+  codes get the user back in if their authenticator dies. Login detours through
+  an opaque, hashed, single-use challenge token in Valkey.
+</PageIntro>
+
+## Threat model
+
+<DataMatrix
+  caption="What MFA defends against"
+  columns={["Threat", "Coverage"]}
+  rows={[
+    {
+      label: "Stolen password",
+      cells: [
+        "Phished or reused on a breached site",
+        "TOTP step + replay guard block sign-in without the second factor",
+      ],
+    },
+    {
+      label: "Stolen session cookie",
+      cells: [
+        "Browser session token extracted client-side",
+        "Out of scope — already authenticated. Mitigated separately by session rotation, 15-minute access JWT, and the JTI revocation cache",
+      ],
+    },
+    {
+      label: "Stolen DB snapshot",
+      cells: [
+        "Encrypted secret column + argon2id recovery hashes",
+        "Attacker cannot enrol a clone without `MFA_ENCRYPTION_KEY`",
+      ],
+    },
+    {
+      label: "Replay of a captured TOTP code",
+      cells: [
+        "Code reuse inside the verification window",
+        "`users.mfa_last_totp_step` blocks any step the user has already consumed",
+      ],
+    },
+    {
+      label: "Recovery-code brute force",
+      cells: [
+        "Attacker hammers `/auth/mfa/verify-recovery`",
+        "Each challenge token allows 5 attempts then self-destructs; codes are argon2id-hashed",
+      ],
+    },
+  ]}
+/>
+
+## Enrollment flow
+
+```mermaid
+flowchart LR
+  user["Settings → Enable MFA"] --> setup["POST /auth/mfa/setup<br/>(password)"]
+  setup --> stage["Stage encrypted secret + recovery hashes in Valkey<br/>cache:mfa:setup:{userId}, 10m TTL"]
+  stage --> qr["SPA renders QR + 10 recovery codes"]
+  qr --> verify["POST /auth/mfa/verify-setup<br/>(first 6-digit code)"]
+  verify --> persist["Persist encrypted secret to users<br/>insert recovery codes<br/>set mfaEnabledAt"]
+  persist --> email["Send 'MFA enabled' email"]
+```
+
+Mid-enrollment state lives in Valkey, not Postgres. An abandoned setup
+self-cleans after 10 minutes. The first valid code is required before
+the secret moves to the durable column, so a half-finished QR scan
+cannot lock the user out.
+
+## Login flow
+
+```mermaid
+flowchart LR
+  login["POST /auth/login<br/>(email + password)"] --> check{mfaEnabledAt?}
+  check -- no --> session["Issue session + refresh cookies"]
+  check -- yes --> challenge["Return {mfaRequired, challengeToken}<br/>(opaque, hashed in Valkey, 5m TTL)"]
+  challenge --> verify["POST /auth/mfa/verify-login<br/>{challengeToken, code}"]
+  verify --> step{matchedStep > lastStep?}
+  step -- no --> rejected["recordFailedAttempt<br/>(5 fails → DEL key)"]
+  step -- yes --> issue["Update lastStep, issue session cookies"]
+```
+
+The challenge token is **opaque** — only its HMAC hash sits in Valkey,
+so a Valkey snapshot leak cannot be replayed against the API.
+`mfa_last_totp_step` rises monotonically; a code that already
+authenticated a session cannot authenticate another one inside the
+same 30-second window.
+
+## Schema
+
+Three additive columns on `auth.users`:
+
+```sql
+ALTER TABLE auth.users
+  ADD COLUMN mfa_enabled_at       timestamptz,
+  ADD COLUMN mfa_secret_encrypted text,
+  ADD COLUMN mfa_last_totp_step   bigint;
+```
+
+One new table:
+
+```sql
+CREATE TABLE auth.mfa_recovery_codes (
+  id          serial PRIMARY KEY,
+  user_id     uuid NOT NULL REFERENCES auth.users(id) ON DELETE cascade,
+  code_hash   text NOT NULL,
+  used_at     timestamptz,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_mfa_recovery_codes_user_id ON auth.mfa_recovery_codes(user_id);
+```
+
+`mfa_secret_encrypted` carries the AES-256-GCM ciphertext as
+`v1$<iv>$<ct>$<tag>`. The `v1$` prefix is the rotation handle — when
+a future deploy rotates `MFA_ENCRYPTION_KEY`, a `v2$` decrypter can
+dispatch on it without a column migration.
+
+## Endpoints
+
+<DataMatrix
+  caption="The seven MFA endpoints under /api/v1/auth/mfa"
+  columns={["Endpoint", "Auth", "Body", "On success"]}
+  rows={[
+    {
+      label: "POST /mfa/setup",
+      cells: [
+        "session + step-up password",
+        "{ password }",
+        "Returns otpauthUri + secretBase32 + recoveryCodes (plaintext, once)",
+      ],
+    },
+    {
+      label: "POST /mfa/verify-setup",
+      cells: [
+        "session",
+        "{ code }",
+        "Persists encrypted secret + recovery code hashes; sets mfaEnabledAt",
+      ],
+    },
+    {
+      label: "POST /mfa/verify-login",
+      cells: [
+        "challenge token in body",
+        "{ challengeToken, code }",
+        "Issues session + refresh cookies",
+      ],
+    },
+    {
+      label: "POST /mfa/verify-recovery",
+      cells: [
+        "challenge token in body",
+        "{ challengeToken, code }",
+        "Marks the recovery row used; issues session cookies",
+      ],
+    },
+    {
+      label: "POST /mfa/regenerate-recovery-codes",
+      cells: [
+        "session + step-up password",
+        "{ password }",
+        "Returns 10 fresh codes; invalidates every previous one",
+      ],
+    },
+    {
+      label: "POST /mfa/disable",
+      cells: [
+        "session + step-up password",
+        "{ password }",
+        "Clears MFA columns + recovery rows; sends 'MFA disabled' email",
+      ],
+    },
+    {
+      label: "GET /mfa/status",
+      cells: ["session", "—", "`{ enabled }` for SPA state"],
+    },
+  ]}
+/>
+
+## Lifecycle signals
+
+<SignalGrid
+  columns={3}
+  items={[
+    {
+      label: "enrolled",
+      title: "Enabling MFA fires an email",
+      body: "The user sees the QR + recovery codes once in the SPA; a separate notification email lands so a stolen session that quietly enrolled a new device is still visible to the legitimate user.",
+    },
+    {
+      label: "disabled",
+      title: "Disabling MFA fires an email too",
+      body: "Same threat shape inverted. A 'MFA disabled' confirmation reaches the user out-of-band so the legitimate operator notices if someone else stripped their second factor.",
+    },
+    {
+      label: "locked out",
+      title: "Five failures destroys the challenge",
+      body: "Each verify-login / verify-recovery attempt increments a counter on the cached challenge. The fifth failure DELETEs the key — the user goes back to /auth/login and starts a fresh challenge. The account is never locked.",
+    },
+  ]}
+/>
+
+## Configuration
+
+<CommandRun
+  title="Generate the encryption key"
+  caption="32 random bytes, base64. Required once any user enables MFA."
+  command={[
+    "openssl rand -base64 32",
+    "# add to compose/.env or your secrets manager",
+    "echo 'MFA_ENCRYPTION_KEY=<paste>' >> compose/.env",
+  ]}
+/>
+
+`MFA_ENCRYPTION_KEY` is allowed to be empty at boot — a fresh deploy
+with no enrolled users keeps running. The first `encryptString` /
+`decryptString` call raises a 500 with a loud "regenerate with
+`openssl rand -base64 32`" hint, which catches the missing-config case
+without taking down a deploy that doesn't use MFA yet.
+
+## Manual operations
+
+For a one-off account lockout reset (lost phone, no recovery codes
+left, support ticket), the operator can wipe the user's MFA state and
+email them a password reset:
+
+```sql
+UPDATE auth.users
+SET mfa_enabled_at       = NULL,
+    mfa_secret_encrypted = NULL,
+    mfa_last_totp_step   = NULL
+WHERE id = '<user-id>';
+
+DELETE FROM auth.mfa_recovery_codes
+WHERE user_id = '<user-id>';
+```
+
+The audit log records every lifecycle action (`auth.mfa_enabled`,
+`auth.mfa_disabled`, `auth.mfa_login_success`, `auth.mfa_login_failed`,
+`auth.mfa_login_locked_out`, `auth.mfa_recovery_used`,
+`auth.mfa_recovery_codes_regenerated`) so a follow-up "who turned this
+off?" investigation has a paper trail.
+
+## Source
+
+[`src/api/auth/services/mfa.service.ts`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/auth/services/mfa.service.ts); the service.
+[`src/api/auth/mfa.routes.ts`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/auth/mfa.routes.ts); the HTTP layer.
+[`src/lib/crypto/aes-gcm.utils.ts`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/crypto/aes-gcm.utils.ts); the
+secret encryption.
+[`src/features/accounts/components/SettingsPage/MfaSection/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/ui/src/features/accounts/components/SettingsPage/MfaSection); the
+SPA settings card.
+
+## Related
+
+- [Auth](/api/auth/); the password-login flow that MFA detours through.
+- [Email](/api/email/); the dispatch path for "MFA enabled / disabled".
+- [Audit log](/api/audit-log/); the trail for MFA lifecycle events.

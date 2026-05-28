@@ -83,6 +83,17 @@ const readAuth = (source: EnvSource) => ({
       ? "test-only-jwt-secret-padded-to-thirty-two-chars"
       : ""
   ),
+  /*
+   * Deterministic test-only key so MFA round-trip tests don't need an
+   * env file. 32 bytes base64 = 44 chars. Production deploys must set
+   * this to a freshly generated value before any user enables MFA.
+   */
+  MFA_ENCRYPTION_KEY: nonEmpty(
+    source.MFA_ENCRYPTION_KEY,
+    source.NODE_ENV === "test"
+      ? "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+      : ""
+  ),
   SUPERUSER_EMAIL: source.SUPERUSER_EMAIL ?? "",
   SUPERUSER_PASSWORD: source.SUPERUSER_PASSWORD ?? "",
   E2E_TEST_ENDPOINTS_ENABLED: toBool(source.E2E_TEST_ENDPOINTS_ENABLED),

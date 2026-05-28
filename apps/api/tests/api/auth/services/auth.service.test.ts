@@ -133,7 +133,11 @@ describe("AuthService.login", () => {
       password: VALID_PASSWORD,
     });
 
-    expect(result.user.email).toBe("login@example.com");
+    expect(result.mfaRequired).toBe(false);
+
+    if (!result.mfaRequired) {
+      expect(result.user.email).toBe("login@example.com");
+    }
   });
 
   test("rejects an unknown email with INVALID_CREDENTIALS", async () => {

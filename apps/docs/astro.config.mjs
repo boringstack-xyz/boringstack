@@ -420,6 +420,7 @@ export default defineConfig({
           items: [
             { label: "Overview", link: "/api/overview/" },
             { label: "Authentication", link: "/api/auth/" },
+            { label: "Two-factor authentication", link: "/api/mfa/" },
             { label: "Billing", link: "/api/billing/" },
             { label: "Email", link: "/api/email/" },
             { label: "Bounce handling", link: "/api/bounce-handling/" },

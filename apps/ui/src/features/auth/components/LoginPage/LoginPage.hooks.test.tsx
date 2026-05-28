@@ -140,6 +140,59 @@ describe("useLoginPage onSubmit", () => {
     expect(toastMock.error).toHaveBeenCalledWith("auth.oauth.notConfigured");
   });
 
+  it("sets a challenge token when /login returns mfaRequired", async () => {
+    apiMock.POST.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: { mfaRequired: true, challengeToken: "tokenxxxxxxxxxxxx" },
+        timestamp: "2026-01-01T00:00:00Z"
+      }
+    });
+
+    const { result } = renderHook(() => useLoginPage(), { wrapper: wrapper() });
+
+    await act(async () => {
+      await result.current.onSubmit({
+        email: "a@b.com",
+        password: "longenough"
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.mfaChallengeToken).toBe("tokenxxxxxxxxxxxx");
+    });
+
+    expect(result.current.mfaMode).toBe("totp");
+  });
+
+  it("toggles between TOTP and recovery modes", () => {
+    const { result } = renderHook(() => useLoginPage(), { wrapper: wrapper() });
+
+    expect(result.current.mfaMode).toBe("totp");
+
+    act(() => {
+      result.current.onMfaModeToggle();
+    });
+
+    expect(result.current.mfaMode).toBe("recovery");
+
+    act(() => {
+      result.current.onMfaModeToggle();
+    });
+
+    expect(result.current.mfaMode).toBe("totp");
+  });
+
+  it("does nothing when the MFA submit fires without a challenge", () => {
+    const { result } = renderHook(() => useLoginPage(), { wrapper: wrapper() });
+
+    act(() => {
+      result.current.onMfaSubmit();
+    });
+
+    expect(apiMock.POST).not.toHaveBeenCalled();
+  });
+
   it("enables OAuth providers returned by the API capabilities endpoint", async () => {
     apiMock.GET.mockResolvedValueOnce({
       data: {

@@ -1,8 +1,10 @@
 import {
+  bigint,
   boolean,
   foreignKey,
   index,
   serial,
+  text,
   timestamp,
   unique,
   uniqueIndex,
@@ -30,6 +32,22 @@ export const users = auth.table(
       .defaultNow()
       .notNull(),
     isPlatformAdmin: boolean("is_platform_admin").default(false).notNull(),
+    /*
+     * Three-column MFA state. All three are non-null together (enabled)
+     * or all three null (disabled): there is no in-between persisted on
+     * the row. Mid-enrollment state lives in Valkey, not here.
+     *
+     *   mfaEnabledAt        — non-null = TOTP required at login
+     *   mfaSecretEncrypted  — AES-256-GCM ciphertext of the TOTP secret
+     *   mfaLastTotpStep     — highest TOTP step accepted so far; rejects
+     *                         replays inside the verification window
+     */
+    mfaEnabledAt: timestamp("mfa_enabled_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+    mfaSecretEncrypted: text("mfa_secret_encrypted"),
+    mfaLastTotpStep: bigint("mfa_last_totp_step", { mode: "number" }),
   },
   (table) => [
     index("idx_users_email").on(table.email),
@@ -119,6 +137,31 @@ export const passwordResetTokens = auth.table(
       name: "password_reset_tokens_user_id_fkey",
     }).onDelete("cascade"),
     unique("password_reset_tokens_token_hash_key").on(table.tokenHash),
+  ]
+);
+
+export const mfaRecoveryCodes = auth.table(
+  "mfa_recovery_codes",
+  {
+    id: serial().primaryKey().notNull(),
+    userId: uuid("user_id").notNull(),
+    /*
+     * argon2id hash of a 10-character opaque code. We never persist the
+     * plaintext; the user sees each code once on generation.
+     */
+    codeHash: text("code_hash").notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true, mode: "string" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("idx_mfa_recovery_codes_user_id").on(table.userId),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [users.id],
+      name: "mfa_recovery_codes_user_id_fkey",
+    }).onDelete("cascade"),
   ]
 );
 

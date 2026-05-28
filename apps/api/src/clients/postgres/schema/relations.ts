@@ -12,6 +12,7 @@ import { auditLog } from "./audit.schema";
 import {
   authSessions,
   emailVerificationTokens,
+  mfaRecoveryCodes,
   passwordResetTokens,
   userAuthProviders,
   users,
@@ -162,6 +163,16 @@ export const passwordResetTokensRelations = relations(
   ({ one }) => ({
     user: one(users, {
       fields: [passwordResetTokens.userId],
+      references: [users.id],
+    }),
+  })
+);
+
+export const mfaRecoveryCodesRelations = relations(
+  mfaRecoveryCodes,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [mfaRecoveryCodes.userId],
       references: [users.id],
     }),
   })

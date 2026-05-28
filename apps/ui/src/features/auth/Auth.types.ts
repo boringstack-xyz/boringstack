@@ -7,6 +7,13 @@ import type {
   forgotPasswordInputSchema,
   loginInputSchema,
   loginResponseSchema,
+  mfaPasswordInputSchema,
+  mfaRecoveryCodesResponseSchema,
+  mfaSetupInputSchema,
+  mfaSetupResponseSchema,
+  mfaStatusResponseSchema,
+  mfaVerifyChallengeInputSchema,
+  mfaVerifySetupInputSchema,
   registerInputSchema,
   resendVerificationInputSchema,
   resetPasswordInputSchema,
@@ -27,6 +34,18 @@ export type IForgotPasswordInput = z.infer<typeof forgotPasswordInputSchema>;
 export type IResetPasswordInput = z.infer<typeof resetPasswordInputSchema>;
 export type IChangePasswordInput = z.infer<typeof changePasswordInputSchema>;
 export type IUser = z.infer<typeof userSchema>;
+
+export type IMfaSetupInput = z.infer<typeof mfaSetupInputSchema>;
+export type IMfaVerifySetupInput = z.infer<typeof mfaVerifySetupInputSchema>;
+export type IMfaVerifyChallengeInput = z.infer<
+  typeof mfaVerifyChallengeInputSchema
+>;
+export type IMfaPasswordInput = z.infer<typeof mfaPasswordInputSchema>;
+export type IMfaSetupResponse = z.infer<typeof mfaSetupResponseSchema>;
+export type IMfaRecoveryCodesResponse = z.infer<
+  typeof mfaRecoveryCodesResponseSchema
+>;
+export type IMfaStatusResponse = z.infer<typeof mfaStatusResponseSchema>;
 
 /*
  * /api/v1/users/me is the canonical authenticated-session payload. Shape is

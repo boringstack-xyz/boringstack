@@ -4,7 +4,7 @@ import { ApiError } from "@/lib/api/ApiError";
 import { apiClient } from "@/lib/api/client";
 
 import { AUTH_QUERY_KEYS } from "./Auth.constants";
-import type { IMe } from "./Auth.types";
+import type { IMe, IMfaStatusResponse } from "./Auth.types";
 
 export function useMe(): UseQueryResult<IMe | null> {
   return useQuery<IMe | null>({
@@ -26,6 +26,30 @@ export function useMe(): UseQueryResult<IMe | null> {
          * server bugs the operator needs to see, not "send the user to
          * login and hide the problem."
          */
+        if (!(error instanceof ApiError)) {
+          return null;
+        }
+
+        if (error.isUnauthorized || error.isForbidden) {
+          return null;
+        }
+
+        throw error;
+      }
+    },
+    staleTime: 60_000
+  });
+}
+
+export function useMfaStatus(): UseQueryResult<IMfaStatusResponse | null> {
+  return useQuery<IMfaStatusResponse | null>({
+    queryKey: AUTH_QUERY_KEYS.mfaStatus,
+    queryFn: async () => {
+      try {
+        const { data } = await apiClient.GET("/api/v1/auth/mfa/status");
+
+        return data?.data ?? null;
+      } catch (error) {
         if (!(error instanceof ApiError)) {
           return null;
         }

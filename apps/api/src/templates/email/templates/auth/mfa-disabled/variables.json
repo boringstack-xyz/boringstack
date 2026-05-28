@@ -1,0 +1,7 @@
+{
+    "subject": "Two-factor authentication is off",
+    "preHeader": "Two-factor authentication is off",
+    "appName": "{{appName}}",
+    "email": "user@example.com",
+    "securityUrl": "https://example.com/account/settings"
+}

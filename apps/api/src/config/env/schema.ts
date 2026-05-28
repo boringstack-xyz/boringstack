@@ -26,6 +26,14 @@ export const envSchema = t.Object({
   DATABASE_SSL_REJECT_UNAUTHORIZED: t.Boolean({ default: true }),
   DATABASE_SSL_CA: t.String({ default: "" }),
   JWT_SECRET: t.String({ minLength: 32 }),
+  /*
+   * AES-256-GCM key used to encrypt TOTP secrets at rest. Base64-encoded
+   * 32 random bytes. Generate with `openssl rand -base64 32`. Required
+   * once any user enables MFA — empty string is accepted at boot so a
+   * fresh deploy with no MFA users keeps running, and the crypto util
+   * throws a loud error the first time encryption is actually requested.
+   */
+  MFA_ENCRYPTION_KEY: t.String({ default: "" }),
 
   APP_NAME: t.String({ default: "API Template" }),
   FRONTEND_URL: t.String({ minLength: 1 }),

@@ -155,7 +155,18 @@ CREATE TABLE "auth"."users" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"is_platform_admin" boolean DEFAULT false NOT NULL,
+	"mfa_enabled_at" timestamp with time zone,
+	"mfa_secret_encrypted" text,
+	"mfa_last_totp_step" bigint,
 	CONSTRAINT "users_email_key" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "auth"."mfa_recovery_codes" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" uuid NOT NULL,
+	"code_hash" text NOT NULL,
+	"used_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "billing"."account_plans" (
@@ -291,6 +302,7 @@ ALTER TABLE "auth"."sessions" ADD CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY
 ALTER TABLE "auth"."email_verification_tokens" ADD CONSTRAINT "email_verification_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auth"."password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auth"."user_auth_providers" ADD CONSTRAINT "user_auth_providers_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "auth"."mfa_recovery_codes" ADD CONSTRAINT "mfa_recovery_codes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "billing"."account_plans" ADD CONSTRAINT "account_plans_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "app"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "billing"."account_plans" ADD CONSTRAINT "account_plans_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "billing"."plans"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "billing"."plan_features" ADD CONSTRAINT "plan_features_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "billing"."plans"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -333,6 +345,7 @@ CREATE INDEX "idx_password_reset_tokens_token_hash" ON "auth"."password_reset_to
 CREATE INDEX "idx_password_reset_tokens_user_id" ON "auth"."password_reset_tokens" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_user_auth_providers_provider_id" ON "auth"."user_auth_providers" USING btree ("provider","provider_user_id");--> statement-breakpoint
 CREATE INDEX "idx_user_auth_providers_user_id" ON "auth"."user_auth_providers" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "idx_mfa_recovery_codes_user_id" ON "auth"."mfa_recovery_codes" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_users_email" ON "auth"."users" USING btree ("email");--> statement-breakpoint
 CREATE INDEX "idx_users_is_platform_admin" ON "auth"."users" USING btree ("is_platform_admin");--> statement-breakpoint
 CREATE INDEX "idx_account_plans_account_id" ON "billing"."account_plans" USING btree ("account_id");--> statement-breakpoint

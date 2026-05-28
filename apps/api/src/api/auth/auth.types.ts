@@ -35,9 +35,16 @@ export interface IPendingRegistration {
   email: string;
 }
 
-export interface ILoginResult {
-  user: IPublicUser;
-}
+/*
+ * Discriminated union so the route can branch cleanly on whether to
+ * issue session cookies inline or detour through the MFA challenge
+ * flow. `mfaRequired: false` keeps the existing route shape; the
+ * `true` variant carries just the userId so the route can hand it to
+ * `mfaService.issueChallenge` without re-querying.
+ */
+export type ILoginResult =
+  | { mfaRequired: false; user: IPublicUser }
+  | { mfaRequired: true; userId: string };
 
 /**
  * Returned by `emailVerificationService.verify` and by the OAuth

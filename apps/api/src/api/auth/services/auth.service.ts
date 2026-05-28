@@ -216,6 +216,21 @@ export class AuthService {
       throw ApiErrors.emailNotVerified();
     }
 
+    if (row.user.mfaEnabledAt !== null) {
+      logger.info("Login deferred to MFA challenge", {
+        event: "auth.login.mfa_required",
+        userId: row.user.id,
+      });
+
+      void auditLogService.record({
+        userId: row.user.id,
+        action: AUDIT_ACTIONS.AUTH_LOGIN_SUCCESS,
+        metadata: { mfaRequired: true },
+      });
+
+      return { mfaRequired: true, userId: row.user.id };
+    }
+
     logger.info("User logged in", {
       event: "auth.login.success",
       userId: row.user.id,
@@ -226,7 +241,7 @@ export class AuthService {
       action: AUDIT_ACTIONS.AUTH_LOGIN_SUCCESS,
     });
 
-    return { user: toPublicUser(row.user) };
+    return { mfaRequired: false, user: toPublicUser(row.user) };
   }
 }
 

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+import { MfaSection } from "./MfaSection";
 import { useSettingsPage } from "./SettingsPage.hooks";
 import type {
   ISettingsDetailRowsProps,
@@ -367,6 +368,8 @@ const SettingsPage: FC<ISettingsPageProps> = () => {
       {securitySection ? (
         <SecuritySection section={securitySection} view={view} t={t} />
       ) : null}
+
+      <MfaSection />
 
       {oauthSection ? (
         <OAuthSection section={oauthSection} view={view} t={t} />

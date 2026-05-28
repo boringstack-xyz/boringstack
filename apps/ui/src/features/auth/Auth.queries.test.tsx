@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/api/ApiError";
 
 import { makeUser } from "../../../tests/factories";
-import { useMe } from "./Auth.queries";
+import { useMe, useMfaStatus } from "./Auth.queries";
 import { useLogin, useLogout } from "./Auth.session.mutations";
 import type { ILoginInput } from "./Auth.types";
 
@@ -154,6 +154,44 @@ describe("useLogout", () => {
     result.current.mutate(undefined);
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
+    });
+  });
+});
+
+describe("useMfaStatus", () => {
+  beforeEach(() => {
+    apiMock.GET.mockReset();
+  });
+
+  it("returns the status payload from data.data", async () => {
+    apiMock.GET.mockResolvedValueOnce({ data: { data: { enabled: true } } });
+
+    const { result } = renderHook(() => useMfaStatus(), { wrapper: wrapper() });
+
+    await waitFor(() => {
+      expect(result.current.data).toEqual({ enabled: true });
+    });
+  });
+
+  it("returns null when the API rejects with 401", async () => {
+    apiMock.GET.mockRejectedValueOnce(
+      new ApiError(401, { message: "Unauthorized" })
+    );
+
+    const { result } = renderHook(() => useMfaStatus(), { wrapper: wrapper() });
+
+    await waitFor(() => {
+      expect(result.current.data).toBeNull();
+    });
+  });
+
+  it("returns null on a thrown non-ApiError", async () => {
+    apiMock.GET.mockRejectedValueOnce(new Error("network blip"));
+
+    const { result } = renderHook(() => useMfaStatus(), { wrapper: wrapper() });
+
+    await waitFor(() => {
+      expect(result.current.data).toBeNull();
     });
   });
 });

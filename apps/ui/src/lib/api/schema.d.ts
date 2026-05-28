@@ -335,6 +335,125 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/mfa/verify-login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete MFA challenge with a TOTP code */
+        post: operations["postApiV1AuthMfaVerify-login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa/verify-recovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete MFA challenge with a recovery code */
+        post: operations["postApiV1AuthMfaVerify-recovery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report whether MFA is currently enabled for the user */
+        get: operations["getApiV1AuthMfaStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stage a TOTP secret + recovery codes. Returns the otpauth URI and the codes (shown once). */
+        post: operations["postApiV1AuthMfaSetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa/verify-setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify the first TOTP code and finalize enrollment */
+        post: operations["postApiV1AuthMfaVerify-setup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable MFA after password step-up */
+        post: operations["postApiV1AuthMfaDisable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa/regenerate-recovery-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Replace all recovery codes after password step-up. Returns the new codes once. */
+        post: operations["postApiV1AuthMfaRegenerate-recovery-codes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users/me": {
         parameters: {
             query?: never;
@@ -1215,6 +1334,14 @@ export interface operations {
                             };
                         };
                         timestamp: string;
+                    } | {
+                        success: boolean;
+                        data: {
+                            /** @constant */
+                            mfaRequired: true;
+                            challengeToken: string;
+                        };
+                        timestamp: string;
                     };
                     "multipart/form-data": {
                         success: boolean;
@@ -1228,6 +1355,14 @@ export interface operations {
                             };
                         };
                         timestamp: string;
+                    } | {
+                        success: boolean;
+                        data: {
+                            /** @constant */
+                            mfaRequired: true;
+                            challengeToken: string;
+                        };
+                        timestamp: string;
                     };
                     "text/plain": {
                         success: boolean;
@@ -1239,6 +1374,14 @@ export interface operations {
                                 lastName: string;
                                 emailVerified: boolean;
                             };
+                        };
+                        timestamp: string;
+                    } | {
+                        success: boolean;
+                        data: {
+                            /** @constant */
+                            mfaRequired: true;
+                            challengeToken: string;
                         };
                         timestamp: string;
                     };
@@ -1906,6 +2049,423 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    "postApiV1AuthMfaVerify-login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Opaque token returned by /auth/login when MFA is required */
+                    challengeToken: string;
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+                "multipart/form-data": {
+                    /** @description Opaque token returned by /auth/login when MFA is required */
+                    challengeToken: string;
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+                "text/plain": {
+                    /** @description Opaque token returned by /auth/login when MFA is required */
+                    challengeToken: string;
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    "postApiV1AuthMfaVerify-recovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Opaque token returned by /auth/login when MFA is required */
+                    challengeToken: string;
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+                "multipart/form-data": {
+                    /** @description Opaque token returned by /auth/login when MFA is required */
+                    challengeToken: string;
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+                "text/plain": {
+                    /** @description Opaque token returned by /auth/login when MFA is required */
+                    challengeToken: string;
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    getApiV1AuthMfaStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            enabled: boolean;
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            enabled: boolean;
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            enabled: boolean;
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    postApiV1AuthMfaSetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+                "multipart/form-data": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+                "text/plain": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            otpauthUri: string;
+                            secretBase32: string;
+                            recoveryCodes: string[];
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            otpauthUri: string;
+                            secretBase32: string;
+                            recoveryCodes: string[];
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            otpauthUri: string;
+                            secretBase32: string;
+                            recoveryCodes: string[];
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    "postApiV1AuthMfaVerify-setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+                "multipart/form-data": {
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+                "text/plain": {
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            message: string;
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            message: string;
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            message: string;
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    postApiV1AuthMfaDisable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+                "multipart/form-data": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+                "text/plain": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            message: string;
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            message: string;
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            message: string;
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    "postApiV1AuthMfaRegenerate-recovery-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+                "multipart/form-data": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+                "text/plain": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            recoveryCodes: string[];
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            recoveryCodes: string[];
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            recoveryCodes: string[];
+                        };
+                        timestamp: string;
+                    };
+                };
             };
         };
     };
