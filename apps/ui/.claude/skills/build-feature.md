@@ -9,6 +9,17 @@ You are implementing a new UI feature end-to-end. The loop has six checkpoints. 
 
 ## Checkpoint 1 — Spec
 
+Before asking anything, check whether the spec loop is active:
+
+1. Look for `.specs/next.md` at the repo root.
+2. If it exists, read it. If frontmatter contains `status: approved`,
+   the user has already done the spec work — use **Problem**,
+   **Slice**, **Design decisions**, and **Verification contract** as
+   the answers to the four questions below. Do NOT re-interview.
+3. If the spec exists but `status` is still `draft`, STOP. Tell the
+   user to finish `slice` and `approve` before running this skill.
+4. If `.specs/next.md` doesn't exist, fall through to the interview:
+
 Ask the user (or restate from context) in this order:
 
 1. **What is the feature?** One sentence.

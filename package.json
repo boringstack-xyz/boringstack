@@ -7,6 +7,7 @@
     "check": "bash scripts/stack-check.sh",
     "check:full": "bash scripts/stack-check.sh --full",
     "rename:project": "bash scripts/rename-project.sh",
+    "spec:init": "bun scripts/spec-init.ts",
     "postinstall": "bash scripts/ci/install-git-hooks.sh",
     "install:hooks": "bash scripts/ci/install-git-hooks.sh"
   },

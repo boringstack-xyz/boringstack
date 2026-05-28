@@ -380,6 +380,7 @@ export default defineConfig({
               label: "First feature in 10 minutes",
               link: "/skills/first-feature-tutorial/",
             },
+            { label: "Spec loop", link: "/skills/spec-loop/" },
           ],
         },
         {

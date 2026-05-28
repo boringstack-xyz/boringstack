@@ -161,6 +161,42 @@ Open **http://localhost:7331**.
 
 If you set `SUPERUSER_EMAIL` + `SUPERUSER_PASSWORD` in `compose/.env` before booting, sign in with those credentials. Otherwise hit "Sign up" on the form and register a new account; that user is the first user in the system. You land on the dashboard, which is minimal on purpose. Start building from here.
 
+## Step 4. Build your first feature
+
+The dashboard you just logged into is intentionally empty — start
+shipping. BoringStack supports two workflows for adding features, both
+agent-friendly. Pick one per session; you can switch any time.
+
+<DocCallout
+  eyebrow="Path A — fast"
+  title="Just tell the agent what you want"
+  variant="tip"
+>
+  In Claude Code or Cursor, run **`/add-full-feature`** and describe
+  the slice. The skill at `.claude/skills/add-full-feature.md`
+  coordinates the api half → OpenAPI regen → ui half. Good for small
+  changes where you trust the agent to stay scoped.
+</DocCallout>
+
+<DocCallout
+  eyebrow="Path B — disciplined"
+  title="Use the spec loop"
+  variant="tip"
+>
+  Run **`bun run spec:init`** once per project to wire the loop
+  (`.specs/next.md`, slash command, gate). Then in the agent:
+  **`/spec explore <idea>`** → **`/spec slice`** → you **approve** →
+  **`/spec build`**. The gate at `tools/spec-loop/hooks/gate.ts`
+  blocks source writes until you approve the slice — useful when the
+  agent's tendency to over-build is the failure mode you're worried
+  about.
+</DocCallout>
+
+The spec loop is **opt-in**. A fresh `bun run spec:init` writes four
+files (`.specs/next.md`, `.claude/commands/spec.md`,
+`.claude/settings.json`, `.cursor/hooks.json`); skip it and Path A is
+the default. See [Spec loop](/skills/spec-loop/) for the deep dive.
+
 ## What's running
 
 <FaqGroup>
