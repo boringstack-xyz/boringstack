@@ -229,6 +229,7 @@ export default defineConfig({
         Header: "./src/components/Header.astro",
         PageTitle: "./src/components/PageTitle.astro",
         Pagination: "./src/components/Pagination.astro",
+        ThemeProvider: "./src/components/ThemeProvider.astro",
       },
       head: [
         {
@@ -376,10 +377,6 @@ export default defineConfig({
           label: "Agent skills",
           items: [
             { label: "Overview", link: "/skills/" },
-            {
-              label: "First feature in 10 minutes",
-              link: "/skills/first-feature-tutorial/",
-            },
             { label: "Spec loop", link: "/skills/spec-loop/" },
           ],
         },
