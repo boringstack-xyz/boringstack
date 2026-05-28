@@ -166,6 +166,19 @@ export default defineConfig(({ mode }) => {
           secure: false,
           ws: true
         }
+      },
+      watch: {
+        // Test + build artefacts are not source. Without this, the istanbul
+        // coverage HTML report (hundreds of files under `coverage/`) and the
+        // Playwright run outputs trigger a "page reload" broadcast per file
+        // every time tests rerun, flooding the dev container logs and
+        // re-bundling for no reason.
+        ignored: [
+          "**/coverage/**",
+          "**/playwright-report/**",
+          "**/test-results/**",
+          "**/dist/**"
+        ]
       }
     },
     preview: {
