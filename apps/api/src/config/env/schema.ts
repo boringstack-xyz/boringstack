@@ -79,6 +79,16 @@ export const envSchema = t.Object({
     default: 0.1,
   }),
 
+  /*
+   * OpenTelemetry tracing. When OTEL_EXPORTER_OTLP_ENDPOINT is set, the
+   * API ships spans via OTLP/HTTP to that endpoint (Tempo, the trace
+   * backend bundled in compose). Empty = OTel SDK is not initialized.
+   * OTEL_SERVICE_NAME shows up as the `service.name` attribute Grafana
+   * uses to group spans in Tempo's Explore tab.
+   */
+  OTEL_EXPORTER_OTLP_ENDPOINT: t.String({ default: "" }),
+  OTEL_SERVICE_NAME: t.String({ default: "boringstack-api" }),
+
   EMAIL_PROVIDER: t.Union(
     [
       t.Literal("cloudflare"),

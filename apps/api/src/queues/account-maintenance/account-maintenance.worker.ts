@@ -1,6 +1,7 @@
 import { Worker, type Job, type WorkerOptions } from "bullmq";
 import { BULL_PREFIX, getValkeyConnectionOptions } from "../../clients/valkey";
 import { logger } from "../../config/logger";
+import { withQueueSpan } from "../../lib/tracing";
 import {
   ACCOUNT_MAINTENANCE_DEFAULTS,
   ACCOUNT_MAINTENANCE_JOB_NAME,
@@ -51,7 +52,10 @@ export class AccountMaintenanceWorker {
 
     this.worker = new Worker<IAccountMaintenanceJobData>(
       ACCOUNT_MAINTENANCE_QUEUE_NAME,
-      this.processJob.bind(this),
+      (job) =>
+        withQueueSpan(ACCOUNT_MAINTENANCE_QUEUE_NAME, job, () =>
+          this.processJob(job)
+        ),
       options
     );
 

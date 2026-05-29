@@ -2,6 +2,7 @@
 #   - Prometheus + Alertmanager  → metrics + alerting
 #   - Grafana                    → dashboards (host port 3010)
 #   - Loki + Promtail            → log aggregation
+#   - Tempo                      → distributed trace storage (OTLP)
 #   - postgres-exporter          → Postgres metrics
 #   - node-exporter              → host metrics
 #
@@ -81,6 +82,7 @@ services:
     depends_on:
       - prometheus
       - loki
+      - tempo
     deploy:
       resources:
         limits:
@@ -120,6 +122,22 @@ services:
         limits:
           cpus: "${PROMTAIL_LIMITS_CPUS:-0.25}"
           memory: "${PROMTAIL_LIMITS_MEMORY:-128M}"
+
+  tempo:
+    profiles: ["observability"]
+    image: grafana/tempo:2.6.1
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - tempo_data:/var/tempo
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "${TEMPO_LIMITS_CPUS:-0.5}"
+          memory: "${TEMPO_LIMITS_MEMORY:-512M}"
 
   postgres-exporter:
     profiles: ["observability"]
@@ -163,3 +181,4 @@ volumes:
   prometheus_data:
   grafana_data:
   loki_data:
+  tempo_data:

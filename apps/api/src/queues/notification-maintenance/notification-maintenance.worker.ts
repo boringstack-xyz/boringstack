@@ -2,6 +2,7 @@ import { Worker, type Job, type WorkerOptions } from "bullmq";
 import { BULL_PREFIX, getValkeyConnectionOptions } from "../../clients/valkey";
 import { logger } from "../../config/logger";
 import { dedupService } from "../../lib/notifications";
+import { withQueueSpan } from "../../lib/tracing";
 import {
   NOTIFICATION_DEDUP_CLEANUP_JOB_NAME,
   NOTIFICATION_MAINTENANCE_DEFAULTS,
@@ -26,7 +27,10 @@ export class NotificationMaintenanceWorker {
 
     this.worker = new Worker<INotificationMaintenanceJobData>(
       NOTIFICATION_MAINTENANCE_QUEUE_NAME,
-      this.processJob.bind(this),
+      (job) =>
+        withQueueSpan(NOTIFICATION_MAINTENANCE_QUEUE_NAME, job, () =>
+          this.processJob(job)
+        ),
       options
     );
 

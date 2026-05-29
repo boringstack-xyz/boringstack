@@ -463,6 +463,7 @@ export default defineConfig({
             { label: "Cloudflare Email", link: "/topics/cloudflare-email/" },
             { label: "Error tracking", link: "/topics/error-tracking/" },
             { label: "Observability", link: "/topics/observability/" },
+            { label: "Distributed tracing", link: "/topics/tracing/" },
             { label: "Alerts", link: "/topics/alerts/" },
             {
               label: "Provisioning with OpenTofu",

@@ -1,3 +1,10 @@
+/*
+ * OpenTelemetry init must run before anything that touches HTTP / ioredis /
+ * undici, so the auto-instrumentations can patch them at import time. See
+ * src/instrument.ts.
+ */
+import "./instrument";
+
 import { createApp } from "./config/app";
 import { env } from "./config/env";
 import {
@@ -8,7 +15,7 @@ import { logStartup } from "./config/logger";
 import { initializeSentry } from "./config/sentry";
 import { setupNotifications, setupQueues } from "./config/setup";
 
-// Initialize Sentry FIRST so any bootstrap error is captured.
+// Initialize Sentry after OTel so error events pick up the OTel trace context.
 initializeSentry();
 
 const app = createApp().listen(env.PORT);
