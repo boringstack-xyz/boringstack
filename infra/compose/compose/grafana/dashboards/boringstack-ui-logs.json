@@ -43,7 +43,7 @@
         "colorMode": "background",
         "graphMode": "area",
         "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
-        "textMode": "value_and_name"
+        "textMode": "value"
       },
       "targets": [
         {
@@ -75,7 +75,7 @@
         "colorMode": "background",
         "graphMode": "area",
         "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
-        "textMode": "value_and_name"
+        "textMode": "value"
       },
       "targets": [
         {
@@ -106,7 +106,7 @@
         "colorMode": "background",
         "graphMode": "area",
         "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
-        "textMode": "value_and_name"
+        "textMode": "value"
       },
       "targets": [
         {
