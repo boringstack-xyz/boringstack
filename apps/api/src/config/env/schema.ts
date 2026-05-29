@@ -166,11 +166,11 @@ export const envSchema = t.Object({
   STRIPE_PRICE_ID_PRO: t.String({ default: "" }),
 
   QUEUES_ENABLED: t.Boolean({ default: true }),
-  CACHE_ENABLED: t.Boolean({ default: false }),
+  CACHE_ENABLED: t.Boolean({ default: true }),
   CACHE_PROVIDER: t.Union([t.Literal("memory"), t.Literal("valkey")], {
     default: "memory",
   }),
-  NOTIFICATIONS_SSE_ENABLED: t.Boolean({ default: false }),
+  NOTIFICATIONS_SSE_ENABLED: t.Boolean({ default: true }),
 
   /*
    * Web Push (VAPID). All three values come as a set: generate them once
