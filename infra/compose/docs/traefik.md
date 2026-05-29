@@ -60,13 +60,12 @@ Traefik in `production-labels.yml` is the **single source of truth** for HSTS, X
 
 ## Observability alongside Traefik
 
-Optional Prometheus / Grafana uses Compose profile `observability`. Grafana publishes on host port 3010 so it does not collide with Traefik's 80/443 in prod.
+Prometheus / Grafana run by default under Compose profile `observability`. Grafana publishes on host port 3010 so it does not collide with Traefik's 80/443 in prod.
 
 ```bash
-WITH_OBSERVABILITY=1 ./scripts/compose-up.sh
+./scripts/compose-up.sh        # observability is on by default
+WITH_OBSERVABILITY=0 ./scripts/compose-up.sh  # skip the overlay
 ```
-
-Stop with the same `WITH_OBSERVABILITY` and `STACK` values you used to start.
 
 ## Merge commands (reference)
 

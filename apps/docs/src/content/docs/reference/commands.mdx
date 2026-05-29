@@ -67,17 +67,17 @@ commands run from `infra/compose/compose`; operational helper scripts live in
   <FaqItem title="Start prod">
     `STACK=prod ./scripts/compose-up.sh`. Data: n/a.
   </FaqItem>
-  <FaqItem title="With observability">
-    `WITH_OBSERVABILITY=1 ./scripts/compose-up.sh`. Data: n/a.
+  <FaqItem title="Skip observability">
+    `WITH_OBSERVABILITY=0 ./scripts/compose-up.sh`. Observability is on by default.
   </FaqItem>
-  <FaqItem title="With error tracking">
-    `WITH_GLITCHTIP=1 ./scripts/compose-up.sh`. Data: n/a.
+  <FaqItem title="Skip error tracking">
+    `WITH_GLITCHTIP=0 ./scripts/compose-up.sh`. GlitchTip is on by default.
   </FaqItem>
   <FaqItem title="With queue dashboard">
     `WITH_BULLMQ=1 ./scripts/compose-up.sh`. Data: n/a.
   </FaqItem>
   <FaqItem title="With image-update bot">
-    `WITH_WUD=1 ./scripts/compose-up.sh`. Data: n/a.
+    `WITH_WUD=1 ./scripts/compose-up.sh`. Data: n/a. (On by default in prod.)
   </FaqItem>
   <FaqItem title="With local email catcher">
     `WITH_MAILPIT=1 ./scripts/compose-up.sh` (dev only). Data: n/a.
@@ -96,7 +96,7 @@ commands run from `infra/compose/compose`; operational helper scripts live in
   </FaqItem>
 </FaqGroup>
 
-Flags compose: `WITH_OBSERVABILITY=1 WITH_GLITCHTIP=1 ./scripts/compose-up.sh`.
+Minimal opt-out: `WITH_OBSERVABILITY=0 WITH_GLITCHTIP=0 ./scripts/compose-up.sh` boots just Postgres + Valkey + your apps.
 
 ## API app
 

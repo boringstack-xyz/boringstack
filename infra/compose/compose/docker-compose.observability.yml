@@ -1,10 +1,14 @@
-# Optional overlay: full observability stack.
+# Full observability stack — on by default for dev + prod via dev.sh.
 #   - Prometheus + Alertmanager  → metrics + alerting
-#   - Grafana                    → dashboards
+#   - Grafana                    → dashboards (host port 3010)
 #   - Loki + Promtail            → log aggregation
 #   - postgres-exporter          → Postgres metrics
 #   - node-exporter              → host metrics
-# Usage (from compose/):  WITH_OBSERVABILITY=1 ./dev.sh
+#
+# Opt out per-run with `WITH_OBSERVABILITY=0 ./dev.sh up`. The whole point
+# of running this in dev is so you've already used the dashboards before
+# prod day-one — disabling it means learning the panels during your first
+# real incident.
 
 services:
   prometheus:

@@ -53,20 +53,20 @@ The base stack (always on) plus per-profile services:
   command={[
     "./dev.sh up -d",
     "STACK=prod ./dev.sh up -d",
-    "WITH_OBSERVABILITY=1 ./dev.sh up -d",
-    "WITH_GLITCHTIP=1 ./dev.sh up -d",
+    "WITH_OBSERVABILITY=0 ./dev.sh up -d",
+    "WITH_GLITCHTIP=0 ./dev.sh up -d",
     "WITH_BULLMQ=1 ./dev.sh up -d",
     "WITH_WUD=1 ./dev.sh up -d",
     "WITH_MAILPIT=1 ./dev.sh up -d",
   ]}
   output={[
-    { text: "baseline dev: no Traefik; Vite proxies /api/*" },
-    { text: "prod: GHCR images, Traefik, HTTPS via ACME" },
-    { text: "overlays: metrics, logs, error tracking, queues, mail, image updates" },
+    { text: "default: api + ui + postgres + valkey + observability + glitchtip" },
+    { text: "prod: GHCR images, Traefik, HTTPS via ACME (same defaults)" },
+    { text: "opt-outs: skip observability or glitchtip; opt-ins: bullmq / wud / mailpit" },
   ]}
 />
 
-Flags compose: `WITH_OBSERVABILITY=1 WITH_GLITCHTIP=1 ./dev.sh up -d` brings up both overlays alongside the base. See [Profiles & overlays](/infra/profiles-and-overlays/).
+The default stack includes Prometheus, Grafana, Loki, and GlitchTip. Niche tooling (Bull-board, WUD, Mailpit) is opt-in. See [Profiles & overlays](/infra/profiles-and-overlays/).
 
 ## File layout
 

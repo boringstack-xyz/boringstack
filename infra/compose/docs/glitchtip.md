@@ -2,19 +2,17 @@
 
 GlitchTip is an open-source, Sentry-compatible error tracking platform. It speaks the Sentry SDK wire protocol, so any client library (`@sentry/react`, `@sentry/node`, `sentry-elysia`, etc.) just works — you point its DSN at your GlitchTip instance instead of `sentry.io`.
 
-This template ships GlitchTip as an **optional overlay** that reuses the base stack's Postgres and Valkey, so the cost of having it on is just the two GlitchTip containers (`web` + `worker`).
+GlitchTip is **on by default** for `dev` and `prod` via `./dev.sh up`. It reuses the base stack's Postgres and Valkey, so the cost is just two extra containers (`web` + `worker`). Opt out with `WITH_GLITCHTIP=0`.
+
+The premise: same as the rest of the observability stack — you should see your own errors land in your own GlitchTip during development. By the time prod throws its first exception, the triage flow is muscle memory.
 
 ## Dev quickstart
 
 ```bash
-# 1. Set the required secret in compose/.env:
-echo "GLITCHTIP_SECRET_KEY=$(openssl rand -base64 50)" >> compose/.env
-
-# 2. Bring the stack up with the overlay:
-WITH_GLITCHTIP=1 ./scripts/compose-up.sh
+./scripts/compose-up.sh        # GlitchTip is on by default
 ```
 
-That's it. On a fresh boot the GlitchTip image entrypoint:
+That's it. `dev.sh` auto-seeds a dev-only `GLITCHTIP_SECRET_KEY` if you don't set one. On a fresh boot the GlitchTip image entrypoint:
 - runs Django migrations against the `glitchtip` database (created by `compose/glitchtip/init-db.sql`)
 - creates the superuser `admin@localhost` / `admin123456` (override via `GLITCHTIP_SUPERUSER_*` in `.env`)
 - creates a default organization (`Local`) with two projects (`API`, `Frontend`)
@@ -45,9 +43,9 @@ Visit **http://glitchtip.localhost** and log in. Each project has a DSN under `S
    GLITCHTIP_SUPERUSER_PASSWORD=...                           # rotate the dev default
    ```
 2. Point DNS `glitchtip.example.com` at the host.
-3. Bring up the stack:
+3. Bring up the stack (GlitchTip is on by default; the prod path requires the secrets above and will fail loudly if any are unset):
    ```bash
-   STACK=prod WITH_GLITCHTIP=1 ./scripts/compose-up.sh
+   STACK=prod ./scripts/compose-up.sh
    ```
 4. Run the bootstrap script once:
    ```bash

@@ -1,6 +1,6 @@
 ---
 title: Profiles & overlays
-description: How `STACK=` and `WITH_*=1` flags compose docker-compose files. The base stack stays small; everything else is opt-in.
+description: How `STACK=` and `WITH_*` flags compose docker-compose files. Observability and error tracking ship on by default; everything else is opt-in.
 ---
 
 import PageIntro from "../../../components/docs-kit/PageIntro";
@@ -13,19 +13,21 @@ import FaqItem from "../../../components/FaqItem.tsx";
   eyebrow="Compose overlays"
   actions={[
     { label: "Design Choices", href: "#design-choices" },
-    { label: "Opt-In Matrix", href: "#the-full-opt-in-matrix" },
+    { label: "Overlay Matrix", href: "#the-full-overlay-matrix" },
   ]}
   facts={[
     { value: "1", label: "base compose stack" },
-    { value: "5", label: "opt-in overlays" },
-    { value: "2", label: "stack profiles" },
+    { value: "2", label: "default-on overlays" },
+    { value: "3", label: "opt-in overlays" },
   ]}
 >
-  The infra stack defaults small: Postgres + Valkey + your apps. Everything else
-  (observability, error tracking, queue dashboard, image-update detection, local
-  email catcher) is opt-in via a flag. Traefik runs in the prod profile only;
-  dev uses Vite's dev-server proxy for same-origin DX. Composition happens in
-  `dev.sh`, which assembles the `docker-compose` invocation based on env vars.
+  The default stack runs Postgres, Valkey, your apps, **plus the full
+  observability stack (Prometheus + Grafana + Loki + exporters) and GlitchTip
+  error tracking** — so you build muscle memory for the dashboards in dev
+  before you ever face them in prod. Niche overlays (BullMQ dashboard, WUD,
+  Mailpit) stay opt-in. Traefik runs in the prod profile only; dev uses Vite's
+  dev-server proxy for same-origin DX. Composition happens in `dev.sh`, which
+  assembles the `docker-compose` invocation based on env vars.
 </PageIntro>
 
 ## How a stack is assembled
@@ -36,16 +38,16 @@ flowchart LR
   stack{"STACK= ?"}
   dev["+ development-labels<br/>host ports for data services"]
   prod["+ production-labels<br/>traefik · HTTPS · ACME · path routing"]
-  obs["+ observability"]
-  glitch["+ glitchtip"]
+  obs["+ observability<br/>(default ON)"]
+  glitch["+ glitchtip<br/>(default ON)"]
   bullmq["+ bullmq (dev only)"]
   wud["+ wud"]
   mailpit["+ mailpit (dev only)"]
   base --> stack
   stack -->|dev| dev
   stack -->|prod| prod
-  base -.->|WITH_OBSERVABILITY=1| obs
-  base -.->|WITH_GLITCHTIP=1| glitch
+  base ==>|on by default| obs
+  base ==>|on by default| glitch
   base -.->|WITH_BULLMQ=1| bullmq
   base -.->|WITH_WUD=1| wud
   base -.->|WITH_MAILPIT=1| mailpit
@@ -56,11 +58,17 @@ The result is a single `docker compose -f ... -f ... --profile ...` command. `de
 ## Design choices
 
 <FaqGroup>
-  <FaqItem title="Base stack always-on, everything else opt-in" open>
-    First-time setup boots fast and uses minimal RAM.
+  <FaqItem title="Observability + GlitchTip default ON" open>
+    The whole point of a "production stack" claim is that the operator has seen
+    the dashboards and triaged real errors before prod day-one. Defaults that
+    hide observability contradict the marketing. Opt out with
+    `WITH_OBSERVABILITY=0` / `WITH_GLITCHTIP=0` if you genuinely don't want
+    them.
   </FaqItem>
-  <FaqItem title="Flags compose freely (WITH_OBSERVABILITY=1 WITH_GLITCHTIP=1 ...)">
-    No combinatorial config files; each overlay is independent.
+  <FaqItem title="Niche overlays stay opt-in">
+    Bull-board (no auth), WUD (image-update detection), and Mailpit (local
+    SMTP) are tools you turn on for a specific reason, not surface area
+    everyone needs.
   </FaqItem>
   <FaqItem title="Separate dev / prod overlays for labels">
     HTTPS, ACME, and security headers live in prod-only files.
@@ -73,29 +81,34 @@ The result is a single `docker compose -f ... -f ... --profile ...` command. `de
   </FaqItem>
 </FaqGroup>
 
-## The full opt-in matrix
+## The full overlay matrix
 
 <FaqGroup>
-  <FaqItem title="WITH_OBSERVABILITY=1" open>
-    Adds Prometheus, Grafana, Loki, Promtail, Alertmanager, and exporters.
+  <FaqItem title="Observability (default ON)" open>
+    Prometheus, Grafana, Loki, Promtail, Alertmanager, postgres-exporter,
+    node-exporter. Grafana on host port 3010. Disable with `WITH_OBSERVABILITY=0`.
   </FaqItem>
-  <FaqItem title="WITH_GLITCHTIP=1">
-    GlitchTip (Sentry-compatible error tracking); reuses base Postgres + Valkey.
+  <FaqItem title="GlitchTip (default ON)">
+    Sentry-compatible error tracking; reuses base Postgres (separate
+    `glitchtip` DB) + Valkey (DB 1). In dev, `dev.sh` seeds a dev-only secret
+    so first clone boots without setup. In prod, requires
+    `GLITCHTIP_SECRET_KEY` / `GLITCHTIP_PUBLIC_HOST` /
+    `GLITCHTIP_BASIC_AUTH_USERS`. Disable with `WITH_GLITCHTIP=0`.
   </FaqItem>
   <FaqItem title="WITH_BULLMQ=1">
     Bull-board UI at `bullmq.localhost`; dev only.
   </FaqItem>
   <FaqItem title="WITH_WUD=1">
-    WUD watches container images. In prod, app images (`api`, `ui`) are
-    auto-deployed while base images remain notify-only; Discord/Slack webhooks
-    are optional.
+    WUD watches container images. Default ON in prod, OFF in dev. In prod, app
+    images (`api`, `ui`) are auto-deployed while base images remain
+    notify-only; Discord/Slack webhooks are optional.
   </FaqItem>
   <FaqItem title="WITH_MAILPIT=1">
     Mailpit SMTP catcher at `:8025`; dev only.
   </FaqItem>
 </FaqGroup>
 
-Combinations: `WITH_OBSERVABILITY=1 WITH_GLITCHTIP=1 ./scripts/compose-up.sh` is supported (and runs in CI).
+Opt-out combinations: `WITH_OBSERVABILITY=0 WITH_GLITCHTIP=0 ./scripts/compose-up.sh` boots a minimal stack with just Postgres + Valkey + your apps (e.g. on a constrained laptop).
 
 <DocCallout
   variant="caution"
@@ -140,7 +153,7 @@ Combinations: `WITH_OBSERVABILITY=1 WITH_GLITCHTIP=1 ./scripts/compose-up.sh` is
   title="Read Live Config & Status"
   caption="check composed Docker configuration or service status"
   command={[
-    "STACK=dev WITH_OBSERVABILITY=1 ./dev.sh config | less",
+    "STACK=dev ./dev.sh config | less",
     "./dev.sh ps",
   ]}
   output={[

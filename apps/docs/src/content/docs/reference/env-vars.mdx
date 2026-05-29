@@ -329,14 +329,17 @@ import FaqItem from "../../../components/FaqItem.tsx";
     **Repo:** infra. **Required:** yes in prod. Let's Encrypt contact address.
   </FaqItem>
   <FaqItem title="GRAFANA_ADMIN_USER / GRAFANA_ADMIN_PASSWORD">
-    **Repo:** infra. **Required:** when observability overlay is on.
+    **Repo:** infra. **Required:** rotate before exposing Grafana beyond localhost. Observability is on by default.
   </FaqItem>
   <FaqItem title="*_LIMITS_CPUS / *_LIMITS_MEMORY (and reservations)">
     **Repo:** infra. **Required:** no. Per-service resource caps; see [Resource
     limits](/infra/resource-limits/).
   </FaqItem>
-  <FaqItem title="WITH_OBSERVABILITY / WITH_GLITCHTIP / WITH_BULLMQ / WITH_WUD">
-    **Repo:** infra. **Required:** no. Overlay toggles.
+  <FaqItem title="WITH_OBSERVABILITY / WITH_GLITCHTIP">
+    **Repo:** infra. **Required:** no. Both default to `1` (on) for dev and prod, `0` (off) for the `smoke` stack. Set to `0` to opt out.
+  </FaqItem>
+  <FaqItem title="WITH_BULLMQ / WITH_WUD / WITH_MAILPIT">
+    **Repo:** infra. **Required:** no. Opt-in overlays. `WITH_WUD` defaults to `1` in prod, `0` elsewhere.
   </FaqItem>
   <FaqItem title="RCLONE_REMOTE_NAME / RCLONE_REMOTE_PATH">
     **Repo:** infra. **Required:** when backups are configured.

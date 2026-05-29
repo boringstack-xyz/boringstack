@@ -52,13 +52,13 @@ import FaqItem from "../../../components/FaqItem.tsx";
     The deployment target: `STACK=dev` or `STACK=prod`. Picks which compose overlay (HTTP routes + host ports for dev, HTTPS + ACME for prod) gets merged on top of the base.
   </FaqItem>
   <FaqItem title="Overlay">
-    <span id="overlay"></span>An opt-in `docker-compose.<name>.yml` file that adds services to the base stack. Activated by a `WITH_<NAME>=1` env var. Overlays compose freely (e.g. `WITH_OBSERVABILITY=1 WITH_GLITCHTIP=1`). [Read more](/infra/profiles-and-overlays/).
+    <span id="overlay"></span>A `docker-compose.<name>.yml` file that adds services to the base stack, gated by a `WITH_<NAME>` env var. Observability and GlitchTip default to on; niche overlays (BullMQ, Mailpit, WUD-in-dev) default to off. [Read more](/infra/profiles-and-overlays/).
   </FaqItem>
   <FaqItem title="Profile">
     A docker-compose feature for grouping services within a single file. The infra stack uses profiles (`--profile dev`, `--profile observability`) alongside overlays; profiles activate services within a file, overlays add files.
   </FaqItem>
   <FaqItem title="Base stack">
-    The always-on services: Postgres + Valkey + api-migrate (one-shot) + the app containers. Traefik is in the prod profile only; dev uses Vite's dev-server proxy. Everything else is an overlay.
+    The always-on services: Postgres + Valkey + api-migrate (one-shot) + the app containers. Traefik is in the prod profile only; dev uses Vite's dev-server proxy. Observability + GlitchTip layer in by default on top.
   </FaqItem>
   <FaqItem title="Data plane">
     Postgres + Valkey. The services that hold state. Deliberately not exposed to the `frontend` Docker network, so the only path from the world to the data plane is through the API.

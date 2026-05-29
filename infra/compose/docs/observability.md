@@ -1,6 +1,8 @@
-# Optional observability (metrics + logs)
+# Observability (metrics + logs)
 
-A self-contained metrics + logs stack, gated behind a single env flag. Stays off by default — turn it on when you need it, leave it off when you don't.
+A self-contained metrics + logs stack. **On by default** for `dev` and `prod` via `./dev.sh up`. Opt out with `WITH_OBSERVABILITY=0`.
+
+The premise: you can't build muscle memory for a dashboard you've never seen until prod day-one. Running Grafana + Prometheus + Loki against your localhost traffic means by the time you ship, the panels are familiar — they show your real dev errors, your real request latencies, your real Postgres connections.
 
 ## What you get
 
@@ -19,10 +21,16 @@ Grafana on **:3010** to avoid clashing with the API on **:7330** and the UI on *
 ## Start
 
 ```bash
-WITH_OBSERVABILITY=1 ./scripts/compose-up.sh
+./scripts/compose-up.sh        # observability is on by default
 ```
 
-The overlay merges automatically. `dev.sh` passes `--profile observability` along with whichever stack profile (`dev` or `prod`) you're using.
+`dev.sh` merges `docker-compose.observability.yml` and adds `--profile observability` automatically.
+
+To skip the overlay (e.g. on a constrained laptop):
+
+```bash
+WITH_OBSERVABILITY=0 ./scripts/compose-up.sh
+```
 
 Set `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` in `compose/.env` before exposing Grafana beyond localhost.
 
@@ -49,10 +57,8 @@ Set `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` in `compose/.env` before exp
 
 ## Stop
 
-Use the same flag:
-
 ```bash
-WITH_OBSERVABILITY=1 ./scripts/compose-down.sh
+./scripts/compose-down.sh      # tears down everything dev.sh brought up
 ```
 
 `compose-down-clean.sh` (with confirmation prompt) wipes the Postgres + Valkey volumes; observability data lives in `prometheus_data`, `grafana_data`, `loki_data` — also wiped by `down -v`.

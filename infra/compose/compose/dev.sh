@@ -24,6 +24,18 @@ STACK="${STACK:-dev}"
 COMPOSE_FILES=(-f "$ROOT/docker-compose.yml")
 PROFILE_ARGS=()
 
+# Observability + GlitchTip default to ON for dev and prod — you can't build
+# muscle memory for a dashboard you've never seen until prod day-one. They
+# stay OFF for `smoke` (full-stack-smoke CI doesn't need them and the extra
+# containers slow the test loop). Override per-run with WITH_OBSERVABILITY=0
+# / WITH_GLITCHTIP=0.
+case "$STACK" in
+  smoke) WITH_OBSERVABILITY_DEFAULT=0; WITH_GLITCHTIP_DEFAULT=0 ;;
+  *)     WITH_OBSERVABILITY_DEFAULT=1; WITH_GLITCHTIP_DEFAULT=1 ;;
+esac
+WITH_OBSERVABILITY="${WITH_OBSERVABILITY:-$WITH_OBSERVABILITY_DEFAULT}"
+WITH_GLITCHTIP="${WITH_GLITCHTIP:-$WITH_GLITCHTIP_DEFAULT}"
+
 case "$STACK" in
   dev)
     COMPOSE_FILES+=(-f "$ROOT/docker-compose.development-labels.yml")
@@ -50,6 +62,11 @@ case "$STACK" in
     : "${PUBLIC_API_URL:?PUBLIC_API_URL required in prod. Same-origin example: https://example.com/api}"
     : "${PUBLIC_UI_HOST:?PUBLIC_UI_HOST required in prod. Bare DNS name, e.g. example.com}"
     : "${ACME_EMAIL:?ACME_EMAIL required in prod for ACME/Lets Encrypt. e.g. you@example.com}"
+    if [[ "$WITH_GLITCHTIP" == "1" ]]; then
+      : "${GLITCHTIP_SECRET_KEY:?GLITCHTIP_SECRET_KEY required in prod when GlitchTip is enabled. Generate with: openssl rand -base64 50. Set WITH_GLITCHTIP=0 to skip GlitchTip entirely.}"
+      : "${GLITCHTIP_PUBLIC_HOST:?GLITCHTIP_PUBLIC_HOST required in prod (DNS name for the GlitchTip router, e.g. glitchtip.example.com). Set WITH_GLITCHTIP=0 to skip.}"
+      : "${GLITCHTIP_BASIC_AUTH_USERS:?GLITCHTIP_BASIC_AUTH_USERS required in prod (htpasswd format, escape \$ as \$\$). Set WITH_GLITCHTIP=0 to skip.}"
+    fi
     ;;
   *)
     echo "[ERROR] STACK must be \"dev\", \"smoke\", or \"prod\" (got: ${STACK})" >&2
@@ -57,12 +74,18 @@ case "$STACK" in
     ;;
 esac
 
-if [[ "${WITH_OBSERVABILITY:-0}" == "1" && -f "$ROOT/docker-compose.observability.yml" ]]; then
+# Dev-only fallback so a fresh clone boots without manual .env editing.
+# Prod requires the operator to generate their own (guarded above).
+if [[ "$WITH_GLITCHTIP" == "1" && "$STACK" != "prod" && -z "${GLITCHTIP_SECRET_KEY:-}" ]]; then
+  export GLITCHTIP_SECRET_KEY="dev-only-not-secret-replace-in-prod-pHnZx7s2qB4eYwLm3KvR8tDfJ5cVgHp1aN6yT0uX9oI="
+fi
+
+if [[ "$WITH_OBSERVABILITY" == "1" && -f "$ROOT/docker-compose.observability.yml" ]]; then
   COMPOSE_FILES+=(-f "$ROOT/docker-compose.observability.yml")
   PROFILE_ARGS+=(--profile observability)
 fi
 
-if [[ "${WITH_GLITCHTIP:-0}" == "1" && -f "$ROOT/docker-compose.glitchtip.yml" ]]; then
+if [[ "$WITH_GLITCHTIP" == "1" && -f "$ROOT/docker-compose.glitchtip.yml" ]]; then
   COMPOSE_FILES+=(-f "$ROOT/docker-compose.glitchtip.yml")
   PROFILE_ARGS+=(--profile "glitchtip-${STACK}")
   # In prod, layer the GlitchTip prod labels (HTTPS + Basic Auth + CORS).

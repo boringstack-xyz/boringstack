@@ -19,15 +19,16 @@ import FaqItem from "../../../components/FaqItem.tsx";
     { value: "Loki", label: "Log store" },
   ]}
 >
-  `WITH_OBSERVABILITY=1` drops a complete metrics-and-logs stack into your
-  environment. Host and infra metrics flow out of the box; application
-  metrics and dashboards are scaffolded but unopinionated.
+  The full metrics-and-logs stack is **on by default** for dev and prod.
+  Host and infra metrics flow out of the box; application metrics and
+  dashboards are scaffolded but unopinionated. Opt out with
+  `WITH_OBSERVABILITY=0`.
 </PageIntro>
 
-`WITH_OBSERVABILITY=1` adds Prometheus, Grafana, Loki, Promtail, and
-exporters to the compose stack. It runs on the same host as the app; no
-SaaS, no per-event billing. The default is "credible debug environment
-for an operator who fills in their own dashboards," not "turnkey APM."
+Prometheus, Grafana, Loki, Promtail, and exporters ship with the default
+compose stack. They run on the same host as the app; no SaaS, no per-event
+billing. The premise: you can't build muscle memory for a dashboard you've
+never seen until prod day-one, so dev runs the same surface as prod.
 
 ## How signals flow
 

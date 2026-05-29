@@ -28,8 +28,8 @@ import FaqItem from "../../../components/FaqItem.tsx";
 
 Both `apps/api` and `apps/ui` ship a Sentry SDK. The same SDK talks to:
 
-- **Hosted [Sentry](https://sentry.io)**; fastest setup, paid past the free tier.
-- **Self-hosted [GlitchTip](https://glitchtip.com)**; Sentry-API-compatible, runs as an overlay in the infra stack (`WITH_GLITCHTIP=1`). Zero per-event cost.
+- **Self-hosted [GlitchTip](https://glitchtip.com)**, on by default in the compose stack. Sentry-API-compatible, zero per-event cost.
+- **Hosted [Sentry](https://sentry.io)**; same SDK, different DSN. Fastest if you'd rather pay for managed.
 
 The SDKs don't know which one they're talking to. Choosing is a one-env-var change.
 
@@ -78,13 +78,14 @@ UI side: Sentry initialises once at app mount when `VITE_SENTRY_DSN` is set. Rep
 
 ## Self-hosting with GlitchTip
 
-GlitchTip is Apache-licensed and Sentry-API-compatible. The infra stack provides it as an overlay:
+GlitchTip is Apache-licensed and Sentry-API-compatible. It runs as part of the default compose stack:
 
 ```bash
-WITH_GLITCHTIP=1 ./dev.sh up -d
+./dev.sh up -d                 # GlitchTip is on by default
+WITH_GLITCHTIP=0 ./dev.sh up -d  # opt out if you'd rather not run it
 ```
 
-First boot bootstraps a superuser, a default org, and two projects (`API` and `Frontend`). Visit `http://glitchtip.localhost`, grab each project's DSN, and drop them into the matching env vars.
+First boot bootstraps a superuser (`admin@localhost` / `admin123456`), a default org, and two projects (`API` and `Frontend`). Visit `http://glitchtip.localhost`, grab each project's DSN, and drop them into the matching env vars.
 
 The overlay reuses the base stack's Postgres (in a separate `glitchtip` database) and Valkey (DB 1). Adding GlitchTip costs two extra containers, not a separate database server.
 
@@ -128,6 +129,6 @@ No SDK changes. The infrastructure is the variable, not the code.
 ## Related
 
 - [Observability](/topics/observability/); metrics and logs that sit alongside error events.
-- [Profiles & overlays](/infra/profiles-and-overlays/); how `WITH_GLITCHTIP=1` actually composes onto the stack.
+- [Profiles & overlays](/infra/profiles-and-overlays/); how GlitchTip composes onto the stack and how to opt out.
 - [Security pipeline](/topics/security/); the broader telemetry surface this fits into.
 - [Notifications](/api/notifications/); how user-facing errors are surfaced back into the app.

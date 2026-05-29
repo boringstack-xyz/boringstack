@@ -59,4 +59,4 @@ All knobs are in `compose/.env.example` under the **Resource budgets** section, 
 
 - `compose/docker-compose.yml` — where the budgets live, under each service's `deploy.resources`.
 - `compose/.env.example` — the override surface.
-- `docs/observability-optional.md` — Grafana dashboard for live `cpu`/`memory` per service via cAdvisor (when observability is enabled).
+- `docs/observability.md` — Grafana dashboard for live `cpu`/`memory` per service via cAdvisor.

@@ -127,7 +127,7 @@ Worked example below: adding **Meilisearch** as an opt-in search engine, exposed
 - `docker compose ps` shows the `meilisearch` container in the running list alongside the base stack.
 - The volume `meilisearch_data` exists: `docker volume ls | grep meilisearch`.
 - The dev URL responds: `curl http://meilisearch.localhost/health`.
-- Flags compose: `WITH_MEILISEARCH=1 WITH_OBSERVABILITY=1 ./scripts/compose-up.sh` brings up both overlays cleanly.
+- Flags compose: `WITH_MEILISEARCH=1 ./scripts/compose-up.sh` layers your new overlay on top of the defaults (observability + GlitchTip already on).
 - Stopping cleanly preserves data: `./scripts/compose-down.sh` then re-up; the index is still there.
 
 ## What changes in code
