@@ -17,7 +17,11 @@ That's it. `dev.sh` auto-seeds a dev-only `GLITCHTIP_SECRET_KEY` if you don't se
 - creates the superuser `admin@localhost` / `admin123456` (override via `GLITCHTIP_SUPERUSER_*` in `.env`)
 - creates a default organization (`Local`) with two projects (`API`, `Frontend`)
 
-Visit **http://glitchtip.localhost** and log in. Each project has a DSN under `Settings → Client Keys`. Copy them into the the API app's `.env` (as `SENTRY_DSN`) and the the UI app's `.env.local` (as `VITE_SENTRY_DSN`).
+**DSNs are auto-wired.** `dev.sh up -d` runs `scripts/glitchtip-fetch-dsn.sh` in the background once GlitchTip is up. The script reads the DSNs for the `API` and `Frontend` projects from GlitchTip's Django ORM, writes them to `compose/.env` as `SENTRY_DSN` and `VITE_SENTRY_DSN`, and restarts `api-dev` + `ui-dev` so they pick the values up. Re-runs are idempotent — the script exits silently when the wiring already matches.
+
+Visit **http://glitchtip.localhost** to log in if you want to browse events, configure alerts, or rotate the superuser password. The DSN copy-paste step from older docs is gone.
+
+If you'd rather point at hosted Sentry or a different GlitchTip, set `SENTRY_DSN` / `VITE_SENTRY_DSN` manually in `compose/.env` before `up`. The script only writes when the .env value is empty — any non-empty value is treated as deliberate and left alone. To rewire after wiping the GlitchTip Postgres volume, clear those two lines and re-run `./scripts/glitchtip-fetch-dsn.sh`.
 
 ## How it's wired
 
@@ -57,18 +61,11 @@ The `/api/*` router has **no Basic Auth** so client SDKs can POST events without
 
 ## SDK integration
 
-**API (apps/api)** — `bun add @sentry/bun` (or use the the API app's existing Sentry middleware):
-```ts
-import * as Sentry from "@sentry/bun";
+The SDKs are already wired in both apps; the auto-wire above gives them DSNs to talk to.
 
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,           // from GlitchTip → Project → Client Keys
-  tracesSampleRate: 1.0,
-  environment: process.env.NODE_ENV,
-});
-```
+**API (apps/api)** — `@sentry/bun` is initialised in `apps/api/src/config/sentry/sentry.ts`. Reads `SENTRY_DSN` from env; no-op when empty. `tracesSampleRate` defaults to `0` (env-tunable via `SENTRY_TRACES_SAMPLE_RATE`) — OTel ships traces to Tempo, Sentry stays error-capture-only.
 
-**UI (apps/ui)** — uses `@sentry/react` and reads `VITE_SENTRY_DSN` from `src/lib/env`. Just set the DSN; the existing wiring sends events to whichever endpoint that DSN points at.
+**UI (apps/ui)** — `@sentry/react` is initialised in `apps/ui/src/app/main.tsx`. Reads `VITE_SENTRY_DSN` at dev-server start (or build time for the prod bundle); no-op when empty. Same posture: `tracesSampleRate: 0`, error capture only, trace IDs propagate via `browserTracingIntegration` so server-side spans land in Tempo with the same ID.
 
 ## Verifying ingestion
 

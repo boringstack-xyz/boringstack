@@ -44,9 +44,11 @@ The SDKs don't know which one they're talking to. Choosing is a one-env-var chan
     app already uses. `WITH_GLITCHTIP=0` opts out.
   </FaqItem>
   <FaqItem title="Empty DSN: SDK is a no-op">
-    Tests do not ship error reports. Once you copy a project DSN from
-    the GlitchTip UI into `SENTRY_DSN` / `VITE_SENTRY_DSN`, error
-    capture starts.
+    Tests do not ship error reports. The dev stack auto-wires
+    `SENTRY_DSN` and `VITE_SENTRY_DSN` from the bundled GlitchTip
+    (`scripts/glitchtip-fetch-dsn.sh`, called by `dev.sh up -d`), so
+    first boot lands ready-to-ship; pre-set values are left alone so
+    you can point at hosted Sentry instead.
   </FaqItem>
   <FaqItem title="Replay-on-error on, full-session replays off">
     Captures the broken flow without storing healthy sessions.
@@ -143,7 +145,7 @@ GlitchTip is Apache-licensed and Sentry-API-compatible. It runs as part of the d
 WITH_GLITCHTIP=0 ./dev.sh up -d  # opt out if you'd rather not run it
 ```
 
-First boot bootstraps a superuser (`admin@localhost` / `admin123456`), a default org, and two projects (`API` and `Frontend`). Visit `http://glitchtip.localhost`, grab each project's DSN, and drop them into the matching env vars.
+First boot bootstraps a superuser (`admin@localhost` / `admin123456`), a default org, and two projects (`API` and `Frontend`). `dev.sh up -d` then runs `scripts/glitchtip-fetch-dsn.sh` in the background — it pulls the DSNs out of GlitchTip's Django ORM, writes them into `compose/.env` as `SENTRY_DSN` / `VITE_SENTRY_DSN`, and restarts `api-dev` + `ui-dev`. Visit `http://glitchtip.localhost` to browse events; the DSN paste step is gone.
 
 The overlay reuses the base stack's Postgres (in a separate `glitchtip` database) and Valkey (DB 1). Adding GlitchTip costs two extra containers, not a separate database server.
 

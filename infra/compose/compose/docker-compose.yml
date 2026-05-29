@@ -242,6 +242,10 @@ services:
       # `tempo` service over the shared `backend` network.
       OTEL_EXPORTER_OTLP_ENDPOINT: ${API_DEV_OTEL_EXPORTER_OTLP_ENDPOINT:-http://tempo:4318}
       OTEL_SERVICE_NAME: ${API_DEV_OTEL_SERVICE_NAME:-boringstack-api-dev}
+      # Auto-wired by scripts/glitchtip-fetch-dsn.sh after first up; empty
+      # until that script writes a value into compose/.env. Sentry init
+      # is a no-op when empty, so an unwired stack still boots cleanly.
+      SENTRY_DSN: ${SENTRY_DSN:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -293,6 +297,10 @@ services:
       CI: "true"
       VITE_API_URL: ""
       VITE_API_PROXY_TARGET: http://api-dev:7330
+      # Auto-wired by scripts/glitchtip-fetch-dsn.sh after first up; empty
+      # until that script writes a value into compose/.env. Vite picks
+      # this up at dev-server startup and exposes it as import.meta.env.
+      VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
     depends_on:
       api-dev:
         condition: service_healthy
