@@ -83,9 +83,13 @@ scrape_configs:
             msg: msg
       # Lowercase Pino's level ("INFO" → "info"). Promote as the `level`
       # label so Grafana's logs panel auto-colours each line by severity.
+      # Note: Promtail's template stage exposes Go's strings.ToLower as
+      # `ToLower` (capital T) — `toLower` from Sprig is NOT registered
+      # here. Using the lowercase form crashes the container with
+      # `function "toLower" not defined` at config load.
       - template:
           source: level
-          template: '{{ .level | toLower }}'
+          template: '{{ ToLower .level }}'
       - labels:
           level:
       # High-cardinality correlation IDs go into structured metadata
