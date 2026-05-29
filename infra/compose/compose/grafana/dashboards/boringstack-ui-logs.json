@@ -43,7 +43,7 @@
         "colorMode": "background",
         "graphMode": "area",
         "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
-        "textMode": "value_and_name"
+        "textMode": "value"
       },
       "targets": [
         {
@@ -75,7 +75,7 @@
         "colorMode": "background",
         "graphMode": "area",
         "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
-        "textMode": "value_and_name"
+        "textMode": "value"
       },
       "targets": [
         {
@@ -106,7 +106,7 @@
         "colorMode": "background",
         "graphMode": "area",
         "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
-        "textMode": "value_and_name"
+        "textMode": "value"
       },
       "targets": [
         {
@@ -115,6 +115,7 @@
           "refId": "A"
         }
       ],
+      "description": "**What:** total UI container log line count over the dashboard time range. In dev that's Vite's HMR / proxy chatter; in prod it's nginx access logs.\n\n**Why:** sanity check that Promtail is ingesting UI logs. Zero lines during active dev work = the plain-pipeline filter in `promtail-config.yml` isn't matching the container — usually means a service rename or a filter typo.",
       "title": "Total log lines",
       "type": "stat"
     },

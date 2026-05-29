@@ -1,6 +1,6 @@
 ---
 title: Alerts
-description: 14 default Prometheus rules + env-driven Slack, Discord, and webhook receivers in Alertmanager. Set one env var to get pager output, none to keep alerts in the UI.
+description: 16 default Prometheus rules + env-driven Slack, Discord, and webhook receivers in Alertmanager. Set one env var to get pager output, none to keep alerts in the UI.
 ---
 
 import PageIntro from "../../../components/docs-kit/PageIntro";
@@ -15,7 +15,7 @@ import DocCallout from "../../../components/DocCallout.tsx";
     { label: "Receivers", href: "#wiring-a-receiver" },
   ]}
   facts={[
-    { value: "14", label: "default rules" },
+    { value: "16", label: "default rules" },
     { value: "3", label: "receiver formats" },
     { value: "1", label: "env var to wire" },
   ]}
@@ -40,7 +40,10 @@ hours.
     `ApiServerErrorsHigh` (page, 5xx > 1% for 5min),
     `ApiServerErrorsCritical` (page, 5xx > 5% for 2min),
     `ApiLatencyP95High` (warn, p95 > 1s for 10min),
-    `ApiUnreachable` (page, no API traffic for 5min).
+    `ApiUnreachable` (page, no API traffic for 5min),
+    `NodeEventLoopLagging` (warn, p99 lag > 200ms for 5min),
+    `NodeEventLoopBlocked` (page, p99 lag > 1s for 2min),
+    `NodeEventLoopSaturated` (warn, ELU avg > 90% for 10min).
   </FaqItem>
   <FaqItem title="boringstack-database">
     `PostgresDown` (page, exporter can't reach pg for 2min),
@@ -105,7 +108,7 @@ block is omitted entirely, so `amtool check-config` stays happy.
     Can be set in addition to the Slack one; alerts fan out to both.
   </FaqItem>
   <FaqItem title="None (UI only)">
-    Leave both env vars unset. The 14 rules still fire — they land in
+    Leave both env vars unset. The 16 rules still fire — they land in
     the Alertmanager UI at `http://localhost:9093`. Useful for seeing
     what alerts look like before deciding where to pager them.
   </FaqItem>
@@ -140,7 +143,7 @@ follow-up ping keeps it firing.
 Drop new entries into `compose/prometheus/rules.yml` under an
 existing group (or create a new group). Required fields per alert:
 `alert`, `expr`, `for` (optional debounce duration), `labels.severity`
-(`page` or `warn`), `annotations.summary`. The 14 bundled rules are
+(`page` or `warn`), `annotations.summary`. The 16 bundled rules are
 worked examples.
 
 Hot-reload Prometheus without a restart:
@@ -175,7 +178,7 @@ script.
 
 ## Source
 
-- [`compose/prometheus/rules.yml`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/prometheus/rules.yml) — the 14 rules.
+- [`compose/prometheus/rules.yml`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/prometheus/rules.yml) — the 16 rules.
 - [`compose/alertmanager/entrypoint.sh`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/alertmanager/entrypoint.sh) — env-driven config renderer.
 - [`infra/compose/docs/alerts.md`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/docs/alerts.md) — the operator-side runbook.
 

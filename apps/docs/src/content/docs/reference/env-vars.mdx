@@ -340,6 +340,12 @@ import FaqItem from "../../../components/FaqItem.tsx";
   <FaqItem title="ALERTMANAGER_WEBHOOK_URL">
     **Repo:** infra. **Required:** no. Generic HTTP endpoint that receives Alertmanager's native JSON payload — for custom bridges (n8n, alerter services, PagerDuty translators). Can be set alongside the Slack URL; alerts fan out to both.
   </FaqItem>
+  <FaqItem title="OTEL_EXPORTER_OTLP_ENDPOINT">
+    **Repo:** infra (api containers). **Required:** no. Defaults to `http://tempo:4318` on the api-dev / api services so traces ship to the bundled Tempo backend. Set to empty to disable trace export entirely (OTel SDK becomes a no-op). Override to point at a different OTLP collector. See [Distributed tracing](/topics/tracing/).
+  </FaqItem>
+  <FaqItem title="OTEL_SERVICE_NAME">
+    **Repo:** api. **Required:** no. Default `boringstack-api`. The value that appears as `service.name` on every span — Grafana's Tempo Explore tab uses this to group spans. Override when you fork the template so traces show your service identity.
+  </FaqItem>
   <FaqItem title="*_LIMITS_CPUS / *_LIMITS_MEMORY (and reservations)">
     **Repo:** infra. **Required:** no. Per-service resource caps; see [Resource
     limits](/infra/resource-limits/).

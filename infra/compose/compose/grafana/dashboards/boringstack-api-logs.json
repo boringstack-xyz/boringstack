@@ -43,7 +43,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
-        "textMode": "value_and_name"
+        "textMode": "value"
       },
       "targets": [
         {
@@ -52,6 +52,7 @@
           "refId": "A"
         }
       ],
+      "description": "**What:** total count of `level=error` Pino log lines from the API containers over the dashboard's time range.\n\n**Why:** the cheapest sanity check on application health. Zero errors in a 30-min window of real traffic is normal; a number that climbs steadily is the first sign of a regression.\n\n**Watch for:** any spike that doesn't correspond to a deploy. Drill into the **Top error / warn events** table below to find which `event` is driving the count.",
       "title": "Errors (selected range)",
       "type": "stat"
     },
@@ -77,7 +78,7 @@
         "colorMode": "background",
         "graphMode": "area",
         "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
-        "textMode": "value_and_name"
+        "textMode": "value"
       },
       "targets": [
         {
@@ -86,6 +87,7 @@
           "refId": "A"
         }
       ],
+      "description": "**What:** total count of `level=warn` Pino log lines over the dashboard's time range.\n\n**Why:** warns are 'something off but not failing yet' — auth retry counts, rate-limit boundary hits, deprecation paths exercised, slow-query thresholds tripped.\n\n**Watch for:** a steady drumbeat of warnings usually means a real bug that hasn't crossed into errors yet. A handful per hour is normal; hundreds per minute deserves attention.",
       "title": "Warnings",
       "type": "stat"
     },
@@ -108,7 +110,7 @@
         "colorMode": "background",
         "graphMode": "area",
         "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
-        "textMode": "value_and_name"
+        "textMode": "value"
       },
       "targets": [
         {
@@ -117,6 +119,7 @@
           "refId": "A"
         }
       ],
+      "description": "**What:** total count of `level=info` log lines — the bulk of normal application activity (request completions, business events, lifecycle).\n\n**Why:** mostly a baseline for comparison against the error/warn counts to the left. A sudden drop in info logs without a matching drop in request rate = a code path stopped logging (could be intentional, could be a regression).",
       "title": "Info",
       "type": "stat"
     },
@@ -139,7 +142,7 @@
         "colorMode": "background",
         "graphMode": "area",
         "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
-        "textMode": "value_and_name"
+        "textMode": "value"
       },
       "targets": [
         {
@@ -148,6 +151,7 @@
           "refId": "A"
         }
       ],
+      "description": "**What:** total log line count from the API containers over the dashboard time range.\n\n**Why:** sanity check that Promtail is shipping. If this number is 0 over a window where you know the API was serving traffic, the structured-logging pipeline is broken — usually means Promtail is crashlooping (`docker compose logs promtail`).",
       "title": "Total log lines",
       "type": "stat"
     },
@@ -242,7 +246,7 @@
     },
     {
       "datasource": { "type": "loki", "uid": "loki" },
-      "description": "Routes generating the most error/warn lines. Quick triage for 'which endpoint is hurting?'.",
+      "description": "**What:** top 10 routes by error+warn log volume in the selected range, grouped by the structured `route` field on Pino log records.\n\n**Why:** answers 'which endpoint is generating the noise?' faster than scrolling the live log panel. Useful for triage and for choosing where to add the next `withDbSpan` to find the slow query.\n\n**Watch for:** a route that wasn't in the top 10 yesterday and is today = recent regression. A route consistently at the top = good candidate for refactoring or rate limiting.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
