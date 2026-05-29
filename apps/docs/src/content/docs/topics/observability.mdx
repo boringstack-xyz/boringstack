@@ -57,18 +57,28 @@ flowchart LR
 <FaqGroup>
   <FaqItem title="Grafana" open>
     Host `:3010`. Default admin / change-me (override via env). Datasources
-    for Prometheus and Loki auto-provisioned.
+    for Prometheus and Loki auto-provisioned. Five baseline dashboards
+    auto-load — see the "Default dashboards" section below.
   </FaqItem>
   <FaqItem title="Prometheus">
     Internal. Scrapes itself, Alertmanager, Traefik (prod profile),
-    postgres-exporter, node-exporter. Configurable retention.
+    postgres-exporter, node-exporter, and `apps/api` `/metrics`. 14
+    bundled alert rules (API errors/latency, Postgres health, host
+    disk/memory/CPU, edge); see [Alerts](/topics/alerts/) for tuning.
   </FaqItem>
   <FaqItem title="Loki">
-    Internal. Per-container labels; configurable retention.
+    Internal. Per-container labels; configurable retention. The api
+    containers' Pino JSON is parsed into structured fields by Promtail's
+    Pino pipeline, so log filtering by `level` and pivoting by `trace_id`
+    / `requestId` / `userId` are first-class.
   </FaqItem>
   <FaqItem title="Promtail">
-    Sidecar. Tails `/var/lib/docker/containers/*.log` so every container's
-    stdout is queryable as labeled logs.
+    Sidecar. Two pipelines: a plain pipeline labels everything by
+    `compose_service`; a Pino-aware pipeline on the api containers
+    parses JSON, promotes `level` (lowercased) as a Loki label, and
+    surfaces `requestId` / `trace_id` / `span_id` / `userId` as
+    structured metadata — so Grafana auto-colours by level and the
+    correlation IDs are clickable.
   </FaqItem>
   <FaqItem title="node-exporter">
     Host metrics: CPU, memory, disk, network.
@@ -77,9 +87,12 @@ flowchart LR
     Postgres metrics: connections, transactions, table sizes.
   </FaqItem>
   <FaqItem title="Alertmanager">
-    Internal. Receivers are not wired by default, paging strategy is
-    project-specific, so the template ships the plumbing and you add the
-    routes.
+    Wired with env-driven Slack/Discord/webhook receivers. Set
+    `ALERTMANAGER_SLACK_WEBHOOK_URL` (Slack-format — works for Discord
+    too with the `/slack` suffix) and/or `ALERTMANAGER_WEBHOOK_URL`
+    (Alertmanager JSON) in `compose/.env`. Without either set, alerts
+    still fire into the Alertmanager UI at `:9093` only. Walkthrough:
+    [Alerts](/topics/alerts/).
   </FaqItem>
 </FaqGroup>
 
@@ -104,22 +117,50 @@ Prometheus scrapes the api on the `boringstack-api` job (dev profile
 hits `api-dev:7330`, prod profile hits `api:7330`); each target is
 labelled with its `profile`.
 
-## Default dashboard
+## Default dashboards
 
-`compose/grafana/dashboards/boringstack-api.json` ships with the
-overlay and auto-loads via the provisioning provider. Panels:
+Five dashboards auto-load from `compose/grafana/dashboards/` via the
+provisioning provider. Open them at `http://localhost:3010` (admin /
+change-me by default) under the BoringStack folder.
 
-- Request rate per route
-- Request latency p95 per route
-- 5xx error rate (stat)
-- Memory (RSS + heap used)
-- Event-loop lag (p50, p99)
-- Process CPU
-- Requests by status (stacked)
+<FaqGroup>
+  <FaqItem title="BoringStack — API" open>
+    RED panels per route: request rate, p95 latency, 5xx rate, requests
+    by status. Plus Node.js runtime: heap, RSS, event-loop lag p50/p99,
+    process CPU. First place to look for "is the API hot?"
+  </FaqItem>
+  <FaqItem title="BoringStack — API logs">
+    Error / warn / info / total counts (stats), log volume per minute
+    stacked by level (colour-coded), top error/warn events aggregated
+    by Pino `event` field, top routes producing errors, plus two live
+    log streams — application events (Drizzle SQL filtered out) and
+    raw database queries (Drizzle stdout). Structured-metadata fields
+    on each line are clickable: trace_id and userId open GlitchTip
+    search, requestId opens a Loki Explore pre-filtered to that
+    request's lines.
+  </FaqItem>
+  <FaqItem title="BoringStack — UI logs">
+    Vite + nginx output. Substring-matched error count (heuristic since
+    Vite isn't structured), HMR / reload activity, per-container log
+    volume, per-minute error timeseries, plus a live filterable stream.
+  </FaqItem>
+  <FaqItem title="BoringStack — Postgres">
+    Connections vs `max_connections`, cache hit ratio (target >95%),
+    transactions per second (commits + rollbacks), database size,
+    longest-running transaction, deadlocks per minute. "Is the DB hot?"
+  </FaqItem>
+  <FaqItem title="BoringStack — Host">
+    CPU by mode (user / system / iowait / ...), iowait stat (red when
+    sustained — usually means disk-bound), memory used / cached /
+    available, filesystem % per mount (red at >85%), network rx/tx.
+    "Is the box itself the problem?"
+  </FaqItem>
+</FaqGroup>
 
-Drop additional dashboards into the same directory and Grafana picks
-them up within 30 s. Good community starting points: Node Exporter
-Full (id `1860`), PostgreSQL exporter quickstart (id `9628`).
+Drop additional dashboards into `compose/grafana/dashboards/` and
+Grafana picks them up within 30 seconds. Heavier community starters
+to pair with the defaults: Node Exporter Full (id `1860`), PostgreSQL
+exporter quickstart (id `9628`), Loki Logs (id `13186`).
 
 ## Design choices
 
@@ -127,21 +168,35 @@ Full (id `1860`), PostgreSQL exporter quickstart (id `9628`).
   <FaqItem title="Self-hosted, not SaaS" open>
     Zero per-event cost; data stays on your infra.
   </FaqItem>
-  <FaqItem title="Prometheus + Loki, not OpenTelemetry collector">
-    Two well-known projects beat one unfamiliar abstraction. The stack
-    can grow into OTel later without re-platforming.
+  <FaqItem title="On by default in dev and prod">
+    The whole point of running the stack in dev is so you've already
+    used Grafana before prod day-one. Disabling it (`WITH_OBSERVABILITY=0`)
+    is supported but reintroduces the "first time I open this dashboard
+    is during an incident" anti-pattern.
   </FaqItem>
-  <FaqItem title="Promtail labels logs per container">
-    "Show me api-prod errors in the last hour" is one filter, not a
-    regex against a giant text blob.
+  <FaqItem title="Promtail labels logs per container, parses Pino on the API">
+    "Show me api-prod errors in the last hour" is one label filter, not
+    a regex against a giant text blob. Grafana auto-colours each line
+    by `level` because Promtail's Pino pipeline emits it as a label.
   </FaqItem>
-  <FaqItem title="Grafana auto-provisions datasources">
+  <FaqItem title="trace_id flows browser → API → Loki">
+    The Sentry SDK (browser + API) propagates `sentry-trace` /
+    `traceparent` headers on every `/api/*` request. The API logger's
+    Pino mixin injects the active span's `trace_id` + `span_id` on
+    every log record. Result: one trace ID stitches together the
+    browser action, the API request handler, the DB queries it
+    triggered, and the GlitchTip event if anything failed.
+  </FaqItem>
+  <FaqItem title="Grafana auto-provisions datasources + dashboards">
     Stack boots usable; no manual wiring after `up -d`. Adding a
     dashboard is a file drop, not a UI click-through.
   </FaqItem>
-  <FaqItem title="Alertmanager included but not wired by default">
-    Pager strategy is project-specific; the plumbing is there when you
-    need it.
+  <FaqItem title="Alertmanager is env-driven, not stub-empty">
+    Set one env var (`ALERTMANAGER_SLACK_WEBHOOK_URL`) and alerts
+    deliver. Discord works through the same env via Slack-format
+    compatibility. No receiver set → alerts surface in the
+    Alertmanager UI only. Full walkthrough in
+    [Alerts](/topics/alerts/).
   </FaqItem>
 </FaqGroup>
 
@@ -162,25 +217,31 @@ pg_stat_database_numbackends{datname="app"}
 rate(http_requests_total[5m]) by (route)
 ```
 
-**Logs (Loki, LogQL).** These work today, every container streams to
-Loki:
+**Logs (Loki, LogQL).** The api containers' Pino JSON is parsed by
+Promtail, so common queries don't need `| json` re-parsing:
 
 ```bash
-# All API errors in the last hour
-{container=~"ai-starter-.*-api-dev-1"} |= "level=ERROR"
+# All API errors in the last hour (level is a Loki label)
+{compose_service=~"api-dev|api", level="error"}
 
-# Worker jobs by status
-{container=~"ai-starter-.*-api-.*"} | json | event="email_delivery_completed"
+# Worker jobs by status — fall back to | json for non-label fields
+{compose_service=~"api-dev|api"} | json | event="email_delivery_completed"
+
+# Every log line for a specific trace (correlation across requests)
+{compose_service=~"api-dev|api"} | json | trace_id="abc123..."
+
+# All activity by a specific user
+{compose_service=~"api-dev|api"} | json | userId="user-uuid..."
 ```
 
 ## Adding an alert
 
-1. Drop a rule file in `compose/prometheus/rules/` (e.g. `api-error-rate.yml`).
-2. Configure routing in `compose/alertmanager/alertmanager.yml`.
-3. `docker compose restart prometheus alertmanager`.
-
-Alertmanager can route to Slack, email, PagerDuty, or a webhook. The
-template ships the structure; you fill in your receiver.
+1. Edit `compose/prometheus/rules.yml` (single bundled file; 14 rules
+   ship by default). Add a new entry under one of the existing
+   `groups:` or create a new group.
+2. Hot-reload Prometheus: `curl -X POST http://localhost:9090/-/reload`
+   (or full restart: `docker compose restart prometheus`).
+3. Set a receiver if you haven't: see [Alerts](/topics/alerts/).
 
 ## Cost
 

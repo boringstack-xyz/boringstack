@@ -94,6 +94,15 @@ commands run from `infra/compose/compose`; operational helper scripts live in
   <FaqItem title="Backup db (offsite)">
     `BACKUP_DRY_RUN=1 ./scripts/backup-wrapper.example.sh` then drop the flag. Data preserved.
   </FaqItem>
+  <FaqItem title="Hot-reload Prometheus rules">
+    `curl -X POST http://localhost:9090/-/reload`. Re-reads `prometheus.yml` + `rules.yml` without restarting the container.
+  </FaqItem>
+  <FaqItem title="Ping a fake alert (verify receiver wiring)">
+    ```bash
+    curl -XPOST http://localhost:9093/api/v2/alerts -H 'Content-Type: application/json' -d '[{"labels":{"alertname":"TestPing","severity":"warn","component":"manual-test"},"annotations":{"summary":"Manual ping"}}]'
+    ```
+    Auto-resolves after 5min. See [Alerts](/topics/alerts/).
+  </FaqItem>
 </FaqGroup>
 
 Minimal opt-out: `WITH_OBSERVABILITY=0 WITH_GLITCHTIP=0 ./scripts/compose-up.sh` boots just Postgres + Valkey + your apps.
