@@ -15,18 +15,28 @@ interface IProtectedRouteProps {
 export const ProtectedRoute: FC<IProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
   const { t } = useTranslation();
-  const { data, isPending } = useMe();
+  const { data, isPending, isFetching } = useMe();
   const [timedOut, setTimedOut] = useState(false);
 
   /*
-   * Only arm the timer while the auth check is pending. Once useMe
-   * resolves (success or error), the timer is cleared. Without the
-   * isPending guard the timer fires unconditionally and the resulting
-   * `timedOut` flag would redirect an already-authenticated user back
-   * to /login after 5s on any protected page.
+   * Wait when either:
+   *   1. `isPending` — first fetch ever; no cached data exists. The
+   *      classic "auth check is loading" case.
+   *   2. `!data && isFetching` — we have cached `null` (from a previous
+   *      unauthenticated /me, or from logout writing setQueryData null)
+   *      and a refetch is in flight. This is the post-login window:
+   *      `useLogin.onSuccess` invalidated `useMe`, login resolved,
+   *      `navigate('/dashboard')` fired, and ProtectedRoute mounted
+   *      before the invalidation-triggered refetch returned. Without
+   *      this guard, the cached `null` made ProtectedRoute redirect
+   *      back to `/login` mid-refetch — the password-reset Playwright
+   *      spec hit this deterministically on CI because the post-reset
+   *      cache + setUser path widened the refetch window enough.
    */
+  const isResolving = (isPending || (data === null && isFetching)) && !timedOut;
+
   useEffect(() => {
-    if (!isPending) {
+    if (!isResolving) {
       return undefined;
     }
 
@@ -37,9 +47,9 @@ export const ProtectedRoute: FC<IProtectedRouteProps> = ({ children }) => {
     return () => {
       clearTimeout(timer);
     };
-  }, [isPending]);
+  }, [isResolving]);
 
-  if (isPending && !timedOut) {
+  if (isResolving) {
     return (
       <div
         role='status'

@@ -72,16 +72,14 @@ describe("buildJWTPayload", () => {
       expect(payload.iat).toBeLessThanOrEqual(after);
     });
 
-    test("when a recent revoke set a future cutoff, iat lifts to cutoff + 1", async () => {
+    test("when a recent revoke set a future cutoff, iat lifts to the cutoff", async () => {
       /*
        * Simulate password-reset's revokeAllForUser: cutoff is
        * floor(now) + 1, killing every prior token. A login completing
        * in the same wall-clock second has nowSeconds == cutoff - 1, so
-       * iat must lift to cutoff + 1 to survive the `iat < cutoff`
-       * check with strict-greater-than headroom — equal-to-cutoff
-       * passed by zero margin and intermittently lost the race on CI
-       * when the cache read for /me happened to see a slightly later
-       * cutoff value than buildJWTPayload's read.
+       * iat must lift to cutoff to survive the `iat < cutoff` check.
+       * This is the exact race the password-reset → immediate-login
+       * e2e test hit on CI cold starts.
        */
       const futureCutoff = Math.floor(Date.now() / 1000) + 1;
 
@@ -95,8 +93,8 @@ describe("buildJWTPayload", () => {
         "acc-1"
       );
 
-      expect(payload.iat).toBe(futureCutoff + 1);
-      expect(payload.exp).toBe(futureCutoff + 1 + JWT_TTL_SECONDS);
+      expect(payload.iat).toBe(futureCutoff);
+      expect(payload.exp).toBe(futureCutoff + JWT_TTL_SECONDS);
     });
 
     test("when the cutoff is in the past, iat stays at wall-clock now", async () => {
