@@ -117,4 +117,25 @@ if [[ $# -eq 0 ]]; then
   set -- up -d
 fi
 
-exec docker compose "${COMPOSE_FILES[@]}" "${PROFILE_ARGS[@]}" "$@"
+# Auto-wire GlitchTip → API/UI DSNs after a detached `up` on the dev stack.
+# Skipped for prod (operator owns those DSNs), smoke (no GlitchTip), and
+# non-up actions (down/logs/ps/etc.) which run a pass-through compose call.
+WIRE_GLITCHTIP=0
+if [[ "$STACK" == "dev" && "$WITH_GLITCHTIP" == "1" && "${1:-}" == "up" ]]; then
+  for arg in "$@"; do
+    if [[ "$arg" == "-d" || "$arg" == "--detach" ]]; then
+      WIRE_GLITCHTIP=1
+      break
+    fi
+  done
+fi
+
+if [[ "$WIRE_GLITCHTIP" == "1" ]]; then
+  docker compose "${COMPOSE_FILES[@]}" "${PROFILE_ARGS[@]}" "$@"
+  # Background — GlitchTip's first-boot bootstrap can take a minute and
+  # we don't want to hold the dev loop. The fetch script is idempotent
+  # and silent when wiring is already done.
+  ( "$ROOT/../scripts/glitchtip-fetch-dsn.sh" --quiet & ) >/dev/null 2>&1
+else
+  exec docker compose "${COMPOSE_FILES[@]}" "${PROFILE_ARGS[@]}" "$@"
+fi
