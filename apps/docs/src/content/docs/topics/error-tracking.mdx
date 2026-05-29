@@ -39,12 +39,14 @@ The SDKs don't know which one they're talking to. Choosing is a one-env-var chan
   <FaqItem title="Sentry SDK on both sides (not a custom shim)" open>
     Same SDK interface and error format across both services.
   </FaqItem>
-  <FaqItem title="GlitchTip as the self-host option">
-    Wire-compatible with Sentry; runs on the same Postgres + Valkey the app
-    already uses.
+  <FaqItem title="GlitchTip as the self-host option, on by default">
+    Wire-compatible with Sentry; runs on the same Postgres + Valkey the
+    app already uses. `WITH_GLITCHTIP=0` opts out.
   </FaqItem>
   <FaqItem title="Empty DSN: SDK is a no-op">
-    Dev stays clean; tests do not ship error reports.
+    Tests do not ship error reports. Once you copy a project DSN from
+    the GlitchTip UI into `SENTRY_DSN` / `VITE_SENTRY_DSN`, error
+    capture starts.
   </FaqItem>
   <FaqItem title="Replay-on-error on, full-session replays off">
     Captures the broken flow without storing healthy sessions.
@@ -52,7 +54,61 @@ The SDKs don't know which one they're talking to. Choosing is a one-env-var chan
   <FaqItem title="Single env var per side: SENTRY_DSN (API), VITE_SENTRY_DSN (UI)">
     Same protocol regardless of backend; swap is one redeploy.
   </FaqItem>
+  <FaqItem title="Events carry user.id + trace_id automatically">
+    The API's auth plugin calls `Sentry.setUser({id, email})` once it
+    resolves a session; the UI's `SentryUserSync` does the same after
+    every `useMe` change. Errors land in GlitchTip tagged with the
+    user that hit them. See "Correlation" below for the full pivot
+    surface.
+  </FaqItem>
 </FaqGroup>
+
+## Correlation: GlitchTip ↔ Loki ↔ requestId
+
+Errors are useful in proportion to how easily you can reach the
+context around them. The stack wires a single chain of IDs across
+browser, API, log store, and error tracker so any one of them
+takes you to the other three.
+
+```mermaid
+flowchart LR
+  user["Browser action"] -->|sentry-trace header| api["API request handler"]
+  api -->|Pino mixin| logs["Loki log lines<br/>(trace_id, requestId, userId)"]
+  api -->|on error| gt["GlitchTip event<br/>(tagged: trace_id, user.id)"]
+  logs -.->|click trace_id link| gt
+  gt -.->|click trace_id tag| logs
+```
+
+**What flows automatically:**
+
+- `trace_id` + `span_id`: the UI's Sentry SDK adds `sentry-trace` /
+  `traceparent` headers to every `/api/*` fetch via
+  `browserTracingIntegration`; the API's Sentry init reads them; the
+  Pino logger's mixin injects them on every log record; Promtail
+  promotes them to Loki structured metadata.
+- `userId`: the API's auth plugin calls `Sentry.setUser({id, email})`
+  on every authenticated request. The Pino mixin reads `userId` from
+  the Sentry scope and emits it on each log line. The UI's
+  `SentryUserSync` provider mirrors the same call after login, MFA
+  verify, account switch, page reload — anywhere `useMe` resolves.
+- `requestId`: a UUID assigned by the API's request-logger middleware,
+  returned as the `x-request-id` header and present on every log line
+  for that request.
+
+**Where the click-through lives:**
+
+- **Grafana → GlitchTip** — the "BoringStack — API logs" dashboard
+  defines clickable data links on `trace_id` and `userId` in the live
+  log panel. Expand any log line, click the field → opens GlitchTip
+  filtered to that trace / user in a new tab. The dashboard variables
+  `$glitchtip_url` and `$glitchtip_org` configure the target (defaults
+  fit the bundled GlitchTip; edit once per environment).
+- **Grafana → Grafana** — `requestId` link opens Explore with a Loki
+  query pre-filtered to that one request's lines.
+- **GlitchTip → Grafana** — configure once in GlitchTip's project
+  settings (UI, not code): a `tags.trace_id` external link template
+  pointing at Grafana Explore with `{compose_service="api-dev"} | json | trace_id="<value>"`.
+  Each event detail then shows a "View logs" link.
 
 ## How it's wired
 

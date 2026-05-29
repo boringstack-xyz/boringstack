@@ -331,6 +331,15 @@ import FaqItem from "../../../components/FaqItem.tsx";
   <FaqItem title="GRAFANA_ADMIN_USER / GRAFANA_ADMIN_PASSWORD">
     **Repo:** infra. **Required:** rotate before exposing Grafana beyond localhost. Observability is on by default.
   </FaqItem>
+  <FaqItem title="ALERTMANAGER_SLACK_WEBHOOK_URL">
+    **Repo:** infra. **Required:** no. Slack-format webhook URL (or a Discord webhook URL with `/slack` appended). When set, Alertmanager delivers rule fires to it. Unset → alerts surface in the UI at `:9093` only. See [Alerts](/topics/alerts/).
+  </FaqItem>
+  <FaqItem title="ALERTMANAGER_SLACK_CHANNEL">
+    **Repo:** infra. **Required:** no. Default `#alerts`. Ignored by Discord (channel is fixed when the webhook is created).
+  </FaqItem>
+  <FaqItem title="ALERTMANAGER_WEBHOOK_URL">
+    **Repo:** infra. **Required:** no. Generic HTTP endpoint that receives Alertmanager's native JSON payload — for custom bridges (n8n, alerter services, PagerDuty translators). Can be set alongside the Slack URL; alerts fan out to both.
+  </FaqItem>
   <FaqItem title="*_LIMITS_CPUS / *_LIMITS_MEMORY (and reservations)">
     **Repo:** infra. **Required:** no. Per-service resource caps; see [Resource
     limits](/infra/resource-limits/).

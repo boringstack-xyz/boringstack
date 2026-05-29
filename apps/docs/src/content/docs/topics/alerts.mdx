@@ -1,0 +1,188 @@
+---
+title: Alerts
+description: 14 default Prometheus rules + env-driven Slack, Discord, and webhook receivers in Alertmanager. Set one env var to get pager output, none to keep alerts in the UI.
+---
+
+import PageIntro from "../../../components/docs-kit/PageIntro";
+import FaqGroup from "../../../components/FaqGroup.tsx";
+import FaqItem from "../../../components/FaqItem.tsx";
+import DocCallout from "../../../components/DocCallout.tsx";
+
+<PageIntro
+  eyebrow="Alerts"
+  actions={[
+    { label: "What fires", href: "#what-rules-ship" },
+    { label: "Receivers", href: "#wiring-a-receiver" },
+  ]}
+  facts={[
+    { value: "14", label: "default rules" },
+    { value: "3", label: "receiver formats" },
+    { value: "1", label: "env var to wire" },
+  ]}
+>
+  Prometheus alert rules + Alertmanager receivers ship with the
+  observability stack. Set `ALERTMANAGER_SLACK_WEBHOOK_URL` in
+  `compose/.env` and alerts deliver to Slack, Discord, or any
+  Slack-compatible endpoint. Without it, alerts surface in the
+  Alertmanager UI at `:9093` only — useful for confirming rules fire
+  before committing to a pager destination.
+</PageIntro>
+
+## What rules ship
+
+`compose/prometheus/rules.yml` defines four rule groups covering the
+obvious failure modes. Severity labels drive Alertmanager's re-notify
+cadence: `severity=page` repeats hourly, `severity=warn` every 12
+hours.
+
+<FaqGroup>
+  <FaqItem title="boringstack-api" open>
+    `ApiServerErrorsHigh` (page, 5xx > 1% for 5min),
+    `ApiServerErrorsCritical` (page, 5xx > 5% for 2min),
+    `ApiLatencyP95High` (warn, p95 > 1s for 10min),
+    `ApiUnreachable` (page, no API traffic for 5min).
+  </FaqItem>
+  <FaqItem title="boringstack-database">
+    `PostgresDown` (page, exporter can't reach pg for 2min),
+    `PostgresConnectionsHigh` (warn, > 80% of `max_connections` for 5min),
+    `PostgresReplicationLagHigh` (warn, lag > 60s for 5min).
+  </FaqItem>
+  <FaqItem title="boringstack-host">
+    `DiskSpaceLow` (warn, < 10% free for 5min),
+    `DiskSpaceCritical` (page, < 5% free for 2min),
+    `MemoryPressureHigh` (warn, available < 10% for 10min),
+    `HostCpuSaturated` (warn, load5/cores > 1.5 for 15min),
+    `NodeExporterDown` (warn, host metrics stale for 3min).
+  </FaqItem>
+  <FaqItem title="boringstack-edge">
+    `TraefikDown` (page, Traefik metrics endpoint unreachable for 2min) —
+    Traefik is the only path into the stack in prod; this firing means
+    the site is down.
+  </FaqItem>
+</FaqGroup>
+
+Thresholds are conservative defaults for a single-host BoringStack
+deployment. Tune per workload — a busy app may legitimately push
+4xx/5xx absolute counts above what a quiet baseline catches.
+
+## Wiring a receiver
+
+Alertmanager has no native env-var substitution in its config, so the
+stack ships a small `entrypoint.sh` that renders alertmanager.yml
+from `ALERTMANAGER_*` env vars at container boot. Empty env → that
+block is omitted entirely, so `amtool check-config` stays happy.
+
+<FaqGroup>
+  <FaqItem title="Slack" open>
+    Create a Slack app + Incoming Webhook
+    ([guide](https://api.slack.com/messaging/webhooks)). Copy the URL,
+    then in `compose/.env`:
+    ```env
+    ALERTMANAGER_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T.../B.../...
+    ALERTMANAGER_SLACK_CHANNEL=#alerts
+    ```
+    Restart: `docker compose restart alertmanager`. Default message
+    template renders status, severity, component, summary, description.
+  </FaqItem>
+  <FaqItem title="Discord">
+    Discord accepts Slack-format payloads at a `/slack` suffix on its
+    webhook URL — so the **same env var** delivers there:
+    1. In Discord: `Server Settings → Integrations → Webhooks → New
+       Webhook`. Copy the URL.
+    2. **Append `/slack`**: `https://discord.com/api/webhooks/.../slack`.
+    3. Set `ALERTMANAGER_SLACK_WEBHOOK_URL` to that value in
+       `compose/.env`. `ALERTMANAGER_SLACK_CHANNEL` is ignored — the
+       channel is fixed when the webhook is created.
+    4. Restart Alertmanager.
+  </FaqItem>
+  <FaqItem title="Generic webhook (Alertmanager JSON)">
+    For custom bridges (n8n, your own alerter, PagerDuty events-v2
+    translators), use the generic receiver. It POSTs Alertmanager's
+    native JSON — different from Slack's format.
+    ```env
+    ALERTMANAGER_WEBHOOK_URL=https://your-bridge.example.com/alerts
+    ```
+    Can be set in addition to the Slack one; alerts fan out to both.
+  </FaqItem>
+  <FaqItem title="None (UI only)">
+    Leave both env vars unset. The 14 rules still fire — they land in
+    the Alertmanager UI at `http://localhost:9093`. Useful for seeing
+    what alerts look like before deciding where to pager them.
+  </FaqItem>
+</FaqGroup>
+
+## Verifying receivers work
+
+Curl a fake firing alert into Alertmanager's API directly, no waiting
+for a real incident:
+
+```bash
+curl -XPOST http://localhost:9093/api/v2/alerts \
+  -H 'Content-Type: application/json' \
+  -d '[{
+    "labels": {
+      "alertname": "TestPing",
+      "severity": "warn",
+      "component": "manual-test"
+    },
+    "annotations": {
+      "summary": "Manual ping from the alerts docs",
+      "description": "If this lands in your Slack/Discord/webhook, the receiver is wired correctly."
+    }
+  }]'
+```
+
+The alert auto-resolves after `resolve_timeout` (5 minutes) since no
+follow-up ping keeps it firing.
+
+## Adding rules
+
+Drop new entries into `compose/prometheus/rules.yml` under an
+existing group (or create a new group). Required fields per alert:
+`alert`, `expr`, `for` (optional debounce duration), `labels.severity`
+(`page` or `warn`), `annotations.summary`. The 14 bundled rules are
+worked examples.
+
+Hot-reload Prometheus without a restart:
+
+```bash
+curl -X POST http://localhost:9090/-/reload
+```
+
+## Adding routes
+
+Out of the box every alert lands in the single `default` receiver. To
+route specific labels to different receivers (e.g. `component=database`
+to a DBA channel), edit `compose/alertmanager/entrypoint.sh` directly —
+it's a small shell script with `cat >> "$CFG" <<EOF` blocks for each
+receiver. Append your own routes block + matching receivers.
+
+If the routing grows beyond a handful of cases, graduate to a static
+`alertmanager.yml` you maintain yourself and remove the entrypoint
+script.
+
+<DocCallout
+  variant="tip"
+  title="Pager fatigue is a real cost"
+  eyebrow="Tuning thresholds"
+>
+  The default `for:` durations are deliberately generous to avoid
+  3am pages on transient blips. If you find you're regularly silencing
+  the same alert, the threshold is wrong — either raise the duration,
+  the rate threshold, or both. An alert that fires and nobody acts on
+  is worse than no alert.
+</DocCallout>
+
+## Source
+
+- [`compose/prometheus/rules.yml`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/prometheus/rules.yml) — the 14 rules.
+- [`compose/alertmanager/entrypoint.sh`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/alertmanager/entrypoint.sh) — env-driven config renderer.
+- [`infra/compose/docs/alerts.md`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/docs/alerts.md) — the operator-side runbook.
+
+## Related
+
+- [Observability](/topics/observability/) — the metrics + logs stack
+  these alerts run inside of.
+- [Error tracking](/topics/error-tracking/) — Sentry/GlitchTip catches
+  exceptions; Alertmanager catches "metrics-shaped" failures (rates,
+  resource pressure, unreachability). Different surfaces, same goal.
