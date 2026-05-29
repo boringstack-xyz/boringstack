@@ -94,6 +94,13 @@ flowchart LR
     still fire into the Alertmanager UI at `:9093` only. Walkthrough:
     [Alerts](/topics/alerts/).
   </FaqItem>
+  <FaqItem title="Tempo">
+    Distributed-trace storage. The API ships OTLP/HTTP spans here
+    automatically (HTTP in/out, fetch, ioredis, queue handlers); spans
+    carry the same `trace_id` already promoted to Loki labels, so log
+    lines pivot to traces with one click. Single-binary mode, 24h
+    retention by default. Walkthrough: [Distributed tracing](/topics/tracing/).
+  </FaqItem>
 </FaqGroup>
 
 ## Application metrics

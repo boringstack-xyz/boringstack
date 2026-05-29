@@ -6,6 +6,7 @@ import { notificationDelivery } from "../../clients/postgres/schema";
 import { BULL_PREFIX, getValkeyConnectionOptions } from "../../clients/valkey";
 import { logger } from "../../config/logger";
 import { getErrorMessage } from "../../lib/errors";
+import { withQueueSpan } from "../../lib/tracing";
 import { maskEmailForLogging, sendTemplateNow } from "../../lib/email";
 import { DELIVERY_STATUS } from "../../lib/notifications/notifications.constants";
 import {
@@ -26,7 +27,10 @@ export class EmailDeliveryWorker {
 
     this.worker = new Worker<IEmailDeliveryJobData>(
       EMAIL_DELIVERY_QUEUE_NAME,
-      this.processJob.bind(this),
+      (job) =>
+        withQueueSpan(EMAIL_DELIVERY_QUEUE_NAME, job, () =>
+          this.processJob(job)
+        ),
       options
     );
 

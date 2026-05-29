@@ -237,6 +237,11 @@ services:
       # production keeps the strict default.
       RATE_LIMIT_MAX: ${API_DEV_RATE_LIMIT_MAX:-10000}
       AUTH_RATE_LIMIT_MAX: ${API_DEV_AUTH_RATE_LIMIT_MAX:-10000}
+      # Tempo trace export — empty when WITH_OBSERVABILITY=0 (the OTel
+      # SDK then no-ops). Resolves to the observability overlay's
+      # `tempo` service over the shared `backend` network.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${API_DEV_OTEL_EXPORTER_OTLP_ENDPOINT:-http://tempo:4318}
+      OTEL_SERVICE_NAME: ${API_DEV_OTEL_SERVICE_NAME:-boringstack-api-dev}
     depends_on:
       postgres:
         condition: service_healthy
@@ -400,6 +405,11 @@ services:
       # rate limiter must key on X-Forwarded-For — otherwise every
       # client looks like the proxy IP and shares one bucket.
       TRUST_PROXY: ${TRUST_PROXY:-true}
+      # Tempo trace export. Defaults to the bundled `tempo` service on
+      # the shared `backend` network; override (or set empty) to point
+      # at a different collector or disable export entirely.
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://tempo:4318}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-boringstack-api}
     security_opt:
       - no-new-privileges:true
     deploy:

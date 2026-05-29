@@ -124,6 +124,11 @@ const readSentry = (source: EnvSource) => ({
   SENTRY_TRACES_SAMPLE_RATE: toFloat(source.SENTRY_TRACES_SAMPLE_RATE, 0.1),
 });
 
+const readOpenTelemetry = (source: EnvSource) => ({
+  OTEL_EXPORTER_OTLP_ENDPOINT: source.OTEL_EXPORTER_OTLP_ENDPOINT ?? "",
+  OTEL_SERVICE_NAME: source.OTEL_SERVICE_NAME ?? "boringstack-api",
+});
+
 const readEmail = (source: EnvSource) => ({
   EMAIL_PROVIDER: source.EMAIL_PROVIDER ?? "cloudflare",
   EMAIL_FROM: source.EMAIL_FROM ?? "noreply@example.com",
@@ -203,6 +208,7 @@ const readRaw = (source: EnvSource): Record<string, unknown> => ({
   ...readUrls(source),
   ...readRateLimit(source),
   ...readSentry(source),
+  ...readOpenTelemetry(source),
   ...readEmail(source),
   ...readOAuth(source),
   ...readAI(source),

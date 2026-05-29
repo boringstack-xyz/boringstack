@@ -2,6 +2,7 @@ import { Worker, type Job, type WorkerOptions } from "bullmq";
 import { BULL_PREFIX, getValkeyConnectionOptions } from "../../clients/valkey";
 import { logger } from "../../config/logger";
 import { runNotificationDispatch } from "../../lib/notifications";
+import { withQueueSpan } from "../../lib/tracing";
 import {
   NOTIFICATION_DISPATCH_DEFAULTS,
   NOTIFICATION_DISPATCH_QUEUE_NAME,
@@ -26,7 +27,10 @@ export class NotificationDispatchWorker {
 
     this.worker = new Worker<INotificationDispatchJobData>(
       NOTIFICATION_DISPATCH_QUEUE_NAME,
-      this.processJob.bind(this),
+      (job) =>
+        withQueueSpan(NOTIFICATION_DISPATCH_QUEUE_NAME, job, () =>
+          this.processJob(job)
+        ),
       options
     );
 

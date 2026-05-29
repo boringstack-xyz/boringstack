@@ -12,6 +12,7 @@ import { logger } from "../../config/logger";
 import { ApiErrors, getErrorMessage } from "../../lib/errors";
 import { DELIVERY_STATUS } from "../../lib/notifications/notifications.constants";
 import { now } from "../../lib/time/now";
+import { withQueueSpan } from "../../lib/tracing";
 import {
   WEB_PUSH_DELIVERY_DEFAULTS,
   WEB_PUSH_DELIVERY_QUEUE_NAME,
@@ -214,7 +215,10 @@ export class WebPushDeliveryWorker {
 
     this.worker = new Worker<IWebPushDeliveryJobData>(
       WEB_PUSH_DELIVERY_QUEUE_NAME,
-      this.processJob.bind(this),
+      (job) =>
+        withQueueSpan(WEB_PUSH_DELIVERY_QUEUE_NAME, job, () =>
+          this.processJob(job)
+        ),
       options
     );
 
