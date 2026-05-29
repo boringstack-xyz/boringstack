@@ -279,7 +279,57 @@
     },
     {
       "datasource": { "type": "loki", "uid": "loki" },
-      "description": "Application events: request lifecycle, errors, business events. Drizzle's per-query SQL logs are filtered out — see the next panel for those. Click a line to expand structured metadata (trace_id, requestId).",
+      "description": "Application events: request lifecycle, errors, business events. Drizzle's per-query SQL logs are filtered out — see the next panel for those. Click a line to expand structured metadata: `trace_id` and `userId` are clickable and open the matching GlitchTip search in a new tab.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "trace_id" },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Search this trace in GlitchTip",
+                    "url": "${glitchtip_url}/${glitchtip_org}/issues/?query=trace_id%3A${__value.raw}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "userId" },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Search this user in GlitchTip",
+                    "url": "${glitchtip_url}/${glitchtip_org}/issues/?query=user.id%3A${__value.raw}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "requestId" },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter Loki to this request",
+                    "url": "/explore?left=%7B%22datasource%22%3A%22loki%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22%7Bcompose_service%3D~%5C%22api-dev%7Capi%5C%22%7D%20%7C%3D%20%5C%22${__value.raw}%5C%22%22%7D%5D%7D",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": { "h": 14, "w": 24, "x": 0, "y": 20 },
       "id": 8,
       "options": {
@@ -331,7 +381,30 @@
   "refresh": "10s",
   "schemaVersion": 39,
   "tags": ["boringstack", "api", "logs"],
-  "templating": { "list": [] },
+  "templating": {
+    "list": [
+      {
+        "current": { "text": "http://glitchtip.localhost", "value": "http://glitchtip.localhost" },
+        "hide": 0,
+        "label": "GlitchTip URL",
+        "name": "glitchtip_url",
+        "options": [{ "selected": true, "text": "http://glitchtip.localhost", "value": "http://glitchtip.localhost" }],
+        "query": "http://glitchtip.localhost",
+        "skipUrlSync": false,
+        "type": "textbox"
+      },
+      {
+        "current": { "text": "local", "value": "local" },
+        "hide": 0,
+        "label": "GlitchTip org slug",
+        "name": "glitchtip_org",
+        "options": [{ "selected": true, "text": "local", "value": "local" }],
+        "query": "local",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
   "time": { "from": "now-30m", "to": "now" },
   "timepicker": {},
   "timezone": "",

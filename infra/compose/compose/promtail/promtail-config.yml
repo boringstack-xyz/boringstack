@@ -79,6 +79,7 @@ scrape_configs:
             requestId: requestId
             trace_id: trace_id
             span_id: span_id
+            userId: userId
             msg: msg
       # Lowercase Pino's level ("INFO" → "info"). Promote as the `level`
       # label so Grafana's logs panel auto-colours each line by severity.
@@ -94,6 +95,7 @@ scrape_configs:
           requestId:
           trace_id:
           span_id:
+          userId:
       # Use Pino's `time` (epoch ms) as the log entry timestamp.
       - timestamp:
           source: time

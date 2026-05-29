@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/bun";
 import { eq } from "drizzle-orm";
 import { Elysia } from "elysia";
 
@@ -117,6 +118,16 @@ export const createAuthMiddleware = () =>
           if (!user) {
             throw ApiErrors.unauthorized("User not found");
           }
+
+          /*
+           * Tag the active Sentry scope with the user so any error
+           * captured for the rest of this request carries `user.id` +
+           * `user.email`. The Pino mixin also reads this scope to inject
+           * `userId` on every log record, so a Grafana log line and a
+           * GlitchTip error event can be correlated by the same id.
+           * No-op when SENTRY_DSN is unset.
+           */
+          Sentry.setUser({ id: user.id, email: user.email });
 
           return { user, accountId: parsed.accountId };
         } catch (err: unknown) {

@@ -8,6 +8,7 @@ import { AbilityProvider } from "./providers/AbilityProvider";
 import { ErrorBoundaryProvider } from "./providers/ErrorBoundaryProvider";
 import { I18nProvider } from "./providers/I18nProvider";
 import { QueryProvider } from "./providers/QueryProvider";
+import { SentryUserSync } from "./providers/SentryUserSync";
 import { ToastProvider } from "./providers/ToastProvider";
 import { AppRoutes } from "./router/routes";
 
@@ -19,6 +20,7 @@ export const App: FC = () => {
           <QueryProvider>
             <AbilityProvider>
               <ToastProvider>
+                <SentryUserSync />
                 <AppRoutes />
                 <CookieConsentBanner />
               </ToastProvider>

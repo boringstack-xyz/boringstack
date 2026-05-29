@@ -6,21 +6,37 @@ import type { LOG_EVENTS } from "./logger.events";
 type ILogEventName = (typeof LOG_EVENTS)[number];
 
 /*
- * Inject the current Sentry/OTel span's trace_id + span_id on every log
- * record. Promtail extracts these as Loki structured metadata so a log
- * line surfaced in Grafana can be pivoted to its trace in Sentry/GlitchTip
- * by the same id. Returns {} when no span is active.
+ * Inject Sentry-scoped correlation fields on every log record:
+ *   - trace_id + span_id from the active Sentry/OTel span
+ *   - userId from the current scope (set by auth.plugin.ts after the
+ *     user is resolved on an authenticated request)
+ *
+ * Promtail extracts these as Loki structured metadata so a log line
+ * surfaced in Grafana can be pivoted to its trace or its user in
+ * Sentry/GlitchTip by the same id. Each field is a no-op when its
+ * source isn't set — unauthenticated requests get trace ids but no
+ * userId; everything is `{}` before Sentry.init when no DSN is
+ * configured.
  */
 const traceMixin = (): Record<string, string> => {
+  const fields: Record<string, string> = {};
+
   const span = Sentry.getActiveSpan();
 
-  if (span === undefined) {
-    return {};
+  if (span !== undefined) {
+    const ctx = span.spanContext();
+
+    fields.trace_id = ctx.traceId;
+    fields.span_id = ctx.spanId;
   }
 
-  const ctx = span.spanContext();
+  const userId = Sentry.getCurrentScope().getUser()?.id;
 
-  return { trace_id: ctx.traceId, span_id: ctx.spanId };
+  if (userId !== undefined) {
+    fields.userId = String(userId);
+  }
+
+  return fields;
 };
 
 /*
