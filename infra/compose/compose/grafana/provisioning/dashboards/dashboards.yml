@@ -1,10 +1,15 @@
 # Grafana dashboard provider — auto-loads any JSON file dropped into the
 # adjacent `dashboards/` directory at container start (and rescans every 30s).
 #
-# Ships with three baseline dashboards: BoringStack API (RED + Node.js
-# runtime), BoringStack Postgres (connections, cache hit ratio, transaction
-# rate, deadlocks), and BoringStack Host (CPU, memory, disk, network). These
-# are the "first place to look" panels when something feels off.
+# Ships with five baseline dashboards:
+#   • API           — RED panels + Node.js runtime (heap, GC, event loop)
+#   • API logs      — error/warn stats, log volume by level, top error
+#                     events, live Pino stream with trace_id pivot
+#   • UI logs       — Vite + nginx output, error-like-line stats, HMR
+#                     activity, filterable live stream
+#   • Postgres      — connections, cache hit ratio, tx/s, deadlocks
+#   • Host          — CPU, memory, filesystem usage, network
+# These are the "first place to look" panels when something feels off.
 #
 # To add another dashboard:
 #   1. Export the dashboard JSON from grafana.com or your existing instance.
