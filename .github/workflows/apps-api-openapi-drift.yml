@@ -8,17 +8,7 @@ name: openapi-drift
 on:
   push:
     branches: [main]
-    paths:
-      - "apps/api/src/**"
-      - "apps/api/package.json"
-      - "apps/api/bun.lock"
-      - ".github/workflows/apps-api-openapi-drift.yml"
   pull_request:
-    paths:
-      - "apps/api/src/**"
-      - "apps/api/package.json"
-      - "apps/api/bun.lock"
-      - ".github/workflows/apps-api-openapi-drift.yml"
 
 concurrency:
   group: apps-api-openapi-drift-${{ github.ref }}
@@ -31,6 +21,11 @@ jobs:
     name: apps/ui OpenAPI schema is fresh
     runs-on: ubuntu-latest
     timeout-minutes: 8
+
+    # The job always runs (so the required-status-check rule on `main` is
+    # always satisfied), but the heavy boot-the-api / regen-schema steps
+    # only fire when something API- or schema-related actually changed.
+    # Mirrors the pattern in infra-compose-validate-compose.yml.
 
     services:
       postgres:
@@ -74,24 +69,46 @@ jobs:
     steps:
       - name: Checkout monorepo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'apps/api/src/**'
+              - 'apps/api/package.json'
+              - 'apps/api/bun.lock'
+              - 'apps/ui/src/lib/api/schema.d.ts'
+              - '.github/workflows/apps-api-openapi-drift.yml'
+
+      - name: No-op (nothing relevant changed)
+        if: steps.filter.outputs.code != 'true'
+        run: echo "No API or generated-schema files changed — drift check is a no-op."
+
       - name: Set up Bun
+        if: steps.filter.outputs.code == 'true'
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.3.14
 
       - name: Install apps/api deps
+        if: steps.filter.outputs.code == 'true'
         working-directory: apps/api
         run: bun install --frozen-lockfile
 
       - name: Apply DB migrations
+        if: steps.filter.outputs.code == 'true'
         working-directory: apps/api
         run: bun run db:migrate
 
       - name: Build email templates
+        if: steps.filter.outputs.code == 'true'
         working-directory: apps/api
         run: bun run build:templates
 
       - name: Boot API
+        if: steps.filter.outputs.code == 'true'
         working-directory: apps/api
         run: |
           bun run src/index.ts &
@@ -106,16 +123,13 @@ jobs:
           echo "✗ api did not become reachable in 30s" >&2
           exit 1
 
-      - name: Set up Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: 1.3.14
-
       - name: Install apps/ui deps
+        if: steps.filter.outputs.code == 'true'
         working-directory: apps/ui
         run: bun install --frozen-lockfile
 
       - name: Check apps/ui schema is up-to-date
+        if: steps.filter.outputs.code == 'true'
         working-directory: apps/ui
         env:
           OPENAPI_URL: http://localhost:7330/swagger/json
@@ -127,7 +141,7 @@ jobs:
           fi
 
       - name: Stop API
-        if: always()
+        if: always() && steps.filter.outputs.code == 'true'
         working-directory: ${{ github.workspace }}
         run: |
           if [ -n "${API_PID:-}" ]; then

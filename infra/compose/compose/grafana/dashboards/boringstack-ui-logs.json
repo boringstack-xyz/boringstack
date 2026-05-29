@@ -188,7 +188,7 @@
     },
     {
       "datasource": { "type": "loki", "uid": "loki" },
-      "description": "Live UI logs. In dev this is Vite's HMR + proxy chatter; in prod it's nginx access logs. Use the search box (Ctrl/Cmd+F) to filter, or use the variable above to pre-filter at the query layer.",
+      "description": "Live UI logs. In dev this is Vite's HMR + proxy chatter; in prod it's nginx access logs. The $pattern variable above swaps in a regex; defaults to '.+' (every line). Use Grafana's panel search (Ctrl/Cmd+F) for ad-hoc filtering.",
       "gridPos": { "h": 14, "w": 24, "x": 0, "y": 12 },
       "id": 6,
       "options": {
@@ -204,7 +204,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "{compose_service=~\"ui-dev|ui\"} $filter",
+          "expr": "{compose_service=~\"ui-dev|ui\"} |~ \"$pattern\"",
           "refId": "A"
         }
       ],
@@ -218,17 +218,16 @@
   "templating": {
     "list": [
       {
-        "current": { "selected": false, "text": "All", "value": "" },
+        "current": { "selected": true, "text": "All", "value": ".+" },
         "hide": 0,
-        "label": "Filter (LogQL fragment)",
-        "name": "filter",
+        "label": "Pattern",
+        "name": "pattern",
         "options": [
-          { "selected": true, "text": "All", "value": "" },
-          { "selected": false, "text": "Errors only", "value": "|~ \"(?i)(error|failed|exception|panic)\"" },
-          { "selected": false, "text": "HMR / reload only", "value": "|~ \"(?i)(hmr update|page reload)\"" },
-          { "selected": false, "text": "Drop HMR noise", "value": "!~ \"(?i)hmr update\"" }
+          { "selected": true, "text": "All", "value": ".+" },
+          { "selected": false, "text": "Errors only", "value": "(?i)(error|failed|exception|panic|EADDR|ECONN)" },
+          { "selected": false, "text": "HMR / reload only", "value": "(?i)(hmr update|page reload)" }
         ],
-        "query": "All : ,Errors only : |~ \"(?i)(error|failed|exception|panic)\",HMR / reload only : |~ \"(?i)(hmr update|page reload)\",Drop HMR noise : !~ \"(?i)hmr update\"",
+        "query": "All : .+, Errors only : (?i)(error|failed|exception|panic|EADDR|ECONN), HMR / reload only : (?i)(hmr update|page reload)",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"

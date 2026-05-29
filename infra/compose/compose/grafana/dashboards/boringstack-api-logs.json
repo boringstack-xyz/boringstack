@@ -12,7 +12,7 @@
       }
     ]
   },
-  "description": "BoringStack API logs — error/warn stats, log volume by level, top error events, and a live stream. Promtail's Pino pipeline gives us level_name as a Loki label, so error filtering is one click.",
+  "description": "BoringStack API logs — error/warn stats, log volume by level, top error events, and split live streams (application events vs database queries). Promtail's Pino pipeline gives us level as a Loki label, so Grafana auto-colours each line by severity.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -48,7 +48,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum(count_over_time({compose_service=~\"api-dev|api|api-migrate|api-migrate-dev\", level_name=\"error\"}[$__range]))",
+          "expr": "sum(count_over_time({compose_service=~\"api-dev|api|api-migrate|api-migrate-dev\", level=\"error\"}[$__range]))",
           "refId": "A"
         }
       ],
@@ -82,7 +82,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum(count_over_time({compose_service=~\"api-dev|api|api-migrate|api-migrate-dev\", level_name=\"warn\"}[$__range]))",
+          "expr": "sum(count_over_time({compose_service=~\"api-dev|api|api-migrate|api-migrate-dev\", level=\"warn\"}[$__range]))",
           "refId": "A"
         }
       ],
@@ -113,7 +113,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum(count_over_time({compose_service=~\"api-dev|api|api-migrate|api-migrate-dev\", level_name=\"info\"}[$__range]))",
+          "expr": "sum(count_over_time({compose_service=~\"api-dev|api|api-migrate|api-migrate-dev\", level=\"info\"}[$__range]))",
           "refId": "A"
         }
       ],
@@ -153,7 +153,7 @@
     },
     {
       "datasource": { "type": "loki", "uid": "loki" },
-      "description": "Log volume per minute, stacked by Pino level. A sudden colour shift toward red/yellow means error rate is spiking.",
+      "description": "Log volume per minute, stacked by Pino level. A sudden colour shift toward red/orange means error rate is spiking. Lines without a parsed level (e.g. Drizzle SQL stdout) appear as the empty series.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -194,8 +194,8 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "sum by (level_name) (count_over_time({compose_service=~\"api-dev|api|api-migrate|api-migrate-dev\"}[1m]))",
-          "legendFormat": "{{level_name}}",
+          "expr": "sum by (level) (count_over_time({compose_service=~\"api-dev|api|api-migrate|api-migrate-dev\"}[1m]))",
+          "legendFormat": "{{level}}",
           "refId": "A"
         }
       ],
@@ -204,7 +204,7 @@
     },
     {
       "datasource": { "type": "loki", "uid": "loki" },
-      "description": "Most-frequent error events in the selected range, aggregated by the Pino `event` field. Long-tail errors collapse to a single row; recurring failures rise to the top.",
+      "description": "Most-frequent error/warn events in the selected range, aggregated by the Pino `event` field. Recurring failures rise to the top; long-tail one-offs collapse to single rows.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -222,7 +222,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "topk(10, sum by (event) (count_over_time({compose_service=~\"api-dev|api|api-migrate|api-migrate-dev\", level_name=~\"error|warn\"} | json [$__range])))",
+          "expr": "topk(10, sum by (event) (count_over_time({compose_service=~\"api-dev|api|api-migrate|api-migrate-dev\", level=~\"error|warn\"} | json [$__range])))",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -242,7 +242,7 @@
     },
     {
       "datasource": { "type": "loki", "uid": "loki" },
-      "description": "Live HTTP request stream. Filtered to request.completed events with parsed route, status, and duration.",
+      "description": "Routes generating the most error/warn lines. Quick triage for 'which endpoint is hurting?'.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -254,12 +254,12 @@
       "id": 7,
       "options": {
         "showHeader": true,
-        "sortBy": [{ "desc": true, "displayName": "Slowest p95 (ms)" }]
+        "sortBy": [{ "desc": true, "displayName": "Count" }]
       },
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "topk(10, sum by (route) (count_over_time({compose_service=~\"api-dev|api\", level_name=~\"error|warn\"} | json | __error__=\"\" | route!=\"\" [$__range])))",
+          "expr": "topk(10, sum by (route) (count_over_time({compose_service=~\"api-dev|api\", level=~\"error|warn\"} | json | __error__=\"\" | route!=\"\" [$__range])))",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -279,7 +279,7 @@
     },
     {
       "datasource": { "type": "loki", "uid": "loki" },
-      "description": "Live stream of API logs. Filter by `level_name` in the panel toolbar (top right → Query options) or expand a line to see structured fields + trace_id.",
+      "description": "Application events: request lifecycle, errors, business events. Drizzle's per-query SQL logs are filtered out — see the next panel for those. Click a line to expand structured metadata (trace_id, requestId).",
       "gridPos": { "h": 14, "w": 24, "x": 0, "y": 20 },
       "id": 8,
       "options": {
@@ -295,48 +295,48 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "{compose_service=~\"api-dev|api|api-migrate|api-migrate-dev\"}",
+          "expr": "{compose_service=~\"api-dev|api|api-migrate|api-migrate-dev\"} !~ \"^Query: \"",
           "refId": "A"
         }
       ],
-      "title": "Live API logs",
+      "title": "Application logs (Drizzle SQL filtered out)",
+      "type": "logs"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "description": "Drizzle's per-query SQL logs. Useful when debugging slow endpoints or unexpected query plans; otherwise this stream is noise that drowns out the application logs panel above.",
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 34 },
+      "id": 9,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "expr": "{compose_service=~\"api-dev|api\"} |~ \"^Query: \"",
+          "refId": "A"
+        }
+      ],
+      "title": "Database queries (Drizzle)",
       "type": "logs"
     }
   ],
   "refresh": "10s",
   "schemaVersion": 39,
   "tags": ["boringstack", "api", "logs"],
-  "templating": {
-    "list": [
-      {
-        "current": { "selected": false, "text": "All", "value": "$__all" },
-        "datasource": { "type": "loki", "uid": "loki" },
-        "definition": "label_values({compose_service=~\"api-dev|api|api-migrate|api-migrate-dev\"}, level_name)",
-        "hide": 0,
-        "includeAll": true,
-        "label": "Level",
-        "multi": true,
-        "name": "level",
-        "options": [],
-        "query": {
-          "label": "level_name",
-          "refId": "LokiVariableQueryEditor-VariableQuery",
-          "stream": "{compose_service=~\"api-dev|api|api-migrate|api-migrate-dev\"}",
-          "type": 1
-        },
-        "refresh": 1,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 0,
-        "type": "query"
-      }
-    ]
-  },
+  "templating": { "list": [] },
   "time": { "from": "now-30m", "to": "now" },
   "timepicker": {},
   "timezone": "",
   "title": "BoringStack — API logs",
   "uid": "boringstack-api-logs",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
