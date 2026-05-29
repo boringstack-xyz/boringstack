@@ -105,7 +105,6 @@ const TRUNCATE_TARGETS = [
   "auth.mfa_recovery_codes",
   "auth.user_auth_providers",
   "auth.account_memberships",
-  "app.widgets",
   "app.account_feature_overrides",
   "app.account_invitations",
   "app.account_join_requests",
@@ -167,7 +166,6 @@ export {
   stripeWebhookEvents,
   userAuthProviders,
   users,
-  widgets,
 } from "../../src/clients/postgres/schema";
 export type { IAccount, IAccountMembership } from "../../src/api/accounts";
 export type { IUser } from "../../src/api/users/users.types";

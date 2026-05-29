@@ -57,10 +57,6 @@ import SignalGrid from "../../../components/docs-kit/SignalGrid";
                   name: "billing.account_plans",
                   detail: "Stripe-backed plan state",
                 },
-                {
-                  name: "app.widgets",
-                  detail: "sample @account-scoped table pattern",
-                },
               ],
             },
           ],
@@ -241,14 +237,24 @@ The decision lives entirely inside `provisionAfterVerification`: read the flag, 
 
 `POST /api/v1/accounts/switch` with a target `accountId` re-issues the JWT with the new active account in the `aid` claim. The client re-fetches `/me`. Old JWTs continue to work against the old account until their 15-minute access TTL expires; the refresh-time membership recheck blocks renewal if the user no longer has an active membership on that account.
 
-## Cross-account isolation tests
+## Cross-account isolation
 
-`tests/api/widgets/widgets.routes.test.ts` is the proof point. Same user holds memberships in two accounts; resource IDs are unique across accounts; every method on Account B's widget returns 404 (not 403, not 200) when the request comes from Account A's JWT. The matrix is the canonical pattern to copy for any new account-scoped resource.
+The guarantee is mechanical, not anecdotal. The
+`drizzle-conventions/account-scoped-tables-require-where` ESLint rule
+reads the `@account-scoped` marker on every account-scoped table and
+refuses to merge any `db.query.<table>.findX` that omits the scope
+column from its `WHERE`. The CASL ability matrix in
+`tests/lib/acl/ability.test.ts` then exercises every role × subject ×
+action combination across two accounts so a regression in
+`buildAbility` surfaces immediately. When you add a new account-scoped
+resource, the lint rule enforces the scoping for free; copy the
+ability matrix's "owner cannot touch resources in a different account"
+test for your new subject.
 
 ## Source
 
 - [`src/api/accounts/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/accounts)
-- [`src/clients/postgres/schema/app.schema.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/clients/postgres/schema/app.schema.ts): `accounts`, `account_invitations`, `account_feature_overrides`, `widgets` (sample account-scoped resource).
+- [`src/clients/postgres/schema/app.schema.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/clients/postgres/schema/app.schema.ts): `accounts`, `account_invitations`, `account_feature_overrides`.
 - [`src/clients/postgres/schema/memberships.schema.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/clients/postgres/schema/memberships.schema.ts): `account_memberships` with both partial unique indexes.
 
 ## Operator queries

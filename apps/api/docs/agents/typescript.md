@@ -16,6 +16,6 @@ Read when ESLint pushes back on a type assertion, a `!`, or an
   exceptions: `_`, `i`, `j`, `k` for loop indices).
 - **No magic UPPER_SNAKE string literals** in `switch` cases or `===` /
   `!==` comparisons. Reference a typed constants object (e.g.
-  `ElysiaErrorCodes.NOT_FOUND`, `AUDIT_ACTIONS.WIDGET_CREATED`).
+  `ElysiaErrorCodes.NOT_FOUND`, `AUDIT_ACTIONS.NOTIFICATION_STATUS_UPDATED`).
 - **No inline `eslint-disable`** comments. Adjust `eslint.config.js`
   with a per-file override and a justification.

@@ -26,20 +26,19 @@ describe("<Can>", () => {
     const ability = buildAbility("owner", "acc-1", {
       can_export: true,
       can_invite_team: true,
-      max_seats: 10,
-      max_widgets: 100
+      max_seats: 10
     });
 
     render(
       <Wrap ability={ability}>
-        <Can I='manage' a='Widget'>
-          <button type='button'>Create widget</button>
+        <Can I='manage' a='Site'>
+          <button type='button'>Create site</button>
         </Can>
       </Wrap>
     );
 
     expect(
-      screen.getByRole("button", { name: "Create widget" })
+      screen.getByRole("button", { name: "Create site" })
     ).toBeInTheDocument();
   });
 
@@ -47,13 +46,12 @@ describe("<Can>", () => {
     const ability = buildAbility("viewer", "acc-1", {
       can_export: false,
       can_invite_team: false,
-      max_seats: 1,
-      max_widgets: 5
+      max_seats: 1
     });
 
     render(
       <Wrap ability={ability}>
-        <Can I='update' a='Widget'>
+        <Can I='update' a='Site'>
           <button type='button'>Edit</button>
         </Can>
       </Wrap>
@@ -65,7 +63,7 @@ describe("<Can>", () => {
   it("with the empty ability (pre-/me) renders nothing", () => {
     render(
       <Wrap ability={emptyAbility}>
-        <Can I='read' a='Widget'>
+        <Can I='read' a='Site'>
           <span data-testid='gated'>visible</span>
         </Can>
       </Wrap>

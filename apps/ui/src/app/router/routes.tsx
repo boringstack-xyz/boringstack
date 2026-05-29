@@ -38,12 +38,6 @@ const DashboardPage = lazy(() =>
   }))
 );
 
-const WidgetsPage = lazy(() =>
-  import("@/features/widgets/components/WidgetsPage").then((m) => ({
-    default: m.WidgetsPage
-  }))
-);
-
 const NotificationsPage = lazy(() =>
   import("@/features/notifications/components/NotificationsPage").then((m) => ({
     default: m.NotificationsPage
@@ -194,19 +188,6 @@ const router = createBrowserRouter([
         <AppShell>
           <Suspense fallback={<Fallback />}>
             <NotificationsPage />
-          </Suspense>
-        </AppShell>
-      </ProtectedRoute>
-    )
-  },
-  {
-    path: "/widgets",
-    errorElement: <RouteErrorBoundary />,
-    element: (
-      <ProtectedRoute>
-        <AppShell>
-          <Suspense fallback={<Fallback />}>
-            <WidgetsPage />
           </Suspense>
         </AppShell>
       </ProtectedRoute>

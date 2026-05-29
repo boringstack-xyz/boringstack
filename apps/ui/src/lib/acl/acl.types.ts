@@ -23,10 +23,6 @@ export interface IFeatureDef {
 export type FeatureValue<K extends FeatureKey> =
   (typeof FEATURES)[K]["kind"] extends "boolean" ? boolean : number;
 
-export interface IWidgetSubject extends ForcedSubject<"Widget"> {
-  readonly accountId: string;
-}
-
 export interface ITeamMemberSubject extends ForcedSubject<"TeamMember"> {
   readonly accountId: string;
 }
@@ -40,7 +36,6 @@ export interface IAccountSubject extends ForcedSubject<"Account"> {
 }
 
 export type SubjectInstance =
-  | IWidgetSubject
   | ITeamMemberSubject
   | ISiteSubject
   | IAccountSubject;

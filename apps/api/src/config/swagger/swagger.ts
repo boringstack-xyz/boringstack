@@ -17,7 +17,6 @@ export const swaggerConfig = swagger({
       { name: "Users", description: "Authenticated user profile" },
       { name: "Accounts", description: "Account switching and invitations" },
       { name: "Dashboard", description: "Authenticated dashboard data" },
-      { name: "Widgets", description: "Example account-scoped CRUD resource" },
       { name: "Billing", description: "Stripe-backed subscription management" },
       {
         name: "Admin",

@@ -73,7 +73,7 @@ describe("adminBillingService.grantFeature", () => {
 
     const result = await adminBillingService.grantFeature({
       accountId: account.id,
-      featureKey: "max_widgets",
+      featureKey: "max_seats",
       value: { number: 50 },
       expiresAt: null,
       visibility: "internal",
@@ -87,7 +87,7 @@ describe("adminBillingService.grantFeature", () => {
       .from(accountFeatureOverrides)
       .where(eq(accountFeatureOverrides.id, result.id));
 
-    expect(row?.featureKey).toBe("max_widgets");
+    expect(row?.featureKey).toBe("max_seats");
     expect(row?.revokedAt).toBeNull();
 
     /*
@@ -128,7 +128,7 @@ describe("adminBillingService.grantFeature", () => {
 
     await adminBillingService.grantFeature({
       accountId: account.id,
-      featureKey: "max_widgets",
+      featureKey: "max_seats",
       value: { number: 50 },
       expiresAt: null,
       visibility: "internal",
@@ -139,7 +139,7 @@ describe("adminBillingService.grantFeature", () => {
 
     await adminBillingService.grantFeature({
       accountId: account.id,
-      featureKey: "max_widgets",
+      featureKey: "max_seats",
       value: { number: 100 },
       expiresAt: null,
       visibility: "internal",

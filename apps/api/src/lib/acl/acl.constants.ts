@@ -22,24 +22,16 @@ export const ACTIONS = [
   "invite",
 ] as const;
 
-export const SUBJECTS = [
-  "Widget",
-  "TeamMember",
-  "Site",
-  "Account",
-  "all",
-] as const;
+export const SUBJECTS = ["TeamMember", "Site", "Account", "all"] as const;
 
 export const FEATURE_KEYS = [
   "can_export",
   "can_invite_team",
   "max_seats",
-  "max_widgets",
 ] as const;
 
 export const FEATURES = {
   can_export: { kind: "boolean", default: false },
   can_invite_team: { kind: "boolean", default: false },
   max_seats: { kind: "limit", default: 1 },
-  max_widgets: { kind: "limit", default: 5 },
 } as const;

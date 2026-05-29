@@ -185,27 +185,6 @@
       }
     }
   },
-  "widgets": {
-    "title": "Widgets",
-    "subtitle": "Erstelle, bearbeite und lösche die beispielhafte kontoabhängige Ressource aus dem API-Starter.",
-    "empty": "Noch keine Widgets.",
-    "form": {
-      "name": "Name",
-      "submit": "Widget erstellen",
-      "submitting": "Wird erstellt…"
-    },
-    "actions": {
-      "edit": "Bearbeiten",
-      "delete": "Löschen",
-      "save": "Speichern",
-      "cancel": "Abbrechen"
-    },
-    "columns": {
-      "name": "Name",
-      "created": "Erstellt",
-      "actions": "Aktionen"
-    }
-  },
   "nav": {
     "ariaPrimary": "Hauptnavigation",
     "openMenu": "Menü öffnen",
@@ -213,7 +192,6 @@
     "menuTitle": "Menü",
     "dashboard": "Übersicht",
     "notifications": "Benachrichtigungen",
-    "widgets": "Widgets",
     "team": "Team",
     "auditLog": "Audit-Log",
     "settings": "Einstellungen",

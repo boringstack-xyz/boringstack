@@ -12,8 +12,8 @@ mutating service method to record an event. Action names live in
 ```ts
 void auditLogService.record({
   userId: created.id, // null for system actions
-  action: AUDIT_ACTIONS.WIDGET_CREATED,
-  metadata: { widgetId: created.id }, // no PII
+  action: AUDIT_ACTIONS.NOTIFICATION_STATUS_UPDATED,
+  metadata: { notificationId: created.id }, // no PII
 });
 ```
 

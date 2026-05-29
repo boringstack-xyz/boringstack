@@ -75,14 +75,6 @@ CREATE TABLE "app"."accounts" (
 	CONSTRAINT "accounts_stripe_customer_id_key" UNIQUE("stripe_customer_id")
 );
 --> statement-breakpoint
-CREATE TABLE "app"."widgets" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"account_id" uuid NOT NULL,
-	"name" varchar(200) NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "audit"."audit_log" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid,
@@ -296,7 +288,6 @@ ALTER TABLE "app"."account_join_requests" ADD CONSTRAINT "account_join_requests_
 ALTER TABLE "app"."account_ownership_transfers" ADD CONSTRAINT "account_ownership_transfers_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "app"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "app"."account_ownership_transfers" ADD CONSTRAINT "account_ownership_transfers_from_user_id_fkey" FOREIGN KEY ("from_user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "app"."account_ownership_transfers" ADD CONSTRAINT "account_ownership_transfers_to_user_id_fkey" FOREIGN KEY ("to_user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "app"."widgets" ADD CONSTRAINT "widgets_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "app"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "audit"."audit_log" ADD CONSTRAINT "audit_log_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auth"."sessions" ADD CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auth"."email_verification_tokens" ADD CONSTRAINT "email_verification_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -328,7 +319,6 @@ CREATE UNIQUE INDEX "uniq_account_ownership_transfers_pending" ON "app"."account
 CREATE INDEX "idx_accounts_deleted_at" ON "app"."accounts" USING btree ("deleted_at");--> statement-breakpoint
 CREATE INDEX "idx_accounts_claimed_domain" ON "app"."accounts" USING btree ("claimed_domain");--> statement-breakpoint
 CREATE UNIQUE INDEX "uniq_accounts_claimed_domain_active" ON "app"."accounts" USING btree ("claimed_domain") WHERE claimed_domain IS NOT NULL AND deleted_at IS NULL;--> statement-breakpoint
-CREATE INDEX "idx_widgets_account_id" ON "app"."widgets" USING btree ("account_id");--> statement-breakpoint
 CREATE INDEX "idx_audit_log_user_id" ON "audit"."audit_log" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_audit_log_action" ON "audit"."audit_log" USING btree ("action");--> statement-breakpoint
 CREATE INDEX "idx_audit_log_created_at" ON "audit"."audit_log" USING btree ("created_at");--> statement-breakpoint

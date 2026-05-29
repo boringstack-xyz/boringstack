@@ -31,22 +31,22 @@ bun run storybook      # see it in :6006
 ## Add a feature
 
 ```bash
-bun run new:feature Widgets
+bun run new:feature Tickets
 ```
 
-Creates `src/features/widgets/` with all dot-suffix files and a starter
-`WidgetsPage` component. The script refuses to overwrite existing files and
+Creates `src/features/tickets/` with all dot-suffix files and a starter
+`TicketsPage` component. The script refuses to overwrite existing files and
 prints the remaining route + i18n wiring steps.
 
 Then:
 
-1. Define endpoints + query keys in `Widgets.constants.ts`.
-2. Define request/response shapes in `Widgets.schemas.ts`.
-3. Derive types via `z.infer` in `Widgets.types.ts`.
-4. Write query hooks in `Widgets.queries.ts`.
+1. Define endpoints + query keys in `Tickets.constants.ts`.
+2. Define request/response shapes in `Tickets.schemas.ts`.
+3. Derive types via `z.infer` in `Tickets.types.ts`.
+4. Write query hooks in `Tickets.queries.ts`.
 5. Add component(s) under `components/<Name>/`.
 6. Register the route in `src/app/router/routes.tsx`.
-7. Add `features.widgets.*` copy to every locale JSON file.
+7. Add `features.tickets.*` copy to every locale JSON file.
 
 ## Add a shadcn primitive
 

@@ -127,7 +127,6 @@ export const FEATURE_KEYS = [
   "can_export",
   "can_invite_team",
   "max_seats",
-  "max_widgets",
 ] as const;
 
 export const FEATURES = {
@@ -143,7 +142,7 @@ Feature gates compose with role rules via CASL's `cannot(...)` rules: a missing 
 
 Every account-scoped Drizzle table carries a `// @account-scoped accountId` comment above its `pgTable` declaration. The companion ESLint rule (`drizzle-conventions/account-scoped-tables-require-where`, defense-in-depth, deferred from the main ACL pass) refuses to merge any `db.query.<table>.findX` that doesn't include the scope column in `WHERE`.
 
-The cross-account isolation matrix in `tests/api/widgets/widgets.routes.test.ts` is the proof: same user with two accounts, resource IDs unique across accounts, every method (`GET`, `PATCH`, `DELETE`) returns 404 when the resource belongs to the other account.
+The lint rule is the mechanical guarantee. Defense-in-depth at the unit-test layer lives in `tests/lib/acl/ability.test.ts`, which exercises every role × subject × action combination across two accounts so a regression in `buildAbility` surfaces immediately.
 
 ## Runtime helpers
 
@@ -192,8 +191,7 @@ The cross-account isolation matrix in `tests/api/widgets/widgets.routes.test.ts`
   "features": {
     "can_export": false,
     "can_invite_team": false,
-    "max_seats": 1,
-    "max_widgets": 5
+    "max_seats": 1
   }
 }
 ```

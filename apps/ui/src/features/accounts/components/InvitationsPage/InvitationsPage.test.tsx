@@ -49,8 +49,7 @@ function buildMe(overrides: Partial<IMe> = {}): IMe {
     features: {
       can_export: true,
       can_invite_team: true,
-      max_seats: 10,
-      max_widgets: 50
+      max_seats: 10
     },
     capabilities: {
       billing: false,
@@ -86,8 +85,7 @@ function renderPage(
       : buildAbility("viewer", "none", {
           can_export: false,
           can_invite_team: false,
-          max_seats: 1,
-          max_widgets: 5
+          max_seats: 1
         });
 
   render(
@@ -118,8 +116,7 @@ describe("InvitationsPage", () => {
         features: {
           can_export: true,
           can_invite_team: false,
-          max_seats: 10,
-          max_widgets: 50
+          max_seats: 10
         }
       })
     );

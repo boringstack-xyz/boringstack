@@ -729,43 +729,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/widgets/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List widgets in the active account */
-        get: operations["getApiV1Widgets"];
-        put?: never;
-        /** Create a widget in the active account */
-        post: operations["postApiV1Widgets"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/widgets/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a widget by id (account-scoped) */
-        get: operations["getApiV1WidgetsById"];
-        put?: never;
-        post?: never;
-        /** Delete a widget (account-scoped) */
-        delete: operations["deleteApiV1WidgetsById"];
-        options?: never;
-        head?: never;
-        /** Update a widget (account-scoped) */
-        patch: operations["patchApiV1WidgetsById"];
-        trace?: never;
-    };
     "/api/v1/webhooks/resend": {
         parameters: {
             query?: never;
@@ -2507,7 +2470,6 @@ export interface operations {
                             can_export: boolean;
                             can_invite_team: boolean;
                             max_seats: number;
-                            max_widgets: number;
                         };
                         capabilities: {
                             billing: boolean;
@@ -2541,7 +2503,6 @@ export interface operations {
                             can_export: boolean;
                             can_invite_team: boolean;
                             max_seats: number;
-                            max_widgets: number;
                         };
                         capabilities: {
                             billing: boolean;
@@ -2575,7 +2536,6 @@ export interface operations {
                             can_export: boolean;
                             can_invite_team: boolean;
                             max_seats: number;
-                            max_widgets: number;
                         };
                         capabilities: {
                             billing: boolean;
@@ -3434,215 +3394,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    getApiV1Widgets: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        items: {
-                            id: string;
-                            accountId: string;
-                            name: string;
-                            createdAt: string;
-                            updatedAt: string;
-                        }[];
-                    };
-                    "multipart/form-data": {
-                        items: {
-                            id: string;
-                            accountId: string;
-                            name: string;
-                            createdAt: string;
-                            updatedAt: string;
-                        }[];
-                    };
-                    "text/plain": {
-                        items: {
-                            id: string;
-                            accountId: string;
-                            name: string;
-                            createdAt: string;
-                            updatedAt: string;
-                        }[];
-                    };
-                };
-            };
-        };
-    };
-    postApiV1Widgets: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    name: string;
-                };
-                "multipart/form-data": {
-                    name: string;
-                };
-                "text/plain": {
-                    name: string;
-                };
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                    "multipart/form-data": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                    "text/plain": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                };
-            };
-        };
-    };
-    getApiV1WidgetsById: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                    "multipart/form-data": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                    "text/plain": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                };
-            };
-        };
-    };
-    deleteApiV1WidgetsById: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    patchApiV1WidgetsById: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    name: string;
-                };
-                "multipart/form-data": {
-                    name: string;
-                };
-                "text/plain": {
-                    name: string;
-                };
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                    "multipart/form-data": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                    "text/plain": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                };
             };
         };
     };

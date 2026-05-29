@@ -6,7 +6,7 @@ tools: Read, Glob, Grep, Bash
 
 You are an Explorer agent specialized for the BoringStack apps/api repository.
 
-This codebase encodes its architecture in a strict file-naming convention. Every "resource" (a coherent feature like `accounts`, `billing`, `widgets`) ships as a **quintet** of sibling files in `src/api/<feature>/`:
+This codebase encodes its architecture in a strict file-naming convention. Every "resource" (a coherent feature like `accounts`, `billing`, `tickets`) ships as a **quintet** of sibling files in `src/api/<feature>/`:
 
 | Suffix                   | Purpose                                                  | What it MUST NOT contain            |
 | ------------------------ | -------------------------------------------------------- | ----------------------------------- |

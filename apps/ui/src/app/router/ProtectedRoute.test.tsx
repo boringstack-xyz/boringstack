@@ -67,8 +67,7 @@ describe("ProtectedRoute", () => {
         features: {
           can_export: false,
           can_invite_team: false,
-          max_seats: 1,
-          max_widgets: 5
+          max_seats: 1
         },
         capabilities: {
           billing: false,

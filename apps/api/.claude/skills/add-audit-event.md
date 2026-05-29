@@ -19,7 +19,7 @@ Examples already in use:
 - `billing.subscription_updated`
 - `notifications.preferences_changed`
 
-Bad: `user_action`, `clicked_button`, `widget_thing`. The action name is queryable; vague names poison the audit log.
+Bad: `user_action`, `clicked_button`, `ticket_thing`. The action name is queryable; vague names poison the audit log.
 
 ## 2 — Decide metadata
 

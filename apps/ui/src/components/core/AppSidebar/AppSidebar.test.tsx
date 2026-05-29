@@ -39,14 +39,10 @@ describe("AppSidebar", () => {
     renderSidebar();
 
     expect(screen.getByText("app.name")).toBeInTheDocument();
-    expect(screen.getAllByRole("link")).toHaveLength(7);
+    expect(screen.getAllByRole("link")).toHaveLength(6);
     expect(
       screen.getByRole("link", { name: /nav\.dashboard/i })
     ).toHaveAttribute("href", "/dashboard");
-    expect(screen.getByRole("link", { name: /nav\.widgets/i })).toHaveAttribute(
-      "href",
-      "/widgets"
-    );
     expect(
       screen.getByRole("link", { name: /nav\.settings/i })
     ).toHaveAttribute("href", "/account/settings");

@@ -33,10 +33,6 @@ export interface IMembership {
  * `{ id }`. Adding a new account-scoped subject means adding both
  * the SUBJECTS constant entry AND a tagged interface here.
  */
-export interface IWidgetSubject extends ForcedSubject<"Widget"> {
-  readonly accountId: string;
-}
-
 export interface ITeamMemberSubject extends ForcedSubject<"TeamMember"> {
   readonly accountId: string;
 }
@@ -50,7 +46,6 @@ export interface IAccountSubject extends ForcedSubject<"Account"> {
 }
 
 export type SubjectInstance =
-  | IWidgetSubject
   | ITeamMemberSubject
   | ISiteSubject
   | IAccountSubject;
@@ -59,8 +54,8 @@ export type SubjectInstance =
  * CASL's `subject(name, obj)` helper returns `obj & ForcedSubject<name>`
  * at compile time. Widening the second slot of the MongoAbility tuple
  * to include both the string-literal Subject and the tagged interfaces
- * lets `ability.can("read", subject("Widget", { ... }))` typecheck
- * alongside `ability.can("read", "Widget")`.
+ * lets `ability.can("read", subject("Site", { ... }))` typecheck
+ * alongside `ability.can("read", "Site")`.
  */
 export type AppSubject = Subject | SubjectInstance;
 

@@ -100,7 +100,7 @@ A feature is three files with three jobs. Lint plugins forbid them from leaking 
     {
       name: "api/",
       detail:
-        "Feature folders: auth, users, accounts, dashboard, billing, admin, health, notifications, widgets",
+        "Feature folders: auth, users, accounts, dashboard, billing, admin, health, notifications",
     },
     {
       name: "clients/postgres/",
@@ -137,7 +137,7 @@ A [feature folder](/reference/glossary#feature-folder) always looks like (for a 
   ]}
 />
 
-The shipped `auth`, `users`, `accounts`, `billing`, `dashboard`, `admin`, `health`, `notifications` modules are framework. `widgets` is the only example domain feature, kept as the reference for the [account-scoped resource pattern](/api/multi-tenant/) (every read/write filters by `accountId`). Replace it with your own product domain. Add new resources with `bun run new:resource <name>`; the scaffolder writes the four-file anatomy and wires it into `config/routes.ts` so you can't forget a step.
+The shipped `auth`, `users`, `accounts`, `billing`, `dashboard`, `admin`, `health`, `notifications` modules are framework. There is no example domain resource — `api/` is yours to fill. The [account-scoped resource pattern](/api/multi-tenant/) is enforced by the `drizzle-conventions/account-scoped-tables-require-where` lint rule, so every new resource you scope to an account inherits the isolation guarantee for free. Add new resources with `bun run new:resource <name>`; the scaffolder writes the four-file anatomy and wires it into `config/routes.ts` so you can't forget a step. The [First feature in 10 minutes](/skills/first-feature-tutorial/) tutorial walks the full backend + UI loop end-to-end.
 
 ## Cross-cutting concerns
 

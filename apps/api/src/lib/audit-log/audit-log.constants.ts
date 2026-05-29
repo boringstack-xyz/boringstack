@@ -82,8 +82,4 @@ export const AUDIT_ACTIONS = {
   NOTIFICATION_PREFERENCES_UPDATED: "notification.preferences_updated",
   NOTIFICATION_PUSH_SUBSCRIBED: "notification.push_subscribed",
   NOTIFICATION_PUSH_UNSUBSCRIBED: "notification.push_unsubscribed",
-
-  WIDGET_CREATED: "widget.created",
-  WIDGET_UPDATED: "widget.updated",
-  WIDGET_DELETED: "widget.deleted",
 } as const;

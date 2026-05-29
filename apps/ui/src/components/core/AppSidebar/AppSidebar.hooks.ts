@@ -1,6 +1,5 @@
 import {
   Bell,
-  Boxes,
   CreditCard,
   History,
   LayoutDashboard,
@@ -36,7 +35,6 @@ export function useAppSidebar(props: IAppSidebarProps): IAppSidebarView {
   const icons: Record<IAppSidebarNavId, LucideIcon> = {
     dashboard: LayoutDashboard,
     notifications: Bell,
-    widgets: Boxes,
     team: Users,
     auditLog: History,
     settings: Settings,

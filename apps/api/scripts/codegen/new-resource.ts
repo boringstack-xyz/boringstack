@@ -95,10 +95,10 @@ export const ${filePrefix} = app.table(
 `;
 
   /*
-   * When app.schema.ts is the post-widgets-removal placeholder (no Drizzle
-   * imports, only `export {};` to satisfy TS), replace the whole shell with
-   * a real header + the new table. Once at least one table exists, future
-   * calls just append (the original behavior).
+   * When app.schema.ts has no Drizzle imports yet (fresh template with
+   * no app-domain tables), replace the whole shell with a real header
+   * plus the new table. Once at least one table exists, future calls
+   * just append.
    */
   if (!content.includes('from "drizzle-orm/pg-core"')) {
     return APP_SCHEMA_HEADER + block;

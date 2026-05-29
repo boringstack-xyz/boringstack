@@ -21,18 +21,18 @@ to `useAppShell` — there is no Zustand store for it.
 ## Queries
 
 ```ts
-// src/features/widgets/Widgets.queries.ts
+// src/features/tickets/Tickets.queries.ts
 import { useQuery } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api/client";
 
-import { WIDGETS_QUERY_KEYS } from "./Widgets.constants";
+import { TICKETS_QUERY_KEYS } from "./Tickets.constants";
 
-export function useWidgets() {
+export function useTickets() {
   return useQuery({
-    queryKey: WIDGETS_QUERY_KEYS.list,
+    queryKey: TICKETS_QUERY_KEYS.list,
     queryFn: async () => {
-      const { data } = await apiClient.GET("/api/widgets");
+      const { data } = await apiClient.GET("/api/tickets");
 
       return data ?? [];
     }
@@ -48,9 +48,9 @@ atomic.
 ```ts
 const qc = useQueryClient();
 return useMutation({
-  mutationFn: (input: ICreateWidget) =>
-    apiClient.POST("/api/widgets", { body: input }),
-  onSuccess: () => qc.invalidateQueries({ queryKey: WIDGETS_QUERY_KEYS.list })
+  mutationFn: (input: ICreateTicket) =>
+    apiClient.POST("/api/tickets", { body: input }),
+  onSuccess: () => qc.invalidateQueries({ queryKey: TICKETS_QUERY_KEYS.list })
 });
 ```
 

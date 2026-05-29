@@ -8,9 +8,9 @@ import { DASHBOARD_ACTIVITY_MAX_LIMIT } from "../../../src/api/dashboard/dashboa
 
 describe("formatActivityTitle", () => {
   test("uses the known label and appends the resource when present", () => {
-    expect(formatActivityTitle("widget.created", "widget:abc-123")).toBe(
-      "Created a widget — widget:abc-123"
-    );
+    expect(
+      formatActivityTitle("notification.status_updated", "notification:abc-123")
+    ).toBe("Updated a notification — notification:abc-123");
   });
 
   test("uses the known label only when resource is null", () => {

@@ -185,27 +185,6 @@
       }
     }
   },
-  "widgets": {
-    "title": "Widgets",
-    "subtitle": "Create, edit, and delete the sample account-scoped resource shipped by the API starter.",
-    "empty": "No widgets yet.",
-    "form": {
-      "name": "Name",
-      "submit": "Create widget",
-      "submitting": "Creating…"
-    },
-    "actions": {
-      "edit": "Edit",
-      "delete": "Delete",
-      "save": "Save",
-      "cancel": "Cancel"
-    },
-    "columns": {
-      "name": "Name",
-      "created": "Created",
-      "actions": "Actions"
-    }
-  },
   "nav": {
     "ariaPrimary": "Primary navigation",
     "openMenu": "Open menu",
@@ -213,7 +192,6 @@
     "menuTitle": "Menu",
     "dashboard": "Dashboard",
     "notifications": "Notifications",
-    "widgets": "Widgets",
     "team": "Team",
     "auditLog": "Audit log",
     "settings": "Settings",

@@ -6,7 +6,7 @@ import { ApiError } from "../../../src/lib/errors";
 describe("enforceLimit", () => {
   test("passes when currentCount is strictly below the limit", () => {
     expect(() => {
-      enforceLimit("max_widgets", 4, 5);
+      enforceLimit("max_seats", 4, 5);
     }).not.toThrow();
   });
 
@@ -14,7 +14,7 @@ describe("enforceLimit", () => {
     let caught: unknown = null;
 
     try {
-      enforceLimit("max_widgets", 5, 5);
+      enforceLimit("max_seats", 5, 5);
     } catch (err) {
       caught = err;
     }
@@ -51,7 +51,7 @@ describe("enforceLimit", () => {
     let caught: unknown = null;
 
     try {
-      enforceLimit("max_widgets", 10, 5);
+      enforceLimit("max_seats", 10, 5);
     } catch (err) {
       caught = err;
     }
@@ -62,7 +62,7 @@ describe("enforceLimit", () => {
       throw new Error("expected an ApiError");
     }
 
-    expect(caught.field).toBe("max_widgets");
+    expect(caught.field).toBe("max_seats");
     expect(caught.details).toEqual({ current: 10, limit: 5 });
   });
 

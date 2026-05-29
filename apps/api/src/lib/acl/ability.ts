@@ -18,7 +18,6 @@ export function buildAbility(
 
   switch (membership.role) {
     case ROLE.owner:
-      can("manage", "Widget", { accountId });
       can("manage", "TeamMember", { accountId });
       can("manage", "Site", { accountId });
       can("manage", "Account", { id: accountId });
@@ -30,22 +29,19 @@ export function buildAbility(
        * changing account-level billing stay with the owner. Billing
        * routes also enforce owner-only at the route layer.
        */
-      can("manage", "Widget", { accountId });
       can("manage", "TeamMember", { accountId });
       can("manage", "Site", { accountId });
       can("read", "Account", { id: accountId });
       break;
     case ROLE.member:
-      can("read", "Widget", { accountId });
       can("read", "TeamMember", { accountId });
-      can("read", "Site", { accountId });
       can("read", "Account", { id: accountId });
-      can("create", "Widget", { accountId });
-      can("update", "Widget", { accountId });
-      can("delete", "Widget", { accountId });
+      can("create", "Site", { accountId });
+      can("read", "Site", { accountId });
+      can("update", "Site", { accountId });
+      can("delete", "Site", { accountId });
       break;
     case ROLE.viewer:
-      can("read", "Widget", { accountId });
       can("read", "TeamMember", { accountId });
       can("read", "Site", { accountId });
       can("read", "Account", { id: accountId });
@@ -59,7 +55,7 @@ export function buildAbility(
    * applied above this layer with an audit row.
    */
   if (!features.can_export) {
-    cannot("export", "Widget");
+    cannot("export", "Site");
   }
 
   if (!features.can_invite_team) {

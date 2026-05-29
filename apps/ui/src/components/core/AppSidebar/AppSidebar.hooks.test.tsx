@@ -61,8 +61,7 @@ const ownerMe: IMe = {
   features: {
     can_export: true,
     can_invite_team: true,
-    max_seats: 10,
-    max_widgets: 50
+    max_seats: 10
   },
   capabilities: {
     billing: false,
@@ -82,7 +81,6 @@ describe("useAppSidebar", () => {
     expect(result.current.items.map((i) => i.id)).toEqual([
       "dashboard",
       "notifications",
-      "widgets",
       "team",
       "auditLog",
       "settings",
@@ -98,7 +96,6 @@ describe("useAppSidebar", () => {
     expect(result.current.items.map((i) => i.id)).toEqual([
       "dashboard",
       "notifications",
-      "widgets",
       "team",
       "auditLog",
       "settings",

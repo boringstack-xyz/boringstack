@@ -6,7 +6,6 @@ import {
   accountJoinRequests,
   accountOwnershipTransfers,
   accounts,
-  widgets,
 } from "./app.schema";
 import { auditLog } from "./audit.schema";
 import {
@@ -44,7 +43,6 @@ export const accountsRelations = relations(accounts, ({ many }) => ({
   ownershipTransfers: many(accountOwnershipTransfers),
   featureOverrides: many(accountFeatureOverrides),
   plans: many(accountPlans),
-  widgets: many(widgets),
 }));
 
 export const accountOwnershipTransfersRelations = relations(
@@ -78,13 +76,6 @@ export const accountJoinRequestsRelations = relations(
     }),
   })
 );
-
-export const widgetsRelations = relations(widgets, ({ one }) => ({
-  account: one(accounts, {
-    fields: [widgets.accountId],
-    references: [accounts.id],
-  }),
-}));
 
 export const accountMembershipsRelations = relations(
   accountMemberships,

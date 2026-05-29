@@ -513,7 +513,6 @@ export default tseslint.config(
         {
           scopeColumn: "accountId",
           tables: [
-            "widgets",
             "accountMemberships",
             "accountInvitations",
             "accountFeatureOverrides",

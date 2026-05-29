@@ -34,7 +34,6 @@ const ResolvedFeaturesSchema = t.Object({
   can_export: t.Boolean(),
   can_invite_team: t.Boolean(),
   max_seats: t.Number(),
-  max_widgets: t.Number(),
 });
 
 const RuntimeCapabilitiesSchema = t.Object({

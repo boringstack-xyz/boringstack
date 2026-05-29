@@ -219,17 +219,17 @@ describe("checkRouteFilesHaveTests", () => {
     const root = mkdtempSync(join(tmpdir(), "lint-meta-routes-"));
 
     try {
-      mkdirSync(join(root, "src", "api", "widgets"), { recursive: true });
+      mkdirSync(join(root, "src", "api", "tickets"), { recursive: true });
       writeFileSync(
-        join(root, "src", "api", "widgets", "widgets.routes.ts"),
-        "export const widgetsRoutes = {};\n"
+        join(root, "src", "api", "tickets", "tickets.routes.ts"),
+        "export const ticketsRoutes = {};\n"
       );
 
       const violations = checkRouteFilesHaveTests(root);
 
       expect(violations.length).toBe(1);
       expect(violations[0]?.rule).toBe("routes-require-test-sibling");
-      expect(violations[0]?.message).toContain("widgets.routes.test.ts");
+      expect(violations[0]?.message).toContain("tickets.routes.test.ts");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -239,15 +239,15 @@ describe("checkRouteFilesHaveTests", () => {
     const root = mkdtempSync(join(tmpdir(), "lint-meta-routes-"));
 
     try {
-      mkdirSync(join(root, "src", "api", "widgets"), { recursive: true });
-      mkdirSync(join(root, "tests", "api", "widgets"), { recursive: true });
+      mkdirSync(join(root, "src", "api", "tickets"), { recursive: true });
+      mkdirSync(join(root, "tests", "api", "tickets"), { recursive: true });
 
       writeFileSync(
-        join(root, "src", "api", "widgets", "widgets.routes.ts"),
-        "export const widgetsRoutes = {};\n"
+        join(root, "src", "api", "tickets", "tickets.routes.ts"),
+        "export const ticketsRoutes = {};\n"
       );
       writeFileSync(
-        join(root, "tests", "api", "widgets", "widgets.routes.test.ts"),
+        join(root, "tests", "api", "tickets", "tickets.routes.test.ts"),
         "import { test } from 'bun:test';\ntest('placeholder', () => {});\n"
       );
 
@@ -358,19 +358,19 @@ describe("checkTouchedTests", () => {
       mkdirSync(join(repo, "tests", "api"), { recursive: true });
 
       writeFileSync(
-        join(repo, "src", "api", "widgets.service.ts"),
-        "export const widgetsService = {};\n"
+        join(repo, "src", "api", "tickets.service.ts"),
+        "export const ticketsService = {};\n"
       );
       writeFileSync(
-        join(repo, "tests", "api", "widgets.service.test.ts"),
+        join(repo, "tests", "api", "tickets.service.test.ts"),
         "import { describe } from 'bun:test';\ndescribe('placeholder', () => {});\n"
       );
       execSync("git add -A", { cwd: repo });
       execSync('git commit -q -m "init"', { cwd: repo });
 
       writeFileSync(
-        join(repo, "src", "api", "widgets.service.ts"),
-        "export const widgetsService = { add: () => 1 };\n"
+        join(repo, "src", "api", "tickets.service.ts"),
+        "export const ticketsService = { add: () => 1 };\n"
       );
       execSync("git add -A", { cwd: repo });
       execSync('git commit -q -m "modify service without touching test"', {
@@ -381,7 +381,7 @@ describe("checkTouchedTests", () => {
 
       expect(violations.length).toBe(1);
       expect(violations[0]?.rule).toBe("touch-tests-too");
-      expect(violations[0]?.message).toContain("widgets.service");
+      expect(violations[0]?.message).toContain("tickets.service");
     } finally {
       rmSync(repo, { recursive: true, force: true });
     }
@@ -400,22 +400,22 @@ describe("checkTouchedTests", () => {
       mkdirSync(join(repo, "tests", "api"), { recursive: true });
 
       writeFileSync(
-        join(repo, "src", "api", "widgets.service.ts"),
-        "export const widgetsService = {};\n"
+        join(repo, "src", "api", "tickets.service.ts"),
+        "export const ticketsService = {};\n"
       );
       writeFileSync(
-        join(repo, "tests", "api", "widgets.service.test.ts"),
+        join(repo, "tests", "api", "tickets.service.test.ts"),
         "import { describe } from 'bun:test';\ndescribe('init', () => {});\n"
       );
       execSync("git add -A", { cwd: repo });
       execSync('git commit -q -m "init"', { cwd: repo });
 
       writeFileSync(
-        join(repo, "src", "api", "widgets.service.ts"),
-        "export const widgetsService = { add: () => 1 };\n"
+        join(repo, "src", "api", "tickets.service.ts"),
+        "export const ticketsService = { add: () => 1 };\n"
       );
       writeFileSync(
-        join(repo, "tests", "api", "widgets.service.test.ts"),
+        join(repo, "tests", "api", "tickets.service.test.ts"),
         "import { describe, expect, test } from 'bun:test';\ntest('add', () => { expect(1).toBe(1); });\n"
       );
       execSync("git add -A", { cwd: repo });

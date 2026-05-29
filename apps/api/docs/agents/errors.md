@@ -5,7 +5,7 @@ Read when throwing in a service or wrapping a caught exception.
 ```ts
 import { ApiErrors, getErrorMessage } from "../../lib/errors";
 
-throw ApiErrors.notFound("Widget");
+throw ApiErrors.notFound("Ticket");
 throw ApiErrors.validation("name is reserved", "name");
 throw ApiErrors.unauthorized();
 

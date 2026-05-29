@@ -3,7 +3,6 @@ import type { LucideIcon } from "lucide-react";
 export type IAppSidebarNavId =
   | "dashboard"
   | "notifications"
-  | "widgets"
   | "team"
   | "auditLog"
   | "settings"

@@ -64,7 +64,7 @@ describe("expireFeatureOverridesJob", () => {
 
     const { id } = await adminBillingService.grantFeature({
       accountId: account.id,
-      featureKey: "max_widgets",
+      featureKey: "max_seats",
       value: { number: 99 },
       expiresAt: PAST,
       visibility: "internal",

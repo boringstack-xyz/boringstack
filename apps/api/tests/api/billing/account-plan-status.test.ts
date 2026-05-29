@@ -5,12 +5,12 @@ import type { IPlanFeatureRow } from "../../../src/lib/acl/feature-resolution.ty
 
 const PAID: readonly IPlanFeatureRow[] = [
   { featureKey: "can_export", value: { bool: true } },
-  { featureKey: "max_widgets", value: { number: 1000 } },
+  { featureKey: "max_seats", value: { number: 1000 } },
 ];
 
 const FREE: readonly IPlanFeatureRow[] = [
   { featureKey: "can_export", value: { bool: false } },
-  { featureKey: "max_widgets", value: { number: 5 } },
+  { featureKey: "max_seats", value: { number: 5 } },
 ];
 
 const NOW = Date.UTC(2026, 5, 17);

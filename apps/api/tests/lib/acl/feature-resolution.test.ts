@@ -37,20 +37,18 @@ describe("resolveFeatures — catalog defaults", () => {
     expect(resolved.can_export).toBe(false);
     expect(resolved.can_invite_team).toBe(false);
     expect(resolved.max_seats).toBe(FEATURES.max_seats.default);
-    expect(resolved.max_widgets).toBe(FEATURES.max_widgets.default);
   });
 });
 
 describe("resolveFeatures — plan_features fallback", () => {
   test("plan_features value wins over catalog default", () => {
     const resolved = resolveFeatures(
-      [planRow("max_widgets", { number: 10 })],
+      [planRow("max_seats", { number: 10 })],
       emptyOverrides,
       NOW
     );
 
-    expect(resolved.max_widgets).toBe(10);
-    expect(resolved.max_seats).toBe(FEATURES.max_seats.default);
+    expect(resolved.max_seats).toBe(10);
   });
 
   test("boolean plan_features value wins over catalog default", () => {
@@ -67,12 +65,12 @@ describe("resolveFeatures — plan_features fallback", () => {
 describe("resolveFeatures — override priority", () => {
   test("active override beats plan_features", () => {
     const resolved = resolveFeatures(
-      [planRow("max_widgets", { number: 10 })],
-      [overrideRow("max_widgets", { number: 50 })],
+      [planRow("max_seats", { number: 10 })],
+      [overrideRow("max_seats", { number: 50 })],
       NOW
     );
 
-    expect(resolved.max_widgets).toBe(50);
+    expect(resolved.max_seats).toBe(50);
   });
 
   test("boolean override flips false back to true", () => {
@@ -87,42 +85,42 @@ describe("resolveFeatures — override priority", () => {
 
   test("override with expiresAt in the past falls through to plan_features", () => {
     const resolved = resolveFeatures(
-      [planRow("max_widgets", { number: 10 })],
-      [overrideRow("max_widgets", { number: 50 }, { expiresAt: PAST })],
+      [planRow("max_seats", { number: 10 })],
+      [overrideRow("max_seats", { number: 50 }, { expiresAt: PAST })],
       NOW
     );
 
-    expect(resolved.max_widgets).toBe(10);
+    expect(resolved.max_seats).toBe(10);
   });
 
   test("override with expiresAt in the future is still active", () => {
     const resolved = resolveFeatures(
-      [planRow("max_widgets", { number: 10 })],
-      [overrideRow("max_widgets", { number: 50 }, { expiresAt: FUTURE })],
+      [planRow("max_seats", { number: 10 })],
+      [overrideRow("max_seats", { number: 50 }, { expiresAt: FUTURE })],
       NOW
     );
 
-    expect(resolved.max_widgets).toBe(50);
+    expect(resolved.max_seats).toBe(50);
   });
 
   test("revoked override is ignored even when expiresAt is null", () => {
     const resolved = resolveFeatures(
-      [planRow("max_widgets", { number: 10 })],
-      [overrideRow("max_widgets", { number: 50 }, { revokedAt: PAST })],
+      [planRow("max_seats", { number: 10 })],
+      [overrideRow("max_seats", { number: 50 }, { revokedAt: PAST })],
       NOW
     );
 
-    expect(resolved.max_widgets).toBe(10);
+    expect(resolved.max_seats).toBe(10);
   });
 
   test("expired override falls through to catalog default when plan has no row either", () => {
     const resolved = resolveFeatures(
       emptyPlan,
-      [overrideRow("max_widgets", { number: 50 }, { expiresAt: PAST })],
+      [overrideRow("max_seats", { number: 50 }, { expiresAt: PAST })],
       NOW
     );
 
-    expect(resolved.max_widgets).toBe(FEATURES.max_widgets.default);
+    expect(resolved.max_seats).toBe(FEATURES.max_seats.default);
   });
 });
 
@@ -130,11 +128,11 @@ describe("resolveFeatures — runtime shape validation", () => {
   test("limit feature with non-numeric jsonb value throws", () => {
     expect(() =>
       resolveFeatures(
-        [planRow("max_widgets", { bool: true })],
+        [planRow("max_seats", { bool: true })],
         emptyOverrides,
         NOW
       )
-    ).toThrow(/max_widgets/u);
+    ).toThrow(/max_seats/u);
   });
 
   test("boolean feature with non-boolean jsonb value throws", () => {
@@ -151,9 +149,9 @@ describe("resolveFeatures — runtime shape validation", () => {
     expect(() =>
       resolveFeatures(
         emptyPlan,
-        [overrideRow("max_widgets", { wrong_key: 50 })],
+        [overrideRow("max_seats", { wrong_key: 50 })],
         NOW
       )
-    ).toThrow(/max_widgets/u);
+    ).toThrow(/max_seats/u);
   });
 });
