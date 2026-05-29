@@ -63,9 +63,15 @@ scrape_configs:
         regex: "/(.*)"
         target_label: "container"
     pipeline_stages:
-      # Pino JSON shape:
-      # {"level":30,"time":1700000000000,"pid":1,"requestId":"...",
+      # Pino JSON shape (apps/api uses a level formatter that emits the
+      # level as an uppercase string, not Pino's default numeric form):
+      # {"level":"INFO","time":1700000000000,"pid":1,"requestId":"...",
       #  "trace_id":"...","span_id":"...","msg":"...","name":"api"}
+      #
+      # Plain-text container output (e.g. Drizzle SQL query logs that
+      # bypass Pino) just falls through this pipeline — the JSON stage
+      # sees no JSON, extracts nothing, and the output stage leaves the
+      # original line in place.
       - json:
           expressions:
             level: level
@@ -74,20 +80,13 @@ scrape_configs:
             trace_id: trace_id
             span_id: span_id
             msg: msg
-      # Map Pino's numeric level → readable string (low cardinality).
+      # Lowercase Pino's level ("INFO" → "info"). Promote as the `level`
+      # label so Grafana's logs panel auto-colours each line by severity.
       - template:
-          source: level_name
-          template: |
-            {{- if eq .level "10" -}}trace
-            {{- else if eq .level "20" -}}debug
-            {{- else if eq .level "30" -}}info
-            {{- else if eq .level "40" -}}warn
-            {{- else if eq .level "50" -}}error
-            {{- else if eq .level "60" -}}fatal
-            {{- else -}}unknown
-            {{- end -}}
+          source: level
+          template: '{{ .level | toLower }}'
       - labels:
-          level_name:
+          level:
       # High-cardinality correlation IDs go into structured metadata
       # (Loki 3+), not labels — promoting them to labels would explode
       # the stream count.
