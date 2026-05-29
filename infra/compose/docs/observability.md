@@ -63,9 +63,9 @@ Set `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` in `compose/.env` before exp
 
 `compose-down-clean.sh` (with confirmation prompt) wipes the Postgres + Valkey volumes; observability data lives in `prometheus_data`, `grafana_data`, `loki_data` — also wiped by `down -v`.
 
-## Adding alert rules
+## Alerts
 
-Drop YAML files into `compose/prometheus/rules/` and reference them in `prometheus.yml`. Alertmanager routing config lives in `compose/alertmanager/alertmanager.yml`. Recipes (Slack, email, PagerDuty) are in the Prometheus docs.
+Prometheus alert rules ship in `compose/prometheus/rules.yml` (14 rules out of the box covering API errors/latency, Postgres, host disk/memory/CPU, Traefik). Alertmanager runs on `:9093` with env-driven receivers — set `ALERTMANAGER_SLACK_WEBHOOK_URL` (Slack or Discord with `/slack` suffix) and/or `ALERTMANAGER_WEBHOOK_URL` (generic JSON) in `compose/.env` to get pager output. Full walkthrough in [alerts.md](alerts.md).
 
 ## Adding dashboards
 
