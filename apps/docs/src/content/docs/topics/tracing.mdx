@@ -101,6 +101,13 @@ Tempo.
     headers to every `/api/*` fetch. The API's OTel SDK reads them and
     continues the trace, so a single trace ID spans the browser action
     and everything it triggered server-side.
+
+    Sentry's browser `tracesSampleRate` is `0` and the API's
+    `SENTRY_TRACES_SAMPLE_RATE` defaults to `0` — Sentry is error-capture-only;
+    OTel is the single tracer that ships spans to Tempo. `@sentry/bun` v10+ is
+    built on `@sentry/opentelemetry`, so any non-zero Sentry sample rate
+    registers a second tracer on top of the OTel SDK and double-instruments
+    HTTP / fetch / DB. Flip it back if you want transactions in Sentry as well.
   </FaqItem>
 </FaqGroup>
 
