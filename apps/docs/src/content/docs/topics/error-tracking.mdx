@@ -132,6 +132,8 @@ API side: Sentry initialises once at boot. If `SENTRY_DSN` is empty, init is a n
 
 UI side: Sentry initialises once at app mount when `VITE_SENTRY_DSN` is set. Replays-on-error capture the error context; full-session replays are off to avoid capturing video of every session.
 
+Sentry transactions are off by default (`SENTRY_TRACES_SAMPLE_RATE=0` on the API, `tracesSampleRate: 0` on the UI). OpenTelemetry is the single tracer that ships spans to Tempo; error events still pick up `trace_id` from the shared context so the GlitchTip → Tempo pivot works. See [Distributed tracing](/topics/tracing/) for the why.
+
 ## Self-hosting with GlitchTip
 
 GlitchTip is Apache-licensed and Sentry-API-compatible. It runs as part of the default compose stack:

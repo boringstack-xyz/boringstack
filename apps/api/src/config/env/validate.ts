@@ -121,7 +121,7 @@ const readRateLimit = (source: EnvSource) => ({
 
 const readSentry = (source: EnvSource) => ({
   SENTRY_DSN: source.SENTRY_DSN ?? "",
-  SENTRY_TRACES_SAMPLE_RATE: toFloat(source.SENTRY_TRACES_SAMPLE_RATE, 0.1),
+  SENTRY_TRACES_SAMPLE_RATE: toFloat(source.SENTRY_TRACES_SAMPLE_RATE, 0),
 });
 
 const readOpenTelemetry = (source: EnvSource) => ({

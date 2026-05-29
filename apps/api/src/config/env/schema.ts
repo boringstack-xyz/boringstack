@@ -73,10 +73,18 @@ export const envSchema = t.Object({
    * sentry.io for hosted. Empty DSN = Sentry is not initialized.
    */
   SENTRY_DSN: t.String({ default: "" }),
+  /*
+   * Default 0: OTel is the single source of trace data (shipped via OTLP to
+   * Tempo). Sentry is error-capture-only — events still carry `trace_id` from
+   * the shared OTel context, so GlitchTip → Tempo click-through works. Flip
+   * non-zero only if you want Sentry / GlitchTip to record transactions in
+   * addition to errors; running both tracers concurrently double-instruments
+   * HTTP / fetch / ioredis paths through `@sentry/opentelemetry`.
+   */
   SENTRY_TRACES_SAMPLE_RATE: t.Number({
     minimum: 0,
     maximum: 1,
-    default: 0.1,
+    default: 0,
   }),
 
   /*

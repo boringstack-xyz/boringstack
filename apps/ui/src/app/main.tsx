@@ -15,16 +15,23 @@ if (env.VITE_SENTRY_DSN !== "") {
   Sentry.init({
     dsn: env.VITE_SENTRY_DSN,
     environment: env.MODE,
-    tracesSampleRate: env.PROD ? 0.1 : 1.0,
-    replaysSessionSampleRate: env.PROD ? 0.0 : 0.0,
+    /*
+     * 0 keeps Sentry error-capture-only on the browser side. `browserTracingIntegration`
+     * stays loaded because it's what writes the W3C `traceparent` header on
+     * outbound `/api/*` fetches — the API's OpenTelemetry SDK reads that
+     * header to continue the trace server-side and ship spans to Tempo. With
+     * rate 0 the browser doesn't send transactions to GlitchTip but still
+     * generates trace ids, so a browser-raised error event still carries
+     * `trace_id` for the GlitchTip → Tempo pivot.
+     */
+    tracesSampleRate: 0,
+    replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 1.0,
     integrations: [Sentry.browserTracingIntegration()],
     /*
      * Propagate `sentry-trace` + `traceparent` headers only on same-origin
-     * API calls. The API's Pino logger picks up the trace id via its
-     * Sentry mixin, so a UI-originated request creates a single trace
-     * spanning browser → API → Postgres. Defaulting to "all origins"
-     * would leak the trace id to CDNs and third-party services.
+     * API calls. Defaulting to "all origins" would leak the trace id to
+     * CDNs and third-party services.
      */
     tracePropagationTargets: ["/api/", /^https?:\/\/[^/]+\/api\//]
   });
