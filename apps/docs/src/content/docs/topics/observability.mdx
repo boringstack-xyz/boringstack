@@ -110,6 +110,11 @@ flowchart LR
 
 - Node.js runtime metrics, event loop lag, GC, heap, FDs, process
   CPU/memory (via `collectDefaultMetrics`).
+- `nodejs_eventloop_utilization` (custom gauge, 0.0–1.0). Computed
+  from `perf_hooks.performance.eventLoopUtilization()`. Surfaces *how
+  saturated* the loop is, which is the leading indicator for Node
+  performance — CPU and memory don't tell you whether the loop can
+  dispatch callbacks. See the API dashboard's top stat row.
 - `http_requests_total{method,route,status}`, counter per route.
 - `http_request_duration_seconds{...}`, histogram with buckets from
   50 ms to 10 s.
@@ -119,6 +124,16 @@ matched route (`/api/v1/users/:id`, not `/api/v1/users/abc-123`) to
 keep cardinality bounded. Add new domain metrics by creating
 `src/lib/metrics/<domain>-metrics.ts`, registering them on the shared
 `metricsRegistry`, and updating them from your service code.
+
+Why event loop lag + ELU rank above CPU/memory as Node health signals:
+Node's runtime is single-threaded for JavaScript. The event loop can
+be blocked (sync FS call, large `JSON.parse`, regex catastrophe,
+CPU-bound work that should be in a worker thread) while CPU shows 30%
+and memory shows 200MB — looks healthy, isn't. Three alert rules
+cover the failure modes: `NodeEventLoopLagging` (warn, p99 > 200ms),
+`NodeEventLoopBlocked` (page, p99 > 1s), and `NodeEventLoopSaturated`
+(warn, ELU > 90% sustained). See [Alerts](/topics/alerts/) for the
+full table.
 
 Prometheus scrapes the api on the `boringstack-api` job (dev profile
 hits `api-dev:7330`, prod profile hits `api:7330`); each target is
@@ -132,9 +147,12 @@ change-me by default) under the BoringStack folder.
 
 <FaqGroup>
   <FaqItem title="BoringStack — API" open>
-    RED panels per route: request rate, p95 latency, 5xx rate, requests
-    by status. Plus Node.js runtime: heap, RSS, event-loop lag p50/p99,
-    process CPU. First place to look for "is the API hot?"
+    Top "is-Node-healthy-right-now" stat row (ELU current, event-loop
+    lag p99, 5xx rate, total req/s) — colour-coded so a glance answers
+    the question. Below: per-route request rate + p95 latency, then a
+    dedicated event-loop row (lag p50+p99 timeseries + ELU over time),
+    then memory (RSS + heap), CPU, requests by status. Every panel has
+    a WHAT/WHY/WATCH-FOR description in the ⓘ tooltip.
   </FaqItem>
   <FaqItem title="BoringStack — API logs">
     Error / warn / info / total counts (stats), log volume per minute
