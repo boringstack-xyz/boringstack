@@ -17,7 +17,16 @@ if (env.VITE_SENTRY_DSN !== "") {
     environment: env.MODE,
     tracesSampleRate: env.PROD ? 0.1 : 1.0,
     replaysSessionSampleRate: env.PROD ? 0.0 : 0.0,
-    replaysOnErrorSampleRate: 1.0
+    replaysOnErrorSampleRate: 1.0,
+    integrations: [Sentry.browserTracingIntegration()],
+    /*
+     * Propagate `sentry-trace` + `traceparent` headers only on same-origin
+     * API calls. The API's Pino logger picks up the trace id via its
+     * Sentry mixin, so a UI-originated request creates a single trace
+     * spanning browser → API → Postgres. Defaulting to "all origins"
+     * would leak the trace id to CDNs and third-party services.
+     */
+    tracePropagationTargets: ["/api/", /^https?:\/\/[^/]+\/api\//]
   });
 }
 

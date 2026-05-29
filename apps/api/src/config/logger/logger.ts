@@ -1,24 +1,40 @@
+import * as Sentry from "@sentry/bun";
 import pino from "pino";
-import pretty from "pino-pretty";
 import { env } from "../env";
 import type { LOG_EVENTS } from "./logger.events";
 
 type ILogEventName = (typeof LOG_EVENTS)[number];
 
-const prettyStream = pretty({
-  colorize: true,
-  ignore: "pid,hostname",
-});
+/*
+ * Inject the current Sentry/OTel span's trace_id + span_id on every log
+ * record. Promtail extracts these as Loki structured metadata so a log
+ * line surfaced in Grafana can be pivoted to its trace in Sentry/GlitchTip
+ * by the same id. Returns {} when no span is active.
+ */
+const traceMixin = (): Record<string, string> => {
+  const span = Sentry.getActiveSpan();
 
-const baseLogger = pino(
-  {
-    level: env.LOG_LEVEL,
-    formatters: {
-      level: (label) => ({ level: label.toUpperCase() }),
-    },
+  if (span === undefined) {
+    return {};
+  }
+
+  const ctx = span.spanContext();
+
+  return { trace_id: ctx.traceId, span_id: ctx.spanId };
+};
+
+/*
+ * JSON in every environment — Loki is the canonical log viewer and
+ * Promtail's Pino pipeline depends on structured output. For ad-hoc
+ * tailing pipe through `bunx pino-pretty`.
+ */
+const baseLogger = pino({
+  level: env.LOG_LEVEL,
+  formatters: {
+    level: (label) => ({ level: label.toUpperCase() }),
   },
-  env.isDevelopment ? prettyStream : undefined
-);
+  mixin: traceMixin,
+});
 
 type ChildBindings = Record<string, unknown>;
 type EventCtx = { event: ILogEventName } & Record<string, unknown>;
