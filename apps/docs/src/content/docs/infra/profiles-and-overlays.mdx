@@ -5,7 +5,7 @@ description: How STACK= and WITH_* flags compose docker-compose files. Observabi
 
 import { Aside } from "@astrojs/starlight/components";
 
-The default stack runs Postgres, Valkey, your apps, plus observability (Prometheus + Grafana + Loki + Promtail) and GlitchTip error tracking. You build muscle memory for the dashboards in dev before prod. Niche overlays (BullMQ, WUD, Mailpit) are opt-in. Traefik runs in prod only; dev uses Vite's proxy. Composition happens in `dev.sh`, which reads `STACK=` and `WITH_*` env vars to assemble the docker-compose command.
+The default stack runs Postgres, Valkey, your apps, plus observability (Prometheus + Grafana + Loki + Promtail) and GlitchTip error tracking. You build muscle memory for the dashboards in dev before prod. WUD (the image-update daemon that powers `git push` deploys) is on by default in prod and off in dev. Niche overlays (BullMQ, Mailpit) are opt-in. Traefik runs in prod only; dev uses Vite's proxy. Composition happens in `dev.sh`, which reads `STACK=` and `WITH_*` env vars to assemble the docker-compose command.
 
 ## How a stack is assembled
 
@@ -17,16 +17,16 @@ flowchart LR
   prod["+ production-labels<br/>traefik · HTTPS · ACME · path routing"]
   obs["+ observability<br/>(default ON)"]
   glitch["+ glitchtip<br/>(default ON)"]
+  wud["+ wud<br/>(default ON in prod)"]
   bullmq["+ bullmq (dev only)"]
-  wud["+ wud"]
   mailpit["+ mailpit (dev only)"]
   base --> stack
   stack -->|dev| dev
   stack -->|prod| prod
   base ==>|on by default| obs
   base ==>|on by default| glitch
+  prod ==>|on by default| wud
   base -.->|WITH_BULLMQ=1| bullmq
-  base -.->|WITH_WUD=1| wud
   base -.->|WITH_MAILPIT=1| mailpit
 ```
 
@@ -34,23 +34,34 @@ The result is a single `docker compose -f ... -f ... --profile ...` command. `de
 
 ## Design choices
 
-- **Observability and GlitchTip default ON.** The whole point of a "production stack" claim is that the operator has seen the dashboards and triaged real errors before prod day-one. Defaults that hide observability contradict the marketing. Opt out with `WITH_OBSERVABILITY=0` or `WITH_GLITCHTIP=0`.
-- **Niche overlays stay opt-in.** Bull-board (no auth), WUD (image-update detection), and Mailpit (local SMTP) are tools you turn on for a specific reason, not surface area everyone needs.
+- **Observability, GlitchTip, and WUD default ON in prod.** Observability and GlitchTip default ON in dev too, so you build muscle memory before prod day-one; WUD only makes sense once you have a registry to pull from, so it's prod-only. Together they cover the three things a `push to main` deploy needs: dashboards, error visibility, and the daemon that actually pulls and recreates the container. Defaults that hide any of these contradict the "deploy and it just works" promise.
+- **Niche overlays stay opt-in.** Bull-board (no auth) and Mailpit (local SMTP) are tools you turn on for a specific reason, not surface area everyone needs.
 - **Separate dev / prod overlays for labels.** HTTPS, ACME, and security headers live in prod-only files.
 - **`WITH_BULLMQ` only valid in dev.** Bull-board has no auth and no place in production.
 - **Profiles plus overlay files (not one giant file).** `docker compose config` stays readable; overlays can be skipped cleanly.
 
-## Overlays
+## On by default
 
-| Flag | Services | Default | Notes |
+These run unless you explicitly turn them off. They're the surface a `push to main` deploy actually needs.
+
+| Env var | Services | Default | Off switch |
 |---|---|---|---|
-| **WITH_OBSERVABILITY=0** | Prometheus, Grafana, Loki, Promtail, Alertmanager, postgres-exporter, node-exporter | ON | Grafana on :3010. Disable to save ~500MB RAM on constrained hosts. |
-| **WITH_GLITCHTIP=0** | Sentry-compatible error tracking | ON | Reuses Postgres (separate glitchtip DB) and Valkey (DB 1). Dev auto-seeds; prod requires secrets. |
-| **WITH_BULLMQ=1** | Bull-board queue UI | OFF (dev only) | Bull-board at bullmq.localhost. No auth; never expose publicly. |
-| **WITH_WUD=1** | Watchtower-like image update daemon | OFF (dev) / ON (prod) | Watches container images for updates. Prod auto-deploys app images; base images notify-only. |
-| **WITH_MAILPIT=1** | Local SMTP catcher | OFF (dev only) | Mailpit at :8025 for development email testing. |
+| `WITH_OBSERVABILITY` | Prometheus, Grafana, Loki, Promtail, Alertmanager, postgres-exporter, node-exporter | ON (dev + prod) | `WITH_OBSERVABILITY=0` |
+| `WITH_GLITCHTIP` | Sentry-compatible error tracking | ON (dev + prod) | `WITH_GLITCHTIP=0` |
+| `WITH_WUD` | What's Up Docker image-update daemon | ON in prod, OFF in dev | `WITH_WUD=0 STACK=prod ./scripts/compose-up.sh` |
 
-Minimal stack: `WITH_OBSERVABILITY=0 WITH_GLITCHTIP=0 ./scripts/compose-up.sh` boots just Postgres + Valkey + apps.
+WUD is what makes `git push origin main` deploy. It polls GHCR, pulls new app image tags, and recreates the container. See [Image updates](/runbooks/image-updates/) for the hybrid policy (app images auto-deploy, base images notify-only).
+
+## Opt-in
+
+These cover specific workflows and stay off until you ask for them.
+
+| Env var | Services | When you'd enable it |
+|---|---|---|
+| `WITH_BULLMQ=1` | Bull-board queue UI | Inspect BullMQ jobs in dev. No auth; never expose publicly. |
+| `WITH_MAILPIT=1` | Local SMTP catcher | Test transactional email in dev without sending to real inboxes. Reaches `:8025`. |
+
+Minimal stack: `WITH_OBSERVABILITY=0 WITH_GLITCHTIP=0 ./scripts/compose-up.sh` boots just Postgres + Valkey + apps. Useful on a constrained host or when you're debugging the base stack itself.
 
 <Aside type="caution" title="Security: BullMQ in production">
 Never run WITH_BULLMQ=1 in a public production environment. The BullMQ dashboard has no authentication.
