@@ -48,4 +48,10 @@ commits = [
   # `0.5` as a leaked key. The follow-up commit changed the example
   # to use a placeholder; this fingerprint pins the historical hit.
   "9262aa98aebe8b93d055b28a98fb44b72097935b",
+  # Squash-merge of PR #64 (docs full rewrite) carries the same
+  # Meilisearch example line; the placeholder
+  # `MEILI_MASTER_KEY=<set-from-your-secret-manager>` matches the
+  # `generic-api-key` heuristic. The working tree's value is a clear
+  # placeholder, not a real key.
+  "6786314043dc1798aff0a19d803102b3b20b5144",
 ]
