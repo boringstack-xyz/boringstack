@@ -42,8 +42,6 @@ jobs:
           filters: |
             code:
               - 'apps/ui/**'
-              - '!apps/ui/**/*.md'
-              - '!apps/ui/**/*.mdx'
               - '.github/workflows/apps-ui-security-deps.yml'
 
       - name: Install osv-scanner CLI
