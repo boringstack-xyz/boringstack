@@ -46,19 +46,16 @@ jobs:
               - 'apps/ui/.size-limit.json'
               - '.github/workflows/apps-ui-bundle-diff.yml'
 
-      - name: Set up Bun
-        if: steps.filter.outputs.code == 'true'
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: 1.3.14
-
-      - name: Install
-        if: steps.filter.outputs.code == 'true'
-        run: bun install --frozen-lockfile
-
-      # size-limit-action runs install + build on both branches internally
-      # unless skip_step is set. We pre-install with bun and use npm as the
-      # runner because bun's node_modules layout is npm-compatible.
+      # size-limit-action runs install + build on both the PR branch and
+      # the base branch internally so it can diff bundle sizes. We let
+      # it manage its own lifecycle — pre-installing with bun and then
+      # setting `skip_step: install` puts the action onto a code path in
+      # v1.8.0 that exec()s the script string as a binary instead of via
+      # `npm run`, failing post-build with
+      # "Unable to locate executable file: build". Letting the action
+      # run `npm install` itself adds ~20s but keeps it on the tested
+      # path. apps/ui's bun lockfile is npm-compatible, so npm install
+      # resolves the same tree.
       - name: Comment with bundle-size diff
         if: steps.filter.outputs.code == 'true'
         uses: andresz1/size-limit-action@94bc357df29c36c8f8d50ea497c3e225c3c95d1d # v1.8.0
@@ -67,18 +64,12 @@ jobs:
         with:
           # v1.8.0 doesn't reliably fall back to env GITHUB_TOKEN — it
           # initialises Octokit before reading the env, so the token must
-          # be passed explicitly as a `with:` input. Without this, every
-          # PR run fails with "Parameter token or opts.auth is required"
-          # even though the env was set. Keeping the env: line above as
-          # belt-and-braces for any future action version that flips back.
+          # be passed explicitly as a `with:` input.
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          # The action spawns `npm run build` in its own subprocess, which
-          # does NOT inherit the job-level `defaults.run.working-directory`.
-          # Without `directory:` it runs from the repo root, where there
-          # is no `build` script, and every UI-touching PR fails with
-          # `npm error Missing script: "build"`. Pin the action's CWD to
-          # apps/ui so it runs npm against the UI package.json.
+          # The action's exec() subprocess does NOT inherit the job-level
+          # `defaults.run.working-directory`. Pinning `directory: apps/ui`
+          # is what makes both `npm install` and `npm run build` resolve
+          # against the UI's package.json instead of the repo root.
           directory: apps/ui
           package_manager: npm
           script: build
-          skip_step: install
