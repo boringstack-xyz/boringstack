@@ -116,7 +116,7 @@ describe("GET /api/v1/users/me", () => {
     expect(typeof body.capabilities.notificationsSse).toBe("boolean");
   });
 
-  test("returns 401 with no auth cookie", async () => {
+  test("returns 200 + { user: null } when no auth cookie is presented (anonymous probe)", async () => {
     if (!(await requireDb())) {
       return;
     }
@@ -124,10 +124,24 @@ describe("GET /api/v1/users/me", () => {
     const app = createApp();
     const res = await app.handle(new Request(ME_URL));
 
-    expect(res.status).toBe(401);
+    /*
+     * `/me` is a probe — a logged-out browser hits it on every initial
+     * paint. Treating no-credentials as a known anonymous state keeps
+     * the noise off the browser console and out of telemetry. The
+     * present-but-invalid case below still 401s.
+     */
+    expect(res.status).toBe(200);
+
+    const body: unknown = await res.json();
+
+    if (body === null || typeof body !== "object" || !("user" in body)) {
+      throw new Error("/me anonymous response missing `user` field");
+    }
+
+    expect(body.user).toBeNull();
   });
 
-  test("returns 401 with a malformed/tampered auth cookie (Elysia INVALID_COOKIE_SIGNATURE → 401, not 500)", async () => {
+  test("still 401s with a malformed/tampered auth cookie (present-but-invalid is a real failure)", async () => {
     if (!(await requireDb())) {
       return;
     }

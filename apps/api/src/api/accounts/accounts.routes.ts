@@ -12,7 +12,7 @@ import {
   resolveActiveMembership,
   resolveFreshMembership,
 } from "../../middleware/require-active-membership";
-import { createAuthMiddleware } from "../auth/auth.plugin";
+import { requireAuth } from "../auth/auth.plugin";
 
 import { accountsService } from "./accounts.service";
 import {
@@ -39,7 +39,7 @@ import { invitationsService } from "./invitations.service";
 import { joinRequestsService } from "./join-requests.service";
 import { ownershipTransfersService } from "./ownership-transfers.service";
 
-const accountsRoutes = createAuthMiddleware()
+const accountsRoutes = requireAuth()
   .onError(({ code, error, set }) =>
     errorHandler({ code: String(code), error, set })
   )
@@ -492,7 +492,7 @@ const accountsRoutes = createAuthMiddleware()
  * invitee is authenticated but doesn't yet belong to the target
  * account.
  */
-const invitationAcceptRoutes = createAuthMiddleware()
+const invitationAcceptRoutes = requireAuth()
   .onError(({ code, error, set }) =>
     errorHandler({ code: String(code), error, set })
   )
@@ -557,7 +557,7 @@ const invitationAcceptRoutes = createAuthMiddleware()
  * is moving FROM the active account TO a different one, so gating
  * on the current active membership would block the very move.
  */
-const accountSessionRoutes = createAuthMiddleware()
+const accountSessionRoutes = requireAuth()
   .onError(({ code, error, set }) =>
     errorHandler({ code: String(code), error, set })
   )

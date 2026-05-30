@@ -13,8 +13,6 @@ Generate a slow request and find it in Grafana. Open Grafana → Explore → Tem
 
 ## What's traced
 
-## What's traced
-
 The API initializes an OpenTelemetry SDK (`src/config/otel/`) before any other module imports. Auto-instrumentation patches several libraries at load time. The resulting spans flow through OTLP/HTTP to Tempo.
 
 ### Incoming HTTP (Elysia routes)

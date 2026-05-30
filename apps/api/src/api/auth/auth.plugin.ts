@@ -81,7 +81,77 @@ const translateJwtError = (err: unknown): never => {
   throw ApiErrors.unauthorized("Authentication failed");
 };
 
-export const createAuthMiddleware = () =>
+/**
+ * Shared verify core for the two guards below. Encodes the contract that
+ * `requireAuth` and `tryAuth` only differ on the missing-cookie case:
+ *
+ *  - missing cookie    → returns `null`
+ *  - present + invalid → throws (translated `ApiError`)
+ *  - present + valid   → returns the resolved session
+ *
+ * Anything that throws here is by definition a real authentication
+ * failure (forged/expired/revoked credentials), and both guards surface
+ * it as 401. Only the "no credentials presented at all" branch is what
+ * the two guards interpret differently.
+ */
+const verifyAuthCookie = async (
+  jwt: { verify: (token: string) => Promise<unknown> },
+  cookieValue: unknown
+): Promise<{ user: IUser; accountId: string } | null> => {
+  if (cookieValue === undefined) {
+    return null;
+  }
+
+  if (typeof cookieValue !== "string") {
+    throw ApiErrors.unauthorized("Invalid authentication cookie");
+  }
+
+  try {
+    const verified = await jwt.verify(cookieValue);
+    const parsed = parseAuthJWTPayload(verified);
+
+    if (parsed.kind !== "ok") {
+      throw ApiErrors.unauthorized("Invalid token payload");
+    }
+
+    await assertNotRevoked(parsed);
+
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, parsed.userId),
+    });
+
+    if (!user) {
+      throw ApiErrors.unauthorized("User not found");
+    }
+
+    /*
+     * Tag the active Sentry scope with the user so any error captured
+     * for the rest of this request carries `user.id` + `user.email`.
+     * The Pino mixin also reads this scope to inject `userId` on every
+     * log record, so a Grafana log line and a GlitchTip error event can
+     * be correlated by the same id. No-op when SENTRY_DSN is unset.
+     */
+    Sentry.setUser({ id: user.id, email: user.email });
+
+    return { user, accountId: parsed.accountId };
+  } catch (err: unknown) {
+    return translateJwtError(err);
+  }
+};
+
+/**
+ * Required-auth guard. Use on every endpoint where an anonymous caller
+ * is a programming error or a security boundary — mutations, account
+ * management, billing, etc. The contract:
+ *
+ *  - missing cookie    → 401 `missing_session`
+ *  - present + invalid → 401 `invalid_session`
+ *  - present + valid   → handler runs with `user` + `accountId`
+ *
+ * For endpoints where "anonymous" is an expected, normal state (`/me`,
+ * `/refresh`, `/mfa/status`), reach for `tryAuth` instead.
+ */
+export const requireAuth = () =>
   new Elysia()
     .use(createJWTConfig())
     .derive(
@@ -89,49 +159,48 @@ export const createAuthMiddleware = () =>
         jwt: jwtPlugin,
         cookie,
       }): Promise<{ user: IUser; accountId: string }> => {
-        try {
-          const authCookie = cookie[AUTH_COOKIE_NAME];
+        const session = await verifyAuthCookie(
+          jwtPlugin,
+          cookie[AUTH_COOKIE_NAME]?.value
+        );
 
-          if (authCookie?.value === undefined) {
-            throw ApiErrors.unauthorized("Missing authentication cookie");
-          }
-
-          const cookieValue = authCookie.value;
-
-          if (typeof cookieValue !== "string") {
-            throw ApiErrors.unauthorized("Invalid authentication cookie");
-          }
-
-          const verified = await jwtPlugin.verify(cookieValue);
-          const parsed = parseAuthJWTPayload(verified);
-
-          if (parsed.kind !== "ok") {
-            throw ApiErrors.unauthorized("Invalid token payload");
-          }
-
-          await assertNotRevoked(parsed);
-
-          const user = await db.query.users.findFirst({
-            where: eq(users.id, parsed.userId),
-          });
-
-          if (!user) {
-            throw ApiErrors.unauthorized("User not found");
-          }
-
-          /*
-           * Tag the active Sentry scope with the user so any error
-           * captured for the rest of this request carries `user.id` +
-           * `user.email`. The Pino mixin also reads this scope to inject
-           * `userId` on every log record, so a Grafana log line and a
-           * GlitchTip error event can be correlated by the same id.
-           * No-op when SENTRY_DSN is unset.
-           */
-          Sentry.setUser({ id: user.id, email: user.email });
-
-          return { user, accountId: parsed.accountId };
-        } catch (err: unknown) {
-          return translateJwtError(err);
+        if (session === null) {
+          throw ApiErrors.unauthorized("Missing authentication cookie");
         }
+
+        return session;
+      }
+    );
+
+/**
+ * Best-effort auth guard. Resolves the session if one is presented and
+ * valid; returns `{ user: null, accountId: null }` when no cookie is
+ * presented at all. Still throws 401 when a cookie IS present but the
+ * signature/payload doesn't verify — a forged or expired credential is
+ * a real failure even on a probe endpoint, and the client should treat
+ * it as a forced-logout signal rather than rendering as "anonymous".
+ *
+ * Use only on probe endpoints that a logged-out browser is expected to
+ * hit on initial load. Every other authenticated route should use
+ * `requireAuth`.
+ */
+export const tryAuth = () =>
+  new Elysia()
+    .use(createJWTConfig())
+    .derive(
+      async ({
+        jwt: jwtPlugin,
+        cookie,
+      }): Promise<{ user: IUser | null; accountId: string | null }> => {
+        const session = await verifyAuthCookie(
+          jwtPlugin,
+          cookie[AUTH_COOKIE_NAME]?.value
+        );
+
+        if (session === null) {
+          return { user: null, accountId: null };
+        }
+
+        return session;
       }
     );

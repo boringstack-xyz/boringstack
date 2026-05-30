@@ -1,4 +1,4 @@
-import { createAuthMiddleware } from "../api/auth/auth.plugin";
+import { requireAuth } from "../api/auth/auth.plugin";
 import { logger } from "../config/logger";
 import { AUDIT_ACTIONS, auditLogService } from "../lib/audit-log";
 import { ApiErrors } from "../lib/errors";
@@ -14,7 +14,7 @@ import { ApiErrors } from "../lib/errors";
  *     .get("/queues", ...)
  */
 export const requirePlatformAdmin = () =>
-  createAuthMiddleware().onBeforeHandle(({ user }) => {
+  requireAuth().onBeforeHandle(({ user }) => {
     if (user.isPlatformAdmin) {
       logger.info("Platform admin check allowed", {
         event: "authz.platform_admin_bypass",

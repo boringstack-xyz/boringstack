@@ -1,0 +1,144 @@
+---
+title: Anonymous vs unauthorized
+description: The two auth guards (`requireAuth`, `tryAuth`) and how probe endpoints distinguish "no credentials" from "bad credentials" so anonymous boots don't pollute the browser console or telemetry.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+A logged-out browser hits at least three endpoints on initial paint — `/api/v1/users/me`, `/api/v1/auth/refresh`, `/api/v1/auth/mfa/status`. If all three return 401 for the anonymous case, three things break:
+
+1. **Browser DevTools** colors every initial-load network row red — looks like the app is broken.
+2. **Pino** logs each 401 at `error` level — fills GlitchTip and the Grafana logs view with what is in fact normal anonymous traffic.
+3. **Prometheus** tags every probe with `status="401"` — the API dashboard's `4xx` bucket spikes on every cold visit.
+
+The API splits the two cases that 401 used to conflate:
+
+- **Anonymous** — no credentials presented. Expected, recurring, not a failure. Returns 200 with a null-shaped body.
+- **Unauthorized** — credentials presented but invalid (tampered, expired, revoked, wrong issuer). A real failure worth logging. Returns 401 with `invalid_session`.
+
+## Two guards
+
+`apps/api/src/api/auth/auth.plugin.ts` exports two middleware factories. Both share the same JWT-verify core; they only diverge on the missing-cookie case.
+
+```ts
+// Use on every endpoint that should refuse anonymous callers.
+export const requireAuth = () => /* ... */;
+
+// Use on probe endpoints where "anonymous" is a known, normal state.
+export const tryAuth = () => /* ... */;
+```
+
+| State                                             | `requireAuth`                         | `tryAuth`                                               |
+| ------------------------------------------------- | ------------------------------------- | ------------------------------------------------------- |
+| No cookie                                         | **401** `missing_session`             | **200** with `user: null` derived; handler decides body |
+| Cookie present, invalid signature/expired/revoked | **401** `invalid_session`             | **401** `invalid_session`                               |
+| Cookie present, valid                             | handler runs with `user`, `accountId` | handler runs with `user`, `accountId`                   |
+
+The "present but invalid" branch is identical on purpose. A forged cookie is a real failure regardless of which guard the route uses; the client should treat it as a forced-logout signal, not render it as "anonymous".
+
+## The probe endpoints
+
+Three routes use `tryAuth` today:
+
+### `GET /api/v1/users/me`
+
+```http
+GET /api/v1/users/me
+  (no cookie)
+→ 200 OK
+  { "user": null }
+```
+
+```http
+GET /api/v1/users/me
+  Cookie: auth_token=<valid jwt>
+→ 200 OK
+  { "user": { "id": ..., "email": ..., ... },
+    "account": { "id": ..., "name": ... },
+    "role": "owner",
+    "memberships": [...],
+    "features": {...},
+    "capabilities": {...},
+    "authProviders": [...],
+    "hasPasswordLogin": true }
+```
+
+```http
+GET /api/v1/users/me
+  Cookie: auth_token=tampered
+→ 401 Unauthorized
+  { "success": false, "error": { "code": "UNAUTHORIZED", "message": "..." } }
+```
+
+The response is a discriminated union on `user`. UI code branches once:
+
+```ts
+const { data } = await apiClient.GET("/api/v1/users/me");
+if (data == null || data.user === null) {
+  return null; // anonymous → show login
+}
+return data; // authenticated → IMe shape
+```
+
+### `POST /api/v1/auth/refresh`
+
+```http
+POST /api/v1/auth/refresh
+  (no cookie)
+→ 200 OK
+  { "success": true, "data": { "user": null }, "timestamp": "..." }
+```
+
+```http
+POST /api/v1/auth/refresh
+  Cookie: refresh_token=<valid opaque token>
+→ 200 OK with new auth+refresh Set-Cookie
+  { "success": true, "data": { "user": {...} }, "timestamp": "..." }
+```
+
+An expired or unknown refresh cookie still 401s — the rotation logic in `sessionService.refresh` throws when it can't find the session row, and that's the right answer for a credential that won't verify.
+
+### `GET /api/v1/auth/mfa/status`
+
+```http
+GET /api/v1/auth/mfa/status
+  (no cookie)
+→ 200 OK
+  { "success": true, "data": { "enabled": false }, "timestamp": "..." }
+```
+
+For an anonymous caller MFA status is unambiguously "not enabled" — there's no user to enable it for. Settings pages can mount this query on first paint without caring whether the user is logged in yet.
+
+## Pino log level
+
+`apps/api/src/middleware/error-handler.ts` ships every thrown `ApiError` to Pino. Application 4xx errors (the remaining 401s, plus 403, 404, 409, 422 from any route) log at `warn`. 5xx logs at `error`.
+
+```ts
+const isClientApiError = (error: unknown): boolean =>
+  error instanceof ApiError &&
+  error.statusCode >= 400 &&
+  error.statusCode < 500;
+```
+
+Pino's `error` channel feeds GlitchTip's "errors" view by default. Without this split, every anonymous 401 would create a new error group; with it, only genuine server bugs land there.
+
+## Picking a guard
+
+When wiring a new route, ask: **what does a logged-out browser hitting this endpoint mean?**
+
+- If the answer is "it's a bug or a security boundary" — `requireAuth`. This is the default. Mutations, billing, account management, anything destructive.
+- If the answer is "the SPA hits this on first paint to discover whether a session exists" — `tryAuth`. This is rare: today only `/me`, `/refresh`, `/mfa/status`. Don't reach for it just to silence a 401; reach for it when anonymous is a legitimate state the route needs to model.
+
+A `tryAuth` route's handler MUST branch on `ctx.user === null` and return a sensible null-shaped body. Forgetting the branch turns the route into a server error: `requireAuth`-typed handler code can't safely run with a `null` user.
+
+## Telemetry impact
+
+Existing dashboards that filter on `status_code >= 400` will see a measurable drop on `/me`, `/refresh`, and `/mfa/status` after this change. That's not a regression — those status codes were anonymous-probe traffic, not failures. If a 4xx panel previously looked busy on cold-boot and now looks empty, that's the correct outcome.
+
+The forensic signal you actually want — "credentials were presented but rejected" — is now isolated and observable cleanly:
+
+```promql
+rate(http_requests_total{status="401", route=~"/api/v1/(users/me|auth/refresh|auth/mfa/status)"}[5m])
+```
+
+A spike there is meaningful (someone is sending bad cookies); a flat zero is the baseline you should see in steady-state production.

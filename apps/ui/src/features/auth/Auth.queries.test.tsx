@@ -36,6 +36,19 @@ function wrapper() {
 
 const USER = makeUser({ firstName: "Demo", lastName: "User" });
 
+const ME_PAYLOAD = {
+  user: USER,
+  account: { id: "acc-1", name: "Demo Account" },
+  role: "owner" as const,
+  memberships: [
+    { accountId: "acc-1", accountName: "Demo Account", role: "owner" as const }
+  ],
+  features: { can_export: true, can_invite_team: true, max_seats: 5 },
+  capabilities: { billing: false, notificationsSse: true, webPush: true },
+  authProviders: ["local"],
+  hasPasswordLogin: true
+};
+
 const VALID_LOGIN: ILoginInput = {
   email: "demo@example.com",
   password: "password123"
@@ -59,14 +72,27 @@ describe("useMe", () => {
     expect(result.current.data).toBeNull();
   });
 
-  it("returns the user when the API responds 200", async () => {
-    apiMock.GET.mockResolvedValueOnce({ data: USER, response: {} });
+  it("returns the full session payload when the API responds 200 with the authenticated shape", async () => {
+    apiMock.GET.mockResolvedValueOnce({ data: ME_PAYLOAD, response: {} });
     const { result } = renderHook(() => useMe(), { wrapper: wrapper() });
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
     });
-    expect(result.current.data).toEqual(USER);
+    expect(result.current.data).toEqual(ME_PAYLOAD);
+  });
+
+  it("returns null when the API responds 200 `{ user: null }` (anonymous probe)", async () => {
+    apiMock.GET.mockResolvedValueOnce({
+      data: { user: null },
+      response: {}
+    });
+    const { result } = renderHook(() => useMe(), { wrapper: wrapper() });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+    expect(result.current.data).toBeNull();
   });
 
   it("returns null when the response data is absent", async () => {

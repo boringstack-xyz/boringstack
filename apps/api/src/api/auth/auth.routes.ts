@@ -24,13 +24,14 @@ import {
 } from "../../lib/oauth";
 import { now } from "../../lib/time/now";
 import { errorHandler } from "../../middleware/error-handler";
-import { createAuthMiddleware } from "./auth.plugin";
+import { requireAuth } from "./auth.plugin";
 import {
   AuthResponse,
   ChangePasswordSchema,
   ForgotPasswordSchema,
   LoginSchema,
   MessageResponse,
+  RefreshResponse,
   RegisterSchema,
   ResendVerificationSchema,
   ResetPasswordSchema,
@@ -382,8 +383,16 @@ const sessionAndOAuthRoutes = new Elysia()
       const refresh = cookie[REFRESH_COOKIE_NAME];
       const refreshValue = refresh?.value;
 
+      /*
+       * Anonymous probe path: no refresh cookie at all. Treat as a
+       * known-logged-out state instead of a 401 so the UI's initial
+       * boot doesn't paint the browser console (and our telemetry)
+       * with errors. A refresh cookie that IS present but doesn't
+       * verify still surfaces as 401 below — that's a real failure
+       * and the client should react to it.
+       */
       if (typeof refreshValue !== "string" || refreshValue === "") {
-        throw ApiErrors.unauthorized("Missing refresh session");
+        return createSuccessResponse({ user: null });
       }
 
       const result = await sessionService.refresh(refreshValue);
@@ -400,10 +409,11 @@ const sessionAndOAuthRoutes = new Elysia()
       return createSuccessResponse({ user: result.user });
     },
     {
-      response: AuthResponse,
+      response: RefreshResponse,
       detail: {
         tags: ["Authentication"],
-        summary: "Refresh the auth cookie using the refresh session",
+        summary:
+          "Refresh the auth cookie using the refresh session. Anonymous callers receive 200 `{ user: null }`; an invalid/expired refresh cookie surfaces as 401.",
       },
     }
   )
@@ -537,7 +547,7 @@ const sessionAndOAuthRoutes = new Elysia()
     }
   );
 
-const authenticatedAuthRoutes = createAuthMiddleware()
+const authenticatedAuthRoutes = requireAuth()
   .onError(({ code, error, set }) =>
     errorHandler({ code: String(code), error, set })
   )

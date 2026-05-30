@@ -302,12 +302,29 @@ describe("auth flow — register → verify → login → me → logout", () => 
 
     expect(logoutRes.status).toBe(200);
 
-    // 8. /me without the cookie → 401
+    /*
+     * 8. /me without the cookie → 200 `{ user: null }`. The endpoint is
+     * a probe; logged-out callers get a known anonymous state, not a
+     * 401. The forced-logout signal (cookie present but invalid) is
+     * covered separately by the tampered-cookie test below.
+     */
     const unauthRes = await app.handle(
       new Request("http://localhost/api/v1/users/me")
     );
 
-    expect(unauthRes.status).toBe(401);
+    expect(unauthRes.status).toBe(200);
+
+    const unauthBody: unknown = await unauthRes.json();
+
+    if (
+      unauthBody === null ||
+      typeof unauthBody !== "object" ||
+      !("user" in unauthBody)
+    ) {
+      throw new Error("/me anonymous response missing `user` field");
+    }
+
+    expect(unauthBody.user).toBeNull();
   });
 
   test("login with wrong password → 401", async () => {
@@ -427,6 +444,62 @@ describe("auth flow — register → verify → login → me → logout", () => 
     const body = await readJson(res);
 
     expect(JSON.stringify(body)).toContain("EMAIL_NOT_VERIFIED");
+  });
+});
+
+describe("POST /api/v1/auth/refresh — anonymous-vs-unauthorized contract", () => {
+  beforeEach(async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    await cleanDatabase();
+  });
+
+  test("no refresh cookie → 200 `{ user: null }` (anonymous probe, not a failure)", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const app = createApp();
+    const res = await app.handle(
+      new Request("http://localhost/api/v1/auth/refresh", {
+        method: "POST",
+      })
+    );
+
+    expect(res.status).toBe(200);
+
+    const body: unknown = await res.json();
+
+    if (
+      body === null ||
+      typeof body !== "object" ||
+      !("data" in body) ||
+      body.data === null ||
+      typeof body.data !== "object" ||
+      !("user" in body.data)
+    ) {
+      throw new Error("/refresh anonymous response missing `data.user`");
+    }
+
+    expect(body.data.user).toBeNull();
+  });
+
+  test("present-but-invalid refresh cookie → 401 (forged credentials are a real failure)", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const app = createApp();
+    const res = await app.handle(
+      new Request("http://localhost/api/v1/auth/refresh", {
+        method: "POST",
+        headers: { cookie: "refresh_token=this-is-not-a-real-session" },
+      })
+    );
+
+    expect(res.status).toBe(401);
   });
 });
 

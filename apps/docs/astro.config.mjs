@@ -424,6 +424,7 @@ export default defineConfig({
           items: [
             { label: "Overview", link: "/api/overview/" },
             { label: "Authentication", link: "/api/auth/" },
+            { label: "Anonymous vs unauthorized", link: "/api/auth-contract/" },
             { label: "Two-factor authentication", link: "/api/mfa/" },
             { label: "Billing", link: "/api/billing/" },
             { label: "Email", link: "/api/email/" },

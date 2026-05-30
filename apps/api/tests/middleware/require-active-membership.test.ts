@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { Elysia } from "elysia";
 
 import { seedVerifiedUser } from "../helpers/auth";
-import { createAuthMiddleware } from "../../src/api/auth/auth.plugin";
+import { requireAuth } from "../../src/api/auth/auth.plugin";
 import { env } from "../../src/config/env";
 import { AUTH_COOKIE_NAME } from "../../src/lib/cookies";
 import { errorHandler } from "../../src/middleware/error-handler";
@@ -80,7 +80,7 @@ const buildProbeApp = () =>
       sign: [AUTH_COOKIE_NAME],
     },
   }).use(
-    createAuthMiddleware()
+    requireAuth()
       .onError(({ code, error, set }) =>
         errorHandler({ code: String(code), error, set })
       )
@@ -211,7 +211,7 @@ describe("requireActiveMembership middleware", () => {
         sign: [AUTH_COOKIE_NAME],
       },
     }).use(
-      createAuthMiddleware()
+      requireAuth()
         .onError(({ code, error, set }) =>
           errorHandler({ code: String(code), error, set })
         )
@@ -291,7 +291,7 @@ const buildFreshProbeApp = () =>
       sign: [AUTH_COOKIE_NAME],
     },
   }).use(
-    createAuthMiddleware()
+    requireAuth()
       .onError(({ code, error, set }) =>
         errorHandler({ code: String(code), error, set })
       )

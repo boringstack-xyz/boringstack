@@ -1,6 +1,6 @@
 import { notificationPreferencesService } from "../../lib/notifications";
 import { errorHandler } from "../../middleware/error-handler";
-import { createAuthMiddleware } from "../auth/auth.plugin";
+import { requireAuth } from "../auth/auth.plugin";
 import notificationsPushRoutes from "./notifications.push.routes";
 import {
   ListNotificationsQuerySchema,
@@ -16,7 +16,7 @@ import { notificationsService } from "./notifications.service";
 import { notificationsStreamHandler } from "./notifications.sse";
 import { parseNotificationsLimit } from "./notifications.utils";
 
-const notificationsRoutes = createAuthMiddleware()
+const notificationsRoutes = requireAuth()
   .onError(({ code, error, set }) =>
     errorHandler({ code: String(code), error, set })
   )

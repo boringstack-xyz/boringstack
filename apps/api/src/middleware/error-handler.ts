@@ -28,12 +28,25 @@ const isClientErrorCode = (code: string): boolean =>
   code === ElysiaErrorCodes.PARSE ||
   code === ElysiaErrorCodes.INVALID_COOKIE_SIGNATURE;
 
+/*
+ * Application-thrown `ApiError`s carry their own statusCode and reach
+ * this handler before Elysia gets to tag them with an error code. Any
+ * 4xx from the app layer is by definition client-driven (bad input,
+ * missing auth, forbidden, conflict) — log at `warn` so it doesn't
+ * pollute the error stream alongside genuine 5xx bugs. 5xx still logs
+ * at `error`.
+ */
+const isClientApiError = (error: unknown): boolean =>
+  error instanceof ApiError &&
+  error.statusCode >= 400 &&
+  error.statusCode < 500;
+
 export const errorHandler = ({
   code,
   error,
   set,
 }: IErrorHandlerArgs): IApiErrorResponse => {
-  const isClientError = isClientErrorCode(code);
+  const isClientError = isClientErrorCode(code) || isClientApiError(error);
 
   const basePayload = {
     errorCode: code,
