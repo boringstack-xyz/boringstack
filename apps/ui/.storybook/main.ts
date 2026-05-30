@@ -20,6 +20,22 @@ const config: StorybookConfig = {
   },
   docs: {
     defaultName: "Docs"
+  },
+  /*
+   * Inject a synthetic VITE_VAPID_PUBLIC_KEY for Storybook builds so
+   * stories of components that read `env.VITE_VAPID_PUBLIC_KEY` (e.g.
+   * the WebPushCard's "ready to subscribe" state) can actually render
+   * the configured branch. The value is read at module-import time by
+   * `src/lib/env/env.loader.ts`, so it can't be overridden per-story
+   * without restructuring the env module. A dummy P-256 public key is
+   * fine here: stories never call `pushManager.subscribe()`, they only
+   * inspect whether the value is non-empty.
+   */
+  viteFinal(viteConfig) {
+    process.env.VITE_VAPID_PUBLIC_KEY ??=
+      "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCC395aLN4dRfx-DH3kZBjxg30zCxnT1KMxr2RC_kdNbQ_AVBfBFA";
+
+    return viteConfig;
   }
 };
 

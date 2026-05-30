@@ -40,7 +40,7 @@ const OAuthCallbackPage: FC = () => {
         <span className='text-primary text-xs font-medium tracking-[0.18em] uppercase'>
           {t("app.name")}
         </span>
-        <h1 className='text-foreground text-4xl leading-[1.05] font-bold tracking-tight md:text-5xl'>
+        <h1 className='text-foreground text-3xl leading-tight font-bold tracking-tight md:text-4xl'>
           {t("auth.oauth.failed.title")}
         </h1>
         {errorMessage !== null ? (

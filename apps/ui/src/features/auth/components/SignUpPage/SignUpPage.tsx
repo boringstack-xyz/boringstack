@@ -38,7 +38,7 @@ const SignUpPage: FC<ISignUpPageProps> = (props) => {
           <span className='text-muted-foreground text-xs font-medium tracking-[0.16em] uppercase'>
             {t("app.name")}
           </span>
-          <h1 className='text-foreground text-4xl leading-[1.05] font-bold tracking-tight md:text-5xl'>
+          <h1 className='text-foreground text-3xl leading-tight font-bold tracking-tight md:text-4xl'>
             {t("auth.checkEmail.title")}
           </h1>
           <p className='text-muted-foreground text-base md:text-lg'>
@@ -86,7 +86,7 @@ const SignUpPage: FC<ISignUpPageProps> = (props) => {
           </span>
           <h1
             id='signup-title'
-            className='text-foreground text-4xl leading-[1.05] font-bold tracking-tight md:text-5xl'
+            className='text-foreground text-3xl leading-tight font-bold tracking-tight md:text-4xl'
           >
             {t("auth.signup.title")}
           </h1>

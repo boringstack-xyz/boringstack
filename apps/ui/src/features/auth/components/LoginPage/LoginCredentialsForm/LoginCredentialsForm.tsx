@@ -55,7 +55,7 @@ const LoginCredentialsForm: FC<ILoginCredentialsFormProps> = ({
         </span>
         <h1
           id='login-title'
-          className='text-foreground text-4xl leading-[1.05] font-bold tracking-tight md:text-5xl'
+          className='text-foreground text-3xl leading-tight font-bold tracking-tight md:text-4xl'
         >
           {t("auth.login.title")}
         </h1>

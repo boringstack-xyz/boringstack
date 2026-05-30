@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { MemoryRouter } from "react-router-dom";
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useForm } from "react-hook-form";
@@ -9,6 +10,18 @@ const meta: Meta<typeof LoginCredentialsForm> = {
   title: "Features/Auth/LoginPage/LoginCredentialsForm",
   component: LoginCredentialsForm,
   parameters: { layout: "centered" },
+  /*
+   * The form renders <Link> elements (forgot-password, signup) so the
+   * story needs a router context; without it useContext(RouterContext)
+   * returns null and the destructure of `basename` blows up.
+   */
+  decorators: [
+    (Story) => (
+      <MemoryRouter>
+        <Story />
+      </MemoryRouter>
+    )
+  ],
   render: (args) => {
     const RenderForm = (): ReactElement => {
       const form = useForm<{ email: string; password: string }>({
