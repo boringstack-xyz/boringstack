@@ -3,88 +3,61 @@ title: Security pipeline
 description: BoringStack ships a layered security pipeline (CI gates, agent skills, repo-settings drift detection, project-aware review skill) running on every PR and on a weekly cron.
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
-import DocCallout from "../../../components/DocCallout.tsx";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
+import { Aside } from "@astrojs/starlight/components";
 
-<PageIntro
-  eyebrow="Security CI"
-  actions={[
-    { label: "CI Gates", href: "#layer-1-ci-gates" },
-    { label: "Agent Skills", href: "#layer-2-agent-skills" },
-    { label: "Allowlist hygiene", href: "#allowlist-hygiene" },
-  ]}
-  facts={[
-    { value: "3", label: "automated layers" },
-    { value: "Weekly", label: "cron sweep" },
-    { value: "Zero", label: "silent suppressions" },
-  ]}
->
-  A fresh fork ships with secret scanning, dep auditing, SAST, signed commits, branch protection, and agent skills already wired. Three automated layers block PRs on leaked secrets, vulnerable dependencies, and code patterns linked to auth bypass.
-</PageIntro>
+A fresh fork ships with secret scanning, dependency auditing, SAST, signed commits, branch protection, and agent skills already wired. Three automated layers block PRs on leaked secrets, vulnerable dependencies, and code patterns linked to auth bypass. All three run on a Monday-morning cron (06:23 UTC). New CVEs against existing dependencies are caught automatically without manual rescans.
 
-<SignalGrid
-  columns={3}
-  items={[
-    {
-      label: "Layer 1",
-      title: "CI gates",
-      body: "Block PRs on leaked secrets, vulnerable dependencies, and code patterns linked to auth bypass.",
-    },
-    {
-      label: "Layer 2",
-      title: "Agent skills",
-      body: "Trail of Bits and Ghost Security marketplace skills for on-demand deep analysis.",
-    },
-    {
-      label: "Layer 3",
-      title: "Project review skill",
-      body: "Orchestrates Layer 2 and verifies stack-specific requirements generic tools miss.",
-    },
-  ]}
-/>
+The three layers:
 
-All three run on a Monday-morning cron (06:23 UTC). New CVEs against existing dependencies are caught automatically; no manual rescans needed.
+1. **CI gates**: block PRs on leaked secrets, vulnerable dependencies, and code patterns linked to auth bypass.
+2. **Agent skills**: Trail of Bits and Ghost Security marketplace skills for on-demand deep analysis.
+3. **Project review skill**: orchestrates Layer 2 and verifies stack-specific requirements generic tools miss.
 
 ## Layer 1: CI gates
 
 Every push to `main` and every pull request runs three blocking workflows.
 
-### `security-secrets` (gitleaks)
+### security-secrets (gitleaks)
 
-Catches API keys, tokens, private keys, and other high-entropy strings before they reach `main`. GitHub's secret push protection is the first net. The gitleaks CLI with a versioned `.gitleaksignore` is the second. Findings upload as SARIF to the repo's Security tab.
+Catches API keys, tokens, private keys, and other high-entropy strings before they reach `main`. GitHub's secret push protection is the first layer. The gitleaks CLI with a versioned `.gitleaksignore` is the second. Findings upload as SARIF to the repo's Security tab.
 
-### `security-deps` (osv-scanner + native audit)
+**Verify:** push a test secret to a feature branch. The workflow should block it before the PR can merge.
+
+### security-deps (osv-scanner + native audit)
 
 Two passes:
 
-- `osv-scanner` reads the lockfile and queries the OSV database for known CVEs across the dep tree, including transitive deps.
-- The native audit (`bun audit` for apps/api, `bun run audit` for apps/ui, Trivy `config` mode for the OpenTofu repo) catches things the OSV cross-reference misses.
+- `osv-scanner` reads the lockfile and queries the OSV database for known CVEs across the dependency tree, including transitive dependencies.
+- Native audit (`bun audit` for apps/api, `bun run audit` for apps/ui, Trivy `config` mode for the OpenTofu repo) catches things the OSV cross-reference misses.
 
 Both honor `osv-scanner.toml` for accepted-risk allowlisting. Every ignored CVE carries a reason and an `ignoreUntil` date. When the date passes, the suppression dies and CI fails. No silent suppressions, no infinite snoozing.
 
-### `security-sast` (Semgrep)
+**Verify:** run `osv-scanner --lockfile=package-lock.json` locally. It should match the workflow output.
 
-Runs OWASP and JavaScript rule packs plus repo-specific rules from `.semgrep/`. Findings upload as SARIF to GitHub Code Scanning. The custom rules catch BoringStack-specific footguns: `new Function`-style template eval, logger payloads that include PII, raw SQL string concatenation.
+### security-sast (Semgrep)
+
+Runs OWASP and JavaScript rule packs plus repo-specific rules from `.semgrep/`. Findings upload as SARIF to GitHub Code Scanning. Custom rules catch BoringStack-specific footguns: `new Function`-style template eval, logger payloads that include PII, raw SQL string concatenation.
+
+**Verify:** run `semgrep --config=p/owasp-top-ten --config=.semgrep src/` locally. It should match the workflow output.
 
 ### Repo settings hardening
 
 The monorepo root `./scripts/audit-repo-settings.sh` diffs the live GitHub configuration against `.github/desired-repo-settings.json`. Drift prints copy-pasteable `gh api` commands. Nothing auto-applies.
 
-The desired state on every repo:
+Desired state on every repo:
 
 - Secret scanning and push protection: enabled
 - Dependabot security updates: enabled
 - Merge style: squash-only, auto-delete branch
 - `main` branch protection: signed commits required, linear history, no force-push, no deletion, all status checks blocking, conversations must resolve
 
+**Verify:** run `./scripts/audit-repo-settings.sh` locally. It should report zero drift.
+
 ### Weekly cron
 
-All security workflows fire on `0 6 * * 1` (Monday morning UTC, staggered by minute to avoid the GitHub Actions cron pileup at `:00`). So even if nobody pushes for a month, CI catches:
+All security workflows fire on `0 6 * * 1` (Monday morning UTC, staggered by minute to avoid the GitHub Actions cron pileup at `:00`). Even if nobody pushes for a month, CI catches:
 
-- A new CVE filed against a dep you're already using
+- A new CVE filed against a dependency you're already using
 - An `ignoreUntil` allowlist entry expiring
 - A new rule release from Semgrep or osv
 
@@ -171,13 +144,13 @@ Awaiting upstream patch via vite transitive deps.
 const spec: unknown = new Function("return " + precompiledCode)();
 ```
 
-<DocCallout variant="caution" title="No ignoreForever" eyebrow="Suppression discipline">
-  When the `ignoreUntil` passes, CI fails on the next run. The discipline is **"every suppression is temporary by default."** There is no `ignoreForever`. If an entry keeps getting extended, fix the rule (false positive) or fix the code (real risk).
-</DocCallout>
+<Aside type="caution" title="No ignoreForever">
+When the `ignoreUntil` passes, CI fails on the next run. The discipline is "every suppression is temporary by default." There is no `ignoreForever`. If an entry keeps getting extended, fix the rule (false positive) or fix the code (real risk).
+</Aside>
 
 ## What this doesn't replace
 
-This pipeline is opinionated for the BoringStack template surface. It doesn't replace:
+This pipeline is designed specifically for the BoringStack template surface. It doesn't replace:
 
 - Penetration testing before a production launch
 - Threat modeling for novel surface area you add on top
@@ -188,23 +161,25 @@ The CI gates block known-bad patterns. The agent skills surface "you forgot to t
 
 ## When CI fails
 
-<FaqGroup>
-  <FaqItem title="A new gitleaks finding on a PR" open>
-    First check whether it's a real secret. If yes, rotate it immediately (the secret is already in git history) and amend the commit. If false positive (test fixture, public key), add a fingerprint line to `.gitleaksignore` and re-push.
-  </FaqItem>
-  <FaqItem title="osv-scanner flags a new CVE in your dep tree">
-    Read the advisory. If patched, bump the dep and re-run. If unpatched but not reachable from your code path, add an `[[IgnoredVulns]]` block to `osv-scanner.toml` with a written reason and an `ignoreUntil` date one quarter out, giving upstream time to ship a patch.
-  </FaqItem>
-  <FaqItem title="Semgrep flags a rule on legitimate code">
-    Add `// nosemgrep: <rule-id>` directly above the line, plus a block comment explaining why the pattern is safe in context. If the rule fires this way often, propose tightening the rule in `.semgrep/` instead.
-  </FaqItem>
-  <FaqItem title="Monday cron fails when nobody changed anything">
-    A new CVE was filed against an existing dep, or an `ignoreUntil` expired. Read the run output, triage as above. The cron exists for this. It surfaces drift in your dependency surface even when you're not actively pushing.
-  </FaqItem>
-  <FaqItem title="`scripts/audit-repo-settings.sh` reports drift">
-    Someone (or you) clicked a setting in the GitHub UI. Paste the suggested `gh api` commands and re-run the audit. If the desired state is wrong, update `.github/desired-repo-settings.json` first.
-  </FaqItem>
-</FaqGroup>
+### A new gitleaks finding on a PR
+
+First check whether it's a real secret. If yes, rotate it immediately (the secret is already in git history) and amend the commit. If false positive (test fixture, public key), add a fingerprint line to `.gitleaksignore` and re-push.
+
+### osv-scanner flags a new CVE in your dependency tree
+
+Read the advisory. If patched, bump the dependency and re-run. If unpatched but not reachable from your code path, add an `[[IgnoredVulns]]` block to `osv-scanner.toml` with a written reason and an `ignoreUntil` date one quarter out, giving upstream time to ship a patch.
+
+### Semgrep flags a rule on legitimate code
+
+Add `// nosemgrep: <rule-id>` directly above the line, plus a block comment explaining why the pattern is safe in context. If the rule fires this way often, propose tightening the rule in `.semgrep/` instead.
+
+### Monday cron fails when nobody changed anything
+
+A new CVE was filed against an existing dependency, or an `ignoreUntil` expired. Read the run output and triage as above. The cron exists for this. It surfaces drift in your dependency surface even when you're not actively pushing.
+
+### scripts/audit-repo-settings.sh reports drift
+
+Someone (or you) clicked a setting in the GitHub UI. Paste the suggested `gh api` commands and re-run the audit. If the desired state is wrong, update `.github/desired-repo-settings.json` first.
 
 ## References
 

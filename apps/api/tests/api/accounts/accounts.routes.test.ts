@@ -748,7 +748,7 @@ describe("POST /api/v1/accounts/:id/transfer-ownership", () => {
     expect(res.status).toBe(403);
   });
 
-  test("200 when the owner transfers to another member", async () => {
+  test("200 + pending transfer row when the owner initiates the two-step transfer", async () => {
     if (!(await requireDb())) {
       return;
     }
@@ -782,16 +782,24 @@ describe("POST /api/v1/accounts/:id/transfer-ownership", () => {
 
     expect(res.status).toBe(200);
 
+    /*
+     * The endpoint initiates a two-step transfer — the target user
+     * must accept via /accept-ownership-transfer before the role
+     * flip lands. The route response carries the new transfer's
+     * metadata (id + expiry); roles in `account_memberships` stay
+     * unchanged at this stage. Service-level coverage of the
+     * accept-and-flip path lives in
+     * ownership-transfers.service.test.ts.
+     */
     const rows = await db
       .select()
       .from(accountMemberships)
       .where(eq(accountMemberships.accountId, account.id));
+    const ownerRow = rows.find((row) => row.userId === user.id);
+    const targetRow = rows.find((row) => row.userId === target.id);
 
-    const formerOwner = rows.find((row) => row.userId === user.id);
-    const newOwner = rows.find((row) => row.userId === target.id);
-
-    expect(formerOwner?.role).toBe("admin");
-    expect(newOwner?.role).toBe("owner");
+    expect(ownerRow?.role).toBe("owner");
+    expect(targetRow?.role).toBe("admin");
   });
 });
 

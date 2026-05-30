@@ -1,0 +1,46 @@
+# Tempo — distributed-trace backend. Receives OTLP spans from the API and
+# stores them locally. Grafana queries Tempo by trace_id for the Explore
+# tab and for the data-link click-through from Loki log lines.
+#
+# Single-binary mode: all the Tempo components (distributor, ingester,
+# compactor, querier, query-frontend) run in one process. Fine for a
+# single-host BoringStack deployment; scale-out is a separate
+# (Kubernetes-shaped) story.
+
+stream_over_http_enabled: true
+
+server:
+  http_listen_port: 3200
+  log_level: info
+
+# OTLP receivers — what the API ships traces to.
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        http:
+          endpoint: "0.0.0.0:4318"
+        grpc:
+          endpoint: "0.0.0.0:4317"
+
+ingester:
+  # Spans cluster into blocks every 10s of idle time or 5m of activity.
+  # Lower values = faster query availability; higher values = fewer
+  # blocks to scan at query time. Defaults are fine for dev.
+  trace_idle_period: 10s
+  max_block_duration: 5m
+
+compactor:
+  compaction:
+    # 24h retention is reasonable for a dev box. Tune in prod if
+    # storage budget allows — traces are cheaper than logs per unit
+    # debugging value, so 48h–7d is common in production.
+    block_retention: 24h
+
+storage:
+  trace:
+    backend: local
+    local:
+      path: /var/tempo/blocks
+    wal:
+      path: /var/tempo/wal

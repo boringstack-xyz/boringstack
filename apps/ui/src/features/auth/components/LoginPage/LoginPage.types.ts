@@ -45,4 +45,17 @@ export interface ILoginPageView {
   readonly pendingEmail: string | null;
   readonly onResendVerification: () => void;
   readonly isResending: boolean;
+  /**
+   * Set when the password is correct but the user has MFA enabled. The
+   * SPA holds an opaque challenge token; the user must enter a 6-digit
+   * TOTP code (or a recovery code) to receive the session cookies.
+   */
+  readonly mfaChallengeToken: string | null;
+  readonly mfaCode: string;
+  readonly onMfaCodeChange: (value: string) => void;
+  readonly onMfaSubmit: () => void;
+  readonly isMfaSubmitting: boolean;
+  readonly mfaError: string | null;
+  readonly mfaMode: "totp" | "recovery";
+  readonly onMfaModeToggle: () => void;
 }

@@ -65,6 +65,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          # v1.8.0 doesn't reliably fall back to env GITHUB_TOKEN — it
+          # initialises Octokit before reading the env, so the token must
+          # be passed explicitly as a `with:` input. Without this, every
+          # PR run fails with "Parameter token or opts.auth is required"
+          # even though the env was set. Keeping the env: line above as
+          # belt-and-braces for any future action version that flips back.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           package_manager: npm
           script: build
           skip_step: install

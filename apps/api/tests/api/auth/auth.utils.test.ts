@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { normalizeEmail, toPublicUser } from "../../../src/api/auth/auth.utils";
+import { toPublicUser } from "../../../src/api/auth/auth.utils";
 import type { IUser } from "../../../src/api/users/users.types";
 
 const makeUser = (overrides: Partial<IUser> = {}): IUser => ({
@@ -12,27 +12,10 @@ const makeUser = (overrides: Partial<IUser> = {}): IUser => ({
   isPlatformAdmin: false,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-05-01T00:00:00.000Z",
+  mfaEnabledAt: null,
+  mfaSecretEncrypted: null,
+  mfaLastTotpStep: null,
   ...overrides,
-});
-
-describe("normalizeEmail", () => {
-  test("lowercases and trims the input", () => {
-    expect(normalizeEmail("  Jane.Doe@Example.COM  ")).toBe(
-      "jane.doe@example.com"
-    );
-  });
-
-  test("preserves already-normalized values", () => {
-    expect(normalizeEmail("jane@example.com")).toBe("jane@example.com");
-  });
-
-  test("handles empty string", () => {
-    expect(normalizeEmail("")).toBe("");
-  });
-
-  test("handles whitespace-only string", () => {
-    expect(normalizeEmail("   ")).toBe("");
-  });
 });
 
 describe("toPublicUser", () => {

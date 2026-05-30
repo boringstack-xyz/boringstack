@@ -75,14 +75,6 @@ CREATE TABLE "app"."accounts" (
 	CONSTRAINT "accounts_stripe_customer_id_key" UNIQUE("stripe_customer_id")
 );
 --> statement-breakpoint
-CREATE TABLE "app"."widgets" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"account_id" uuid NOT NULL,
-	"name" varchar(200) NOT NULL,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "audit"."audit_log" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid,
@@ -155,7 +147,18 @@ CREATE TABLE "auth"."users" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"is_platform_admin" boolean DEFAULT false NOT NULL,
+	"mfa_enabled_at" timestamp with time zone,
+	"mfa_secret_encrypted" text,
+	"mfa_last_totp_step" bigint,
 	CONSTRAINT "users_email_key" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "auth"."mfa_recovery_codes" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" uuid NOT NULL,
+	"code_hash" text NOT NULL,
+	"used_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "billing"."account_plans" (
@@ -266,6 +269,17 @@ CREATE TABLE "notifications"."push_subscription" (
 	"last_used_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "notifications"."email_suppression" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"email" varchar(320) NOT NULL,
+	"reason" varchar(32) NOT NULL,
+	"provider" varchar(32) NOT NULL,
+	"provider_message_id" varchar(255),
+	"metadata" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"suppressed_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 ALTER TABLE "app"."account_feature_overrides" ADD CONSTRAINT "account_feature_overrides_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "app"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "app"."account_feature_overrides" ADD CONSTRAINT "account_feature_overrides_granted_by_user_id_fkey" FOREIGN KEY ("granted_by_user_id") REFERENCES "auth"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "app"."account_invitations" ADD CONSTRAINT "account_invitations_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "app"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -274,12 +288,12 @@ ALTER TABLE "app"."account_join_requests" ADD CONSTRAINT "account_join_requests_
 ALTER TABLE "app"."account_ownership_transfers" ADD CONSTRAINT "account_ownership_transfers_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "app"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "app"."account_ownership_transfers" ADD CONSTRAINT "account_ownership_transfers_from_user_id_fkey" FOREIGN KEY ("from_user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "app"."account_ownership_transfers" ADD CONSTRAINT "account_ownership_transfers_to_user_id_fkey" FOREIGN KEY ("to_user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "app"."widgets" ADD CONSTRAINT "widgets_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "app"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "audit"."audit_log" ADD CONSTRAINT "audit_log_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auth"."sessions" ADD CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auth"."email_verification_tokens" ADD CONSTRAINT "email_verification_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auth"."password_reset_tokens" ADD CONSTRAINT "password_reset_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auth"."user_auth_providers" ADD CONSTRAINT "user_auth_providers_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "auth"."mfa_recovery_codes" ADD CONSTRAINT "mfa_recovery_codes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "billing"."account_plans" ADD CONSTRAINT "account_plans_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "app"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "billing"."account_plans" ADD CONSTRAINT "account_plans_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "billing"."plans"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "billing"."plan_features" ADD CONSTRAINT "plan_features_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "billing"."plans"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -305,7 +319,6 @@ CREATE UNIQUE INDEX "uniq_account_ownership_transfers_pending" ON "app"."account
 CREATE INDEX "idx_accounts_deleted_at" ON "app"."accounts" USING btree ("deleted_at");--> statement-breakpoint
 CREATE INDEX "idx_accounts_claimed_domain" ON "app"."accounts" USING btree ("claimed_domain");--> statement-breakpoint
 CREATE UNIQUE INDEX "uniq_accounts_claimed_domain_active" ON "app"."accounts" USING btree ("claimed_domain") WHERE claimed_domain IS NOT NULL AND deleted_at IS NULL;--> statement-breakpoint
-CREATE INDEX "idx_widgets_account_id" ON "app"."widgets" USING btree ("account_id");--> statement-breakpoint
 CREATE INDEX "idx_audit_log_user_id" ON "audit"."audit_log" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_audit_log_action" ON "audit"."audit_log" USING btree ("action");--> statement-breakpoint
 CREATE INDEX "idx_audit_log_created_at" ON "audit"."audit_log" USING btree ("created_at");--> statement-breakpoint
@@ -322,6 +335,7 @@ CREATE INDEX "idx_password_reset_tokens_token_hash" ON "auth"."password_reset_to
 CREATE INDEX "idx_password_reset_tokens_user_id" ON "auth"."password_reset_tokens" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_user_auth_providers_provider_id" ON "auth"."user_auth_providers" USING btree ("provider","provider_user_id");--> statement-breakpoint
 CREATE INDEX "idx_user_auth_providers_user_id" ON "auth"."user_auth_providers" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "idx_mfa_recovery_codes_user_id" ON "auth"."mfa_recovery_codes" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_users_email" ON "auth"."users" USING btree ("email");--> statement-breakpoint
 CREATE INDEX "idx_users_is_platform_admin" ON "auth"."users" USING btree ("is_platform_admin");--> statement-breakpoint
 CREATE INDEX "idx_account_plans_account_id" ON "billing"."account_plans" USING btree ("account_id");--> statement-breakpoint
@@ -338,4 +352,6 @@ CREATE INDEX "idx_notification_dedup_expires_at" ON "notifications"."notificatio
 CREATE INDEX "idx_notification_delivery_notification_channel" ON "notifications"."notification_delivery" USING btree ("notification_id","channel");--> statement-breakpoint
 CREATE UNIQUE INDEX "idx_notification_preference_user_event_channel" ON "notifications"."notification_preference" USING btree ("user_id","event_type","channel");--> statement-breakpoint
 CREATE UNIQUE INDEX "idx_push_subscription_user_endpoint" ON "notifications"."push_subscription" USING btree ("user_id","endpoint");--> statement-breakpoint
-CREATE INDEX "idx_push_subscription_user_id" ON "notifications"."push_subscription" USING btree ("user_id");
+CREATE INDEX "idx_push_subscription_user_id" ON "notifications"."push_subscription" USING btree ("user_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "idx_email_suppression_email" ON "notifications"."email_suppression" USING btree ("email");--> statement-breakpoint
+CREATE INDEX "idx_email_suppression_suppressed_at" ON "notifications"."email_suppression" USING btree ("suppressed_at");

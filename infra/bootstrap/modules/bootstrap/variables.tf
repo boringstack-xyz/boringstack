@@ -74,6 +74,15 @@ variable "github_oauth_client_secret" {
   sensitive = true
 }
 
+variable "linkedin_oauth_client_id" {
+  type = string
+}
+
+variable "linkedin_oauth_client_secret" {
+  type      = string
+  sensitive = true
+}
+
 variable "stripe_secret_key" {
   type      = string
   sensitive = true

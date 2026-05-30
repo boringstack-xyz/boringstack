@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   baseTemplateVariables,
+  normalizeEmail,
   validateEmailMessage,
 } from "../../../src/lib/email/email.utils";
 import { ApiError } from "../../../src/lib/errors";
@@ -154,5 +155,25 @@ describe("baseTemplateVariables", () => {
 
     expect(typeof vars).toBe("object");
     expect(vars).not.toBeNull();
+  });
+});
+
+describe("normalizeEmail", () => {
+  test("lowercases and trims the input", () => {
+    expect(normalizeEmail("  Jane.Doe@Example.COM  ")).toBe(
+      "jane.doe@example.com"
+    );
+  });
+
+  test("preserves already-normalized values", () => {
+    expect(normalizeEmail("jane@example.com")).toBe("jane@example.com");
+  });
+
+  test("handles empty string", () => {
+    expect(normalizeEmail("")).toBe("");
+  });
+
+  test("handles whitespace-only string", () => {
+    expect(normalizeEmail("   ")).toBe("");
   });
 });

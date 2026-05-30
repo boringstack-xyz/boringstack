@@ -14,7 +14,7 @@ export function OpenSourceSection() {
         body="The templates, ESLint plugins, CI workflows, and this docs site are public GitHub repos. Everything is MIT-licensed. BoringStack is not a commercial product: no paid tier, no hosted runtime, no license key. Fork with Use this template and run it on your own machine or VPS."
         eyebrow="GitHub"
         id="bs-oss-title"
-        title="Fully open source"
+        title="Open source"
       />
 
       <div className="mt-8">

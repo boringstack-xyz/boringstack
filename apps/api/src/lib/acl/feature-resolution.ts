@@ -138,12 +138,5 @@ export function resolveFeatures(
       overrides,
       now
     ),
-    max_widgets: resolveLimitFeature(
-      "max_widgets",
-      FEATURES.max_widgets.default,
-      planFeatures,
-      overrides,
-      now
-    ),
   };
 }

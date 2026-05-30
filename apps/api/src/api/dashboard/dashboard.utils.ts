@@ -51,9 +51,6 @@ const ACTIVITY_LABELS: Record<string, string> = {
   "notification.status_updated": "Updated a notification",
   "notification.mark_all_read": "Marked all notifications read",
   "notification.preferences_updated": "Updated notification preferences",
-  "widget.created": "Created a widget",
-  "widget.updated": "Updated a widget",
-  "widget.deleted": "Deleted a widget",
 };
 
 /**
@@ -74,7 +71,7 @@ const deriveActionLabel = (action: string): string => {
 /**
  * Format an audit-row action + resource pair into a human-readable
  * activity title for the dashboard feed. The action key is translated
- * via `ACTIVITY_LABELS`; the resource (e.g. `widget:abc-123`) is
+ * via `ACTIVITY_LABELS`; the resource (e.g. `notification:abc-123`) is
  * appended verbatim when present so admins can spot the target row.
  */
 export const formatActivityTitle = (

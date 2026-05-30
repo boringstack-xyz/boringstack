@@ -17,15 +17,15 @@ Run from the repository root (after `nvm use` / Bun per project norms):
 bun run new:resource -- <PascalName>
 ```
 
-Example: `bun run new:resource -- Widgets`
+Example: `bun run new:resource -- Tickets`
 
 The script creates `src/api/<camelName>/` with `<prefix>.*.ts` files, adds an `app` schema table in `src/clients/postgres/schema/app.schema.ts` when needed, and prints **manual wiring** steps.
 
 ## Manual wiring (required after scaffold)
 
-1. **[src/config/routes.ts](src/config/routes.ts)** — import the default route module and add `widgets: widgetsRoutes` (names must match).
-2. **[src/config/app.ts](src/config/app.ts)** — mount with `.group("/api/v1/widgets", (group) => group.use(routes.widgets))` (adjust path and key).
-3. **[src/config/swagger.ts](src/config/swagger.ts)** — add `{ name: "Widgets", description: "..." }` to `documentation.tags`.
+1. **[src/config/routes.ts](src/config/routes.ts)** — import the default route module and add `tickets: ticketsRoutes` (names must match).
+2. **[src/config/app.ts](src/config/app.ts)** — mount with `.group("/api/v1/tickets", (group) => group.use(routes.tickets))` (adjust path and key).
+3. **[src/config/swagger.ts](src/config/swagger.ts)** — add `{ name: "Tickets", description: "..." }` to `documentation.tags`.
 
 ## Database
 

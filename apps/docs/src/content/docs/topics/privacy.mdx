@@ -5,12 +5,12 @@ description: Starting point for the privacy policy your BoringStack fork needs a
 
 This is a **template**, not legal advice. Replace every `TODO:` block
 with values specific to your company. Have a lawyer review the result
-before going to production — privacy law is jurisdiction-dependent and
+before going to production, privacy law is jurisdiction-dependent and
 the wording matters.
 
 ## Files to wire up
 
-The UI template doesn't ship a `/privacy` route — adding one is a
+The UI template doesn't ship a `/privacy` route, adding one is a
 single-page lift:
 
 1. Create `apps/ui/src/features/legal/PrivacyPage/PrivacyPage.tsx`
@@ -31,17 +31,17 @@ single-page lift:
 
 We collect the minimum data needed to operate the service:
 
-- **Account data** — email, hashed password (argon2id), first and last
+- **Account data**: email, hashed password (argon2id), first and last
   name when provided.
-- **Authentication metadata** — IP address of recent sign-ins, session
+- **Authentication metadata**: IP address of recent sign-ins, session
   rotation history (used to detect refresh-token replay).
-- **Audit log** — a record of security-relevant actions (sign-in,
+- **Audit log**: a record of security-relevant actions (sign-in,
   password change, ownership transfer, OAuth disconnect, billing
   events). No request bodies or PII beyond user IDs.
-- **Billing data** — Stripe customer ID and the subscription state we
+- **Billing data**: Stripe customer ID and the subscription state we
   cache locally; the card itself never touches our servers (Stripe
   Checkout handles it).
-- **Diagnostic logs** — structured logs with request IDs; PII
+- **Diagnostic logs**: structured logs with request IDs; PII
   fields (`email`, `token`, `password`, …) are redacted at the lint
   level so they never reach disk.
 
@@ -49,12 +49,12 @@ We do **not** collect:
 
 - Card numbers (Stripe's domain).
 - Cross-site identifiers (no third-party ad pixels).
-- Analytics by default — first-party product analytics ship off, and
+- Analytics by default, first-party product analytics ship off, and
   only run if you tick the "Analytics" category in the cookie banner.
 
 ### What we share
 
-> **TODO:** list each subprocessor — Postgres provider, hosted Valkey
+> **TODO:** list each subprocessor, Postgres provider, hosted Valkey
 > if applicable, Stripe, email provider (SendGrid / Resend /
 > Cloudflare Email), error tracking (Sentry / GlitchTip), and any
 > hosting provider.
@@ -69,7 +69,7 @@ We do **not** collect:
 
 > **TODO:** under the laws of your jurisdiction (GDPR / CCPA /
 > equivalents), this section enumerates the rights the user has
-> against your processing — typically access, rectification, erasure,
+> against your processing, typically access, rectification, erasure,
 > portability, and objection. Link to a contact form / email.
 
 ### How to contact us
@@ -86,6 +86,6 @@ We do **not** collect:
 
 ## Related
 
-- [Cookie consent](/topics/cookie-consent/) — what the banner stores
+- [Cookie consent](/topics/cookie-consent/), what the banner stores
   and how to gate code on it.
-- [Terms of service](/topics/terms/) — the companion document.
+- [Terms of service](/topics/terms/), the companion document.

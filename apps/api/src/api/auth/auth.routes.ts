@@ -37,9 +37,12 @@ import {
   VerifyEmailSchema,
 } from "./auth.schemas";
 import { resolveActiveAccountId } from "./auth.utils";
+import mfaRoutes from "./mfa.routes";
+import { MfaRequiredResponse } from "./mfa.schemas";
 import {
   authService,
   emailVerificationService,
+  mfaService,
   oauthAuthService,
   passwordChangeService,
   passwordResetService,
@@ -82,10 +85,27 @@ const credentialingRoutes = new Elysia()
     "/login",
     async ({ body, jwt, cookie }) => {
       const result = await authService.login(body);
+
+      if (result.mfaRequired) {
+        /*
+         * Password ok but the user has MFA enabled — issue a short-lived
+         * opaque challenge instead of the session cookies. The SPA
+         * exchanges this for a real session via /auth/mfa/verify-login
+         * (or /auth/mfa/verify-recovery). Cookies stay unset on purpose
+         * so a leaked challenge can't grant API access on its own.
+         */
+        const challenge = await mfaService.issueChallenge(result.userId);
+
+        return createSuccessResponse({
+          mfaRequired: true as const,
+          challengeToken: challenge.challengeToken,
+        });
+      }
+
       const accountId = await resolveActiveAccountId(result.user.id);
       const session = await sessionService.create(result.user.id);
       const token = await jwt.sign(
-        buildJWTPayload(result.user.id, result.user.email, accountId)
+        await buildJWTPayload(result.user.id, result.user.email, accountId)
       );
 
       const auth = cookie[AUTH_COOKIE_NAME];
@@ -98,7 +118,7 @@ const credentialingRoutes = new Elysia()
     },
     {
       body: LoginSchema,
-      response: AuthResponse,
+      response: t.Union([AuthResponse, MfaRequiredResponse]),
       detail: { tags: ["Authentication"], summary: "Log in" },
     }
   )
@@ -108,7 +128,11 @@ const credentialingRoutes = new Elysia()
       const result = await emailVerificationService.verify(body.token);
       const session = await sessionService.create(result.user.id);
       const token = await jwt.sign(
-        buildJWTPayload(result.user.id, result.user.email, result.accountId)
+        await buildJWTPayload(
+          result.user.id,
+          result.user.email,
+          result.accountId
+        )
       );
 
       const auth = cookie[AUTH_COOKIE_NAME];
@@ -173,7 +197,11 @@ const credentialingRoutes = new Elysia()
       );
       const session = await sessionService.create(result.user.id);
       const token = await jwt.sign(
-        buildJWTPayload(result.user.id, result.user.email, result.accountId)
+        await buildJWTPayload(
+          result.user.id,
+          result.user.email,
+          result.accountId
+        )
       );
 
       const auth = cookie[AUTH_COOKIE_NAME];
@@ -361,7 +389,7 @@ const sessionAndOAuthRoutes = new Elysia()
       const result = await sessionService.refresh(refreshValue);
       const accountId = await resolveActiveAccountId(result.user.id);
       const token = await jwt.sign(
-        buildJWTPayload(result.user.id, result.user.email, accountId)
+        await buildJWTPayload(result.user.id, result.user.email, accountId)
       );
 
       const auth = cookie[AUTH_COOKIE_NAME];
@@ -476,7 +504,11 @@ const sessionAndOAuthRoutes = new Elysia()
       const session = await sessionService.create(result.user.id);
 
       const token = await jwt.sign(
-        buildJWTPayload(result.user.id, result.user.email, result.accountId)
+        await buildJWTPayload(
+          result.user.id,
+          result.user.email,
+          result.accountId
+        )
       );
 
       const auth = cookie[AUTH_COOKIE_NAME];
@@ -578,6 +610,7 @@ const authenticatedAuthRoutes = createAuthMiddleware()
 const authRoutes = new Elysia()
   .use(credentialingRoutes)
   .use(sessionAndOAuthRoutes)
-  .use(authenticatedAuthRoutes);
+  .use(authenticatedAuthRoutes)
+  .use(mfaRoutes);
 
 export default authRoutes;

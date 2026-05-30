@@ -98,4 +98,4 @@ topk(10,
 )
 ```
 
-Related: [PromQL cheatsheet](promql-cheatsheet.md), [observability-optional.md](observability-optional.md).
+Related: [PromQL cheatsheet](promql-cheatsheet.md), [observability.md](observability.md).

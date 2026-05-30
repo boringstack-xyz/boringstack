@@ -3,34 +3,9 @@ title: Email
 description: One pluggable interface, five providers (Cloudflare default, Resend, SendGrid, SMTP, noop). Templates precompiled to JSON at build time; dispatch is queue-aware.
 ---
 
-import CommandRun from "../../../components/docs-kit/CommandRun";
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
+Email has a delivery spine without forcing one vendor. Providers, templates, and dispatch are independently swappable, while request handlers keep calling the same function.
 
-<PageIntro
-  eyebrow="Provider-swappable email"
-  actions={[
-    { label: "Queues", href: "/api/queues/" },
-    { label: "Mailpit", href: "/topics/email-in-dev/" },
-  ]}
-  facts={[
-    { value: "5", label: "providers shipped" },
-    { value: "JSON", label: "precompiled templates" },
-    { value: "queue", label: "or inline dispatch" },
-  ]}
->
-  Email has a delivery spine without forcing one vendor. Providers, templates,
-  and dispatch are independently swappable, while request handlers keep calling
-  the same function.
-</PageIntro>
-
-Three layers:
-
-1. Provider: the wire to whoever actually delivers the mail.
-2. Templates: Handlebars `.hbs` files precompiled to JSON at build time.
-3. Dispatch: `sendTemplate(...)` chooses queue or inline based on env, so the call site doesn't care which.
-
-The default is [Cloudflare Email Service](/topics/cloudflare-email/) because it's the cheapest at scale. Resend, SendGrid, and a plain SMTP provider ship alongside; swapping is a one-env-var change. SMTP is what you use locally against [Mailpit](/topics/email-in-dev/).
+The default is Cloudflare Email Service because it's the cheapest at scale. Resend, SendGrid, a plain SMTP provider, and a noop fallback ship alongside. Swapping is a one-environment-variable change. Three layers compose the system: providers (the wire to the mail service), templates (Handlebars `.hbs` files precompiled to JSON at build time), and dispatch (`sendTemplate(...)` chooses queue or inline based on env).
 
 ## How a send flows
 
@@ -48,43 +23,9 @@ flowchart LR
 
 Two retry layers stack when queues are on: the inner `retryWithBackoff` handles flickery HTTP responses, the outer BullMQ retry handles the case where the whole provider is down for minutes.
 
-## Design choices
+## Design
 
-<SignalGrid
-  columns={3}
-  items={[
-    {
-      label: "provider",
-      title: "Single IEmailService interface",
-      body: "Adding Postmark or SES later is one file plus one selector branch.",
-    },
-    {
-      label: "dev",
-      title: "noop provider fallback",
-      body: "Dev boots without credentials; tests stay deterministic.",
-    },
-    {
-      label: "templates",
-      title: "Precompiled to JSON",
-      body: "No Handlebars parser in the hot path and no template injection from user data.",
-    },
-    {
-      label: "dispatch",
-      title: "sendTemplate is queue-aware",
-      body: "Workers skip the queue; request handlers go through it when queues are enabled.",
-    },
-    {
-      label: "privacy",
-      title: "Address masking in logs",
-      body: "Email addresses never reach the log pipeline raw.",
-    },
-    {
-      label: "default",
-      title: "Cloudflare first",
-      body: "The default provider is cheap at scale, but the app contract stays provider-agnostic.",
-    },
-  ]}
-/>
+Every provider implements a single `IEmailService` interface, so adding Postmark or SES later is one file plus one selector branch. Dev boots without credentials via a noop provider fallback. Templates are precompiled to JSON at build time, eliminating any Handlebars parser in the hot path and preventing template injection from user data. `sendTemplate` is queue-aware: workers skip the queue and run inline, while request handlers go through it when queues are enabled. Email addresses are masked in logs before they reach the pipeline. Cloudflare is the default provider because it's cheap at scale, but the contract stays provider-agnostic.
 
 ## The provider contract
 
@@ -105,7 +46,7 @@ Authors write `.hbs` files in `src/templates/email/templates/{auth,notifications
 
 Shared layout partials live in `components/`. `baseTemplateVariables()` injects common context (product name, support URL, current year) so templates don't repeat it.
 
-## Using it
+## Calling sendTemplate
 
 ```ts
 import { sendTemplate } from "../lib/email";
@@ -118,22 +59,7 @@ await sendTemplate({
 });
 ```
 
-<CommandRun
-  title="Provider switch"
-  caption="same application code, different delivery wire"
-  command={[
-    "EMAIL_PROVIDER=cloudflare bun run dev",
-    "EMAIL_PROVIDER=smtp WITH_MAILPIT=1 ./dev.sh up -d",
-  ]}
-  output={[
-    {
-      text: "cloudflare: production default when API token and account id exist",
-    },
-    { text: "smtp: local Mailpit loop with no external credentials" },
-  ]}
-/>
-
-Do not branch on queue vs inline in the handler; that decision lives in env config and `sendTemplate` / `sendTemplateNow`.
+Switch providers by changing `EMAIL_PROVIDER` in env (cloudflare, resend, sendgrid, smtp). Do not branch on queue vs inline in the handler; that decision lives in env config and the `sendTemplate` / `sendTemplateNow` helpers decide which path to take.
 
 ## Adding a provider
 
@@ -155,10 +81,20 @@ The HTTP call should be wrapped in `retryWithBackoff` so transient 5xx responses
 
 ## Source
 
-[`src/lib/email/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/email); providers, dispatch, template service. [`src/templates/email/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/templates/email); the `.hbs` sources and build pipeline.
+[`src/lib/email/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/email): providers, dispatch, template service. [`src/templates/email/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/templates/email): Handlebars sources and build pipeline.
+
+## Bounce handling
+
+Bounces and spam complaints feed a local `email_suppression` table that
+`sendTemplateNow` consults before every send. Cloudflare manages its
+own list and the API mirrors the verdict on send-time errors;
+Resend and SendGrid push their verdicts in over signed webhooks. See
+[Bounce handling](/api/bounce-handling/) for the per-provider model
+and webhook wire-up.
 
 ## Related
 
+- [Bounce handling](/api/bounce-handling/); per-provider suppression + webhooks.
 - [Cloudflare Email Service](/topics/cloudflare-email/); why it's the default.
 - [Setup runbook](/runbooks/cloudflare-email-setup/); domain + token wire-up.
 - [Queues](/api/queues/); the `email-delivery` queue on the worker side.

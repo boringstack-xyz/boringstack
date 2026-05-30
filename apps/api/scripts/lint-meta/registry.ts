@@ -4,6 +4,7 @@ import { githubActionsPermissionsRule } from "./rules/ci/github-actions-permissi
 import { prePushCiParityRule } from "./rules/ci/pre-push-ci-parity";
 import { eslintConfigNoWarnRule } from "./rules/config/eslint-config-no-warn";
 import { envCascadeDriftRule } from "./rules/env/env-cascade-drift";
+import { canonicalHelpersSingleHomeRule } from "./rules/source-text/canonical-helpers-single-home";
 import { forbiddenTextRule } from "./rules/source-text/forbidden-text";
 import { noRawRoleLiteralsRule } from "./rules/source-text/no-raw-role-literals";
 import { noOverlappingLibsRule } from "./rules/supply-chain/no-overlapping-libs";
@@ -22,6 +23,7 @@ export const META_RULES: readonly IMetaRule[] = [
   envCascadeDriftRule,
   generatedArtifactContractRule,
   forbiddenTextRule,
+  canonicalHelpersSingleHomeRule,
   noRawRoleLiteralsRule,
   routesRequireTestSiblingRule,
   logicFilesRequireTestSiblingRule,

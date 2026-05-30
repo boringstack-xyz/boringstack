@@ -1,0 +1,236 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Host metrics — CPU, memory, disk, network. Populated by node-exporter. The 'is the box itself the problem?' dashboard.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "% CPU",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "stacking": { "group": "A", "mode": "normal" },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "min": 0,
+          "max": 100,
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "legend": { "calcs": ["last", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 * sum by (mode) (rate(node_cpu_seconds_total{mode!=\"idle\"}[1m])) / scalar(count(node_cpu_seconds_total{mode=\"idle\"}))",
+          "legendFormat": "{{mode}}",
+          "refId": "A"
+        }
+      ],
+      "description": "**What:** stacked CPU usage by mode — `user` (your code), `system` (kernel), `iowait` (CPU stalled waiting on disk), `softirq`, `nice`, `steal`.\n\n**Why:** answers 'what's the host doing right now?' The breakdown matters: 80% user is healthy if expected; 80% iowait is a disk problem; 80% system is a kernel-call problem.\n\n**Watch for:** sustained iowait (orange / red on the next panel) = disk-bound. user + system together approaching 100% = CPU saturated; `HostCpuSaturated` triggers if load5 / cores > 1.5 for 15min.",
+      "title": "CPU usage by mode (user / system / iowait / ...)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "**What:** fraction of CPU time spent stalled waiting on disk I/O.\n\n**Why:** the most-missed cause of 'slow host' incidents. When iowait is high, your processes look idle (low user CPU) but everything is actually slow because the CPU is twiddling thumbs waiting for the disk.\n\n**Watch for:** > 5% sustained (orange) = disk pressure starting. > 15% (red) = disk is the bottleneck — bigger I/O queue, slower SSD than expected, or a noisy neighbour on a shared volume. Move heavy I/O off the same disk as Postgres if you can.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.05 },
+              { "color": "red", "value": 0.15 }
+            ]
+          },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(node_cpu_seconds_total{mode=\"iowait\"}[1m])) / scalar(count(node_cpu_seconds_total{mode=\"idle\"}))",
+          "refId": "A"
+        }
+      ],
+      "title": "IO wait (sustained high = disk-bound)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes",
+          "legendFormat": "used",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "node_memory_Cached_bytes + node_memory_Buffers_bytes",
+          "legendFormat": "cached + buffers",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "node_memory_MemAvailable_bytes",
+          "legendFormat": "available",
+          "refId": "C"
+        }
+      ],
+      "description": "**What:** host memory split into `used` (process working memory), `cached + buffers` (kernel page cache + filesystem buffers), and `available` (what a new allocation can claim, including reclaimable cache).\n\n**Why:** `MemAvailable` is the metric to watch — `MemFree` looks scarier than it should because Linux uses RAM aggressively for cache.\n\n**Watch for:** `available` dropping below 10% of `MemTotal` for 10min = `MemoryPressureHigh`. Heavy swap = the next worst thing; usually means a container is leaking and the host is reclaiming. Reach for `docker stats` to find the offender.",
+      "title": "Memory (used / cached / available)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "**What:** per-mountpoint filesystem usage as a percentage (`ext4`, `xfs`, `btrfs` only — tmpfs/overlay filtered).\n\n**Why:** the data volume (where Postgres lives) hitting 100% means writes fail and Postgres can't accept new transactions. Same goes for the Docker overlay if container images and volumes grow unchecked.\n\n**Watch for:** > 70% (orange) = plan cleanup. > 85% (red) = clean up *now*; `DiskSpaceLow` already paged. Common culprits: `docker system df` shows orphan images/volumes; Postgres WAL growth; Loki / Prometheus / Tempo retention windows too long.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          },
+          "min": 0,
+          "max": 100,
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 * (1 - (node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs\"}))",
+          "legendFormat": "{{mountpoint}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Filesystem usage %",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 5,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum by (device) (rate(node_network_receive_bytes_total{device!~\"lo|veth.*|docker.*|br-.*\"}[1m]))",
+          "legendFormat": "{{device}} rx",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "-sum by (device) (rate(node_network_transmit_bytes_total{device!~\"lo|veth.*|docker.*|br-.*\"}[1m]))",
+          "legendFormat": "{{device}} tx",
+          "refId": "B"
+        }
+      ],
+      "description": "**What:** per-interface network throughput. rx (received) plotted positive, tx (transmitted) plotted negative so both fit on one axis.\n\n**Why:** quick sanity for 'is the host saturating its NIC?' On most cheap VPS plans you have a few hundred Mbps to play with.\n\n**Watch for:** sustained tx near your provider's outbound cap = throttling imminent. Asymmetric spikes (lots of rx, no tx) = something inbound (file upload, scraper, attack). Loopback interfaces (`lo`, `veth*`, `docker*`, `br-*`) are filtered out so this only shows real external traffic.",
+      "title": "Network throughput (rx +, tx –)",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["boringstack", "host"],
+  "templating": { "list": [] },
+  "time": { "from": "now-30m", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "BoringStack — Host",
+  "uid": "boringstack-host",
+  "version": 1,
+  "weekStart": ""
+}

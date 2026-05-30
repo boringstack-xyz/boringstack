@@ -20,6 +20,11 @@ vi.mock("./WebPushCard", () => ({
   default: () => <article data-testid='web-push-card' />
 }));
 
+vi.mock("./MfaSection", () => ({
+  MfaSection: () => <article data-testid='mfa-section' />,
+  default: () => <article data-testid='mfa-section' />
+}));
+
 vi.mock("react-i18next", async () => {
   const actual = await vi.importActual<typeof ReactI18Next>("react-i18next");
 

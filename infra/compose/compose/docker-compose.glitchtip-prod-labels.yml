@@ -1,6 +1,6 @@
 # GlitchTip prod overlay — adds the HTTPS routers + Basic Auth for the UI
-# and CORS for the SDK ingest endpoint. Only merged when both STACK=prod
-# AND WITH_GLITCHTIP=1.
+# and CORS for the SDK ingest endpoint. Merged when STACK=prod and GlitchTip
+# is on (default; set WITH_GLITCHTIP=0 to skip).
 #
 # Requires in compose/.env:
 #   GLITCHTIP_PUBLIC_HOST       — public DNS name (ACME certs)

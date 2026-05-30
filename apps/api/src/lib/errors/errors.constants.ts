@@ -42,6 +42,7 @@ export const ErrorCodes = {
   INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
   DATABASE_ERROR: "DATABASE_ERROR",
   EXTERNAL_SERVICE_ERROR: "EXTERNAL_SERVICE_ERROR",
+  NOT_IMPLEMENTED: "NOT_IMPLEMENTED",
 } as const;
 
 export const ErrorMessages: Record<ErrorCode, string> = {
@@ -66,4 +67,5 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCodes.INTERNAL_SERVER_ERROR]: "An internal error occurred",
   [ErrorCodes.DATABASE_ERROR]: "Database operation failed",
   [ErrorCodes.EXTERNAL_SERVICE_ERROR]: "External service error",
+  [ErrorCodes.NOT_IMPLEMENTED]: "Endpoint is not configured",
 };

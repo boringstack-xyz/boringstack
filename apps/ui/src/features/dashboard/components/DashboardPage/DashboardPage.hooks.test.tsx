@@ -60,8 +60,7 @@ describe("useDashboardPage", () => {
             features: {
               can_export: true,
               can_invite_team: true,
-              max_seats: 5,
-              max_widgets: 100
+              max_seats: 5
             },
             capabilities: {
               billing: true,

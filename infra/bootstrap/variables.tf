@@ -313,13 +313,36 @@ variable "github_oauth_client_id" {
 
 variable "github_oauth_client_secret" {
   type        = string
-  description = ""
+  description = "GitHub OAuth — paired with github_oauth_client_id."
   default     = ""
   sensitive   = true
 
   validation {
     condition     = length(regexall("[\r\n]", var.github_oauth_client_secret)) == 0
     error_message = "github_oauth_client_secret must fit on one line."
+  }
+}
+
+variable "linkedin_oauth_client_id" {
+  type        = string
+  description = "LinkedIn OAuth — leave empty to disable LinkedIn login."
+  default     = ""
+
+  validation {
+    condition     = length(regexall("[\r\n]", var.linkedin_oauth_client_id)) == 0
+    error_message = "linkedin_oauth_client_id must fit on one line."
+  }
+}
+
+variable "linkedin_oauth_client_secret" {
+  type        = string
+  description = "LinkedIn OAuth — paired with linkedin_oauth_client_id."
+  default     = ""
+  sensitive   = true
+
+  validation {
+    condition     = length(regexall("[\r\n]", var.linkedin_oauth_client_secret)) == 0
+    error_message = "linkedin_oauth_client_secret must fit on one line."
   }
 }
 

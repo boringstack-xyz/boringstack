@@ -8,7 +8,8 @@
   },
   "common": {
     "loading": "Loading…",
-    "loadingAria": "Loading"
+    "loadingAria": "Loading",
+    "close": "Close"
   },
   "auth": {
     "login": {
@@ -22,6 +23,18 @@
       "signUp": "Create one",
       "resend": "Resend verification email",
       "resendSending": "Sending…",
+      "mfa": {
+        "title": "Two-factor authentication",
+        "totpHint": "Open your authenticator app and enter the 6-digit code.",
+        "recoveryHint": "Enter one of your single-use recovery codes.",
+        "codeLabel": "Authentication code",
+        "recoveryLabel": "Recovery code",
+        "submit": "Verify",
+        "submitting": "Verifying…",
+        "useRecovery": "Lost your device? Use a recovery code",
+        "useTotp": "Use your authenticator app instead",
+        "invalidCode": "That code didn't work. Try again."
+      },
       "errors": {
         "invalidCredentials": "Email or password is incorrect.",
         "emailNotVerified": "Your email isn't verified yet.",
@@ -172,27 +185,6 @@
       }
     }
   },
-  "widgets": {
-    "title": "Widgets",
-    "subtitle": "Create, edit, and delete the sample account-scoped resource shipped by the API starter.",
-    "empty": "No widgets yet.",
-    "form": {
-      "name": "Name",
-      "submit": "Create widget",
-      "submitting": "Creating…"
-    },
-    "actions": {
-      "edit": "Edit",
-      "delete": "Delete",
-      "save": "Save",
-      "cancel": "Cancel"
-    },
-    "columns": {
-      "name": "Name",
-      "created": "Created",
-      "actions": "Actions"
-    }
-  },
   "nav": {
     "ariaPrimary": "Primary navigation",
     "openMenu": "Open menu",
@@ -200,8 +192,8 @@
     "menuTitle": "Menu",
     "dashboard": "Dashboard",
     "notifications": "Notifications",
-    "widgets": "Widgets",
     "team": "Team",
+    "auditLog": "Audit log",
     "settings": "Settings",
     "billing": "Billing",
     "profile": "Profile"
@@ -360,6 +352,45 @@
         "disconnectSuccess": "Provider disconnected",
         "disconnectError": "Couldn't disconnect provider. Try again.",
         "noProviders": "No OAuth providers are configured."
+      },
+      "mfa": {
+        "title": "Two-factor authentication",
+        "body": "Add a code from an authenticator app on top of your password.",
+        "passwordLabel": "Confirm your password to start",
+        "enable": "Enable two-factor",
+        "starting": "Starting…",
+        "qrAlt": "QR code for your authenticator app",
+        "qrLoading": "Generating QR code…",
+        "secretHint": "Can't scan? Enter this secret manually.",
+        "recoveryCodesTitle": "Recovery codes",
+        "recoveryCodesHint": "Save these now. Each works once if you lose your authenticator.",
+        "firstCodeLabel": "Enter the 6-digit code from your app",
+        "confirm": "Confirm and enable",
+        "verifying": "Verifying…",
+        "cancel": "Cancel",
+        "statusActive": "Two-factor is active",
+        "statusActiveHint": "You'll be asked for a code after entering your password.",
+        "statusBadge": "On",
+        "freshCodesTitle": "Your new recovery codes",
+        "freshCodesHint": "Replace your old codes. Each new code works once.",
+        "regeneratePasswordLabel": "Confirm your password to regenerate codes",
+        "regenerate": "Regenerate recovery codes",
+        "regenerating": "Regenerating…",
+        "disablePasswordLabel": "Confirm your password to disable",
+        "disable": "Disable two-factor",
+        "disabling": "Disabling…",
+        "notifications": {
+          "enabled": "Two-factor authentication enabled",
+          "disabled": "Two-factor authentication disabled",
+          "codesRegenerated": "Recovery codes regenerated"
+        },
+        "errors": {
+          "passwordRequired": "Enter your current password.",
+          "passwordIncorrect": "That password didn't match.",
+          "codeRequired": "Enter the 6-digit code from your app.",
+          "invalidCode": "Code didn't match. Try the next one from your app.",
+          "generic": "Something went wrong. Try again."
+        }
       }
     },
     "profile": {
@@ -382,6 +413,15 @@
       "ariaLabel": "Switch active account",
       "currentBadge": "Active",
       "rolePrefix": "Role"
+    },
+    "auditLog": {
+      "pageTitle": "Audit log",
+      "pageSubtitle": "Account-scoped activity — owners and admins only.",
+      "loading": "Loading audit entries",
+      "error": "Could not load the audit log. Try again.",
+      "empty": "No audit entries for this account yet.",
+      "systemActor": "System",
+      "navLabel": "Audit log"
     },
     "invitations": {
       "pageTitle": "Team",

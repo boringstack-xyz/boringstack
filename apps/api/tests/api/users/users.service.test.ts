@@ -236,7 +236,6 @@ describe("UsersService.getMe — feature resolution", () => {
     const me = await usersService.getMe(user.id, account.id);
 
     expect(me.features.max_seats).toBe(1);
-    expect(me.features.max_widgets).toBe(5);
     expect(me.capabilities.billing).toBe(env.BILLING_ENABLED);
   });
 
@@ -254,7 +253,7 @@ describe("UsersService.getMe — feature resolution", () => {
       .insert(planFeatures)
       .values({
         planId: pro,
-        featureKey: "max_widgets",
+        featureKey: "max_seats",
         value: { number: 1000 },
       })
       .onConflictDoUpdate({
@@ -271,7 +270,7 @@ describe("UsersService.getMe — feature resolution", () => {
 
     const me = await usersService.getMe(user.id, account.id);
 
-    expect(me.features.max_widgets).toBe(1000);
+    expect(me.features.max_seats).toBe(1000);
   });
 
   test("admin override wins over the plan row on the next getMe", async () => {
@@ -294,7 +293,7 @@ describe("UsersService.getMe — feature resolution", () => {
 
     await adminBillingService.grantFeature({
       accountId: account.id,
-      featureKey: "max_widgets",
+      featureKey: "max_seats",
       value: { number: 99 },
       expiresAt: null,
       visibility: "internal",
@@ -305,7 +304,7 @@ describe("UsersService.getMe — feature resolution", () => {
 
     const me = await usersService.getMe(user.id, account.id);
 
-    expect(me.features.max_widgets).toBe(99);
+    expect(me.features.max_seats).toBe(99);
   });
 
   test("revoked overrides fall back to plan defaults", async () => {
@@ -323,7 +322,7 @@ describe("UsersService.getMe — feature resolution", () => {
       .insert(planFeatures)
       .values({
         planId: free,
-        featureKey: "max_widgets",
+        featureKey: "max_seats",
         value: { number: 10 },
       })
       .onConflictDoUpdate({
@@ -340,7 +339,7 @@ describe("UsersService.getMe — feature resolution", () => {
 
     const granted = await adminBillingService.grantFeature({
       accountId: account.id,
-      featureKey: "max_widgets",
+      featureKey: "max_seats",
       value: { number: 99 },
       expiresAt: null,
       visibility: "internal",
@@ -369,6 +368,6 @@ describe("UsersService.getMe — feature resolution", () => {
 
     const me = await usersService.getMe(user.id, account.id);
 
-    expect(me.features.max_widgets).toBe(10);
+    expect(me.features.max_seats).toBe(10);
   });
 });

@@ -12,6 +12,11 @@ import {
   retryWithBackoff,
   validateEmailMessage,
 } from "../email.utils";
+import { EMAIL_SUPPRESSION_PROVIDERS } from "../suppression.constants";
+import {
+  isProviderSuppressionError,
+  mirrorProviderSuppression,
+} from "./suppression.helpers";
 
 export class ResendEmailService implements IEmailService {
   public readonly providerName = "resend" as const;
@@ -36,6 +41,14 @@ export class ResendEmailService implements IEmailService {
         });
 
         if (result.error !== null) {
+          if (isProviderSuppressionError(result.error.message)) {
+            await mirrorProviderSuppression(
+              message.to,
+              EMAIL_SUPPRESSION_PROVIDERS.RESEND,
+              result.error.message
+            );
+          }
+
           throw ApiErrors.externalService(
             `Resend error: ${result.error.message}`
           );

@@ -18,7 +18,7 @@ export function ProofSection() {
 
       <div
         aria-label="What BoringStack gives you earlier"
-        className="grid self-end border-y border-[var(--bs-line)] lg:mt-2"
+        className="grid self-end lg:mt-2"
       >
         <div className="grid grid-cols-1 gap-2 py-4 font-mono text-[0.78rem] font-extrabold leading-snug text-[var(--bs-accent-strong)] min-[641px]:grid-cols-[minmax(9rem,0.35fr)_minmax(0,1fr)] min-[641px]:gap-6">
           <span>Usually postponed</span>

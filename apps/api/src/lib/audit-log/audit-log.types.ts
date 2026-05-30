@@ -22,3 +22,25 @@ export interface IAuditEventInput {
   /** User-Agent header, when available. */
   userAgent?: string;
 }
+
+export interface IListForAccountInput {
+  accountId: string;
+  /** Newest-first; capped at 100. Defaults to 50. */
+  limit?: number;
+}
+
+export interface IAuditLogEntry {
+  id: string;
+  action: string;
+  resource: string | null;
+  metadata: unknown;
+  createdAt: string;
+  actorUserId: string | null;
+  actorEmail: string | null;
+  actorFirstName: string | null;
+  actorLastName: string | null;
+}
+
+export interface IListForAccountResult {
+  entries: IAuditLogEntry[];
+}

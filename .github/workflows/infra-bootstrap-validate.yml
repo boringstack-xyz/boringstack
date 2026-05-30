@@ -30,7 +30,6 @@ jobs:
           filters: |
             code:
               - 'infra/bootstrap/**'
-              - '!infra/bootstrap/**/*.md'
               - '.github/workflows/infra-bootstrap-validate.yml'
 
       - name: Install OpenTofu

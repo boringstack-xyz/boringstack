@@ -1,154 +1,140 @@
 ---
 title: "Recipe: Add a service to Compose"
-description: Add a new container to the BoringStack Compose stack as an opt-in overlay with profiles, resource limits, and (optionally) Traefik routing. Goal, Prereqs, Steps, Verify, and what changes in code.
+description: Add a container as an opt-in overlay with resource limits and Traefik routing. Estimated 20 minutes.
 verifiedOn: "2026-05"
 ---
 
-import { Steps } from "@astrojs/starlight/components";
-import DocCallout from "../../../components/DocCallout.tsx";
-import HowToSchema from "../../../components/HowToSchema.astro";
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import CommandRun from "../../../components/docs-kit/CommandRun";
+Add a container to the Compose stack as an optional overlay. The core stack stays lean; opt-in services (search, caching, dashboards) get their own flag and resource budget. Worked example: adding Meilisearch.
 
-<HowToSchema
-  name="Add a service to BoringStack's Compose stack"
-  description="Add a new container as an opt-in overlay with profiles, resource limits, and Traefik routing."
-  totalTime="PT20M"
-  steps={[
-    "Create docker-compose.<name>.yml under compose/ with the service definition and resource limits.",
-    "Wire the overlay into compose/dev.sh as a WITH_<NAME>=1 flag.",
-    "Add a dev-only Traefik labels overlay for a friendly hostname.",
-    "Add a parallel prod-labels overlay for HTTPS and BasicAuth in production.",
-    "Document the new flag and any required env vars in compose/.env.example.",
-    "Boot with WITH_<NAME>=1 ./scripts/compose-up.sh and verify health.",
-  ]}
-/>
+Estimated time: 20 minutes.
 
-<PageIntro
-  eyebrow="Recipes"
-  actions={[
-    { label: "Steps", href: "#steps" },
-    { label: "Verification", href: "#verify" },
-  ]}
-  facts={[
-    { value: "20 min", label: "Estimated duration" },
-    { value: "Compose", label: "Engine" },
-    { value: "Opt-in", label: "Overlay Model" },
-  ]}
->
-  Add a containerized service to your local stack as an isolated overlay. The core stack stays light; opt-in tools get their own resource budgets.
-</PageIntro>
+## Overview
 
-## Goal
+Create three files:
+1. `docker-compose.meilisearch.yml`  - the service
+2. `docker-compose.meilisearch-dev-labels.yml`  - Traefik routing for dev
+3. `docker-compose.meilisearch-prod-labels.yml`  - HTTPS + BasicAuth for prod
 
-Add a new container to the stack as an [overlay](/reference/glossary#overlay). A `WITH_<NAME>=1` flag turns it on without changing the base file. Same model the observability, GlitchTip, Bull Board, and Mailpit overlays use.
+Wire the flag into `dev.sh`, document in `.env.example`, boot with `WITH_MEILISEARCH=1`.
 
-Worked example below: adding **Meilisearch** as an opt-in search engine, exposed on a dev hostname and behind Basic Auth in prod.
+## 1. Create the service file
 
-## Prereqs
+`infra/compose/compose/docker-compose.meilisearch.yml`:
 
-- A working local stack.
-- Read [Profiles & overlays](/infra/profiles-and-overlays/) for the convention `./dev.sh` and `compose-up.sh` follow.
+```yaml
+services:
+  meilisearch:
+    image: getmeili/meilisearch:v1.10
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY is required}
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meilisearch_data:/meili_data
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "${MEILI_LIMITS_CPUS:-0.5}"
+          memory: "${MEILI_LIMITS_MEMORY:-512M}"
+        reservations:
+          cpus: "${MEILI_LIMITS_CPUS_RESERVATION:-0.1}"
+          memory: "${MEILI_LIMITS_MEMORY_RESERVATION:-128M}"
 
-## Steps
+volumes:
+  meilisearch_data:
+```
 
-<Steps>
+Always declare `deploy.resources.limits` and `reservations`. A runaway overlay without limits starves the base stack. Copy the pattern from existing overlays and adjust for your service.
 
-1. Create the overlay file. In `infra/compose/compose/`:
+## 2. Add dev routing
 
-   ```yaml
-   # docker-compose.meilisearch.yml
-   services:
-     meilisearch:
-       image: getmeili/meilisearch:v1.10
-       restart: unless-stopped
-       environment:
-         MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY is required}
-         MEILI_NO_ANALYTICS: "true"
-       volumes:
-         - meilisearch_data:/meili_data
-       networks:
-         - backend
-       deploy:
-         resources:
-           limits:
-             cpus: "${MEILI_LIMITS_CPUS:-0.5}"
-             memory: ${MEILI_LIMITS_MEMORY:-512M}
-           reservations:
-             cpus: "${MEILI_RESERVATIONS_CPUS:-0.1}"
-             memory: ${MEILI_RESERVATIONS_MEMORY:-128M}
+`infra/compose/compose/docker-compose.meilisearch-dev-labels.yml`:
 
-   volumes:
-     meilisearch_data:
-   ```
+```yaml
+services:
+  meilisearch:
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.meilisearch.rule: Host(`meilisearch.localhost`)
+      traefik.http.services.meilisearch.loadbalancer.server.port: "7700"
+```
 
-   The env-var-with-default pattern matches the rest of the stack (see [Resource limits](/infra/resource-limits/)).
+This exposes the service at `http://meilisearch.localhost` during development.
 
-2. Wire the overlay into `dev.sh`. The orchestrator already understands `WITH_<NAME>=1` flags. Add the file to the `case` block:
+## 3. Add prod routing
 
-   ```bash
-   # in compose/dev.sh
-   if [ "${WITH_MEILISEARCH:-0}" = "1" ]; then
-     COMPOSE_FILES+=( "-f" "compose/docker-compose.meilisearch.yml" )
-   fi
-   ```
+`infra/compose/compose/docker-compose.meilisearch-prod-labels.yml`:
 
-3. Add a dev-only labels overlay if you want a friendly hostname. Mirror the pattern in `docker-compose.development-labels.yml`:
+```yaml
+services:
+  meilisearch:
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.meilisearch.rule: Host(`search.example.com`)
+      traefik.http.routers.meilisearch.entrypoints: websecure
+      traefik.http.routers.meilisearch.tls: "true"
+      traefik.http.middlewares.meilisearch-auth.basicauth.users: admin:$$2y$$...
+      traefik.http.routers.meilisearch.middlewares: meilisearch-auth
+      traefik.http.services.meilisearch.loadbalancer.server.port: "7700"
+```
 
-   ```yaml
-   # docker-compose.meilisearch-dev-labels.yml
-   services:
-     meilisearch:
-       labels:
-         traefik.enable: "true"
-         traefik.http.routers.meilisearch.rule: Host(`meilisearch.localhost`)
-         traefik.http.services.meilisearch.loadbalancer.server.port: "7700"
-   ```
+This puts HTTPS + BasicAuth in front of the service in production. Follow the GlitchTip prod overlay as a reference for the exact pattern.
 
-   Add a parallel `meilisearch-prod-labels.yml` for HTTPS + Basic Auth in production, following the GlitchTip prod overlay as the reference shape.
+## 4. Wire the flag
 
-4. Document the new flag in `compose/.env.example`:
+In `infra/compose/compose/dev.sh`, find the case block and add:
 
-   ```bash
-   # Meilisearch overlay (WITH_MEILISEARCH=1)
-   MEILI_MASTER_KEY=
-   ```
+```bash
+if [ "${WITH_MEILISEARCH:-0}" = "1" ]; then
+  COMPOSE_FILES+=( "-f" "compose/docker-compose.meilisearch.yml" )
+  COMPOSE_FILES+=( "-f" "compose/docker-compose.meilisearch-dev-labels.yml" )
+fi
+```
 
-5. Boot it:
+## 5. Document in .env.example
 
-   ```bash
-   WITH_MEILISEARCH=1 ./scripts/compose-up.sh
-   ```
+```bash
+# Meilisearch (WITH_MEILISEARCH=1)
+MEILI_MASTER_KEY=<set-from-your-secret-manager>
+MEILI_LIMITS_CPUS=0.5
+MEILI_LIMITS_MEMORY=512M
+```
 
-</Steps>
+## 6. Boot it
 
-## Verify
+```bash
+WITH_MEILISEARCH=1 ./scripts/compose-up.sh
+```
 
-- `docker compose ps` shows the `meilisearch` container in the running list alongside the base stack.
-- The volume `meilisearch_data` exists: `docker volume ls | grep meilisearch`.
-- The dev URL responds: `curl http://meilisearch.localhost/health`.
-- Flags compose: `WITH_MEILISEARCH=1 WITH_OBSERVABILITY=1 ./scripts/compose-up.sh` brings up both overlays cleanly.
-- Stopping cleanly preserves data: `./scripts/compose-down.sh` then re-up; the index is still there.
+Verify:
 
-## What changes in code
+```bash
+# Container is running
+docker compose ps | grep meilisearch
 
-- `infra/compose/compose/docker-compose.meilisearch.yml`: new (the service).
-- `infra/compose/compose/docker-compose.meilisearch-dev-labels.yml`: new (Traefik routing in dev).
-- `infra/compose/compose/docker-compose.meilisearch-prod-labels.yml`: new (HTTPS + BasicAuth in prod).
-- `infra/compose/compose/dev.sh`: one new `if` block for the `WITH_MEILISEARCH=1` flag.
-- `infra/compose/compose/.env.example`: new env stanza.
+# Volume exists
+docker volume ls | grep meilisearch
 
-No changes to `docker-compose.yml`. That's the point of the overlay model: the base never grows, opt-in services live in their own files.
+# Dev URL responds
+curl http://meilisearch.localhost/health
+```
 
-<DocCallout eyebrow="Reminder" title="Resource limits aren't optional" variant="caution">
-  Every overlay should declare `deploy.resources.limits`. A misbehaving overlay
-  without limits can starve the base stack on a small VPS. The pattern is in
-  every existing overlay file. Copy and adjust.
-</DocCallout>
+You can stack multiple flags:
+
+```bash
+WITH_MEILISEARCH=1 WITH_OBSERVABILITY=1 ./scripts/compose-up.sh
+```
+
+## Key points
+
+- **Resource limits are mandatory**: Every overlay must declare `deploy.resources.limits` and `reservations`. Without them, a stuck service starves the whole stack on a small VPS.
+- **Overlay model keeps base clean**: The base `docker-compose.yml` never grows. Each optional service lives in its own file.
+- **Idempotent**: `./scripts/compose-down.sh` then re-up preserves volumes, so data persists across restarts.
 
 ## Related
 
-- [Profiles & overlays](/infra/profiles-and-overlays/); how flags compose over the base stack.
-- [Resource limits](/infra/resource-limits/); the per-service budget convention.
-- [Secrets](/infra/secrets/); how env values reach containers safely.
-- [Infra template overview](/infra/overview/); the source map for compose files.
+- [Profiles & overlays](/infra/profiles-and-overlays/)  - how the overlay system works.
+- [Resource limits](/infra/resource-limits/)  - the per-service budget convention.
+- [Secrets](/infra/secrets/)  - how env values reach containers safely.

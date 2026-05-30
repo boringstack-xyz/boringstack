@@ -10,10 +10,12 @@ const shouldRenderSearch =
   config.pagefind ||
   config.components.Search !== "@astrojs/starlight/components/Search.astro";
 
+const navLinkClass =
+  "rounded-md px-3 py-2 text-[0.92rem] font-bold leading-none text-[var(--sl-color-gray-2)] no-underline transition-colors hover:bg-white/[0.05] hover:text-[var(--sl-color-white)]";
+
 const navItems = [
   { href: "/quickstart/", label: "Quickstart" },
   { href: "/architecture/why-boringstack/", label: "Why" },
-  { href: "/architecture/why-boringstack/#cost-calc-title", label: "Cost" },
   { href: "/architecture/decisions/", label: "Decisions" },
   { href: "/recipes/add-stripe/", label: "Recipes" },
   { href: "/topics/deployment/", label: "Deploy" },
@@ -51,10 +53,7 @@ const navItems = [
   <nav class="flex items-center gap-1 max-[74rem]:hidden" aria-label="Primary">
     {
       navItems.map((item) => (
-        <a
-          class="rounded-md px-3 py-2 text-[0.92rem] font-bold leading-none text-[var(--sl-color-gray-2)] no-underline transition-colors hover:bg-white/[0.05] hover:text-[var(--sl-color-white)]"
-          href={item.href}
-        >
+        <a class={navLinkClass} href={item.href}>
           {item.label}
         </a>
       ))
@@ -66,7 +65,7 @@ const navItems = [
   </div>
 
   <div
-    class="sl-hidden justify-self-end md:sl-flex print:hidden items-center justify-end gap-3 before:h-7 before:w-px before:bg-[var(--sl-color-gray-5)] before:content-['']"
+    class="sl-hidden items-center justify-end justify-self-end gap-3 print:hidden before:h-7 before:w-px before:bg-[var(--sl-color-gray-5)] before:content-[''] md:sl-flex"
   >
     <SocialIcons />
     <ThemeSelect />

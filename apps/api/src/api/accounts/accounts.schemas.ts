@@ -138,3 +138,23 @@ export const OwnershipTransferResponse = t.Object({
 export const PendingOwnershipTransferResponse = t.Object({
   pending: t.Union([OwnershipTransferSchema, t.Null()]),
 });
+
+export const AuditLogEntrySchema = t.Object({
+  id: t.String(),
+  action: t.String(),
+  resource: t.Union([t.String(), t.Null()]),
+  metadata: t.Unknown(),
+  createdAt: t.String(),
+  actorUserId: t.Union([t.String(), t.Null()]),
+  actorEmail: t.Union([t.String(), t.Null()]),
+  actorFirstName: t.Union([t.String(), t.Null()]),
+  actorLastName: t.Union([t.String(), t.Null()]),
+});
+
+export const AuditLogListResponse = t.Object({
+  entries: t.Array(AuditLogEntrySchema),
+});
+
+export const AuditLogListQuerySchema = t.Object({
+  limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })),
+});

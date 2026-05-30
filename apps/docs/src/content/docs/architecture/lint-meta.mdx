@@ -1,29 +1,11 @@
 ---
 title: lint:meta rules
-description: Static repo guardrails that run alongside ESLint — package.json pins, CI parity, env cascade drift, source-text bans, and test coverage contracts.
+description: Static repo enforcement rules that run alongside ESLint, package.json pins, CI parity, env cascade drift, source-text bans, and test coverage contracts.
 ---
 
 import { Aside } from "@astrojs/starlight/components";
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import LintMetaCatalog from "../../../components/docs-kit/LintMetaCatalog";
 
-<PageIntro
-  eyebrow="lint:meta"
-  actions={[
-    { label: "ESLint contract", href: "/architecture/lint-as-contract/" },
-    { label: "Scripts & tooling", href: "/reference/scripts-tooling/" },
-  ]}
-  facts={[
-    { value: "lint:meta", label: "merge-gate layer" },
-    { value: "ui + api", label: "template catalogs" },
-    { value: "registry.ts", label: "source of truth" },
-  ]}
->
-  ESLint enforces architecture inside TypeScript modules. <code>lint:meta</code>{" "}
-  catches repo-level drift ESLint cannot see: unpinned GitHub Actions, env
-  cascade gaps, forbidden inline disables, cross-repo imports, and missing test
-  siblings. It runs inside <code>bun run check</code> / <code>bun run check</code>.
-</PageIntro>
+ESLint enforces architecture inside TypeScript modules. `lint:meta` catches repo-level drift ESLint cannot see: unpinned GitHub Actions, env cascade gaps, forbidden inline disables, cross-repo imports, and missing test siblings. It runs inside `bun run validate`.
 
 ## Merge gate stack
 
@@ -33,7 +15,7 @@ typecheck → ESLint → lint:meta → knip → tests
 
 <Aside type="tip" title="Machine-readable source">
   Each template registers rules in <code>scripts/lint-meta/registry.ts</code>.
-  This page is generated from that registry — add a rule, run the generator,
+  This page is generated from that registry, add a rule, run the generator,
   and CI keeps the docs aligned.
 </Aside>
 
@@ -41,28 +23,22 @@ typecheck → ESLint → lint:meta → knip → tests
 
 The apps/ui catalog includes rules that only apply to the SPA repo:
 
-- `no-cross-repo-import` — **CI-critical**; UI imports must not reach into backend or infra source
-- `modulepreload-size-limit-coverage` — bundle size-limit config must cover modulepreload chunks
-- `no-dark-variant`, `no-dangerous-html`, `env-access`, `no-raw-fetch` — source-text bans for Vite/React patterns
+- `no-cross-repo-import`, **CI-critical**; UI imports must not reach into backend or infra source
+- `modulepreload-size-limit-coverage`, bundle size-limit config must cover modulepreload chunks
+- `no-dark-variant`, `no-dangerous-html`, `env-access`, `no-raw-fetch`, source-text bans for Vite/React patterns
 
 ## API-only rules
 
 The apps/api catalog adds backend test contracts:
 
-- `routes-require-test-sibling` — every `*.routes.ts` needs a matching `tests/api/**/*.routes.test.ts`
-- `touch-tests-too` — opt-in via `LINT_META_TOUCHED_BASE` for diff-aware test enforcement
+- `routes-require-test-sibling`, every `*.routes.ts` needs a matching `tests/api/**/*.routes.test.ts`
+- `touch-tests-too`, opt-in via `LINT_META_TOUCHED_BASE` for diff-aware test enforcement
 
 ## Shared rules
 
 Both templates share supply-chain, CI, env, artifact, and config rules (exact deps, pre-push CI parity, engine pin parity, generated artifact banners, forbidden inline disables, raw role literals, logic-file test siblings).
 
-## apps/ui catalog
-
-<LintMetaCatalog template="ui" />
-
-## apps/api catalog
-
-<LintMetaCatalog template="api" />
+See the ESLint plugin inventory and implementation under `scripts/lint-meta/` in the boringstack repo.
 
 ## Adding a rule
 
@@ -74,6 +50,6 @@ Both templates share supply-chain, CI, env, artifact, and config rules (exact de
 
 ## Related
 
-- [Lint as the contract](/architecture/lint-as-contract/) — ESLint plugin inventory
-- [Scripts & tooling](/reference/scripts-tooling/) — which script runs `lint:meta`
-- [Commands cheatsheet](/reference/commands/) — day-to-day workflow commands
+- [Lint as the contract](/architecture/lint-as-contract/), ESLint plugin inventory
+- [Scripts & tooling](/reference/scripts-tooling/), which script runs `lint:meta`
+- [Commands cheatsheet](/reference/commands/), day-to-day workflow commands

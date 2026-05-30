@@ -1,250 +1,83 @@
 ---
 title: Commands cheatsheet
-description: Every command you'll run during a normal day of working on BoringStack.
+description: Day-to-day CLI commands for BoringStack development and operations.
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import CommandRun from "../../../components/docs-kit/CommandRun";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
+CLI commands for development, testing, and infrastructure control. Full script catalogues live in each app's `package.json` and the infra folder's `compose/` directory.
 
-<PageIntro
-  eyebrow="Commands"
-  actions={[
-    { label: "Infra Commands", href: "#infra-docker-compose-stack" },
-    { label: "API Commands", href: "#api-app" },
-    { label: "UI Commands", href: "#ui-app" },
-  ]}
-  facts={[
-    { value: "30+", label: "workflow commands" },
-    { value: "Unified", label: "infra control" },
-    { value: "1-flag", label: "composition" },
-  ]}
->
-  CLI commands for day-to-day development, testing, and operations. For which
-  script file each command runs, see
-  [Scripts & tooling](/reference/scripts-tooling/).
-</PageIntro>
+## Where scripts live
 
-## Monorepo root
+- **Repository root:** `package.json` (monorepo tasks: `bun run regen`, `bun run check`)
+- **apps/api:** `package.json` (API dev, build, test, database)
+- **apps/ui:** `package.json` (UI dev, build, test, components)
+- **infra/compose/scripts/:** shell helpers (compose-up.sh, compose-down.sh, backup-wrapper.sh)
 
-Run from the repository root (`boringstack/`):
+For every command below, see the source `package.json` for the full list and options.
 
-<FaqGroup>
-  <FaqItem title="Regenerate all cross-app artifacts" open>
-    `bun run regen` — ACL types, OpenAPI schema (needs api on :7330), lint-meta
-    RULES.md, docs JSON catalogs.
-  </FaqItem>
-  <FaqItem title="Drift checks before push">
-    `bun run check` — same gates as CI for contracts across apps/docs.
-  </FaqItem>
-  <FaqItem title="Full validate">
-    `bun run check:full` — check plus `apps/api` validate, `apps/ui` validate, and
-    `apps/docs` `build:ci`.
-  </FaqItem>
-  <FaqItem title="First-time local setup">
-    `./setup.sh` or `./setup.sh --up` — seed compose `.env` and optionally boot
-    the dev stack.
-  </FaqItem>
-</FaqGroup>
+## First-week commands
 
-Paths in the sections below are relative to each app unless noted. Compose
-commands run from `infra/compose/compose`; operational helper scripts live in
-`infra/compose/scripts`.
+### Setup (first time)
 
-## Infra (docker-compose stack)
+```bash
+./setup.sh        # seed compose/.env, optional --up to boot the stack
+```
 
-<FaqGroup>
-  <FaqItem title="Start dev stack" open>
-    `./scripts/compose-up.sh`. Data: n/a.
-  </FaqItem>
-  <FaqItem title="Stop, keep data">
-    `./scripts/compose-down.sh`. Data preserved.
-  </FaqItem>
-  <FaqItem title="Stop and wipe data">
-    `./scripts/compose-down-clean.sh`. Data not preserved (prompts; `CONFIRM=yes` to skip confirmation).
-  </FaqItem>
-  <FaqItem title="Start prod">
-    `STACK=prod ./scripts/compose-up.sh`. Data: n/a.
-  </FaqItem>
-  <FaqItem title="With observability">
-    `WITH_OBSERVABILITY=1 ./scripts/compose-up.sh`. Data: n/a.
-  </FaqItem>
-  <FaqItem title="With error tracking">
-    `WITH_GLITCHTIP=1 ./scripts/compose-up.sh`. Data: n/a.
-  </FaqItem>
-  <FaqItem title="With queue dashboard">
-    `WITH_BULLMQ=1 ./scripts/compose-up.sh`. Data: n/a.
-  </FaqItem>
-  <FaqItem title="With image-update bot">
-    `WITH_WUD=1 ./scripts/compose-up.sh`. Data: n/a.
-  </FaqItem>
-  <FaqItem title="With local email catcher">
-    `WITH_MAILPIT=1 ./scripts/compose-up.sh` (dev only). Data: n/a.
-  </FaqItem>
-  <FaqItem title="Service status">
-    `docker compose -f compose/docker-compose.yml -f compose/docker-compose.development-labels.yml --profile dev ps`. Data: n/a.
-  </FaqItem>
-  <FaqItem title="Live logs">
-    `docker compose ... logs -f api-dev`. Data: n/a.
-  </FaqItem>
-  <FaqItem title="Live resource use">
-    `docker stats`. Data: n/a.
-  </FaqItem>
-  <FaqItem title="Backup db (offsite)">
-    `BACKUP_DRY_RUN=1 ./scripts/backup-wrapper.example.sh` then drop the flag. Data preserved.
-  </FaqItem>
-</FaqGroup>
+### Dev stack control
 
-Flags compose: `WITH_OBSERVABILITY=1 WITH_GLITCHTIP=1 ./scripts/compose-up.sh`.
+```bash
+./scripts/compose-up.sh       # start (from infra/compose/compose/)
+./scripts/compose-down.sh     # stop, keep data
+./scripts/compose-down-clean.sh   # stop and wipe
+```
 
-## API app
+### Regeneration and checks (repo root)
 
-<FaqGroup>
-  <FaqItem title="Run in watch mode" open>
-    `bun run dev`
-  </FaqItem>
-  <FaqItem title="Production bundle">
-    `bun run build`
-  </FaqItem>
-  <FaqItem title="Run production bundle">
-    `bun run start`
-  </FaqItem>
-  <FaqItem title="Typecheck + lint + knip">
-    `bun run check`
-  </FaqItem>
-  <FaqItem title="Lint only">
-    `bun run lint`
-  </FaqItem>
-  <FaqItem title="Auto-fix lint">
-    `bun run lint:fix`
-  </FaqItem>
-  <FaqItem title="Dead-code detection">
-    `bun run knip`
-  </FaqItem>
-  <FaqItem title="Unit + integration tests">
-    `bun run test`
-  </FaqItem>
-  <FaqItem title="Full merge gate">
-    `bun run validate`
-  </FaqItem>
-  <FaqItem title="Run the pre-push gate (same as `git push`)">
-    `bun run pre-push`
-  </FaqItem>
-  <FaqItem title="Generate migration">
-    `bun run db:generate`
-  </FaqItem>
-  <FaqItem title="Apply migrations">
-    `bun run db:migrate`
-  </FaqItem>
-  <FaqItem title="Push schema (dev)">
-    `bun run db:push --force`
-  </FaqItem>
-  <FaqItem title="Seed superuser (if SUPERUSER_EMAIL + _PASSWORD set)">
-    `bun run db:seed`
-  </FaqItem>
-  <FaqItem title="Drizzle studio">
-    `bun run db:studio`
-  </FaqItem>
-  <FaqItem title="Scaffold a new resource">
-    `bun run new:resource <name>`
-  </FaqItem>
-  <FaqItem title="Build email templates">
-    `bun run build:templates`
-  </FaqItem>
-  <FaqItem title="Watch email templates">
-    `bun run build:templates:watch`
-  </FaqItem>
-</FaqGroup>
+```bash
+bun run regen     # ACL types, OpenAPI schema, lint-meta, docs JSON
+bun run check     # drift checks (API must be running on :7330)
+bun run validate  # full merge gate (check + tests)
+```
 
-## UI app
+### API app (from apps/api)
 
-<FaqGroup>
-  <FaqItem title="Dev server (port 7331)" open>
-    `bun run dev`
-  </FaqItem>
-  <FaqItem title="Production build">
-    `bun run build`
-  </FaqItem>
-  <FaqItem title="Production preview">
-    `bun run preview`
-  </FaqItem>
-  <FaqItem title="Typecheck">
-    `bun run typecheck`
-  </FaqItem>
-  <FaqItem title="Lint + format + typecheck + knip">
-    `bun run check`
-  </FaqItem>
-  <FaqItem title="Auto-fix lint">
-    `bun run lint:fix`
-  </FaqItem>
-  <FaqItem title="Dead-code detection">
-    `bun run knip`
-  </FaqItem>
-  <FaqItem title="Unit + component tests">
-    `bun run test`
-  </FaqItem>
-  <FaqItem title="Coverage">
-    `bun run test:ci`
-  </FaqItem>
-  <FaqItem title="e2e (Playwright)">
-    `bun run e2e`
-  </FaqItem>
-  <FaqItem title="e2e visual baselines">
-    `bun run e2e:visual:update`
-  </FaqItem>
-  <FaqItem title="Bundle size budget">
-    `bun run size:check`
-  </FaqItem>
-  <FaqItem title="Bundle analyzer">
-    `bun run analyze`
-  </FaqItem>
-  <FaqItem title="Lighthouse">
-    `bun run lighthouse`
-  </FaqItem>
-  <FaqItem title="Full merge gate">
-    `bun run validate`
-  </FaqItem>
-  <FaqItem title="Run the pre-push gate (same as `git push`)">
-    `bun run pre-push`
-  </FaqItem>
-  <FaqItem title="Regenerate API schema">
-    `bun run generate:api`
-  </FaqItem>
-  <FaqItem title="Scaffold a component">
-    `bun run new:component <Name>`
-  </FaqItem>
-  <FaqItem title="Scaffold a feature">
-    `bun run new:feature <name>`
-  </FaqItem>
-  <FaqItem title="Storybook">
-    `bun run storybook`
-  </FaqItem>
-</FaqGroup>
+```bash
+bun run dev       # watch mode
+bun run validate  # typecheck + lint + tests
+bun run db:migrate    # apply migrations
+bun run db:seed   # seed superuser (if vars set)
+```
 
-## Inside the dev containers (rare)
+### UI app (from apps/ui)
 
-<CommandRun
-  title="Inside Dev Containers"
-  caption="running shell commands or database client sessions"
-  command={[
-    "docker compose exec api-dev sh",
-    "docker compose logs -f --tail=100 api-dev",
-    "docker compose exec postgres psql -U app -d app",
-    "docker compose exec valkey valkey-cli",
-  ]}
-  output={[
-    { tone: "ok", text: "api-dev container shell spawned" },
-    { tone: "info", text: "Streaming api-dev logs..." },
-    { tone: "ok", text: "psql (17.x) connection established on database 'app'" },
-    { tone: "ok", text: "valkey-cli connected to 127.0.0.1:6379" },
-  ]}
-/>
+```bash
+bun run dev       # dev server on :7331
+bun run validate  # typecheck + lint + tests
+bun run generate:api  # sync OpenAPI schema
+```
+
+## Environment modulation (infra commands from infra/compose/compose/)
+
+```bash
+STACK=prod ./scripts/compose-up.sh              # prod profile
+WITH_OBSERVABILITY=0 ./scripts/compose-up.sh    # skip observability
+WITH_GLITCHTIP=0 ./scripts/compose-up.sh        # skip error tracking
+WITH_MAILPIT=1 ./scripts/compose-up.sh          # add local email catcher
+WITH_BULLMQ=1 ./scripts/compose-up.sh           # add queue dashboard (dev only)
+```
+
+Minimal: `WITH_OBSERVABILITY=0 WITH_GLITCHTIP=0 ./scripts/compose-up.sh` boots Postgres + Valkey + apps only.
+
+## Status and debugging
+
+```bash
+./scripts/compose-up.sh ps          # service status
+docker compose logs -f api-dev      # stream logs
+docker stats                        # live resource usage
+```
 
 ## Related
 
-- [Quickstart](/quickstart/); the boot-from-clone path that produces this state.
-- [Environment variables](/reference/env-vars/); every knob you can flip alongside these commands.
-- [Profiles & overlays](/infra/profiles-and-overlays/); what the `WITH_*=1` flags actually toggle.
-- [Glossary](/reference/glossary/); the vocabulary (stack, overlay, profile, merge gate) the commands speak.
-- [Deployment](/topics/deployment/); the production sequence that wraps these locally-run commands.
+- [Scripts & tooling](/reference/scripts-tooling/); full command catalogues from each app
+- [Environment variables](/reference/env-vars/); every knob you can set
+- [Profiles & overlays](/infra/profiles-and-overlays/); what the WITH_* flags control
+- [Deployment](/topics/deployment/); production command sequences

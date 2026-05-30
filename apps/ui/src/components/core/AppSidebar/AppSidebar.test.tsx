@@ -35,7 +35,7 @@ function renderSidebar(onNavigate?: () => void) {
 }
 
 describe("AppSidebar", () => {
-  it("renders the brand lockup + all six nav links", () => {
+  it("renders the brand lockup + all non-billing nav links", () => {
     renderSidebar();
 
     expect(screen.getByText("app.name")).toBeInTheDocument();
@@ -43,10 +43,6 @@ describe("AppSidebar", () => {
     expect(
       screen.getByRole("link", { name: /nav\.dashboard/i })
     ).toHaveAttribute("href", "/dashboard");
-    expect(screen.getByRole("link", { name: /nav\.widgets/i })).toHaveAttribute(
-      "href",
-      "/widgets"
-    );
     expect(
       screen.getByRole("link", { name: /nav\.settings/i })
     ).toHaveAttribute("href", "/account/settings");

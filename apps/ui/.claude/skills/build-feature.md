@@ -1,13 +1,24 @@
 ---
 name: build-feature
-description: Use when implementing a new feature in ui-template — adding a page, scaffolding a component, building a vertical UI slice, wiring an existing API endpoint into the SPA, or creating a form. Drives the canonical loop — spec → plan → scaffold → tests-first → implement → `bun run validate` → diff summary. Triggers — "add a feature", "add a page", "scaffold a component", "build [X] UI", "wire up [X] page", "add a route", "add the [X] screen", "new component", "new feature folder", "consume the /api/[X] endpoint".
+description: Use when implementing a new feature in apps/ui — adding a page, scaffolding a component, building a vertical UI slice, wiring an existing API endpoint into the SPA, or creating a form. Drives the canonical loop — spec → plan → scaffold → tests-first → implement → `bun run validate` → diff summary. Triggers — "add a feature", "add a page", "scaffold a component", "build [X] UI", "wire up [X] page", "add a route", "add the [X] screen", "new component", "new feature folder", "consume the /api/[X] endpoint".
 ---
 
-# Build feature (ui-template)
+# Build feature (apps/ui)
 
 You are implementing a new UI feature end-to-end. The loop has six checkpoints. Don't skip ahead — each step's output informs the next. The merge gate is `bun run validate`; pre-1.0 rules apply (no `dark:` Tailwind classes, no `any`/`!`/`as`, no `dangerouslySetInnerHTML`, no `import.meta.env` outside `src/lib/env/`, no inline `eslint-disable`, no `console.*`).
 
 ## Checkpoint 1 — Spec
+
+Before asking anything, check whether the spec loop is active:
+
+1. Look for `.specs/next.md` at the repo root.
+2. If it exists, read it. If frontmatter contains `status: approved`,
+   the user has already done the spec work — use **Problem**,
+   **Slice**, **Design decisions**, and **Verification contract** as
+   the answers to the four questions below. Do NOT re-interview.
+3. If the spec exists but `status` is still `draft`, STOP. Tell the
+   user to finish `slice` and `approve` before running this skill.
+4. If `.specs/next.md` doesn't exist, fall through to the interview:
 
 Ask the user (or restate from context) in this order:
 
@@ -20,7 +31,7 @@ Ask the user (or restate from context) in this order:
    - Form (RHF + Zod)
    - List view fed by TanStack Query
 3. **What does success look like?** User-visible behavior. Becomes test expectations in Checkpoint 4.
-4. **Does this need a new endpoint?** If yes — run api-template's `/build-feature` first, regenerate the OpenAPI client via `bun run openapi:types`, then come back here.
+4. **Does this need a new endpoint?** If yes — run apps/api's `/build-feature` first, regenerate the OpenAPI client via `bun run openapi:types`, then come back here.
 
 Print a one-line summary. Stop until the user confirms.
 

@@ -38,12 +38,6 @@ const DashboardPage = lazy(() =>
   }))
 );
 
-const WidgetsPage = lazy(() =>
-  import("@/features/widgets/components/WidgetsPage").then((m) => ({
-    default: m.WidgetsPage
-  }))
-);
-
 const NotificationsPage = lazy(() =>
   import("@/features/notifications/components/NotificationsPage").then((m) => ({
     default: m.NotificationsPage
@@ -73,6 +67,12 @@ const VerifyEmailPage = lazy(() =>
 const InvitationsPage = lazy(() =>
   import("@/features/accounts/components/InvitationsPage").then((m) => ({
     default: m.InvitationsPage
+  }))
+);
+
+const AuditLogPage = lazy(() =>
+  import("@/features/accounts/components/AuditLogPage").then((m) => ({
+    default: m.AuditLogPage
   }))
 );
 
@@ -194,19 +194,6 @@ const router = createBrowserRouter([
     )
   },
   {
-    path: "/widgets",
-    errorElement: <RouteErrorBoundary />,
-    element: (
-      <ProtectedRoute>
-        <AppShell>
-          <Suspense fallback={<Fallback />}>
-            <WidgetsPage />
-          </Suspense>
-        </AppShell>
-      </ProtectedRoute>
-    )
-  },
-  {
     path: "/notifications/preferences",
     errorElement: <RouteErrorBoundary />,
     element: (
@@ -227,6 +214,19 @@ const router = createBrowserRouter([
         <AppShell>
           <Suspense fallback={<Fallback />}>
             <InvitationsPage />
+          </Suspense>
+        </AppShell>
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/account/audit-log",
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <ProtectedRoute>
+        <AppShell>
+          <Suspense fallback={<Fallback />}>
+            <AuditLogPage />
           </Suspense>
         </AppShell>
       </ProtectedRoute>

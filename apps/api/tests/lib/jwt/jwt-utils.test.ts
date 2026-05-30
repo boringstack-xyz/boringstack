@@ -1,5 +1,6 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
 
+import { jwtRevocationService } from "../../../src/lib/jwt/jwt-revocation";
 import {
   buildJWTPayload,
   createJWTConfig,
@@ -9,17 +10,26 @@ import { JWT_TTL_SECONDS } from "../../../src/lib/jwt/jwt.constants";
 const TEST_EMAIL = "user@example.com";
 
 describe("buildJWTPayload", () => {
-  test("packs id, email, and account id under their canonical claim names", () => {
-    const payload = buildJWTPayload("user-1", TEST_EMAIL, "acc-1");
+  afterEach(() => {
+    /*
+     * Restore the spy after every test. The default noop cache returns
+     * 0 for getUserRevokeCutoff (no cutoff stored), which the tests
+     * below either accept or override per-case.
+     */
+    spyOn(jwtRevocationService, "getUserRevokeCutoff").mockRestore();
+  });
+
+  test("packs id, email, and account id under their canonical claim names", async () => {
+    const payload = await buildJWTPayload("user-1", TEST_EMAIL, "acc-1");
 
     expect(payload.id).toBe("user-1");
     expect(payload.email).toBe(TEST_EMAIL);
     expect(payload.aid).toBe("acc-1");
   });
 
-  test("sets exp to roughly now + JWT_TTL_SECONDS (seconds, not ms)", () => {
+  test("sets exp to roughly now + JWT_TTL_SECONDS (seconds, not ms)", async () => {
     const before = Math.floor(Date.now() / 1000);
-    const payload = buildJWTPayload("user-1", TEST_EMAIL, "acc-1");
+    const payload = await buildJWTPayload("user-1", TEST_EMAIL, "acc-1");
     const after = Math.floor(Date.now() / 1000);
 
     const exp = payload.exp;
@@ -32,8 +42,8 @@ describe("buildJWTPayload", () => {
     expect(exp).toBeLessThanOrEqual(after + JWT_TTL_SECONDS);
   });
 
-  test("returns only string|number values (compatible with @elysiajs/jwt)", () => {
-    const payload = buildJWTPayload("user-1", TEST_EMAIL, "acc-1");
+  test("returns only string|number values (compatible with @elysiajs/jwt)", async () => {
+    const payload = await buildJWTPayload("user-1", TEST_EMAIL, "acc-1");
 
     for (const value of Object.values(payload)) {
       const token = typeof value;
@@ -42,14 +52,69 @@ describe("buildJWTPayload", () => {
     }
   });
 
-  test("exp is an integer number of seconds since epoch", () => {
+  test("exp is an integer number of seconds since epoch", async () => {
     const before = Math.floor(Date.now() / 1000);
-    const payload = buildJWTPayload("user-1", TEST_EMAIL, "acc-1");
+    const payload = await buildJWTPayload("user-1", TEST_EMAIL, "acc-1");
     const after = Math.floor(Date.now() / 1000);
 
     expect(Number.isInteger(payload.exp)).toBe(true);
     expect(payload.exp).toBeGreaterThanOrEqual(before + JWT_TTL_SECONDS);
     expect(payload.exp).toBeLessThanOrEqual(after + JWT_TTL_SECONDS);
+  });
+
+  describe("iat is lifted past an active revoke cutoff", () => {
+    test("with no cutoff (default noop cache), iat is current wall-clock seconds", async () => {
+      const before = Math.floor(Date.now() / 1000);
+      const payload = await buildJWTPayload("fresh-user", TEST_EMAIL, "acc-1");
+      const after = Math.floor(Date.now() / 1000);
+
+      expect(payload.iat).toBeGreaterThanOrEqual(before);
+      expect(payload.iat).toBeLessThanOrEqual(after);
+    });
+
+    test("when a recent revoke set a future cutoff, iat lifts to the cutoff", async () => {
+      /*
+       * Simulate password-reset's revokeAllForUser: cutoff is
+       * floor(now) + 1, killing every prior token. A login completing
+       * in the same wall-clock second has nowSeconds == cutoff - 1, so
+       * iat must lift to cutoff to survive the `iat < cutoff` check.
+       * This is the exact race the password-reset → immediate-login
+       * e2e test hit on CI cold starts.
+       */
+      const futureCutoff = Math.floor(Date.now() / 1000) + 1;
+
+      spyOn(jwtRevocationService, "getUserRevokeCutoff").mockResolvedValue(
+        futureCutoff
+      );
+
+      const payload = await buildJWTPayload(
+        "user-with-cutoff",
+        TEST_EMAIL,
+        "acc-1"
+      );
+
+      expect(payload.iat).toBe(futureCutoff);
+      expect(payload.exp).toBe(futureCutoff + JWT_TTL_SECONDS);
+    });
+
+    test("when the cutoff is in the past, iat stays at wall-clock now", async () => {
+      const staleCutoff = Math.floor(Date.now() / 1000) - 3600;
+
+      spyOn(jwtRevocationService, "getUserRevokeCutoff").mockResolvedValue(
+        staleCutoff
+      );
+
+      const before = Math.floor(Date.now() / 1000);
+      const payload = await buildJWTPayload(
+        "user-with-stale-cutoff",
+        TEST_EMAIL,
+        "acc-1"
+      );
+      const after = Math.floor(Date.now() / 1000);
+
+      expect(payload.iat).toBeGreaterThanOrEqual(before);
+      expect(payload.iat).toBeLessThanOrEqual(after);
+    });
   });
 });
 

@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "vitest";
 
 import {
+  checkCanonicalHelpersSingleHome,
   checkDependencyPairs,
   checkForbiddenText,
   checkNoCrossRepoImports,
@@ -300,6 +301,17 @@ describe("lint-meta guardrails", () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
+  });
+});
+
+describe("checkCanonicalHelpersSingleHome", () => {
+  test("returns no violations on a clean file when the registry is empty", () => {
+    const violations = checkCanonicalHelpersSingleHome(
+      join(FIXTURES, "source-text/clean.ts"),
+      join(FIXTURES, "..", "..", "..")
+    );
+
+    expect(violations).toEqual([]);
   });
 });
 

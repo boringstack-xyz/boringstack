@@ -127,7 +127,7 @@ describe("AuditLogService.record", () => {
     await auditLogService.record({
       userId,
       action: AUDIT_ACTIONS.AUTH_LOGIN_SUCCESS,
-      resource: "widget:abc-123",
+      resource: "notification:abc-123",
     });
 
     const rows = await db
@@ -136,6 +136,6 @@ describe("AuditLogService.record", () => {
       .where(eq(auditLog.userId, userId));
 
     expect(rows).toHaveLength(1);
-    expect(rows[0]?.resource).toBe("widget:abc-123");
+    expect(rows[0]?.resource).toBe("notification:abc-123");
   });
 });

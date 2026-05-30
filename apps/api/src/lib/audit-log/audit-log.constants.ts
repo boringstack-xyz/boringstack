@@ -29,6 +29,15 @@ export const AUDIT_ACTIONS = {
    */
   AUTH_REFRESH_REPLAY: "auth.refresh_replay",
 
+  AUTH_MFA_SETUP_INITIATED: "auth.mfa_setup_initiated",
+  AUTH_MFA_ENABLED: "auth.mfa_enabled",
+  AUTH_MFA_DISABLED: "auth.mfa_disabled",
+  AUTH_MFA_LOGIN_SUCCESS: "auth.mfa_login_success",
+  AUTH_MFA_LOGIN_FAILED: "auth.mfa_login_failed",
+  AUTH_MFA_LOGIN_LOCKED_OUT: "auth.mfa_login_locked_out",
+  AUTH_MFA_RECOVERY_USED: "auth.mfa_recovery_used",
+  AUTH_MFA_RECOVERY_CODES_REGENERATED: "auth.mfa_recovery_codes_regenerated",
+
   USER_CREATED: "user.created",
   USER_PROFILE_UPDATED: "user.profile_updated",
 
@@ -73,8 +82,4 @@ export const AUDIT_ACTIONS = {
   NOTIFICATION_PREFERENCES_UPDATED: "notification.preferences_updated",
   NOTIFICATION_PUSH_SUBSCRIBED: "notification.push_subscribed",
   NOTIFICATION_PUSH_UNSUBSCRIBED: "notification.push_unsubscribed",
-
-  WIDGET_CREATED: "widget.created",
-  WIDGET_UPDATED: "widget.updated",
-  WIDGET_DELETED: "widget.deleted",
 } as const;

@@ -248,14 +248,14 @@ export function writeOrCheck(outputPath, payload, checkMode) {
 
   if (checkMode) {
     if (!existsSync(outputPath)) {
-      console.error(`[docs] missing ${outputPath} — run generator`);
+      console.error(`[docs] missing ${outputPath}, run generator`);
       process.exit(1);
     }
 
     const current = readFileSync(outputPath, "utf8");
 
     if (current !== next) {
-      console.error(`[docs] ${outputPath} is out of date — run generator`);
+      console.error(`[docs] ${outputPath} is out of date, run generator`);
       process.exit(1);
     }
 

@@ -192,3 +192,46 @@ export const notificationPreference = notifications.table(
     }).onDelete("cascade"),
   ]
 );
+
+/**
+ * Per-address email deliverability blocklist. One row per recipient
+ * address that has hard-bounced, complained, or been marked suppressed
+ * by the upstream provider. The dispatch path consults this table
+ * before each send and short-circuits to a `suppressed` delivery row
+ * instead of calling the provider.
+ *
+ * Rows are added by:
+ *   - Resend / SendGrid webhook handlers (bounce / complaint events)
+ *   - The Cloudflare provider when its API surfaces a recipient-level
+ *     suppression error (mirrors the upstream verdict locally so we
+ *     skip the round-trip on the next send)
+ *   - Manual operator action (reason = `manual`)
+ *
+ * The `email` column is the unique key — once an address is
+ * suppressed by any provider, every provider treats it as suppressed.
+ * Cleared when a user verifies a new primary email address.
+ */
+export const emailSuppression = notifications.table(
+  "email_suppression",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    email: varchar({ length: 320 }).notNull(),
+    reason: varchar({ length: 32 }).notNull(),
+    provider: varchar({ length: 32 }).notNull(),
+    providerMessageId: varchar("provider_message_id", { length: 255 }),
+    metadata: jsonb().notNull().default({}),
+    suppressedAt: timestamp("suppressed_at", {
+      withTimezone: true,
+      mode: "string",
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("idx_email_suppression_email").on(table.email),
+    index("idx_email_suppression_suppressed_at").on(table.suppressedAt),
+  ]
+);

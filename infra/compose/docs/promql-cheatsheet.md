@@ -106,4 +106,4 @@ changes(container_start_time_seconds[1h]) > 0
 - **Grafana Dashboards** for things you'll read repeatedly.
 - **Prometheus alerting rules** (`compose/prometheus/`) for "wake me up if".
 
-Related: [LogQL cheatsheet](logql-cheatsheet.md), [observability-optional.md](observability-optional.md).
+Related: [LogQL cheatsheet](logql-cheatsheet.md), [observability.md](observability.md).

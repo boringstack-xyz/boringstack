@@ -58,6 +58,41 @@ export const userSchema = z.object({
   updatedAt: z.string().optional()
 });
 
-export const loginResponseSchema = z.object({
-  user: userSchema
+export const loginResponseSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("session"), user: userSchema }),
+  z.object({
+    kind: z.literal("mfa-required"),
+    challengeToken: z.string().min(16)
+  })
+]);
+
+export const mfaSetupInputSchema = z.object({
+  password: z.string().min(8, "Password must be at least 8 characters.")
+});
+
+export const mfaVerifySetupInputSchema = z.object({
+  code: z.string().regex(/^\d{6}$/u, "Enter the 6-digit code from your app.")
+});
+
+export const mfaVerifyChallengeInputSchema = z.object({
+  challengeToken: z.string().min(16),
+  code: z.string().min(6).max(10)
+});
+
+export const mfaPasswordInputSchema = z.object({
+  password: z.string().min(8, "Password must be at least 8 characters.")
+});
+
+export const mfaSetupResponseSchema = z.object({
+  otpauthUri: z.string(),
+  secretBase32: z.string(),
+  recoveryCodes: z.array(z.string())
+});
+
+export const mfaRecoveryCodesResponseSchema = z.object({
+  recoveryCodes: z.array(z.string())
+});
+
+export const mfaStatusResponseSchema = z.object({
+  enabled: z.boolean()
 });

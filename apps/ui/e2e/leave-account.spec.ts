@@ -21,7 +21,9 @@ async function registerAndVerify(
   firstName: string,
   lastName: string
 ): Promise<void> {
-  const ctx: APIRequestContext = await request.newContext({ baseURL: BASE_URL });
+  const ctx: APIRequestContext = await request.newContext({
+    baseURL: BASE_URL
+  });
 
   const registerRes = await ctx.post("/api/v1/auth/register", {
     data: {

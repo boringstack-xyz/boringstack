@@ -10,7 +10,7 @@ table per file). Every table has `createdAt` + `updatedAt` (enforced by
 `drizzle-conventions/tables-must-have-timestamps`).
 
 ```ts
-export const widgets = pgSchema("app").table("widgets", {
+export const tickets = pgSchema("app").table("tickets", {
   id: uuid().defaultRandom().primaryKey(),
   userId: uuid("user_id").notNull(),
   name: varchar({ length: 100 }).notNull(),

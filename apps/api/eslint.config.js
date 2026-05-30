@@ -513,7 +513,6 @@ export default tseslint.config(
         {
           scopeColumn: "accountId",
           tables: [
-            "widgets",
             "accountMemberships",
             "accountInvitations",
             "accountFeatureOverrides",
@@ -537,18 +536,38 @@ export default tseslint.config(
       "bullmq/no-blocking-concurrency-zero": "error",
       "bullmq/valkey-client-from-factory": "error",
 
-      // Stripe webhook path: src/api/billing/billing.routes.ts uses request.text();
-      // billing.service.constructWebhookEvent uses constructEventAsync (Bun SubtleCrypto).
+      /*
+       * Stripe webhook path: src/api/billing/billing.routes.ts uses request.text();
+       * billing.service.constructWebhookEvent uses constructEventAsync (Bun SubtleCrypto).
+       *
+       * The same rule family also guards the email-deliverability
+       * webhooks under src/api/webhooks/. Those receivers verify
+       * signatures via `verifyResendWebhook` (svix-HMAC) and
+       * `verifySendGridWebhook` (ECDSA), so both names are added to
+       * the recognised construct/verify list. The Stripe-flavoured
+       * `whsec_` signature-source check is scoped to Stripe paths via
+       * an override below — email providers manage their own keying.
+       */
       "stripe-webhooks/handler-must-verify-signature": [
         "error",
         {
-          constructEventNames: ["constructEvent", "constructEventAsync"],
+          constructEventNames: [
+            "constructEvent",
+            "constructEventAsync",
+            "verifyResendWebhook",
+            "verifySendGridWebhook",
+          ],
         },
       ],
       "stripe-webhooks/no-parsed-body-before-verification": [
         "error",
         {
-          constructEventNames: ["constructEvent", "constructEventAsync"],
+          constructEventNames: [
+            "constructEvent",
+            "constructEventAsync",
+            "verifyResendWebhook",
+            "verifySendGridWebhook",
+          ],
         },
       ],
       "stripe-webhooks/require-stripe-signature-header": "error",
@@ -557,7 +576,12 @@ export default tseslint.config(
       "stripe-webhooks/service-must-construct-event": [
         "error",
         {
-          constructEventNames: ["constructEvent", "constructEventAsync"],
+          constructEventNames: [
+            "constructEvent",
+            "constructEventAsync",
+            "verifyResendWebhook",
+            "verifySendGridWebhook",
+          ],
         },
       ],
 
@@ -1062,6 +1086,31 @@ export default tseslint.config(
       // is overkill there. A plain stringified error is the right shape
       // for one-shot CLI output.
       "structured-logging/no-error-stringify": "off",
+    },
+  },
+  {
+    /*
+     * Email-deliverability webhooks (Resend / SendGrid) use their own
+     * signature schemes — svix HMAC and ECDSA P-256 respectively — not
+     * Stripe's `whsec_*` prefix or `stripe-signature` header. The
+     * Stripe-webhook rule family encodes Stripe-specific verification
+     * shape (constructEvent call inside the handler, the `whsec_`
+     * literal scan, etc.), so it is disabled wholesale for this
+     * directory. Signature handling here is verified by dedicated
+     * unit tests against `verifyResendWebhook` and
+     * `verifySendGridWebhook`.
+     */
+    files: [
+      "src/api/webhooks/**/*.ts",
+      "tests/api/webhooks/**/*.ts",
+    ],
+    rules: {
+      "stripe-webhooks/require-stripe-signature-header": "off",
+      "stripe-webhooks/handler-must-handle-event-type": "off",
+      "stripe-webhooks/handler-must-be-idempotent": "off",
+      "stripe-webhooks/handler-must-verify-signature": "off",
+      "stripe-webhooks/no-parsed-body-before-verification": "off",
+      "stripe-webhooks/service-must-construct-event": "off",
     },
   },
   /*

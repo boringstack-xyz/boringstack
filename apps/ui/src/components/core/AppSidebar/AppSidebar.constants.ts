@@ -10,14 +10,14 @@ export const APP_SIDEBAR_NAV_ITEMS = [
     labelKey: "nav.notifications"
   },
   {
-    id: "widgets",
-    path: "/widgets",
-    labelKey: "nav.widgets"
-  },
-  {
     id: "team",
     path: "/account/invitations",
     labelKey: "nav.team"
+  },
+  {
+    id: "auditLog",
+    path: "/account/audit-log",
+    labelKey: "nav.auditLog"
   },
   {
     id: "settings",

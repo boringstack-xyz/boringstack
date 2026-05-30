@@ -11,48 +11,45 @@ const OTHER_ACCOUNT_ID = "acc-2";
 const featuresAllOn: IResolvedFeatures = {
   can_export: true,
   can_invite_team: true,
-  max_seats: 10,
-  max_widgets: 100
+  max_seats: 10
 };
 
 const featuresAllOff: IResolvedFeatures = {
   can_export: false,
   can_invite_team: false,
-  max_seats: 1,
-  max_widgets: 5
+  max_seats: 1
 };
 
-const widgetIn = (accountId: string) =>
-  subject("Widget", { id: "w1", accountId });
+const siteIn = (accountId: string) => subject("Site", { id: "w1", accountId });
 
 const teamMemberIn = (accountId: string) =>
   subject("TeamMember", { id: "tm1", accountId });
 
 describe("buildAbility — owner", () => {
-  it("can manage own-account widgets and team members", () => {
+  it("can manage own-account sites and team members", () => {
     const ability = buildAbility("owner", ACCOUNT_ID, featuresAllOn);
 
-    expect(ability.can("read", widgetIn(ACCOUNT_ID))).toBe(true);
-    expect(ability.can("update", widgetIn(ACCOUNT_ID))).toBe(true);
-    expect(ability.can("delete", widgetIn(ACCOUNT_ID))).toBe(true);
+    expect(ability.can("read", siteIn(ACCOUNT_ID))).toBe(true);
+    expect(ability.can("update", siteIn(ACCOUNT_ID))).toBe(true);
+    expect(ability.can("delete", siteIn(ACCOUNT_ID))).toBe(true);
     expect(ability.can("invite", teamMemberIn(ACCOUNT_ID))).toBe(true);
   });
 
-  it("cannot touch widgets that belong to another account", () => {
+  it("cannot touch sites that belong to another account", () => {
     const ability = buildAbility("owner", ACCOUNT_ID, featuresAllOn);
 
-    expect(ability.can("read", widgetIn(OTHER_ACCOUNT_ID))).toBe(false);
-    expect(ability.can("update", widgetIn(OTHER_ACCOUNT_ID))).toBe(false);
+    expect(ability.can("read", siteIn(OTHER_ACCOUNT_ID))).toBe(false);
+    expect(ability.can("update", siteIn(OTHER_ACCOUNT_ID))).toBe(false);
   });
 });
 
 describe("buildAbility — viewer", () => {
-  it("can read but cannot mutate widgets", () => {
+  it("can read but cannot mutate sites", () => {
     const ability = buildAbility("viewer", ACCOUNT_ID, featuresAllOn);
 
-    expect(ability.can("read", widgetIn(ACCOUNT_ID))).toBe(true);
-    expect(ability.can("update", widgetIn(ACCOUNT_ID))).toBe(false);
-    expect(ability.can("delete", widgetIn(ACCOUNT_ID))).toBe(false);
+    expect(ability.can("read", siteIn(ACCOUNT_ID))).toBe(true);
+    expect(ability.can("update", siteIn(ACCOUNT_ID))).toBe(false);
+    expect(ability.can("delete", siteIn(ACCOUNT_ID))).toBe(false);
   });
 
   it("cannot invite team members", () => {
@@ -66,13 +63,13 @@ describe("buildAbility — feature gates", () => {
   it("disables export when can_export is false, even for owners", () => {
     const owner = buildAbility("owner", ACCOUNT_ID, featuresAllOff);
 
-    expect(owner.can("export", widgetIn(ACCOUNT_ID))).toBe(false);
+    expect(owner.can("export", siteIn(ACCOUNT_ID))).toBe(false);
   });
 
   it("enables export when can_export is true", () => {
     const owner = buildAbility("owner", ACCOUNT_ID, featuresAllOn);
 
-    expect(owner.can("export", widgetIn(ACCOUNT_ID))).toBe(true);
+    expect(owner.can("export", siteIn(ACCOUNT_ID))).toBe(true);
   });
 
   it("disables invite when can_invite_team is false, even for owners", () => {

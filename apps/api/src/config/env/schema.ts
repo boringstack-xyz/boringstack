@@ -26,6 +26,14 @@ export const envSchema = t.Object({
   DATABASE_SSL_REJECT_UNAUTHORIZED: t.Boolean({ default: true }),
   DATABASE_SSL_CA: t.String({ default: "" }),
   JWT_SECRET: t.String({ minLength: 32 }),
+  /*
+   * AES-256-GCM key used to encrypt TOTP secrets at rest. Base64-encoded
+   * 32 random bytes. Generate with `openssl rand -base64 32`. Required
+   * once any user enables MFA — empty string is accepted at boot so a
+   * fresh deploy with no MFA users keeps running, and the crypto util
+   * throws a loud error the first time encryption is actually requested.
+   */
+  MFA_ENCRYPTION_KEY: t.String({ default: "" }),
 
   APP_NAME: t.String({ default: "API Template" }),
   FRONTEND_URL: t.String({ minLength: 1 }),
@@ -65,11 +73,29 @@ export const envSchema = t.Object({
    * sentry.io for hosted. Empty DSN = Sentry is not initialized.
    */
   SENTRY_DSN: t.String({ default: "" }),
+  /*
+   * Default 0: OTel is the single source of trace data (shipped via OTLP to
+   * Tempo). Sentry is error-capture-only — events still carry `trace_id` from
+   * the shared OTel context, so GlitchTip → Tempo click-through works. Flip
+   * non-zero only if you want Sentry / GlitchTip to record transactions in
+   * addition to errors; running both tracers concurrently double-instruments
+   * HTTP / fetch / ioredis paths through `@sentry/opentelemetry`.
+   */
   SENTRY_TRACES_SAMPLE_RATE: t.Number({
     minimum: 0,
     maximum: 1,
-    default: 0.1,
+    default: 0,
   }),
+
+  /*
+   * OpenTelemetry tracing. When OTEL_EXPORTER_OTLP_ENDPOINT is set, the
+   * API ships spans via OTLP/HTTP to that endpoint (Tempo, the trace
+   * backend bundled in compose). Empty = OTel SDK is not initialized.
+   * OTEL_SERVICE_NAME shows up as the `service.name` attribute Grafana
+   * uses to group spans in Tempo's Explore tab.
+   */
+  OTEL_EXPORTER_OTLP_ENDPOINT: t.String({ default: "" }),
+  OTEL_SERVICE_NAME: t.String({ default: "boringstack-api" }),
 
   EMAIL_PROVIDER: t.Union(
     [
@@ -93,7 +119,22 @@ export const envSchema = t.Object({
   CLOUDFLARE_ACCOUNT_ID: t.String({ default: "" }),
   CLOUDFLARE_EMAIL_API_TOKEN: t.String({ default: "" }),
   RESEND_API_KEY: t.String({ default: "" }),
+  /*
+   * Resend webhook signing secret (svix). Required for the bounce /
+   * complaint webhook at /api/v1/webhooks/resend. Format: starts with
+   * `whsec_` followed by a base64 secret. Issue from the Resend
+   * dashboard under Webhooks → endpoint signing secret. Empty disables
+   * the route (it returns 503).
+   */
+  RESEND_WEBHOOK_SECRET: t.String({ default: "" }),
   SENDGRID_API_KEY: t.String({ default: "" }),
+  /*
+   * SendGrid Event Webhook signing key. PEM-encoded ECDSA P-256 public
+   * key produced when "Signed Event Webhook Requests" is enabled in
+   * Mail Settings → Event Webhook. Required for the bounce / complaint
+   * webhook at /api/v1/webhooks/sendgrid. Empty disables the route.
+   */
+  SENDGRID_WEBHOOK_PUBLIC_KEY: t.String({ default: "" }),
   /*
    * Plain SMTP provider. Primary use case is local Mailpit at
    * mailpit:1025 (no auth) when WITH_MAILPIT=1 in the compose stack;
@@ -143,11 +184,11 @@ export const envSchema = t.Object({
   STRIPE_PRICE_ID_PRO: t.String({ default: "" }),
 
   QUEUES_ENABLED: t.Boolean({ default: true }),
-  CACHE_ENABLED: t.Boolean({ default: false }),
+  CACHE_ENABLED: t.Boolean({ default: true }),
   CACHE_PROVIDER: t.Union([t.Literal("memory"), t.Literal("valkey")], {
     default: "memory",
   }),
-  NOTIFICATIONS_SSE_ENABLED: t.Boolean({ default: false }),
+  NOTIFICATIONS_SSE_ENABLED: t.Boolean({ default: true }),
 
   /*
    * Web Push (VAPID). All three values come as a set: generate them once

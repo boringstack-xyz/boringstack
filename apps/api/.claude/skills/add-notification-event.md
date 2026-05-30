@@ -1,9 +1,9 @@
 ---
 name: add-notification-event
-description: Use when adding a new in-app notification event type to api-template. Wraps `bun run new:notification-event` with the dedup-strategy decision, the render functions, and the dispatcher call. Triggers — "add a notification event", "new notification type", "notify user when [X]", "wire up notification for [X]", "add in-app alert for [X]".
+description: Use when adding a new in-app notification event type to apps/api. Wraps `bun run new:notification-event` with the dedup-strategy decision, the render functions, and the dispatcher call. Triggers — "add a notification event", "new notification type", "notify user when [X]", "wire up notification for [X]", "add in-app alert for [X]".
 ---
 
-# Add notification event (api-template)
+# Add notification event (apps/api)
 
 You are adding a new notification event type. Notifications are typed events defined with `defineNotificationEvent`, registered in the events barrel, and dispatched through the `notifications` singleton. Five steps.
 

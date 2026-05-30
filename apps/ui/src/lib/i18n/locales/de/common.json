@@ -8,7 +8,8 @@
   },
   "common": {
     "loading": "Wird geladen…",
-    "loadingAria": "Wird geladen"
+    "loadingAria": "Wird geladen",
+    "close": "Schließen"
   },
   "auth": {
     "login": {
@@ -22,6 +23,18 @@
       "signUp": "Konto erstellen",
       "resend": "Bestätigungsmail erneut senden",
       "resendSending": "Wird gesendet…",
+      "mfa": {
+        "title": "Zwei-Faktor-Authentifizierung",
+        "totpHint": "Öffne deine Authenticator-App und gib den 6-stelligen Code ein.",
+        "recoveryHint": "Gib einen deiner einmaligen Wiederherstellungscodes ein.",
+        "codeLabel": "Authentifizierungscode",
+        "recoveryLabel": "Wiederherstellungscode",
+        "submit": "Bestätigen",
+        "submitting": "Wird bestätigt…",
+        "useRecovery": "Gerät verloren? Wiederherstellungscode verwenden",
+        "useTotp": "Stattdessen Authenticator-App verwenden",
+        "invalidCode": "Dieser Code hat nicht funktioniert. Bitte erneut versuchen."
+      },
       "errors": {
         "invalidCredentials": "E-Mail oder Passwort sind falsch.",
         "emailNotVerified": "Deine E-Mail ist noch nicht bestätigt.",
@@ -172,27 +185,6 @@
       }
     }
   },
-  "widgets": {
-    "title": "Widgets",
-    "subtitle": "Erstelle, bearbeite und lösche die beispielhafte kontoabhängige Ressource aus dem API-Starter.",
-    "empty": "Noch keine Widgets.",
-    "form": {
-      "name": "Name",
-      "submit": "Widget erstellen",
-      "submitting": "Wird erstellt…"
-    },
-    "actions": {
-      "edit": "Bearbeiten",
-      "delete": "Löschen",
-      "save": "Speichern",
-      "cancel": "Abbrechen"
-    },
-    "columns": {
-      "name": "Name",
-      "created": "Erstellt",
-      "actions": "Aktionen"
-    }
-  },
   "nav": {
     "ariaPrimary": "Hauptnavigation",
     "openMenu": "Menü öffnen",
@@ -200,8 +192,8 @@
     "menuTitle": "Menü",
     "dashboard": "Übersicht",
     "notifications": "Benachrichtigungen",
-    "widgets": "Widgets",
     "team": "Team",
+    "auditLog": "Audit-Log",
     "settings": "Einstellungen",
     "billing": "Abrechnung",
     "profile": "Profil"
@@ -381,6 +373,45 @@
         "disconnectSuccess": "Anbieter getrennt",
         "disconnectError": "Anbieter konnte nicht getrennt werden. Bitte erneut versuchen.",
         "noProviders": "Keine OAuth-Anbieter konfiguriert."
+      },
+      "mfa": {
+        "title": "Zwei-Faktor-Authentifizierung",
+        "body": "Füge einen Code aus einer Authenticator-App zusätzlich zu deinem Passwort hinzu.",
+        "passwordLabel": "Passwort zur Bestätigung",
+        "enable": "Zwei-Faktor aktivieren",
+        "starting": "Wird gestartet…",
+        "qrAlt": "QR-Code für deine Authenticator-App",
+        "qrLoading": "QR-Code wird erstellt…",
+        "secretHint": "Kein Scan möglich? Gib dieses Geheimnis manuell ein.",
+        "recoveryCodesTitle": "Wiederherstellungscodes",
+        "recoveryCodesHint": "Sichere sie jetzt. Jeder Code ist einmalig nutzbar.",
+        "firstCodeLabel": "Gib den 6-stelligen Code aus deiner App ein",
+        "confirm": "Bestätigen und aktivieren",
+        "verifying": "Wird überprüft…",
+        "cancel": "Abbrechen",
+        "statusActive": "Zwei-Faktor ist aktiv",
+        "statusActiveHint": "Nach dem Passwort wirst du nach einem Code gefragt.",
+        "statusBadge": "An",
+        "freshCodesTitle": "Deine neuen Wiederherstellungscodes",
+        "freshCodesHint": "Ersetze deine alten Codes. Jeder neue Code ist einmalig nutzbar.",
+        "regeneratePasswordLabel": "Passwort zur Bestätigung der Neugenerierung",
+        "regenerate": "Wiederherstellungscodes neu generieren",
+        "regenerating": "Wird neu generiert…",
+        "disablePasswordLabel": "Passwort zur Bestätigung der Deaktivierung",
+        "disable": "Zwei-Faktor deaktivieren",
+        "disabling": "Wird deaktiviert…",
+        "notifications": {
+          "enabled": "Zwei-Faktor-Authentifizierung aktiviert",
+          "disabled": "Zwei-Faktor-Authentifizierung deaktiviert",
+          "codesRegenerated": "Wiederherstellungscodes neu generiert"
+        },
+        "errors": {
+          "passwordRequired": "Bitte gib dein aktuelles Passwort ein.",
+          "passwordIncorrect": "Dieses Passwort stimmt nicht.",
+          "codeRequired": "Gib den 6-stelligen Code aus deiner App ein.",
+          "invalidCode": "Code passt nicht. Versuche den nächsten Code aus deiner App.",
+          "generic": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
+        }
       }
     },
     "profile": {
@@ -403,6 +434,15 @@
       "ariaLabel": "Aktives Konto wechseln",
       "currentBadge": "Aktiv",
       "rolePrefix": "Rolle"
+    },
+    "auditLog": {
+      "pageTitle": "Audit-Log",
+      "pageSubtitle": "Aktivität dieses Kontos — nur Eigentümer und Admins.",
+      "loading": "Audit-Einträge werden geladen",
+      "error": "Audit-Log konnte nicht geladen werden. Bitte erneut versuchen.",
+      "empty": "Noch keine Audit-Einträge für dieses Konto.",
+      "systemActor": "System",
+      "navLabel": "Audit-Log"
     },
     "invitations": {
       "pageTitle": "Team",

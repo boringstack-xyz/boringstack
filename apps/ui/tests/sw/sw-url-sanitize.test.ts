@@ -32,8 +32,8 @@ describe("sanitizeTargetPath", () => {
 
   test("preserves search + hash for same-origin URLs", () => {
     expect(
-      sanitizeTargetPath("https://example.test/widgets?id=42#detail", ORIGIN)
-    ).toBe("/widgets?id=42#detail");
+      sanitizeTargetPath("https://example.test/dashboard?id=42#detail", ORIGIN)
+    ).toBe("/dashboard?id=42#detail");
   });
 
   test("accepts a relative path and resolves against the given origin", () => {

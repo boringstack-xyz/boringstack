@@ -21,9 +21,45 @@ Reservations are softer: they tell the scheduler "this much must be available be
 | api (prod)  |       1.0 |      512M |         0.25 |         128M | Compiled, lean                      |
 | ui (prod)   |       0.5 |      128M |          0.1 |          32M | Static nginx — almost free          |
 
-**Sum (dev profile)**: ~5.5 vCPU limit, ~3.6G memory limit. CPU limits oversubscribe deliberately — they cap _peak_, not _steady-state_; the scheduler shares cycles when nobody's saturated.
+**Sum (dev profile, base)**: ~5.5 vCPU limit, ~3.6G memory limit. CPU limits oversubscribe deliberately — they cap _peak_, not _steady-state_; the scheduler shares cycles when nobody's saturated.
 
-**Sum (prod profile)**: ~3.5 vCPU limit, ~1.7G memory limit. Plenty of headroom on a 4-vCPU / 8G host for the data services and OS.
+**Sum (prod profile, base)**: ~3.5 vCPU limit, ~1.7G memory limit. Plenty of headroom on a 4-vCPU / 8G host for the data services and OS.
+
+## Default-on overlays
+
+Observability + GlitchTip are on by default. Their budgets:
+
+| Service           | CPU limit | RAM limit | Why                                                   |
+| ----------------- | --------: | --------: | ----------------------------------------------------- |
+| prometheus        |       0.5 |      512M | TSDB; retention-driven                                |
+| alertmanager      |      0.25 |      128M | Tiny; routes rules to receivers                       |
+| grafana           |       0.5 |      512M | UI + provisioning; query workload                     |
+| loki              |       0.5 |      512M | Log store; retention-driven                           |
+| promtail          |      0.25 |      128M | Sidecar tailer                                        |
+| postgres-exporter |       0.1 |       64M | Polls Postgres                                        |
+| node-exporter     |       0.1 |       64M | Reads /proc and /sys                                  |
+| glitchtip-web     |       1.0 |      512M | Django + uWSGI; ingest + UI                           |
+| glitchtip-worker  |       1.0 |      512M | Celery + Beat; ingest, alerts, scheduled jobs         |
+
+**Overlay sum**: ~4.2 vCPU limit, ~2.9G memory limit.
+
+**Grand total (default dev boot)**: ~9.7 vCPU peak, ~6.5G memory ceiling.
+
+This fits a 4-vCPU / 8G host comfortably (memory is the constraint to watch — leave at least 1G headroom for the OS + Docker). On a 2-vCPU / 4G box, disable the overlays:
+
+```bash
+WITH_OBSERVABILITY=0 WITH_GLITCHTIP=0 ./dev.sh up -d
+```
+
+## Boot expectations
+
+Single-host cold start, default dev stack:
+
+- **First boot ever** (volumes empty): 60–120s. GlitchTip dominates — Django migrations against a fresh database take 30–60s, then superuser + org + projects seeding adds another 5–10s. Everything else is healthy in <20s.
+- **Warm boot** (volumes populated): 15–30s. Postgres ready in ~3s, Valkey in ~2s, api-migrate runs Drizzle drift check (fast on a healthy schema), api-dev + ui-dev compile in 5–10s. Grafana provisioning and Loki schema init add a few seconds.
+- **Image pulls**: subtract from "first ever" — pulling all images on a fresh `docker pull` takes 1–3 minutes depending on network. Subsequent boots reuse the layers.
+
+If steady-state cold boot exceeds 2 minutes on a 4-vCPU/8G host, check `docker compose logs glitchtip-web` for a slow migration step or `docker system df` for a near-full overlay storage driver.
 
 ## How `deploy.resources` interacts with plain `docker compose`
 
@@ -59,4 +95,4 @@ All knobs are in `compose/.env.example` under the **Resource budgets** section, 
 
 - `compose/docker-compose.yml` — where the budgets live, under each service's `deploy.resources`.
 - `compose/.env.example` — the override surface.
-- `docs/observability-optional.md` — Grafana dashboard for live `cpu`/`memory` per service via cAdvisor (when observability is enabled).
+- `docs/observability.md` — Grafana dashboard for live `cpu`/`memory` per service via cAdvisor.

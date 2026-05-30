@@ -1,9 +1,9 @@
 ---
 name: add-audit-event
-description: Use when adding a single audit-log entry to an existing service in api-template. Drives the minimal change — pick an action name, decide what metadata is safe (no PII), wire `auditLogService.record(...)` into the right place, add a sibling test. Triggers — "add an audit event", "wire audit log into [X]", "log this for audit", "make sure we audit [X]", "add tracking for [X]", "record [X] in audit".
+description: Use when adding a single audit-log entry to an existing service in apps/api. Drives the minimal change — pick an action name, decide what metadata is safe (no PII), wire `auditLogService.record(...)` into the right place, add a sibling test. Triggers — "add an audit event", "wire audit log into [X]", "log this for audit", "make sure we audit [X]", "add tracking for [X]", "record [X] in audit".
 ---
 
-# Add audit event (api-template)
+# Add audit event (apps/api)
 
 You are adding ONE call to `auditLogService.record(...)` into an existing service. This is a narrow scaffold — no spec/plan checkpoints. Just the four actions below.
 
@@ -19,7 +19,7 @@ Examples already in use:
 - `billing.subscription_updated`
 - `notifications.preferences_changed`
 
-Bad: `user_action`, `clicked_button`, `widget_thing`. The action name is queryable; vague names poison the audit log.
+Bad: `user_action`, `clicked_button`, `ticket_thing`. The action name is queryable; vague names poison the audit log.
 
 ## 2 — Decide metadata
 

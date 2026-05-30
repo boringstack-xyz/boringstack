@@ -1,6 +1,6 @@
 // k6 load test — golden-path API smoke at sustained load.
 //
-// Exercises register → force-verify → login → dashboard summary → widget
+// Exercises register → force-verify → login → dashboard summary
 // create → list, all over the SPA's Vite proxy at :7331 (same path your
 // real users hit). Run against the local dev stack:
 //
@@ -120,23 +120,6 @@ export default function () {
       "summary 200": (r) => expectStatus(r, 200, "dashboard"),
       "summary has totals": (r) =>
         r.body.includes("totalEvents") && r.body.includes("recentActivity"),
-    });
-  });
-
-  group("create + list widget", () => {
-    const createRes = http.post(
-      `${BASE}/api/v1/widgets`,
-      JSON.stringify({ name: `Widget ${__VU}-${__ITER}` }),
-      { headers, jar }
-    );
-    check(createRes, {
-      "create 200": (r) => expectStatus(r, 200, "widget-create"),
-    });
-
-    const listRes = http.get(`${BASE}/api/v1/widgets`, { jar });
-    check(listRes, {
-      "list 200": (r) => expectStatus(r, 200, "widget-list"),
-      "list non-empty": (r) => r.body.includes(`"items":[`),
     });
   });
 

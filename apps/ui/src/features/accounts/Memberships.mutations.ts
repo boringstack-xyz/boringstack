@@ -39,7 +39,7 @@ export function useSwitchAccount(): UseMutationResult<
       /*
        * The new active account is on the server (JWT cookie was
        * rotated). Drop ALL cached data so account-scoped queries
-       * (widgets, dashboard, invitations) refetch under the new aid,
+       * (sites, dashboard, invitations) refetch under the new aid,
        * then refetch /me last so AbilityProvider rebuilds with the
        * new role + features.
        */

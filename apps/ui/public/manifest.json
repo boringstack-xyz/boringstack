@@ -1,6 +1,6 @@
 {
-  "name": "AI Starter UI",
-  "short_name": "ai-ui",
+  "name": "BoringStack",
+  "short_name": "boringstack",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",

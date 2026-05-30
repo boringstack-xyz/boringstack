@@ -1,3 +1,5 @@
+import { generateKeyPairSync } from "node:crypto";
+
 import { afterAll } from "bun:test";
 
 /*
@@ -58,6 +60,30 @@ process.env.STRIPE_SECRET_KEY = ["sk", "test", "fake", "for", "tests"].join(
 process.env.STRIPE_WEBHOOK_SECRET = ["whsec", "fake", "for", "tests"].join("_");
 process.env.STRIPE_PRICE_ID_FREE = "price_test_free";
 process.env.STRIPE_PRICE_ID_PRO = "price_test_pro";
+
+/*
+ * Email webhook secrets. The Resend signing secret is a constant whsec
+ * value the resend webhook utils (and route tests) can build signatures
+ * against. The SendGrid signed-event webhook needs an ECDSA P-256
+ * key pair — generated at preload and the matching private key stashed
+ * on `globalThis` for sendgrid route tests to sign with.
+ */
+process.env.RESEND_WEBHOOK_SECRET = `whsec_${Buffer.from(
+  "test-resend-webhook-secret-32-bytes-padding!!"
+).toString("base64")}`;
+
+const sendGridKeys = generateKeyPairSync("ec", { namedCurve: "P-256" });
+
+process.env.SENDGRID_WEBHOOK_PUBLIC_KEY = sendGridKeys.publicKey.export({
+  type: "spki",
+  format: "pem",
+});
+
+Reflect.set(
+  globalThis,
+  "__SENDGRID_TEST_PRIVATE_KEY__",
+  sendGridKeys.privateKey
+);
 
 /*
  * Force the in-process memory cache provider so unit tests can round-trip

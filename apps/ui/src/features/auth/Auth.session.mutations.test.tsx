@@ -45,7 +45,9 @@ describe("useLogin", () => {
     const { Wrapper } = makeWrapper();
     const { result } = renderHook(() => useLogin(), { wrapper: Wrapper });
 
-    let response: { user: typeof user } | undefined;
+    let response:
+      | Awaited<ReturnType<typeof result.current.mutateAsync>>
+      | undefined;
 
     await act(async () => {
       response = await result.current.mutateAsync({
@@ -57,7 +59,11 @@ describe("useLogin", () => {
     expect(apiMock.POST).toHaveBeenCalledWith("/api/v1/auth/login", {
       body: { email: "x@example.com", password: "Hunter2!" }
     });
-    expect(response?.user).toEqual(user);
+    expect(response?.kind).toBe("session");
+
+    if (response?.kind === "session") {
+      expect(response.user).toEqual(user);
+    }
   });
 
   it("POSTs credentials and invalidates me + capabilities on success", async () => {
@@ -85,6 +91,64 @@ describe("useLogin", () => {
 
   it("throws when the server returns no data envelope", async () => {
     apiMock.POST.mockResolvedValueOnce({ data: null });
+
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useLogin(), { wrapper: Wrapper });
+
+    await act(async () => {
+      await result.current
+        .mutateAsync({ email: "x@example.com", password: "p" })
+        .catch(() => undefined);
+    });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+  });
+
+  it("resolves with an mfa-required envelope when the user has TOTP enabled", async () => {
+    apiMock.POST.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          mfaRequired: true,
+          challengeToken: "tokenxxxxxxxxxxxx"
+        }
+      }
+    });
+
+    const { Wrapper, client } = makeWrapper();
+    const invalidateSpy = vi.spyOn(client, "invalidateQueries");
+    const { result } = renderHook(() => useLogin(), { wrapper: Wrapper });
+
+    let response:
+      | Awaited<ReturnType<typeof result.current.mutateAsync>>
+      | undefined;
+
+    await act(async () => {
+      response = await result.current.mutateAsync({
+        email: "x@example.com",
+        password: "Hunter2!"
+      });
+    });
+
+    expect(response?.kind).toBe("mfa-required");
+
+    if (response?.kind === "mfa-required") {
+      expect(response.challengeToken).toBe("tokenxxxxxxxxxxxx");
+    }
+
+    /*
+     * The /me cache must NOT be invalidated on the mfa-required branch
+     * because cookies haven't been issued yet.
+     */
+    expect(invalidateSpy).not.toHaveBeenCalled();
+  });
+
+  it("throws when the envelope is neither user nor mfa-required", async () => {
+    apiMock.POST.mockResolvedValueOnce({
+      data: { success: true, data: { somethingElse: true } }
+    });
 
     const { Wrapper } = makeWrapper();
     const { result } = renderHook(() => useLogin(), { wrapper: Wrapper });

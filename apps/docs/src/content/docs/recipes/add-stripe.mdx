@@ -1,139 +1,132 @@
 ---
 title: "Recipe: Add Stripe Checkout"
-description: Wire Stripe Checkout, the Customer Portal, and webhooks onto the API app's existing billing spine. Goal, prereqs, steps, verification, and code touchpoints.
+description: Wire Stripe Checkout and Customer Portal to your billing spine. Estimated 45 minutes.
 verifiedOn: "2026-05"
 ---
 
-import { Steps } from "@astrojs/starlight/components";
-import DocCallout from "../../../components/DocCallout.tsx";
-import HowToSchema from "../../../components/HowToSchema.astro";
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import CommandRun from "../../../components/docs-kit/CommandRun";
+Add Stripe subscriptions and billing to your app. The API already ships a billing spine; this recipe wires it to real Stripe accounts for Checkout, the Customer Portal, and webhook handlers.
 
-<HowToSchema
-  name="Add Stripe Checkout to BoringStack"
-  description="Wire Stripe Checkout, the Customer Portal, and webhooks onto the API app's existing billing spine."
-  totalTime="PT45M"
-  steps={[
-    "Flip BILLING_ENABLED=true and capture STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_ID_FREE, STRIPE_PRICE_ID_PRO in compose/.env.",
-    "Forward webhooks locally with stripe listen --forward-to localhost:7330/api/v1/billing/stripe/webhooks.",
-    "Extend the existing UI billing feature and POST to /api/v1/billing/stripe/checkout-session.",
-    "Add a Manage subscription mutation that calls /api/v1/billing/stripe/portal-session.",
-    "Declare your plan and feature flags in the ACL feature resolver.",
-  ]}
-/>
+Estimated time: 45 minutes.
 
-<PageIntro
-  eyebrow="Recipes"
-  actions={[
-    { label: "Steps", href: "#steps" },
-    { label: "Verification", href: "#verify" },
-  ]}
-  facts={[
-    { value: "45 min", label: "Estimated duration" },
-    { value: "Stripe", label: "Checkout + Portal" },
-    { value: "Webhooks", label: "Idempotent handlers" },
-  ]}
->
-  Wire Stripe Checkout, the Customer Portal, and webhooks onto your local stack
-  for subscriptions, billing updates, and feature gates.
-</PageIntro>
+## Overview
 
-## Goal
+1. Set `BILLING_ENABLED=true` and add Stripe keys to env.
+2. Forward webhooks locally with `stripe listen`.
+3. Extend the UI billing feature to call Checkout and Portal endpoints.
+4. Declare your plans in the ACL feature resolver.
 
-Finish with a paid plan a user can subscribe to via Stripe Checkout, manage from the Customer Portal, and sync back into your DB through webhooks. The apps/api already ships [`api/billing/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/billing) with the right shape. This recipe wires it to a real Stripe account.
+## Prerequisites
 
-## Prereqs
+- A Stripe account (Test Mode is fine).
+- One product and recurring price already created in the Stripe dashboard.
+- The [Stripe CLI](https://docs.stripe.com/stripe-cli) installed locally.
 
-- A working local stack (`./scripts/compose-up.sh` clean).
-- A [Stripe account](https://dashboard.stripe.com). Test Mode is fine; no business verification needed for this recipe.
-- One product + recurring price already created in the Stripe dashboard.
-- The [Stripe CLI](https://docs.stripe.com/stripe-cli) installed locally for webhook forwarding.
+## 1. Add Stripe env vars
 
-## Steps
+```bash
+BILLING_ENABLED=true
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...      # from step 2 below
+STRIPE_PRICE_ID_FREE=price_...
+STRIPE_PRICE_ID_PRO=price_...
+```
 
-<Steps>
+The env validator refuses to boot the API in prod if `BILLING_ENABLED=true` but any Stripe key is missing.
 
-1. Flip the feature flag and capture the Stripe secrets in `compose/.env`:
+## 2. Forward webhooks locally
 
-   ```bash
-   BILLING_ENABLED=true
-   STRIPE_SECRET_KEY=sk_test_...
-   STRIPE_WEBHOOK_SECRET=whsec_...     # from `stripe listen` (next step)
-   STRIPE_PRICE_ID_FREE=price_...      # your free-tier price
-   STRIPE_PRICE_ID_PRO=price_...       # your paid-tier price
-   ```
+Open a separate terminal:
 
-   `BILLING_ENABLED=false` is the default. The billing routes don't mount until you flip it. The [env validator](/api/env-validator/) refuses to boot the API in production if any required Stripe key is missing while `BILLING_ENABLED=true`.
+```bash
+stripe listen --forward-to localhost:7330/api/v1/billing/stripe/webhooks
+```
 
-2. Forward webhooks to your local API:
+Copy the `whsec_...` signing secret that prints on first connect. Add it to `compose/.env`:
 
-   ```bash
-   stripe listen --forward-to localhost:7330/api/v1/billing/stripe/webhooks
-   ```
+```bash
+echo 'STRIPE_WEBHOOK_SECRET=whsec_...' >> compose/.env
+```
 
-   Copy the `whsec_...` signing secret printed on first connect into `STRIPE_WEBHOOK_SECRET`. Then restart:
+Restart the API:
 
-   ```bash
-   ./scripts/compose-up.sh   # picks up new env
-   ```
+```bash
+./scripts/compose-up.sh
+```
 
-3. Extend the UI billing feature. `apps/ui/src/features/billing/` already ships the page, queries, and mutations for the starter billing flow. Add or adapt the Checkout call site following the [component anatomy](/ui/architecture-rules/). Inside `Billing.mutations.ts`, POST to the real endpoint via the typed client:
+## 3. Implement Checkout
 
-   ```ts
-   // Billing.mutations.ts
-   const startCheckout = (planId: string) =>
-     apiClient.POST("/api/v1/billing/stripe/checkout-session", {
-       body: {
-         planId,
-         successUrl: `${window.location.origin}/billing/success`,
-         cancelUrl: `${window.location.origin}/billing`,
-       },
-     });
-   ```
+In `apps/ui/src/features/billing/`, the starter billing flow already exists. Add or adapt the Checkout call. Inside `Billing.mutations.ts`:
 
-   The endpoint returns a Stripe Checkout URL; redirect the browser to it.
+```ts
+const startCheckout = (planId: string) =>
+  apiClient.POST("/api/v1/billing/stripe/checkout-session", {
+    body: {
+      planId,
+      successUrl: `${window.location.origin}/billing/success`,
+      cancelUrl: `${window.location.origin}/billing`,
+    },
+  });
+```
 
-4. Surface the Customer Portal. Add a "Manage subscription" mutation that POSTs to `/api/v1/billing/stripe/portal-session` and redirects the user to Stripe's hosted portal for cancellation and payment-method updates.
+The endpoint returns a Stripe Checkout URL; redirect the browser to it.
 
-5. Add your plan to the [ACL feature resolver](/api/acl/). The `accountId → activePlan → enabledFeatures` chain is the source of truth. Adding a `pro` plan with a feature flag is one entry in the plan config.
+## 4. Implement the Customer Portal
 
-</Steps>
+Add a "Manage subscription" mutation that calls `/api/v1/billing/stripe/portal-session` and redirects to Stripe's hosted portal.
+
+```ts
+const manageSubscription = () =>
+  apiClient.POST("/api/v1/billing/stripe/portal-session", {
+    body: {
+      returnUrl: `${window.location.origin}/billing`,
+    },
+  });
+```
+
+## 5. Configure your plans
+
+In `src/api/acl/`, declare your plans. Example:
+
+```ts
+export const PLAN_CONFIG = {
+  free: {
+    stripePrice: env.STRIPE_PRICE_ID_FREE,
+    features: ["basic-reporting", "one-team"],
+  },
+  pro: {
+    stripePrice: env.STRIPE_PRICE_ID_PRO,
+    features: ["advanced-reporting", "unlimited-teams", "sso"],
+  },
+};
+```
+
+The ACL resolver checks this config and gates features based on the user's subscription.
 
 ## Verify
 
-- Click **Upgrade** as a logged-in user. The browser redirects to Stripe Checkout. Use Stripe's test card `4242 4242 4242 4242`, any future date, any CVC.
-- After payment, the redirect drops you back at the configured `success_url`. The `stripe listen` terminal shows `checkout.session.completed` and `customer.subscription.created` events arriving.
-- In the API's `audit.audit_log` table you should see entries for the subscription lifecycle (the billing service writes them fire-and-forget). Quick check:
+1. Log in and click **Upgrade**.
+2. Stripe Checkout redirects to your success URL.
+3. Use test card `4242 4242 4242 4242`, any future date, any CVC.
+4. The `stripe listen` terminal shows webhook events arriving: `checkout.session.completed`, `customer.subscription.created`, etc.
+5. Check the audit log for subscription events:
 
-  ```sql
-  SELECT actor, event, payload->>'plan' AS plan
-  FROM audit.audit_log
-  WHERE event LIKE 'billing.%'
-  ORDER BY ts DESC LIMIT 5;
-  ```
+```sql
+SELECT actor, event, payload->>'plan' AS plan
+FROM audit.audit_log
+WHERE event LIKE 'billing.%'
+ORDER BY ts DESC LIMIT 5;
+```
 
-- The ACL endpoint `/api/me/features` returns the upgraded plan's features.
+6. Hit `/api/me/features` and verify the upgraded plan's features return.
 
-## What changes in code
+## Key points
 
-- `apps/api/src/api/billing/billing.service.ts`: fill in plan-to-price mapping and the webhook handler logic for `checkout.session.completed`.
-- `apps/api/src/api/billing/billing.routes.ts`: already exposes `/stripe/checkout-session`, `/stripe/portal-session`, `/stripe/webhooks` under the billing router; no new routes needed.
-- ACL plan config: declare your plan + features so the [ACL resolver](/api/acl/) knows about it.
-- `apps/ui/src/features/billing/`: existing feature folder hosting the mutations that call the typed client and the page with the Upgrade button and Customer Portal link.
-
-No new dependencies. No new patterns. Stripe is wired as a [pluggable provider](/api/env-validator/) so changing pricing later is a config edit, not a code rewrite.
-
-<DocCallout eyebrow="Heads up" title="Idempotency matters" variant="caution">
-  Stripe retries webhooks aggressively. The billing service uses an idempotency
-  table keyed on Stripe's `event.id`. Don't disable it. The
-  [`@boring-stack-pkg/eslint-plugin-stripe-webhooks`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-stripe-webhooks)
-  plugin enforces the pattern.
-</DocCallout>
+- **Idempotency matters**: Stripe retries webhooks. The billing service uses an idempotency table keyed on Stripe's `event.id` to prevent double-processing.
+- **Feature gates**: Plans and features live in the ACL config. Change pricing later by editing env and ACL, not code.
+- **No UI secrets**: The UI doesn't need Stripe client IDs. All OAuth and Stripe calls go through the API.
 
 ## Related
 
-- [Billing](/api/billing/); the existing billing spine and what it ships.
-- [ACL & feature resolution](/api/acl/); plan + feature gating after subscription.
-- [Audit log](/api/audit-log/); where subscription events get recorded.
-- [Decision log](/architecture/decisions/); why the architecture-as-lint discipline matters for Stripe webhooks.
+- [Billing](/api/billing/)  - the billing spine and webhook handlers.
+- [ACL & feature resolution](/api/acl/)  - plan-based feature gating.
+- [Audit log](/api/audit-log/)  - subscription lifecycle events.

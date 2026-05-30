@@ -83,6 +83,17 @@ const readAuth = (source: EnvSource) => ({
       ? "test-only-jwt-secret-padded-to-thirty-two-chars"
       : ""
   ),
+  /*
+   * Deterministic test-only key so MFA round-trip tests don't need an
+   * env file. 32 bytes base64 = 44 chars. Production deploys must set
+   * this to a freshly generated value before any user enables MFA.
+   */
+  MFA_ENCRYPTION_KEY: nonEmpty(
+    source.MFA_ENCRYPTION_KEY,
+    source.NODE_ENV === "test"
+      ? "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+      : ""
+  ),
   SUPERUSER_EMAIL: source.SUPERUSER_EMAIL ?? "",
   SUPERUSER_PASSWORD: source.SUPERUSER_PASSWORD ?? "",
   E2E_TEST_ENDPOINTS_ENABLED: toBool(source.E2E_TEST_ENDPOINTS_ENABLED),
@@ -110,7 +121,12 @@ const readRateLimit = (source: EnvSource) => ({
 
 const readSentry = (source: EnvSource) => ({
   SENTRY_DSN: source.SENTRY_DSN ?? "",
-  SENTRY_TRACES_SAMPLE_RATE: toFloat(source.SENTRY_TRACES_SAMPLE_RATE, 0.1),
+  SENTRY_TRACES_SAMPLE_RATE: toFloat(source.SENTRY_TRACES_SAMPLE_RATE, 0),
+});
+
+const readOpenTelemetry = (source: EnvSource) => ({
+  OTEL_EXPORTER_OTLP_ENDPOINT: source.OTEL_EXPORTER_OTLP_ENDPOINT ?? "",
+  OTEL_SERVICE_NAME: source.OTEL_SERVICE_NAME ?? "boringstack-api",
 });
 
 const readEmail = (source: EnvSource) => ({
@@ -120,7 +136,9 @@ const readEmail = (source: EnvSource) => ({
   CLOUDFLARE_ACCOUNT_ID: source.CLOUDFLARE_ACCOUNT_ID ?? "",
   CLOUDFLARE_EMAIL_API_TOKEN: source.CLOUDFLARE_EMAIL_API_TOKEN ?? "",
   RESEND_API_KEY: source.RESEND_API_KEY ?? "",
+  RESEND_WEBHOOK_SECRET: source.RESEND_WEBHOOK_SECRET ?? "",
   SENDGRID_API_KEY: source.SENDGRID_API_KEY ?? "",
+  SENDGRID_WEBHOOK_PUBLIC_KEY: source.SENDGRID_WEBHOOK_PUBLIC_KEY ?? "",
   SMTP_HOST: source.SMTP_HOST ?? "",
   SMTP_PORT: toInt(source.SMTP_PORT, 25),
   SMTP_USER: source.SMTP_USER ?? "",
@@ -190,6 +208,7 @@ const readRaw = (source: EnvSource): Record<string, unknown> => ({
   ...readUrls(source),
   ...readRateLimit(source),
   ...readSentry(source),
+  ...readOpenTelemetry(source),
   ...readEmail(source),
   ...readOAuth(source),
   ...readAI(source),
@@ -339,6 +358,81 @@ const checkEmailFromDomain = (env: Env): string[] => {
     `EMAIL_FROM "${env.EMAIL_FROM}" uses a placeholder domain. ` +
       "Set it to an address on a domain you control and verified with the provider.",
   ];
+};
+
+/**
+ * Rejects placeholder secrets in production. The env-example files ship
+ * obviously-fake values long enough to pass the schema's minLength check
+ * (e.g. JWT_SECRET=replace-with-openssl-rand-base64-48), and Docker
+ * Compose has hardcoded migration-task placeholders that exist only to
+ * satisfy schema validation in containers that never sign tokens.
+ * Without this check, an operator who copies the example file verbatim
+ * boots production with a known string. The patterns below cover every
+ * placeholder string that ships in the template today.
+ */
+const PLACEHOLDER_SECRET_EXACT_MATCHES = [
+  "test-only-jwt-secret-padded-to-thirty-two-chars",
+  "migrate-placeholder-secret-padded-to-thirty-two-chars",
+  "api-migrate-placeholder-secret-padded-to-thirty-two",
+  "docker-compose-api-dev-jwt-secret-keys",
+  "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+] as const;
+
+/*
+ * Precomputed lowercase denylist so the exact-match check uses the
+ * same case-folding as the prefix and substring checks below. Without
+ * this, an attacker (or a careless deploy) could bypass the guard by
+ * uppercasing the placeholder.
+ */
+const PLACEHOLDER_SECRET_EXACT_MATCHES_LOWER =
+  PLACEHOLDER_SECRET_EXACT_MATCHES.map((value) => value.toLowerCase());
+
+const PLACEHOLDER_SECRET_PREFIXES = [
+  "replace-with-",
+  "change-me-",
+  "your-",
+  "example-",
+] as const;
+
+const isPlaceholderSecret = (value: string): boolean => {
+  const lower = value.toLowerCase();
+
+  if (PLACEHOLDER_SECRET_EXACT_MATCHES_LOWER.includes(lower)) {
+    return true;
+  }
+
+  if (PLACEHOLDER_SECRET_PREFIXES.some((prefix) => lower.startsWith(prefix))) {
+    return true;
+  }
+
+  return lower.includes("placeholder");
+};
+
+const PLACEHOLDER_SECRET_FIELDS: readonly {
+  readonly name: keyof Env;
+  readonly generator: string;
+}[] = [
+  { name: "JWT_SECRET", generator: "openssl rand -base64 48" },
+  { name: "MFA_ENCRYPTION_KEY", generator: "openssl rand -base64 32" },
+];
+
+const checkPlaceholderSecrets = (env: Env): string[] => {
+  if (env.NODE_ENV !== "production") {
+    return [];
+  }
+
+  return PLACEHOLDER_SECRET_FIELDS.flatMap(({ name, generator }) => {
+    const value = env[name];
+
+    if (typeof value !== "string" || !isPlaceholderSecret(value)) {
+      return [];
+    }
+
+    return [
+      `${name} looks like a placeholder ("${value}"). ` +
+        `Generate a real value with \`${generator}\` and set it before boot.`,
+    ];
+  });
 };
 
 const checkAIProvider = (env: Env): string[] => {
@@ -506,6 +600,7 @@ const checkInvariants = (env: Env): string[] => [
   ...checkQueuesEnabledInProd(env),
   ...checkValkeyPassword(env),
   ...checkWebPushVapid(env),
+  ...checkPlaceholderSecrets(env),
 ];
 
 const formatSchemaErrors = (raw: Record<string, unknown>): string[] => {

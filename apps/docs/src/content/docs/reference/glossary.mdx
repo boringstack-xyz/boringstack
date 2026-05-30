@@ -3,128 +3,189 @@ title: Glossary
 description: Project-specific terms used across the docs, defined in one place.
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
-
-<PageIntro
-  eyebrow="Glossary"
-  actions={[
-    { label: "Architecture", href: "#architecture-vocabulary" },
-    { label: "Infrastructure", href: "#infra-vocabulary" },
-  ]}
-  facts={[
-    { value: "4", label: "core categories" },
-    { value: "Gitignored", label: "config" },
-    { value: "Lint-enforced", label: "contract" },
-  ]}
->
-  Project-specific terms used across the docs, collected here so you do not have to hunt definitions page by page.
-</PageIntro>
+Project-specific terminology used across the docs, collected here
+for reference.
 
 ## Architecture vocabulary
 
-<FaqGroup>
-  <FaqItem title="The workspace apps" open>
-    The folders that compose BoringStack's runtime: `apps/api`, `apps/ui`, and `infra/compose`. They live in one monorepo so Compose, CI, and docs can reference every layer through stable relative paths. `infra/bootstrap` provisions a VPS via OpenTofu and is optional.
-  </FaqItem>
-  <FaqItem title="Feature folder">
-    <span id="feature-folder"></span>A single directory per feature (`src/api/<feature>/`, `src/features/<feature>/`). Holds the routes, services, types, and tests for that one feature. The unit of independent change. The apps/api ships `auth`, `users`, `billing`, `dashboard`, `admin`, `health` as framework features; no demo domain resource. [Read more](/architecture/monorepo-layout/).
-  </FaqItem>
-  <FaqItem title="Route / service / types split">
-    The API app's per-feature pattern. For a hypothetical `posts` resource: `posts.routes.ts` does HTTP only, `posts.service.ts` does business logic + DB, `posts.types.ts` holds the shapes shared between them. Enforced by ESLint. [Read more](/api/overview/).
-  </FaqItem>
-  <FaqItem title="Component anatomy">
-    The UI app's per-component pattern. A page like `DashboardPage/` is a folder of ~8 files (`.tsx`, `.hooks.ts`, `.types.ts`, `.constants.ts`, `.utils.ts`, `.test.tsx`, `.stories.tsx`, `index.ts`). [Read more](/ui/overview/).
-  </FaqItem>
-  <FaqItem title="View object">
-    <span id="view-object"></span>The shape a hook returns to its component (`IDashboardPageView` returned by `useDashboardPage`). The component never reads queries, stores, or env directly; it only renders the view object. Decouples logic from JSX.
-  </FaqItem>
-  <FaqItem title="Module boundary">
-    The lint-enforced rule that a file can have one semantic concern. No mixing routes + services + utils in one file. Enforced by [`@boring-stack-pkg/eslint-plugin-module-boundaries`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-module-boundaries).
-  </FaqItem>
-</FaqGroup>
+### The workspace apps
+
+The folders that compose BoringStack's runtime: `apps/api`,
+`apps/ui`, and `infra/compose`. They live in one monorepo so
+Compose, CI, and docs can reference every layer through stable
+relative paths. `infra/bootstrap` provisions a VPS via OpenTofu and
+is optional.
+
+### Feature folder <a id="feature-folder"></a>
+
+A single directory per feature (`src/api/<feature>/`,
+`src/features/<feature>/`). Holds the routes, services, types, and
+tests for that one feature. The unit of independent change. The
+api ships `auth`, `users`, `billing`, `dashboard`, `admin`, and
+`health` as framework features; no demo domain resource.
+See [Repository layout](/architecture/monorepo-layout/).
+
+### Route / service / types split
+
+The API app's per-feature pattern. For a hypothetical `posts`
+resource: `posts.routes.ts` does HTTP only, `posts.service.ts`
+does business logic plus DB access, `posts.types.ts` holds the
+shapes shared between them. Enforced by ESLint. See [API
+overview](/api/overview/).
+
+### Component anatomy
+
+The UI app's per-component pattern. A page like `DashboardPage/`
+is a folder of about eight files (`.tsx`, `.hooks.ts`, `.types.ts`,
+`.constants.ts`, `.utils.ts`, `.test.tsx`, `.stories.tsx`,
+`index.ts`). See [UI overview](/ui/overview/).
+
+### View object <a id="view-object"></a>
+
+The shape a hook returns to its component (`IDashboardPageView`
+returned by `useDashboardPage`). The component never reads queries,
+stores, or env directly; it only renders the view object. Decouples
+logic from JSX.
+
+### Module boundary
+
+The lint-enforced rule that a file can have one semantic concern.
+No mixing routes, services, and utils in one file. Enforced by
+[`@boring-stack-pkg/eslint-plugin-module-boundaries`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-module-boundaries).
 
 ## Infra vocabulary
 
-<FaqGroup>
-  <FaqItem title="Stack" open>
-    The deployment target: `STACK=dev` or `STACK=prod`. Picks which compose overlay (HTTP routes + host ports for dev, HTTPS + ACME for prod) gets merged on top of the base.
-  </FaqItem>
-  <FaqItem title="Overlay">
-    <span id="overlay"></span>An opt-in `docker-compose.<name>.yml` file that adds services to the base stack. Activated by a `WITH_<NAME>=1` env var. Overlays compose freely (e.g. `WITH_OBSERVABILITY=1 WITH_GLITCHTIP=1`). [Read more](/infra/profiles-and-overlays/).
-  </FaqItem>
-  <FaqItem title="Profile">
-    A docker-compose feature for grouping services within a single file. The infra stack uses profiles (`--profile dev`, `--profile observability`) alongside overlays; profiles activate services within a file, overlays add files.
-  </FaqItem>
-  <FaqItem title="Base stack">
-    The always-on services: Postgres + Valkey + api-migrate (one-shot) + the app containers. Traefik is in the prod profile only; dev uses Vite's dev-server proxy. Everything else is an overlay.
-  </FaqItem>
-  <FaqItem title="Data plane">
-    Postgres + Valkey. The services that hold state. Deliberately not exposed to the `frontend` Docker network, so the only path from the world to the data plane is through the API.
-  </FaqItem>
-  <FaqItem title="Valkey">
-    The BSD-licensed Redis-protocol-compatible store BoringStack uses for cache + queues. Drop-in compatible with Redis: same wire protocol, same client libraries (`ioredis`, BullMQ). Env vars are renamed `VALKEY_HOST` / `VALKEY_PORT` / `VALKEY_PASSWORD` / `VALKEY_DB` so the operator-facing names match the binary; third-party containers (bull-board, GlitchTip) still read their own `REDIS_*` env names internally, with our compose overlays bridging the value. Maintained by the Linux Foundation with AWS, Google, and Oracle as primary sponsors.
-  </FaqItem>
-</FaqGroup>
+### Stack
+
+The deployment target: `STACK=dev` or `STACK=prod`. Picks which
+compose overlay (HTTP routes plus host ports for dev, HTTPS plus
+ACME for prod) gets merged on top of the base.
+
+### Overlay <a id="overlay"></a>
+
+A `docker-compose.<name>.yml` file that adds services to the base
+stack, gated by a `WITH_<NAME>` env var. Observability and
+GlitchTip default to on; niche overlays (BullMQ, Mailpit, WUD in
+dev) default to off. See [Profiles and
+overlays](/infra/profiles-and-overlays/).
+
+### Profile
+
+A docker-compose feature for grouping services within a single
+file. The infra stack uses profiles (`--profile dev`,
+`--profile observability`) alongside overlays; profiles activate
+services within a file, overlays add files.
+
+### Base stack
+
+The always-on services: Postgres, Valkey, api-migrate (one-shot),
+and the app containers. Traefik is in the prod profile only; dev
+uses Vite's dev-server proxy. Observability and GlitchTip layer in
+by default on top.
+
+### Data plane
+
+Postgres plus Valkey. The services that hold state. Deliberately
+not exposed to the `frontend` Docker network, so the only path
+from the world to the data plane is through the API.
+
+### Valkey
+
+The BSD-licensed Redis-protocol-compatible store BoringStack uses
+for cache and queues. Drop-in compatible with Redis: same wire
+protocol, same client libraries (`ioredis`, BullMQ). Env vars are
+renamed `VALKEY_HOST`, `VALKEY_PORT`, `VALKEY_PASSWORD`,
+`VALKEY_DB` so the operator-facing names match the binary;
+third-party containers (bull-board, GlitchTip) still read their
+own `REDIS_*` env names internally, with our compose overlays
+bridging the value. Maintained by the Linux Foundation with AWS,
+Google, and Oracle as primary sponsors.
 
 ## Architecture rules vocabulary
 
-<FaqGroup>
-  <FaqItem title="The contract" open>
-    Shorthand for "the rules the ESLint plugins enforce." When something is "in the contract," violating it fails `bun run validate`. The phrase emphasizes that *the lint is load-bearing*, not the prose docs. [Read more](/architecture/lint-as-contract/).
-  </FaqItem>
-  <FaqItem title="Fire-and-forget">
-    A call site that intentionally doesn't `await` a Promise. Used for audit-log writes and other telemetry where failure must never propagate to the caller. The `void` prefix marks the intent for both readers and the linter.
-  </FaqItem>
-  <FaqItem title="Pluggable provider">
-    An interface with multiple concrete implementations, selected by env var. Used for email, AI, and cache. The interface is the contract; the implementations are interchangeable.
-  </FaqItem>
-</FaqGroup>
+### The contract
 
-## Data + persistence
+Shorthand for "the rules the ESLint plugins enforce." When
+something is "in the contract", violating it fails
+`bun run validate`. The lint rules are enforceable boundaries, not
+just documentation. See [Lint as the
+contract](/architecture/lint-as-contract/).
 
-<FaqGroup>
-  <FaqItem title="Drizzle" open>
-    The TypeScript-first ORM the apps/api uses for Postgres. Schema-as-TS, migrations as generated SQL files, queries that look like SQL but are typed. Picked over Prisma because there's no shadow database and migrations are plain SQL.
-  </FaqItem>
-  <FaqItem title="Schema (Postgres)">
-    A namespace within a database. The apps/api uses two: `public` (app tables) and `audit` (the audit log). Keeping them separate lets you grant, archive, or migrate them independently.
-  </FaqItem>
-  <FaqItem title="Audit log">
-    The append-only `audit.audit_log` table. Records security- and compliance-relevant events. Fire-and-forget; writes never block requests. [Read more](/api/audit-log/).
-  </FaqItem>
-</FaqGroup>
+### Fire-and-forget
+
+A call site that intentionally doesn't `await` a Promise. Used for
+audit-log writes and other telemetry where failure must never
+propagate to the caller. The `void` prefix marks the intent for
+both readers and the linter.
+
+### Pluggable provider
+
+An interface with multiple concrete implementations, selected by
+env var. Used for email, AI, and cache. The interface is the
+contract; the implementations are interchangeable.
+
+## Data and persistence
+
+### Drizzle
+
+The TypeScript-first ORM the api uses for Postgres. Schema-as-TS,
+migrations as generated SQL files, queries that look like SQL but
+are typed. Picked over Prisma because there's no shadow database
+and migrations are plain SQL.
+
+### Schema (Postgres)
+
+A namespace within a database. The api uses several: `auth`,
+`billing`, `audit`, `app`, `notifications`. Keeping them separate
+lets you grant, archive, or migrate them independently.
+
+### Audit log
+
+The append-only `audit.audit_log` table. Records security- and
+compliance-relevant events. Fire-and-forget; writes never block
+requests. See [Audit log](/api/audit-log/).
 
 ## Background work
 
-<FaqGroup>
-  <FaqItem title="Queue" open>
-    A named work buffer in Valkey, owned by a directory under `src/queues/<name>/`. Producers enqueue; workers consume. The directory follows a fixed pattern (constants, types, queue, worker, setup) so producer + consumer can't drift on names.
-  </FaqItem>
-  <FaqItem title="QueueManager">
-    The process-singleton that owns all queues + workers. Application code never imports BullMQ's `Queue` class directly; it calls `manager.enqueueX(...)`. [Read more](/api/queues/).
-  </FaqItem>
-  <FaqItem title="Idempotent">
-    A job that produces the same result if run twice. BullMQ retries on failure, so workers must be idempotent. Patterns: natural keys, UNIQUE constraints with caught violations, check-then-do inside a transaction.
-  </FaqItem>
-</FaqGroup>
+### Queue
+
+A named work buffer in Valkey, owned by a directory under
+`src/queues/<name>/`. Producers enqueue; workers consume. The
+directory follows a fixed pattern (constants, types, queue,
+worker, setup) so producer and consumer can't drift on names.
+
+### QueueManager
+
+The process-singleton that owns all queues and workers.
+Application code never imports BullMQ's `Queue` class directly; it
+calls `manager.enqueueX(...)`. See [Queues](/api/queues/).
+
+### Idempotent
+
+A job that produces the same result if run twice. BullMQ retries
+on failure, so workers must be idempotent. Patterns: natural keys,
+UNIQUE constraints with caught violations, check-then-do inside a
+transaction.
 
 ## Other
 
-<FaqGroup>
-  <FaqItem title="dev.sh" open>
-    The infra orchestrator. Forwards every argument to `docker compose` with the right overlay + profile flags based on `STACK=` and `WITH_*=` env vars. Plain bash; you can read what it does.
-  </FaqItem>
-  <FaqItem title="bun run validate / bun run validate">
-    The merge gate. Typecheck + lint + tests. A PR can't merge if `validate` fails. The phrase "the merge gate" anywhere in the docs means this command.
-  </FaqItem>
-</FaqGroup>
+### dev.sh
+
+The infra orchestrator. Forwards every argument to
+`docker compose` with the right overlay and profile flags based on
+`STACK=` and `WITH_*=` env vars. Plain bash; you can read what it
+does.
+
+### bun run validate
+
+The merge gate. Typecheck plus lint plus tests. A PR can't merge
+if `validate` fails. The phrase "the merge gate" anywhere in the
+docs refers to this command.
 
 ## Related
 
-- [Repository layout](/architecture/monorepo-layout/); where the monorepo workspaces live and how they connect.
-- [Stack at a glance](/architecture/stack/); the dependency inventory behind the vocabulary.
-- [Profiles & overlays](/infra/profiles-and-overlays/); overlay vs profile in practice.
-- [Commands cheatsheet](/reference/commands/); what to type for each term.
-- [Lint as the contract](/architecture/lint-as-contract/); the rules these terms refer back to.
+- [Repository layout](/architecture/monorepo-layout/), where the monorepo workspaces live and how they connect.
+- [Stack at a glance](/architecture/stack/), the dependency inventory behind the vocabulary.
+- [Profiles and overlays](/infra/profiles-and-overlays/), overlay vs profile in practice.
+- [Commands cheatsheet](/reference/commands/), what to type for each term.
+- [Lint as the contract](/architecture/lint-as-contract/), the rules these terms refer back to.

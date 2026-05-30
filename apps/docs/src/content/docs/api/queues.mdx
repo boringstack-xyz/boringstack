@@ -3,34 +3,9 @@ title: Queues
 description: BullMQ on Valkey (Redis-protocol) for background jobs. One QueueManager owns lifecycle; dispatch falls back to inline execution when queues are off.
 ---
 
-import DocFileTree from "../../../components/DocFileTree";
-import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
-import PageIntro from "../../../components/docs-kit/PageIntro";
+Background work uses BullMQ over the same Valkey the cache lives on. A single QueueManager owns queues and workers, so request handlers dispatch intent without knowing whether the work runs inline, locally, or in a worker.
 
-<PageIntro
-  eyebrow="Background work that can start inline"
-  actions={[
-    { label: "Email dispatch", href: "/api/email/" },
-    { label: "Infra overlays", href: "/infra/profiles-and-overlays/" },
-  ]}
-  facts={[
-    { value: "BullMQ", label: "job lifecycle" },
-    { value: "Valkey", label: "queue backend" },
-    { value: "inline", label: "fallback when queues are off" },
-  ]}
->
-  Background work uses BullMQ over the same Valkey the cache lives on. A single
-  QueueManager owns queues and workers, so request handlers dispatch intent
-  without knowing whether the work runs inline, locally, or in a worker.
-</PageIntro>
-
-The mental model:
-
-- A **queue** is a named work buffer in Valkey.
-- A **worker** is a long-lived process that pulls jobs off the queue and runs them.
-- A **`QueueManager`** is a process-singleton that owns all queues + workers, so application code only ever talks to one object.
-
-When `QUEUES_ENABLED=false`, every dispatch helper falls back to inline execution. Dev and tests run without a worker process.
+A queue is a named work buffer in Valkey. A worker is a long-lived process that pulls jobs off the queue and runs them. QueueManager is a process-singleton that owns all queues and workers, so application code only ever talks to one object. When `QUEUES_ENABLED=false`, every dispatch helper falls back to inline execution. Dev and tests run without a worker process.
 
 ## How a job runs
 
@@ -52,84 +27,27 @@ sequenceDiagram
   end
 ```
 
-## Design choices
+## Design
 
-<FeatureGrid
-  columns={3}
-  items={[
-    {
-      eyebrow: "manager",
-      title: "One QueueManager per process",
-      body: "Centralized lifecycle, shutdown, admin stats, and retry defaults.",
-    },
-    {
-      eyebrow: "shape",
-      title: "Per-queue directory",
-      body: "Constants, queue, worker, setup, and types stay together.",
-    },
-    {
-      eyebrow: "dev",
-      title: "Inline fallback",
-      body: "When QUEUES_ENABLED=false, dev and tests boot without a worker process.",
-    },
-    {
-      eyebrow: "success",
-      title: "Bounded success retention",
-      body: "removeOnComplete keeps one hour or the latest 100 successes.",
-    },
-    {
-      eyebrow: "failure",
-      title: "Failed jobs remain inspectable",
-      body: "removeOnFail is false, so the dashboard can show what broke.",
-    },
-    {
-      eyebrow: "lint",
-      title: "Workers are checked",
-      body: "The BullMQ lint plugin catches missing failed handlers and retry config.",
-    },
-  ]}
-/>
+One QueueManager per process provides centralized lifecycle, shutdown, admin stats, and retry defaults. Per-queue directories keep constants, queue, worker, setup, and types together. When `QUEUES_ENABLED=false`, dev and tests boot without a worker process. Success jobs are retained for one hour or the latest 100 (removeOnComplete). Failed jobs remain inspectable; removeOnFail is false so the dashboard can show what broke. The BullMQ lint plugin catches missing failed handlers and retry config.
 
-## The shape of a queue
+## Queue anatomy
 
 Every queue is a small directory under `src/queues/<name>/`:
 
-<DocFileTree
-  root="src/queues/email-delivery/"
-  title="Queue anatomy"
-  caption="producer and consumer share one contract"
-  nodes={[
-    {
-      name: "email-delivery.constants.ts",
-      detail: "Queue name, job name, and retry defaults",
-    },
-    {
-      name: "email-delivery.types.ts",
-      detail: "JSON-serializable job-data type",
-    },
-    { name: "email-delivery.queue.ts", detail: "BullMQ Queue factory" },
-    {
-      name: "email-delivery.worker.ts",
-      detail: "Worker plus structured-logged event handlers",
-    },
-    {
-      name: "email-delivery.setup.ts",
-      detail: "Boot wiring for queue + worker",
-    },
-  ]}
-/>
+- `<name>.constants.ts`: Queue name, job name, and retry defaults
+- `<name>.types.ts`: JSON-serializable job-data type
+- `<name>.queue.ts`: BullMQ Queue factory
+- `<name>.worker.ts`: Worker plus structured-logged event handlers
+- `<name>.setup.ts`: Boot wiring for queue and worker
 
-The reference implementation is `email-delivery`; it's the simplest worker that exists (render a template, hand off to the email provider), so it's a good copy-target.
+The reference implementation is `email-delivery` (render a template, hand off to the email provider), so it's a good copy-target.
 
 ## QueueManager is the seam
 
-Application code never imports `Queue` directly. It calls `manager.enqueueX(...)`. Why:
+Application code never imports `Queue` directly; it calls `manager.enqueueX(...)`. This provides one place to enforce retry/cleanup defaults across queues. Graceful shutdown works via `manager.close()`, which shuts every worker and queue in parallel; signal handlers only know about the manager. Admin observability comes from `getStats()`, which returns waiting/active/completed/failed/delayed/paused counts for every managed queue.
 
-- One place to enforce retry/cleanup defaults across queues.
-- Graceful shutdown: `manager.close()` shuts every worker + queue in parallel; signal handlers only know about the manager.
-- Admin observability: `getStats()` returns waiting/active/completed/failed/delayed/paused counts for every managed queue.
-
-A new queue therefore needs four additions to `QueueManager`: the constructor input, an `enqueue<Name>()` method, an entry in `getStats()`, and a `close()` line. The lint plugin catches workers that omit a `failed` handler or skip retry config.
+A new queue needs four additions to `QueueManager`: the constructor input, an `enqueue<Name>()` method, an entry in `getStats()`, and a `close()` line. The lint plugin catches workers that omit a `failed` handler or skip retry config.
 
 ## Idempotency
 
@@ -147,17 +65,13 @@ Using BullMQ's `jobId` for deduplication only protects against simultaneous dupl
 2. Add it to `QueueManager`'s constructor, an `enqueue<Name>()` method, `getStats()`, and `close()`.
 3. Call `manager.enqueue<Name>(...)` from the producer.
 
-## Dashboard
+## Dashboard and monitoring
 
-`WITH_BULLMQ=1` in the infra stack brings up [Bull-board](https://github.com/felixmosh/bull-board) at `http://bullmq.localhost`; jobs by state, retry timelines, manual retry/discard. Dev-only; not exposed in the prod profile. See [Profiles & overlays](/infra/profiles-and-overlays/).
-
-## Lint coverage
-
-[`@boring-stack-pkg/eslint-plugin-bullmq`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-bullmq) catches the common foot-guns: workers that don't handle `failed`, jobs that mutate shared state without idempotency, missing retry config.
+`WITH_BULLMQ=1` in the infra stack brings up [Bull-board](https://github.com/felixmosh/bull-board) at `http://bullmq.localhost`. Jobs by state, retry timelines, manual retry/discard. Dev-only; not exposed in the prod profile. See [Profiles & overlays](/infra/profiles-and-overlays/).
 
 ## Source
 
-[`src/queues/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/queues) on GitHub. [`src/config/setup-queues.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/config/setup-queues.ts) wires the manager into boot.
+[`src/queues/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/queues) and [`src/config/setup-queues.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/config/setup-queues.ts) wire the manager into boot.
 
 ## Related
 

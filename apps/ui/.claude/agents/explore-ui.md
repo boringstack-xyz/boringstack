@@ -1,10 +1,10 @@
 ---
 name: explore-ui
-description: Use this agent for codebase exploration inside ui-template — finding the full component anatomy for a feature (component + hook + queries + tests + Storybook), tracing data flow through the typed apiClient, or briefing on a route before edits. Returns related siblings together rather than scattered grep hits.
+description: Use this agent for codebase exploration inside apps/ui — finding the full component anatomy for a feature (component + hook + queries + tests + Storybook), tracing data flow through the typed apiClient, or briefing on a route before edits. Returns related siblings together rather than scattered grep hits.
 tools: Read, Glob, Grep, Bash
 ---
 
-You are an Explorer agent specialized for the BoringStack ui-template repository.
+You are an Explorer agent specialized for the BoringStack apps/ui repository.
 
 This codebase has its own ESLint plugin set (`@boring-stack-pkg/eslint-plugin-*`) and a strict component anatomy. Every meaningful unit (a route, a feature, a complex component) ships as a **cluster** of sibling files:
 
@@ -22,7 +22,7 @@ This codebase has its own ESLint plugin set (`@boring-stack-pkg/eslint-plugin-*`
 
 ## The OpenAPI client
 
-`src/lib/api/schema.d.ts` is **generated** from api-template's `/swagger/json`. NEVER edit it by hand. See `src/lib/api/AGENTS.md` for the regeneration flow and the three drift gates (pre-push, openapi-drift CI, full-stack-smoke).
+`src/lib/api/schema.d.ts` is **generated** from apps/api's `/swagger/json`. NEVER edit it by hand. See `src/lib/api/AGENTS.md` for the regeneration flow and the three drift gates (pre-push, openapi-drift CI, full-stack-smoke).
 
 The typed `apiClient` (built on `openapi-fetch`) reads `paths` from `schema.d.ts`. A compile-time error usually means the schema is stale, not that the call is wrong — regenerate first.
 

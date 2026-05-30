@@ -2,6 +2,7 @@ import { t } from "elysia";
 
 import { env } from "../../config/env";
 import { isAdminRole, isOwnerRole } from "../../lib/acl";
+import { auditLogService } from "../../lib/audit-log";
 import { AUTH_COOKIE_CONFIG, AUTH_COOKIE_NAME } from "../../lib/cookies";
 import { ApiErrors, createSuccessResponse } from "../../lib/errors";
 import { buildJWTPayload } from "../../lib/jwt";
@@ -18,6 +19,8 @@ import {
   AcceptInvitationResponse,
   AcceptInvitationSchema,
   AccountResponse,
+  AuditLogListQuerySchema,
+  AuditLogListResponse,
   CreateInvitationSchema,
   InitiateOwnershipTransferResponse,
   InvitationResponse,
@@ -260,6 +263,35 @@ const accountsRoutes = createAuthMiddleware()
       detail: {
         tags: ["Accounts"],
         summary: "Get the pending ownership transfer offer, if any",
+      },
+    }
+  )
+  .get(
+    "/:id/audit-log",
+    async ({ membership, params, query }) => {
+      if (params.id !== membership.accountId) {
+        throw ApiErrors.forbidden();
+      }
+
+      if (!isOwnerRole(membership.role) && !isAdminRole(membership.role)) {
+        throw ApiErrors.forbidden(
+          "Only an owner or admin can view the audit log"
+        );
+      }
+
+      return auditLogService.listForAccount({
+        accountId: membership.accountId,
+        limit: query.limit,
+      });
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      query: AuditLogListQuerySchema,
+      response: AuditLogListResponse,
+      detail: {
+        tags: ["Accounts"],
+        summary:
+          "Recent audit-log entries scoped to the account (owner/admin only)",
       },
     }
   )
@@ -535,7 +567,7 @@ const accountSessionRoutes = createAuthMiddleware()
       await accountsService.switchAccount(user.id, body.accountId);
 
       const token = await jwt.sign(
-        buildJWTPayload(user.id, user.email, body.accountId)
+        await buildJWTPayload(user.id, user.email, body.accountId)
       );
       const auth = cookie[AUTH_COOKIE_NAME];
 

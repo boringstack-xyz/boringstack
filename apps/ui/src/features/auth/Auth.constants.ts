@@ -4,5 +4,6 @@
  * typed `apiClient.GET("/api/v1/users/me")` calls in Auth.queries.ts.
  */
 export const AUTH_QUERY_KEYS = {
-  me: ["auth", "me"] as const
+  me: ["auth", "me"] as const,
+  mfaStatus: ["auth", "mfa", "status"] as const
 };

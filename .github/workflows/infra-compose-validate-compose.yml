@@ -40,7 +40,6 @@ jobs:
           filters: |
             code:
               - 'infra/compose/**'
-              - '!infra/compose/**/*.md'
               - 'scripts/**'
               - '.github/workflows/**'
 
@@ -156,7 +155,6 @@ jobs:
           filters: |
             code:
               - 'infra/compose/**'
-              - '!infra/compose/**/*.md'
               - 'scripts/**'
               - '.github/workflows/**'
 
@@ -239,7 +237,6 @@ jobs:
           filters: |
             code:
               - 'infra/compose/**'
-              - '!infra/compose/**/*.md'
               - 'scripts/**'
               - '.github/workflows/**'
 

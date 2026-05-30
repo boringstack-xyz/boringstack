@@ -29,7 +29,8 @@ fi
 WEB_CONTAINER="$(docker compose ps -q glitchtip-web 2>/dev/null || true)"
 if [[ -z "$WEB_CONTAINER" ]]; then
   echo "[bootstrap] ERROR: glitchtip-web container is not running. Bring it up first:" >&2
-  echo "            WITH_GLITCHTIP=1 ./scripts/compose-up.sh" >&2
+  echo "            ./scripts/compose-up.sh   # GlitchTip is on by default" >&2
+  echo "            (or check WITH_GLITCHTIP is not set to 0)" >&2
   exit 1
 fi
 

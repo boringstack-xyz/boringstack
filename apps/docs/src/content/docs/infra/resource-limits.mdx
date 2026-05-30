@@ -3,29 +3,7 @@ title: Resource limits
 description: Every service has CPU and memory caps driven by env vars. Defaults sized for a 4-vCPU / 8 GB host.
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import CommandRun from "../../../components/docs-kit/CommandRun";
-import DataMatrix from "../../../components/docs-kit/DataMatrix";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
-
-<PageIntro
-  eyebrow="Container Sizing"
-  actions={[
-    { label: "Default sizing", href: "#default-sizing-4-vcpu--8-gb" },
-    { label: "OOM diagnosis", href: "#diagnosing-an-oom-kill" },
-  ]}
-  facts={[
-    { value: "4 vCPU", label: "default target" },
-    { value: "8 GB", label: "base RAM" },
-    { value: "Env-driven", label: "all knobs" },
-  ]}
->
-  Every container in the stack has `deploy.resources.limits` and
-  `deploy.resources.reservations` set from env vars. The defaults target a
-  4-vCPU / 8 GB VPS, the cheapest tier on Hetzner / OVH / DigitalOcean that's
-  usable in production. Bigger box? Bump the knobs.
-</PageIntro>
+Every container has `deploy.resources.limits` (hard cap) and `deploy.resources.reservations` (guaranteed minimum) set from env vars. The defaults target a 4-vCPU / 8 GB VPS, the cheapest production-viable tier on Hetzner / OVH / DigitalOcean. Bigger host? Bump the knobs in `compose/.env`.
 
 ## Why limits matter
 
@@ -33,23 +11,11 @@ A misbehaving worker consuming all memory shouldn't take Postgres down with it. 
 
 ## Design choices
 
-<FaqGroup>
-  <FaqItem title="Limits + reservations on every service" open>
-    Failures stay isolated; the host stays responsive.
-  </FaqItem>
-  <FaqItem title="Knobs in compose/.env, not hardcoded">
-    Right-sizing is a config change, not a code change.
-  </FaqItem>
-  <FaqItem title="Defaults target 4 vCPU / 8 GB">
-    Cheapest production-viable VPS tier; everything else scales up from there.
-  </FaqItem>
-  <FaqItem title="Reservations less than limits (~1:4 ratio)">
-    Reserves the minimum to boot; allows bursts up to the limit.
-  </FaqItem>
-  <FaqItem title="bun and Node services share roughly the same shape">
-    Avoids per-runtime tuning until measurements say otherwise.
-  </FaqItem>
-</FaqGroup>
+- **Limits plus reservations on every service.** Failures stay isolated; the host stays responsive.
+- **Knobs in `compose/.env`, not hardcoded.** Right-sizing is a config change, not a code change.
+- **Defaults target 4 vCPU / 8 GB.** Cheapest production-viable VPS tier; everything else scales up from there.
+- **Reservations less than limits (about 1:4 ratio).** Reserves the minimum to boot; allows bursts up to the limit.
+- **Bun and Node services share roughly the same shape.** Avoids per-runtime tuning until measurements say otherwise.
 
 ## The shape of a knob
 
@@ -66,102 +32,56 @@ Same pattern for `VALKEY_`, `TRAEFIK_`, `API_DEV_`, `UI_DEV_`, `API_`, `UI_`, an
 
 ## Default sizing (4 vCPU / 8 GB)
 
-<DataMatrix
-  caption="Default resource allocations for a 4 vCPU / 8 GB host"
-  columns={["Service", "CPU limit", "RAM limit", "Notes"]}
-  rows={[
-    {
-      label: "Postgres",
-      cells: [
-        "Postgres",
-        "1.0",
-        "512 MB",
-        "Heaviest of the data plane; bump first.",
-      ],
-    },
-    {
-      label: "Valkey",
-      cells: [
-        "Valkey",
-        "0.5",
-        "256 MB",
-        "Plenty for cache + queues at small scale.",
-      ],
-    },
-    {
-      label: "Traefik",
-      cells: ["Traefik", "0.5", "256 MB", "Steady-state usage is low."],
-    },
-    {
-      label: "API (dev/prod)",
-      cells: [
-        "API (dev/prod)",
-        "1.5",
-        "1 GB",
-        "Generous for Bun + Drizzle; covers burst on cold caches.",
-      ],
-    },
-    {
-      label: "UI (dev)",
-      cells: [
-        "UI (dev)",
-        "1.5",
-        "1 GB",
-        "Vite dev server uses memory during HMR.",
-      ],
-    },
-    {
-      label: "UI (prod, nginx)",
-      cells: [
-        "UI (prod, nginx)",
-        "0.25",
-        "128 MB",
-        "Static file serving is cheap.",
-      ],
-    },
-  ]}
-/>
+| Service | CPU limit | Memory limit | Notes |
+|---|---|---|---|
+| Postgres | 1.0 | 512 MB | Heaviest of the data plane; bump first when OOMing. |
+| Valkey | 0.5 | 256 MB | Sufficient for cache + queues at small scale. |
+| Traefik | 0.5 | 256 MB | Reverse proxy; low steady-state usage. |
+| API (dev/prod) | 1.5 | 1 GB | Bun + Drizzle; generous to cover cold-cache bursts. |
+| UI (dev) | 1.5 | 1 GB | Vite dev server memory during HMR. |
+| UI (prod) | 0.25 | 128 MB | Static file serving is cheap. |
 
-Sum of limits exceeds host capacity on purpose: containers don't all peak simultaneously. Reservations are sized so nothing can starve.
+Limits sum to more than the host on purpose: containers don't peak simultaneously. Reservations are small so the host stays responsive under load.
+
+### Setting limits
+
+Each service has four env vars in `compose/.env`:
+
+```bash
+POSTGRES_LIMITS_CPUS=1.0
+POSTGRES_LIMITS_MEMORY=512M
+POSTGRES_RESERVATIONS_CPUS=0.25
+POSTGRES_RESERVATIONS_MEMORY=128M
+```
+
+Same pattern for `VALKEY_`, `TRAEFIK_`, `API_DEV_`, `UI_DEV_`, `API_`, `UI_`, and optional overlays.
 
 ## Sizing for bigger hosts
 
-<FaqGroup>
-  <FaqItem title="4 vCPU / 8 GB host" open>
-    Postgres at default. One of each worker/API replica.
-  </FaqItem>
-  <FaqItem title="8 vCPU / 16 GB host">
-    `POSTGRES_LIMITS_MEMORY=2G`, `POSTGRES_LIMITS_CPUS=2.0`. Consider horizontal
-    API replication.
-  </FaqItem>
-  <FaqItem title="16+ vCPU / 32+ GB host">
-    Postgres deserves its own host. Multiple API + worker replicas; revisit
-    Valkey Cluster.
-  </FaqItem>
-</FaqGroup>
+- **4 vCPU / 8 GB host.** Postgres at default. One of each worker / API replica.
+- **8 vCPU / 16 GB host.** `POSTGRES_LIMITS_MEMORY=2G`, `POSTGRES_LIMITS_CPUS=2.0`. Consider horizontal API replication.
+- **16+ vCPU / 32+ GB host.** Postgres deserves its own host. Multiple API + worker replicas; revisit Valkey Cluster.
 
 Above the 16 vCPU mark, the single-host model itself becomes the bottleneck; that's the right time to look at the planned Kubernetes path.
 
-## Diagnosing an OOM kill
+## Diagnosing OOM kills
 
-<CommandRun
-  title="Diagnose OOM kill"
-  caption="check if a container was killed due to out-of-memory"
-  command={[
-    "docker inspect <container> --format '{{.State.OOMKilled}}'",
-    "docker inspect <container> --format '{{.State.ExitCode}}'",
-    "docker stats",
-  ]}
-  output={[
-    { tone: "warn", text: "true  ← OOMKilled=true means memory limit was hit" },
-    { tone: "warn", text: "137   ← exit code 137 = SIGKILL by OOM" },
-    { tone: "info", text: "NAME        CPU %   MEM USAGE / LIMIT" },
-  ]}
-/>
+Check if a container was killed for exceeding memory:
 
-If `OOMKilled=true`, bump the matching `*_LIMITS_MEMORY` knob in `.env` and redeploy. If it keeps happening, the underlying code is leaking; fix the leak, don't keep raising the ceiling.
+```bash
+docker inspect <container-name> --format '{{.State.OOMKilled}}'
+docker inspect <container-name> --format '{{.State.ExitCode}}'
+```
 
-`docker stats` shows live usage so you can see how close services run to their limits in steady state. Anything pegged >80% of its memory limit is a candidate for a bump.
+`OOMKilled=true` means the memory limit was exceeded. Exit code 137 is SIGKILL by OOM.
+
+```bash
+docker stats
+```
+
+Shows live CPU and memory usage. Watch for services pegged >80% of their limit; they are candidates for a bump.
+
+If a service OOMs repeatedly after bumping the limit, the code is likely leaking memory. Fix the leak rather than keep raising the ceiling.
 
 ## Source
 

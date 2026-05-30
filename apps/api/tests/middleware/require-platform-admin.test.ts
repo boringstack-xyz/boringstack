@@ -25,7 +25,7 @@ const signCookie = async (
 ): Promise<string> => {
   const plugin = createJWTConfig();
   const ctx = plugin.decorator.jwt;
-  const token = await ctx.sign(buildJWTPayload(userId, email, accountId));
+  const token = await ctx.sign(await buildJWTPayload(userId, email, accountId));
 
   return `${AUTH_COOKIE_NAME}=${token}`;
 };

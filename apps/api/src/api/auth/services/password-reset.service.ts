@@ -9,7 +9,7 @@ import {
 import { env } from "../../../config/env";
 import { logger } from "../../../config/logger";
 import { AUDIT_ACTIONS, auditLogService } from "../../../lib/audit-log";
-import { sendTemplate } from "../../../lib/email";
+import { normalizeEmail, sendTemplate } from "../../../lib/email";
 import { ApiErrors, getErrorMessage } from "../../../lib/errors";
 import { notifications } from "../../../lib/notifications";
 import { passwordService } from "../../../lib/password";
@@ -23,7 +23,6 @@ import {
   TEMPLATE_PATHS,
 } from "../auth.constants";
 import type { IMessageResult } from "../auth.types";
-import { normalizeEmail } from "../auth.utils";
 import { sessionService } from "./session.service";
 
 export class PasswordResetService {

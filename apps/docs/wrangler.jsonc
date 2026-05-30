@@ -1,3 +1,24 @@
+// Cloudflare Pages: assets-only deployment.
+//
+// The docs site is fully static (Astro Starlight, `output: "static"`,
+// no SSR adapter). Wrangler uploads the prerendered `dist/` directory
+// straight to Cloudflare's edge.
+//
+// Three fields are deliberately absent compared to a Workers-style
+// config:
+//
+//   - `main`: no Worker entrypoint. Astro doesn't emit `dist/_worker.js`
+//     when there's no adapter, and wrangler rejects a `main` that
+//     points to a missing file.
+//   - `compatibility_flags` (`nodejs_compat`, `global_fetch_strictly_public`):
+//     only meaningful for a Worker runtime. Static assets don't run
+//     Node code on the edge.
+//   - `assets.binding`: only valid when a Worker reads the bundled
+//     assets via the ASSETS binding at runtime. Wrangler refuses
+//     `assets.binding` without a corresponding `main`.
+//
+// If/when we add an edge Worker (e.g. for OG-image generation), bring
+// these fields back together with the adapter.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "boring-stack-landing-page",

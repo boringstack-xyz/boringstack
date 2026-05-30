@@ -3,135 +3,78 @@ title: "Infra template: overview"
 description: docker-compose for single-host deployments. Postgres + Valkey + Traefik, with optional overlays for observability, error tracking, queue dashboards, and image-update detection.
 ---
 
-import DocFileTree from "../../../components/DocFileTree";
-import CommandRun from "../../../components/docs-kit/CommandRun";
-import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
-
-<PageIntro
-  eyebrow="infra-compose"
-  actions={[
-    { label: "Profiles", href: "/infra/profiles-and-overlays/" },
-    { label: "Secrets", href: "/infra/secrets/" },
-  ]}
-  facts={[
-    { value: "Compose", label: "local and single-host runtime" },
-    { value: "Traefik", label: "prod ingress and TLS" },
-    { value: "Overlays", label: "observability, mail, queues" },
-  ]}
->
-  `infra/compose` composes `apps/api` and `apps/ui` into one running
-  stack. It targets your laptop and a first VPS before you need cluster
-  machinery, while keeping observability, email, and queue tooling close to the
-  app.
-</PageIntro>
+`infra/compose` composes `apps/api` and `apps/ui` into one running stack. It targets your laptop and a first VPS before you need cluster machinery, while keeping observability, email, and queue tooling close to the app.
 
 ## Service inventory
 
-The base stack (always on) plus per-profile services:
+The base stack (always on):
+- **postgres** - Always-on app database
+- **valkey** - Redis-protocol cache plus BullMQ queue backend
+- **traefik** - Prod reverse proxy, ACME, and one-domain path routing
+- **api-migrate** - One-shot schema push plus optional superuser seed
+- **api-dev / api** - Bun + Elysia in dev, GHCR image in production
+- **ui-dev / ui** - Vite dev server locally, nginx static image in production
 
-<FeatureGrid
-  columns={4}
-  items={[
-    { eyebrow: "data", title: "postgres", body: "Always-on app database." },
-    { eyebrow: "cache", title: "valkey", body: "Redis-protocol cache plus BullMQ queue backend." },
-    { eyebrow: "edge", title: "traefik", body: "Prod reverse proxy, ACME, and one-domain path routing." },
-    { eyebrow: "migrate", title: "api-migrate", body: "One-shot schema push plus optional superuser seed." },
-    { eyebrow: "api", title: "api-dev / api", body: "Bun + Elysia in dev, GHCR image in production." },
-    { eyebrow: "ui", title: "ui-dev / ui", body: "Vite dev server locally, nginx static image in production." },
-    { eyebrow: "ops", title: "observability overlays", body: "Prometheus, Grafana, Loki, Promtail, and exporters on demand." },
-    { eyebrow: "dev", title: "mail and queue tools", body: "Mailpit, Bull Board, GlitchTip, and WUD are profile overlays." },
-  ]}
-/>
+Optional overlays:
+- **observability** - Prometheus, Grafana, Loki, Promtail, and exporters
+- **error tracking** - GlitchTip
+- **mail and queue tools** - Mailpit, Bull Board, WUD image-update detector
 
 ## Profile model
 
-<CommandRun
-  title="Profile model"
-  caption="flags compose over the same base stack"
-  command={[
-    "./dev.sh up -d",
-    "STACK=prod ./dev.sh up -d",
-    "WITH_OBSERVABILITY=1 ./dev.sh up -d",
-    "WITH_GLITCHTIP=1 ./dev.sh up -d",
-    "WITH_BULLMQ=1 ./dev.sh up -d",
-    "WITH_WUD=1 ./dev.sh up -d",
-    "WITH_MAILPIT=1 ./dev.sh up -d",
-  ]}
-  output={[
-    { text: "baseline dev: no Traefik; Vite proxies /api/*" },
-    { text: "prod: GHCR images, Traefik, HTTPS via ACME" },
-    { text: "overlays: metrics, logs, error tracking, queues, mail, image updates" },
-  ]}
-/>
+The profile system uses environment flags to compose overlays over the base stack:
 
-Flags compose: `WITH_OBSERVABILITY=1 WITH_GLITCHTIP=1 ./dev.sh up -d` brings up both overlays alongside the base. See [Profiles & overlays](/infra/profiles-and-overlays/).
+```bash
+./dev.sh up -d                         # default: api + ui + postgres + valkey + observability + glitchtip
+STACK=prod ./dev.sh up -d              # prod: GHCR images, Traefik, HTTPS via ACME (same defaults)
+WITH_OBSERVABILITY=0 ./dev.sh up -d    # skip observability
+WITH_GLITCHTIP=0 ./dev.sh up -d        # skip glitchtip
+WITH_BULLMQ=1 ./dev.sh up -d           # add bull board (opt-in)
+WITH_WUD=1 ./dev.sh up -d              # add WUD image-update detector (opt-in)
+WITH_MAILPIT=1 ./dev.sh up -d          # add Mailpit local SMTP (opt-in)
+```
+
+The default stack includes Prometheus, Grafana, Loki, and GlitchTip. Niche tooling (Bull Board, WUD, Mailpit) is opt-in. See [Profiles & overlays](/infra/profiles-and-overlays/).
 
 ## File layout
 
-<DocFileTree
-  root="infra/compose/"
-  title="Infra source map"
-  caption="base stack plus overlays and runbooks"
-  nodes={[
-    {
-      name: "compose/",
-      detail: "Compose files and per-profile service overlays",
-      children: [
-        { name: "docker-compose.yml", detail: "Base: postgres, valkey, api-migrate, api/ui, Traefik in prod" },
-        { name: "docker-compose.development-labels.yml", detail: "Dev overlay: host-published data ports" },
-        { name: "docker-compose.production-labels.yml", detail: "Prod overlay: HTTPS, ACME, path routing, security headers" },
-        { name: "docker-compose.observability.yml", detail: "Prometheus, Grafana, Loki, Promtail, exporters" },
-        { name: "docker-compose.glitchtip.yml", detail: "GlitchTip dev + prod" },
-        { name: "docker-compose.glitchtip-prod-labels.yml", detail: "Prod-only HTTPS + BasicAuth labels for GlitchTip" },
-        { name: "docker-compose.bullmq.yml", detail: "Bull-board in development" },
-        { name: "docker-compose.wud.yml", detail: "WUD image-update detector" },
-        { name: "docker-compose.mailpit.yml", detail: "Local SMTP catcher in development" },
-        { name: "dev.sh", detail: "Orchestrator" },
-        { name: ".env.example", detail: "All knobs in one file" },
-        { name: "prometheus/", detail: "Scrape config" },
-        { name: "grafana/", detail: "Datasource provisioning" },
-        { name: "alertmanager/", detail: "Alert routes" },
-        { name: "promtail/", detail: "Log scrape config" },
-        { name: "glitchtip/", detail: "init-db.sql" },
-      ],
-    },
-    {
-      name: "scripts/",
-      detail: "Operational wrappers",
-      children: [
-        { name: "compose-up.sh", detail: "bring the stack up" },
-        { name: "compose-down.sh", detail: "stop without deleting data" },
-        { name: "compose-down-clean.sh", detail: "clean local services intentionally" },
-        { name: "backup-wrapper.example.sh", detail: "Postgres to rclone, with retention" },
-        { name: "ufw.example.sh", detail: "UFW + Cloudflare IP allowlist" },
-        { name: "glitchtip-bootstrap.sh", detail: "Prod GlitchTip migrate + superuser" },
-      ],
-    },
-    { name: "docs/", detail: "Runbooks and cheatsheets" },
-  ]}
-/>
+Under `infra/compose/`:
+
+**compose/** - Compose files and per-profile service overlays
+- `docker-compose.yml` - Base: postgres, valkey, api-migrate, api/ui, Traefik in prod
+- `docker-compose.development-labels.yml` - Dev overlay: host-published data ports
+- `docker-compose.production-labels.yml` - Prod overlay: HTTPS, ACME, path routing, security headers
+- `docker-compose.observability.yml` - Prometheus, Grafana, Loki, Promtail, exporters
+- `docker-compose.glitchtip.yml` - GlitchTip dev + prod
+- `docker-compose.glitchtip-prod-labels.yml` - Prod-only HTTPS + BasicAuth labels
+- `docker-compose.bullmq.yml` - Bull Board in development
+- `docker-compose.wud.yml` - WUD image-update detector
+- `docker-compose.mailpit.yml` - Local SMTP catcher in development
+- `dev.sh` - Orchestrator
+- `.env.example` - All knobs in one file
+- `prometheus/` - Scrape config
+- `grafana/` - Datasource provisioning
+- `alertmanager/` - Alert routes
+- `promtail/` - Log scrape config
+- `glitchtip/` - init-db.sql
+
+**scripts/** - Operational wrappers
+- `compose-up.sh` - bring the stack up
+- `compose-down.sh` - stop without deleting data
+- `compose-down-clean.sh` - clean local services intentionally
+- `backup-wrapper.example.sh` - Postgres to rclone, with retention
+- `ufw.example.sh` - UFW + Cloudflare IP allowlist
+- `glitchtip-bootstrap.sh` - Prod GlitchTip migrate + superuser
+
+**docs/** - Runbooks and cheatsheets
 
 ## Networks
 
 Two bridge networks. Services are split on purpose:
 
-<SignalGrid
-  columns={2}
-  items={[
-    {
-      label: "backend",
-      title: "Data plane network",
-      body: "postgres, valkey, api[-dev], api-migrate, exporters, glitchtip, and mailpit.",
-    },
-    {
-      label: "frontend",
-      title: "Ingress network",
-      body: "traefik in prod, ui[-dev], and glitchtip-web. Traefik joins both when it needs to route.",
-    },
-  ]}
-/>
+**backend (data plane).** postgres, valkey, api[-dev], api-migrate, exporters, glitchtip, and mailpit.
+
+**frontend (ingress).** traefik in prod, ui[-dev], and glitchtip-web. Traefik joins both when it needs to route.
 
 In prod, Traefik joins both networks so it can route HTTPS from `frontend` to services on `backend`. The data plane (Postgres, Valkey) is never exposed to `frontend`.
 

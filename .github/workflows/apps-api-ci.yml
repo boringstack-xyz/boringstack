@@ -85,8 +85,6 @@ jobs:
           filters: |
             code:
               - 'apps/api/**'
-              - '!apps/api/**/*.md'
-              - '!apps/api/**/*.mdx'
               - '.github/workflows/apps-api-ci.yml'
 
       - name: Set up Bun
@@ -135,6 +133,18 @@ jobs:
         env:
           REQUIRE_INTEGRATION_DB: "true"
         run: bun run test:coverage
+
+      - name: Upload coverage to Codecov
+        if: steps.filter.outputs.code == 'true'
+        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
+        with:
+          files: apps/api/coverage/lcov.info
+          flags: api
+          name: api-coverage
+          fail_ci_if_error: false
+          # CODECOV_TOKEN is required for private repos; for public repos
+          # uploads work tokenless.
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Production bundle
         if: steps.filter.outputs.code == 'true'

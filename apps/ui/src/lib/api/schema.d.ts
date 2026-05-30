@@ -59,6 +59,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Prometheus scrape endpoint
+         * @description Plain-text Prometheus exposition format. Scraped by the observability overlay; no auth.
+         */
+        get: operations["getMetrics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/capabilities/": {
         parameters: {
             query?: never;
@@ -309,6 +329,125 @@ export interface paths {
         get: operations["getApiV1AuthOauthByProviderLink"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa/verify-login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete MFA challenge with a TOTP code */
+        post: operations["postApiV1AuthMfaVerify-login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa/verify-recovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete MFA challenge with a recovery code */
+        post: operations["postApiV1AuthMfaVerify-recovery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report whether MFA is currently enabled for the user */
+        get: operations["getApiV1AuthMfaStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stage a TOTP secret + recovery codes. Returns the otpauth URI and the codes (shown once). */
+        post: operations["postApiV1AuthMfaSetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa/verify-setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify the first TOTP code and finalize enrollment */
+        post: operations["postApiV1AuthMfaVerify-setup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable MFA after password step-up */
+        post: operations["postApiV1AuthMfaDisable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/mfa/regenerate-recovery-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Replace all recovery codes after password step-up. Returns the new codes once. */
+        post: operations["postApiV1AuthMfaRegenerate-recovery-codes"];
         delete?: never;
         options?: never;
         head?: never;
@@ -590,41 +729,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/widgets/": {
+    "/api/v1/webhooks/resend": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List widgets in the active account */
-        get: operations["getApiV1Widgets"];
+        get?: never;
         put?: never;
-        /** Create a widget in the active account */
-        post: operations["postApiV1Widgets"];
+        /** Resend deliverability webhook receiver */
+        post: operations["postApiV1WebhooksResend"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/widgets/{id}": {
+    "/api/v1/webhooks/sendgrid": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get a widget by id (account-scoped) */
-        get: operations["getApiV1WidgetsById"];
+        get?: never;
         put?: never;
-        post?: never;
-        /** Delete a widget (account-scoped) */
-        delete: operations["deleteApiV1WidgetsById"];
+        /** SendGrid deliverability webhook receiver */
+        post: operations["postApiV1WebhooksSendgrid"];
+        delete?: never;
         options?: never;
         head?: never;
-        /** Update a widget (account-scoped) */
-        patch: operations["patchApiV1WidgetsById"];
+        patch?: never;
         trace?: never;
     };
     "/api/v1/accounts/switch": {
@@ -723,6 +859,23 @@ export interface paths {
         };
         /** Get the pending ownership transfer offer, if any */
         get: operations["getApiV1AccountsByIdTransfer-ownershipPending"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/{id}/audit-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recent audit-log entries scoped to the account (owner/admin only) */
+        get: operations["getApiV1AccountsByIdAudit-log"];
         put?: never;
         post?: never;
         delete?: never;
@@ -947,6 +1100,27 @@ export interface operations {
             };
         };
     };
+    getMetrics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                    "multipart/form-data": string;
+                    "text/plain": string;
+                };
+            };
+        };
+    };
     getApiV1Capabilities: {
         parameters: {
             query?: never;
@@ -1123,6 +1297,14 @@ export interface operations {
                             };
                         };
                         timestamp: string;
+                    } | {
+                        success: boolean;
+                        data: {
+                            /** @constant */
+                            mfaRequired: true;
+                            challengeToken: string;
+                        };
+                        timestamp: string;
                     };
                     "multipart/form-data": {
                         success: boolean;
@@ -1136,6 +1318,14 @@ export interface operations {
                             };
                         };
                         timestamp: string;
+                    } | {
+                        success: boolean;
+                        data: {
+                            /** @constant */
+                            mfaRequired: true;
+                            challengeToken: string;
+                        };
+                        timestamp: string;
                     };
                     "text/plain": {
                         success: boolean;
@@ -1147,6 +1337,14 @@ export interface operations {
                                 lastName: string;
                                 emailVerified: boolean;
                             };
+                        };
+                        timestamp: string;
+                    } | {
+                        success: boolean;
+                        data: {
+                            /** @constant */
+                            mfaRequired: true;
+                            challengeToken: string;
                         };
                         timestamp: string;
                     };
@@ -1817,6 +2015,423 @@ export interface operations {
             };
         };
     };
+    "postApiV1AuthMfaVerify-login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Opaque token returned by /auth/login when MFA is required */
+                    challengeToken: string;
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+                "multipart/form-data": {
+                    /** @description Opaque token returned by /auth/login when MFA is required */
+                    challengeToken: string;
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+                "text/plain": {
+                    /** @description Opaque token returned by /auth/login when MFA is required */
+                    challengeToken: string;
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    "postApiV1AuthMfaVerify-recovery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Opaque token returned by /auth/login when MFA is required */
+                    challengeToken: string;
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+                "multipart/form-data": {
+                    /** @description Opaque token returned by /auth/login when MFA is required */
+                    challengeToken: string;
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+                "text/plain": {
+                    /** @description Opaque token returned by /auth/login when MFA is required */
+                    challengeToken: string;
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    getApiV1AuthMfaStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            enabled: boolean;
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            enabled: boolean;
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            enabled: boolean;
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    postApiV1AuthMfaSetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+                "multipart/form-data": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+                "text/plain": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            otpauthUri: string;
+                            secretBase32: string;
+                            recoveryCodes: string[];
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            otpauthUri: string;
+                            secretBase32: string;
+                            recoveryCodes: string[];
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            otpauthUri: string;
+                            secretBase32: string;
+                            recoveryCodes: string[];
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    "postApiV1AuthMfaVerify-setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+                "multipart/form-data": {
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+                "text/plain": {
+                    /** @description 6-digit TOTP code or recovery code */
+                    code: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            message: string;
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            message: string;
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            message: string;
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    postApiV1AuthMfaDisable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+                "multipart/form-data": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+                "text/plain": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            message: string;
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            message: string;
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            message: string;
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    "postApiV1AuthMfaRegenerate-recovery-codes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+                "multipart/form-data": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+                "text/plain": {
+                    /** @description Current password — step-up authentication */
+                    password: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            recoveryCodes: string[];
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            recoveryCodes: string[];
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            recoveryCodes: string[];
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
     getApiV1UsersMe: {
         parameters: {
             query?: never;
@@ -1855,7 +2470,6 @@ export interface operations {
                             can_export: boolean;
                             can_invite_team: boolean;
                             max_seats: number;
-                            max_widgets: number;
                         };
                         capabilities: {
                             billing: boolean;
@@ -1889,7 +2503,6 @@ export interface operations {
                             can_export: boolean;
                             can_invite_team: boolean;
                             max_seats: number;
-                            max_widgets: number;
                         };
                         capabilities: {
                             billing: boolean;
@@ -1923,7 +2536,6 @@ export interface operations {
                             can_export: boolean;
                             can_invite_team: boolean;
                             max_seats: number;
-                            max_widgets: number;
                         };
                         capabilities: {
                             billing: boolean;
@@ -2785,7 +3397,7 @@ export interface operations {
             };
         };
     };
-    getApiV1Widgets: {
+    postApiV1WebhooksResend: {
         parameters: {
             query?: never;
             header?: never;
@@ -2800,96 +3412,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        items: {
-                            id: string;
-                            accountId: string;
-                            name: string;
-                            createdAt: string;
-                            updatedAt: string;
-                        }[];
+                        success: boolean;
+                        data: {
+                            received: boolean;
+                            recorded: number;
+                        };
+                        timestamp: string;
                     };
                     "multipart/form-data": {
-                        items: {
-                            id: string;
-                            accountId: string;
-                            name: string;
-                            createdAt: string;
-                            updatedAt: string;
-                        }[];
+                        success: boolean;
+                        data: {
+                            received: boolean;
+                            recorded: number;
+                        };
+                        timestamp: string;
                     };
                     "text/plain": {
-                        items: {
-                            id: string;
-                            accountId: string;
-                            name: string;
-                            createdAt: string;
-                            updatedAt: string;
-                        }[];
+                        success: boolean;
+                        data: {
+                            received: boolean;
+                            recorded: number;
+                        };
+                        timestamp: string;
                     };
                 };
             };
         };
     };
-    postApiV1Widgets: {
+    postApiV1WebhooksSendgrid: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": {
-                    name: string;
-                };
-                "multipart/form-data": {
-                    name: string;
-                };
-                "text/plain": {
-                    name: string;
-                };
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                    "multipart/form-data": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                    "text/plain": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                };
-            };
-        };
-    };
-    getApiV1WidgetsById: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
         requestBody?: never;
         responses: {
             200: {
@@ -2898,97 +3454,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
+                        success: boolean;
+                        data: {
+                            received: boolean;
+                            recorded: number;
+                        };
+                        timestamp: string;
                     };
                     "multipart/form-data": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
+                        success: boolean;
+                        data: {
+                            received: boolean;
+                            recorded: number;
+                        };
+                        timestamp: string;
                     };
                     "text/plain": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                };
-            };
-        };
-    };
-    deleteApiV1WidgetsById: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    patchApiV1WidgetsById: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    name: string;
-                };
-                "multipart/form-data": {
-                    name: string;
-                };
-                "text/plain": {
-                    name: string;
-                };
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                    "multipart/form-data": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
-                    };
-                    "text/plain": {
-                        id: string;
-                        accountId: string;
-                        name: string;
-                        createdAt: string;
-                        updatedAt: string;
+                        success: boolean;
+                        data: {
+                            received: boolean;
+                            recorded: number;
+                        };
+                        timestamp: string;
                     };
                 };
             };
@@ -3402,6 +3889,67 @@ export interface operations {
                             cancelledAt: string | null;
                             createdAt: string;
                         } | null;
+                    };
+                };
+            };
+        };
+    };
+    "getApiV1AccountsByIdAudit-log": {
+        parameters: {
+            query?: {
+                limit?: string | number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        entries: {
+                            id: string;
+                            action: string;
+                            resource: string | null;
+                            metadata: unknown;
+                            createdAt: string;
+                            actorUserId: string | null;
+                            actorEmail: string | null;
+                            actorFirstName: string | null;
+                            actorLastName: string | null;
+                        }[];
+                    };
+                    "multipart/form-data": {
+                        entries: {
+                            id: string;
+                            action: string;
+                            resource: string | null;
+                            metadata: unknown;
+                            createdAt: string;
+                            actorUserId: string | null;
+                            actorEmail: string | null;
+                            actorFirstName: string | null;
+                            actorLastName: string | null;
+                        }[];
+                    };
+                    "text/plain": {
+                        entries: {
+                            id: string;
+                            action: string;
+                            resource: string | null;
+                            metadata: unknown;
+                            createdAt: string;
+                            actorUserId: string | null;
+                            actorEmail: string | null;
+                            actorFirstName: string | null;
+                            actorLastName: string | null;
+                        }[];
                     };
                 };
             };

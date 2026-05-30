@@ -1,9 +1,9 @@
 ---
 name: security-review
-description: Use when reviewing a branch or PR for security regressions in ui-template. Replays the Layer 1 CI scanners locally (gitleaks, osv-scanner, bun audit), invokes Layer 2 agent skills (differential-review, insecure-defaults, sharp-edges, supply-chain-risk-auditor) in parallel, then runs BoringStack-specific UI invariants — no raw fetch outside openapi.ts, no dangerouslySetInnerHTML, no import.meta.env outside src/lib/env/, no localStorage token storage, no JSX-level user-supplied strings without i18n, CSRF + content-type validation on user-data flows. Triggers — "security review", "review for security", "any vulnerabilities in this branch", "audit this PR", "is this safe to merge", "did we leave any XSS holes", "is the auth flow safe".
+description: Use when reviewing a branch or PR for security regressions in apps/ui. Replays the Layer 1 CI scanners locally (gitleaks, osv-scanner, bun audit), invokes Layer 2 agent skills (differential-review, insecure-defaults, sharp-edges, supply-chain-risk-auditor) in parallel, then runs BoringStack-specific UI invariants — no raw fetch outside openapi.ts, no dangerouslySetInnerHTML, no import.meta.env outside src/lib/env/, no localStorage token storage, no JSX-level user-supplied strings without i18n, CSRF + content-type validation on user-data flows. Triggers — "security review", "review for security", "any vulnerabilities in this branch", "audit this PR", "is this safe to merge", "did we leave any XSS holes", "is the auth flow safe".
 ---
 
-# Security review (ui-template)
+# Security review (apps/ui)
 
 You are reviewing this branch for security regressions. Work through the
 five checkpoints below. Do not skip ahead. Print findings as you go.

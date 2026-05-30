@@ -19,8 +19,16 @@ export const initializeSentry = (): void => {
   Sentry.init({
     dsn: env.SENTRY_DSN,
     environment: env.NODE_ENV,
+    /*
+     * `@sentry/bun` v10+ is built on `@sentry/opentelemetry`, so any
+     * sample rate > 0 registers a second tracer alongside the
+     * OpenTelemetry SDK in `config/otel/otel.ts` — both then instrument
+     * HTTP / fetch / ioredis. Default is 0 (env-tunable): OTel ships
+     * spans to Tempo, Sentry stays error-capture-only. Error events
+     * still pick up `trace_id` from the shared OTel context, so
+     * GlitchTip → Tempo click-through is preserved.
+     */
     tracesSampleRate: env.SENTRY_TRACES_SAMPLE_RATE,
-    // Bun-side defaults; tune per workload.
     sampleRate: 1.0,
     release: env.APP_NAME,
   });

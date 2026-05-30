@@ -57,20 +57,22 @@ module "bootstrap" {
   acme_email        = var.acme_email
 
   # Optional integrations
-  email_provider             = var.email_provider
-  email_from                 = var.email_from
-  cloudflare_account_id      = var.cloudflare_account_id
-  cloudflare_email_api_token = var.cloudflare_email_api_token
-  resend_api_key             = var.resend_api_key
-  sendgrid_api_key           = var.sendgrid_api_key
-  google_oauth_client_id     = var.google_oauth_client_id
-  google_oauth_client_secret = var.google_oauth_client_secret
-  github_oauth_client_id     = var.github_oauth_client_id
-  github_oauth_client_secret = var.github_oauth_client_secret
-  stripe_secret_key          = var.stripe_secret_key
-  stripe_webhook_secret      = var.stripe_webhook_secret
-  sentry_dsn                 = var.sentry_dsn
-  vite_sentry_dsn            = var.vite_sentry_dsn
+  email_provider               = var.email_provider
+  email_from                   = var.email_from
+  cloudflare_account_id        = var.cloudflare_account_id
+  cloudflare_email_api_token   = var.cloudflare_email_api_token
+  resend_api_key               = var.resend_api_key
+  sendgrid_api_key             = var.sendgrid_api_key
+  google_oauth_client_id       = var.google_oauth_client_id
+  google_oauth_client_secret   = var.google_oauth_client_secret
+  github_oauth_client_id       = var.github_oauth_client_id
+  github_oauth_client_secret   = var.github_oauth_client_secret
+  linkedin_oauth_client_id     = var.linkedin_oauth_client_id
+  linkedin_oauth_client_secret = var.linkedin_oauth_client_secret
+  stripe_secret_key            = var.stripe_secret_key
+  stripe_webhook_secret        = var.stripe_webhook_secret
+  sentry_dsn                   = var.sentry_dsn
+  vite_sentry_dsn              = var.vite_sentry_dsn
 
   # Backups
   backups_enabled       = var.backups_enabled

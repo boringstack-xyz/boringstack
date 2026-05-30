@@ -61,11 +61,11 @@ describe("ApiErrors factory", () => {
   });
 
   test("notFound → 404, includes resource name in message", () => {
-    const err = ApiErrors.notFound("Widget");
+    const err = ApiErrors.notFound("Ticket");
 
     expect(err.statusCode).toBe(404);
     expect(err.code).toBe(ErrorCodes.NOT_FOUND);
-    expect(err.message).toContain("Widget");
+    expect(err.message).toContain("Ticket");
   });
 
   test("conflict → 409", () => {

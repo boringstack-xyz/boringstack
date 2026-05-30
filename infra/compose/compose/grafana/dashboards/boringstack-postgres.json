@@ -1,0 +1,259 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "Postgres health — connections, cache hit ratio, transaction rate, and database size. Populated by postgres-exporter. First place to look when API latency spikes: is the DB hot?",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "connections",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum by (datname) (pg_stat_database_numbackends{datname!=\"\"})",
+          "legendFormat": "{{datname}}",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "pg_settings_max_connections",
+          "legendFormat": "max_connections",
+          "refId": "B"
+        }
+      ],
+      "description": "**What:** current active connections per database vs the configured `max_connections` ceiling.\n\n**Why:** Postgres rejects new connections once max is reached — APIs hang or 500. The ratio is early-warning before that point.\n\n**Watch for:** > 80% sustained triggers `PostgresConnectionsHigh`. Options to relieve: lower `DATABASE_POOL_SIZE` on the API side, scale Postgres up, or hunt for connection leaks (long-lived connections without active queries are usually a forgotten cleanup).",
+      "title": "Active connections (per database) vs max_connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "**What:** buffer-cache hit ratio across all databases, computed as `blks_hit / (blks_hit + blks_read)`.\n\n**Why:** Postgres reads pages from disk or from `shared_buffers`. Disk reads are 100–1000× slower. The hit ratio tells you whether queries are finding hot data in memory.\n\n**Watch for:** sustained < 95% = hot data doesn't fit in `shared_buffers`. Either bump that setting (single biggest Postgres tuning lever), or a query is scanning much more than it should (likely missing an index, found via `EXPLAIN ANALYZE`).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 0.9 },
+              { "color": "green", "value": 0.95 }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(pg_stat_database_blks_hit{datname!=\"\"}[5m])) / (sum(rate(pg_stat_database_blks_hit{datname!=\"\"}[5m])) + sum(rate(pg_stat_database_blks_read{datname!=\"\"}[5m])))",
+          "refId": "A"
+        }
+      ],
+      "title": "Cache hit ratio (target: >95%)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "tx/s",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "stacking": { "group": "A", "mode": "normal" },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "options": {
+        "legend": { "calcs": ["last", "mean"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(pg_stat_database_xact_commit{datname!=\"\"}[1m]))",
+          "legendFormat": "commits",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(pg_stat_database_xact_rollback{datname!=\"\"}[1m]))",
+          "legendFormat": "rollbacks",
+          "refId": "B"
+        }
+      ],
+      "description": "**What:** stacked commits + rollbacks per second across all databases.\n\n**Why:** baseline DB workload metric. Lets you correlate API traffic with DB pressure.\n\n**Watch for:** rollback ratio creeping up = user errors or a buggy code path. Sudden TX-rate drop without a matching API-rate drop = something blocking writes (lock contention, replication issue, full disk).",
+      "title": "Transactions per second (commits + rollbacks)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "pg_database_size_bytes{datname!=\"\"}",
+          "legendFormat": "{{datname}}",
+          "refId": "A"
+        }
+      ],
+      "description": "**What:** on-disk size per database over time.\n\n**Why:** capacity-planning signal. Predicts when you'll need a larger volume.\n\n**Watch for:** sudden step-changes = a new table or unbounded log/audit insertion. Steady linear growth = normal; project the line to know when you'll hit disk pressure (`DiskSpaceLow` triggers at 10% free).",
+      "title": "Database size",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "**What:** wall-clock duration of the single longest-running active transaction.\n\n**Why:** long transactions block VACUUM and accumulate dead tuples. The classic 'why is Postgres slow and only restarting fixes it' cause.\n\n**Watch for:** > 60s (orange) = a query that should be async or chunked is running synchronously. > 5min (red) = real problem — often a forgotten `BEGIN` in an interactive session, a stuck migration, or a backup job holding a snapshot.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 60 },
+              { "color": "red", "value": 300 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 16 },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "max(pg_stat_activity_max_tx_duration{datname!=\"\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Longest running transaction",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "deadlocks/min",
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 16 },
+      "id": 6,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum by (datname) (increase(pg_stat_database_deadlocks{datname!=\"\"}[1m]))",
+          "legendFormat": "{{datname}}",
+          "refId": "A"
+        }
+      ],
+      "description": "**What:** count of deadlocks Postgres detected and broke per minute.\n\n**Why:** Postgres resolves deadlocks automatically (it kills the younger transaction) but each one is a failed user request.\n\n**Watch for:** any sustained non-zero rate = your code has a lock-order bug. Classic cause: two transactions acquire `accounts` then `memberships` in one code path but reverse order in another. Trace the offending SQL via the API logs dashboard's database-queries panel.",
+      "title": "Deadlocks per minute",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["boringstack", "postgres"],
+  "templating": { "list": [] },
+  "time": { "from": "now-30m", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "BoringStack — Postgres",
+  "uid": "boringstack-postgres",
+  "version": 1,
+  "weekStart": ""
+}

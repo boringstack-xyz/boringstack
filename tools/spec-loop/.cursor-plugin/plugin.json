@@ -1,0 +1,25 @@
+{
+  "name": "solo-spec-loop",
+  "displayName": "Solo Spec Loop",
+  "description": "Portable spec loop + Cursor adapter. Same .specs/next.md contract and gate script work in any agent; plugins are optional.",
+  "version": "0.1.0",
+  "author": {
+    "name": "agjs"
+  },
+  "homepage": "https://github.com/agjs/solo-spec-loop",
+  "repository": "https://github.com/agjs/solo-spec-loop",
+  "license": "MIT",
+  "keywords": [
+    "spec-driven",
+    "spec-loop",
+    "solo-founder",
+    "vertical-slice",
+    "cursor",
+    "claude-code",
+    "portable",
+    "agent-agnostic"
+  ],
+  "commands": "./commands/",
+  "rules": "./rules/",
+  "hooks": "./hooks/hooks-cursor.json"
+}

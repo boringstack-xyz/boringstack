@@ -3,29 +3,7 @@ title: "UI template: overview"
 description: Vite + React 19 + TanStack Query + shadcn/ui + Zustand. A typed OpenAPI client and an ESLint-enforced component anatomy.
 ---
 
-import DocFileTree from "../../../components/DocFileTree";
-import DataMatrix from "../../../components/docs-kit/DataMatrix";
-import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
-
-<PageIntro
-  eyebrow="apps/ui"
-  actions={[
-    { label: "OpenAPI client", href: "/ui/openapi-client/" },
-    { label: "Testing model", href: "/ui/testing/" },
-  ]}
-  facts={[
-    { value: "Vite", label: "local feedback loop" },
-    { value: "React 19", label: "SPA shell" },
-    { value: "OpenAPI", label: "server contract" },
-  ]}
->
-  The UI is a Vite + React SPA with a typed OpenAPI client: fast local feedback
-  and a compile-time contract with the API. Architecture rules keep [feature
-  folders](/reference/glossary#feature-folder) small enough for humans and
-  agents to change safely.
-</PageIntro>
+The UI is a Vite + React single-page app with a typed OpenAPI client: fast local feedback and a compile-time contract with the API. Architecture rules keep feature folders small enough for humans and agents to change safely.
 
 A production-shaped SPA. Architecture rules (component anatomy, queries vs stores, OpenAPI client) keep features from turning into 600-line `.tsx` blobs as the codebase grows.
 
@@ -57,164 +35,43 @@ Components only ever see the [**view object**](/reference/glossary#view-object) 
 
 ## Design choices
 
-<SignalGrid
-  columns={3}
-  items={[
-    {
-      label: "shape",
-      title: "Component as a folder",
-      body: "Each file has one job; useState in .tsx is a lint error.",
-    },
-    {
-      label: "state",
-      title: "TanStack Query + Zustand",
-      body: "Server state and client state stay in separate buckets.",
-    },
-    {
-      label: "contract",
-      title: "OpenAPI-generated client",
-      body: "Wrong paths and body shapes fail the typecheck.",
-    },
-    {
-      label: "tokens",
-      title: "shadcn/ui + Tailwind",
-      body: "You own primitives in components/ui while theme tokens stay centralized.",
-    },
-    {
-      label: "tests",
-      title: "E2e against the real stack",
-      body: "Playwright hits the running API directly; there is no mock layer.",
-    },
-    {
-      label: "agents",
-      title: "Lint keeps the surface honest",
-      body: "The folder anatomy is enforced before review, not remembered by convention.",
-    },
-  ]}
-/>
+**Component as a folder.** Each file has one job; `useState` in `.tsx` is a lint error.
+
+**TanStack Query + Zustand.** Server state and client state stay in separate buckets.
+
+**OpenAPI-generated client.** Wrong paths and body shapes fail the typecheck.
+
+**shadcn/ui + Tailwind.** You own UI components in `components/ui` while theme tokens stay centralized.
+
+**E2e against the real stack.** Playwright hits the running API directly; there is no mock layer.
+
+**Lint keeps the surface honest.** The folder anatomy is enforced before review, not remembered by convention.
 
 ## Routes & shell
 
 Every authenticated route renders inside `AppShell`: a brand-marked left sidebar (`AppSidebar` with `NavLink` + `aria-[current=page]:` Tailwind active styling), a sticky header (account switcher · notification bell · theme toggle · logout), and the page content. On mobile the sidebar collapses into a `Sheet` drawer triggered from the header.
 
-<DataMatrix
-  caption="Route map"
-  columns={["Route", "Page", "Auth"]}
-  rows={[
-    { cells: ["/ and /login", "LoginPage", "public"] },
-    {
-      cells: [
-        "/signup",
-        "SignUpPage with form and check-your-inbox confirmation",
-        "public",
-      ],
-    },
-    {
-      cells: [
-        "/verify-email",
-        "VerifyEmailPage with verifying, success, and token-error states",
-        "public",
-      ],
-    },
-    { cells: ["/oauth/success", "OAuthCallbackPage", "public"] },
-    {
-      cells: [
-        "/dashboard",
-        "DashboardPage with welcome, stats, and activity feed",
-        "protected",
-      ],
-    },
-    { cells: ["/notifications", "NotificationsPage", "protected"] },
-    {
-      cells: [
-        "/notifications/preferences",
-        "NotificationsPreferencesPage",
-        "protected",
-      ],
-    },
-    {
-      cells: [
-        "/account/invitations",
-        "InvitationsPage for team invites",
-        "protected",
-      ],
-    },
-    {
-      cells: [
-        "/account/settings",
-        "SettingsPage placeholder sections",
-        "protected",
-      ],
-    },
-    {
-      cells: [
-        "/account/profile",
-        "ProfilePage with read-only useMe fields",
-        "protected",
-      ],
-    },
-    { cells: ["*", "NotFoundPage", "public"] },
-  ]}
-/>
-
-`SettingsPage` ships with an explicit "placeholder, fill this in" copy block so a fork knows the page is wired into the nav but the form is yours to write.
+By default the shell covers the full auth surface (login, signup, verify-email, OAuth callback), the dashboard, the notifications feed and preferences, and the account pages (profile, invitations, settings). `SettingsPage` ships with an explicit "placeholder, fill this in" copy block so a fork knows the page is wired into the nav but the form is yours to write.
 
 ## File layout
 
-<DocFileTree
-  root="src/"
-  title="UI source map"
-  caption="typed OpenAPI client"
-  nodes={[
-    { name: "app/", detail: "App shell: providers, router, main entry" },
-    {
-      name: "features/",
-      detail:
-        "Vertical feature folders: auth, dashboard, notifications, and yours",
-    },
-    {
-      name: "components/",
-      children: [
-        { name: "ui/", detail: "shadcn/ui primitives" },
-        { name: "core/", detail: "composed components" },
-        { name: "global/", detail: "app-shell wrappers" },
-      ],
-    },
-    {
-      name: "lib/",
-      children: [
-        { name: "api/", detail: "openapi-fetch client + generated schema" },
-        { name: "env/", detail: "Zod-validated import.meta.env" },
-        {
-          name: "auth/",
-          detail: "OAuth start helper for the server-side flow",
-        },
-        { name: "logger/", detail: "structured client logs" },
-        { name: "i18n/", detail: "react-i18next setup + locales" },
-      ],
-    },
-    { name: "hooks/", detail: "cross-feature hooks" },
-    { name: "store/", detail: "app-level Zustand stores" },
-  ]}
-/>
+Under `src/`:
+- `app/` - App shell: providers, router, main entry
+- `features/` - Vertical feature folders: auth, dashboard, notifications, and yours
+- `components/` - `ui/` (shadcn/ui base components), `core/` (composed components), `global/` (app-shell wrappers)
+- `lib/` - `api/` (openapi-fetch client + generated schema), `env/` (Zod-validated import.meta.env), `auth/` (OAuth start helper), `logger/` (structured client logs), `i18n/` (react-i18next setup + locales)
+- `hooks/` - cross-feature hooks
+- `store/` - app-level Zustand stores
 
-A page or component folder always looks like:
-
-<DocFileTree
-  root="features/dashboard/components/DashboardPage/"
-  title="Component folder anatomy"
-  caption="the UI lint rules enforce this split"
-  nodes={[
-    { name: "DashboardPage.tsx", detail: "pure JSX" },
-    { name: "DashboardPage.hooks.ts", detail: "all React hooks" },
-    { name: "DashboardPage.types.ts", detail: "IDashboardPageView" },
-    { name: "DashboardPage.constants.ts" },
-    { name: "DashboardPage.utils.ts" },
-    { name: "DashboardPage.test.tsx" },
-    { name: "DashboardPage.stories.tsx" },
-    { name: "index.ts", detail: "re-export" },
-  ]}
-/>
+A page or component folder always has the same 8-file layout (enforced by the UI lint rules):
+- `ComponentName.tsx` - pure JSX
+- `ComponentName.hooks.ts` - all React hooks
+- `ComponentName.types.ts` - IComponentNameView
+- `ComponentName.constants.ts`
+- `ComponentName.utils.ts`
+- `ComponentName.test.tsx`
+- `ComponentName.stories.tsx`
+- `index.ts` - re-export
 
 Stories ship 1:1 with the components and run under a global theme decorator (`@storybook/addon-themes` wired in `.storybook/preview.tsx`), so every story has a light/dark toggle in the Storybook toolbar with no per-story plumbing.
 
@@ -222,33 +79,15 @@ Stories ship 1:1 with the components and run under a global theme decorator (`@s
 
 ## State, in one decision
 
-<FeatureGrid
-  columns={4}
-  items={[
-    {
-      eyebrow: "server",
-      title: "Fetched state",
-      body: "*.queries.ts with TanStack Query.",
-    },
-    {
-      eyebrow: "client",
-      title: "UI state",
-      body: "*.store.ts with Zustand for modals, drawers, and step indexes.",
-    },
-    {
-      eyebrow: "form",
-      title: "Input state",
-      body: "*.hooks.ts with React Hook Form and Zod.",
-    },
-    {
-      eyebrow: "view",
-      title: "Render-derived state",
-      body: "*.hooks.ts returns IXxxView; no extra store.",
-    },
-  ]}
-/>
+**Fetched state (server).** Use `*.queries.ts` with TanStack Query.
 
-If you can't tell which bucket something belongs to, that's almost always a sign the boundary is wrong; not a need for a fifth bucket.
+**UI state (client).** Use `*.store.ts` with Zustand for modals, drawers, and step indexes.
+
+**Input state (form).** Use `*.hooks.ts` with React Hook Form and Zod.
+
+**Render-derived state (view).** `*.hooks.ts` returns `IXxxView`; no extra store.
+
+If you can't tell which bucket something belongs to, that is almost always a sign the boundary is wrong, not a need for a fifth bucket.
 
 ## The typed OpenAPI client
 
@@ -258,31 +97,13 @@ See [OpenAPI client](/ui/openapi-client/).
 
 ## Testing
 
-<SignalGrid
-  columns={4}
-  items={[
-    {
-      label: "unit",
-      title: "Hooks and utilities",
-      body: "Vitest + Testing Library for hooks, utilities, and schemas.",
-    },
-    {
-      label: "component",
-      title: "One component surface",
-      body: "Render the component and its hook together, not a mocked UI stub.",
-    },
-    {
-      label: "e2e",
-      title: "Real stack",
-      body: "Playwright runs against the API and UI from Compose.",
-    },
-    {
-      label: "visual",
-      title: "Snapshot baselines",
-      body: "Per-platform baselines catch layout drift before release.",
-    },
-  ]}
-/>
+**Unit (hooks and utilities).** Vitest + Testing Library for hooks, utilities, and schemas.
+
+**Component (one surface).** Render the component and its hook together, not a mocked UI stub.
+
+**E2e (real stack).** Playwright runs against the API and UI from Compose.
+
+**Visual (snapshot baselines).** Per-platform baselines catch layout drift before release.
 
 See [Testing](/ui/testing/).
 

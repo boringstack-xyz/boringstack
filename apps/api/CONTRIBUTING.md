@@ -8,11 +8,11 @@ exist so `bun run check` is a reliable signal.
 Each feature lives at `src/api/<Feature>/`:
 
 ```
-widgets/
-├── widgets.routes.ts     # Elysia route group (HTTP only)
-├── widgets.service.ts    # business logic, Drizzle
-├── widgets.schemas.ts    # TypeBox request/response shapes
-└── widgets.types.ts      # types inferred from db schema
+tickets/
+├── tickets.routes.ts     # Elysia route group (HTTP only)
+├── tickets.service.ts    # business logic, Drizzle
+├── tickets.schemas.ts    # TypeBox request/response shapes
+└── tickets.types.ts      # types inferred from db schema
 ```
 
 Routes never query the DB directly. Services never touch `t.*`. Import
@@ -34,7 +34,7 @@ Commit the generated SQL.
 ### 2. Scaffold the feature
 
 ```bash
-bun run new:resource -- Widgets
+bun run new:resource -- Tickets
 ```
 
 This generates the four `.ts` files with the right import boundaries
@@ -45,27 +45,27 @@ A minimal **service**:
 ```ts
 import { eq } from "drizzle-orm";
 import { db } from "../../clients/postgres";
-import { widgets } from "../../clients/postgres/schema";
+import { tickets } from "../../clients/postgres/schema";
 import { AUDIT_ACTIONS, auditLogService } from "../../lib/audit-log";
 import { ApiErrors } from "../../lib/errors";
 
-export class WidgetsService {
+export class TicketsService {
   async create(userId: string, name: string) {
     const [created] = await db
-      .insert(widgets)
+      .insert(tickets)
       .values({ userId, name })
       .returning();
-    if (!created) throw ApiErrors.internal("Failed to create widget");
+    if (!created) throw ApiErrors.internal("Failed to create ticket");
     void auditLogService.record({
       userId,
-      action: AUDIT_ACTIONS.WIDGET_CREATED,
-      metadata: { widgetId: created.id },
+      action: AUDIT_ACTIONS.NOTIFICATION_STATUS_UPDATED,
+      metadata: { ticketId: created.id },
     });
     return created;
   }
 }
 
-export const widgetsService = new WidgetsService();
+export const ticketsService = new TicketsService();
 ```
 
 The `audit-log` plugin **requires** a recorded event for every mutating
@@ -77,16 +77,16 @@ A minimal **routes** file:
 
 ```ts
 import { createAuthMiddleware } from "../auth/auth.plugin";
-import { CreateWidgetSchema, WidgetResponse } from "./widgets.schemas";
-import { widgetsService } from "./widgets.service";
+import { CreateTicketSchema, TicketResponse } from "./tickets.schemas";
+import { ticketsService } from "./tickets.service";
 
 export default createAuthMiddleware().post(
   "/",
-  ({ body, user }) => widgetsService.create(user.id, body.name),
+  ({ body, user }) => ticketsService.create(user.id, body.name),
   {
-    body: CreateWidgetSchema,
-    response: WidgetResponse,
-    detail: { tags: ["Widgets"], security: [{ cookieAuth: [] }] },
+    body: CreateTicketSchema,
+    response: TicketResponse,
+    detail: { tags: ["Tickets"], security: [{ cookieAuth: [] }] },
   }
 );
 ```
@@ -94,7 +94,7 @@ export default createAuthMiddleware().post(
 ### 3. Wire it
 
 - `src/config/routes.ts` — import + add to `routes`.
-- `src/config/app.ts` — `.group("/api/v1/widgets", ...)`.
+- `src/config/app.ts` — `.group("/api/v1/tickets", ...)`.
 - `src/config/swagger.ts` — add the tag.
 
 ## Errors
@@ -104,7 +104,7 @@ response. `throw new Error(...)` produces a generic 500 — the `elysia`
 plugin flags it.
 
 ```ts
-throw ApiErrors.notFound("Widget");
+throw ApiErrors.notFound("Ticket");
 throw ApiErrors.validation("name is reserved", "name");
 ```
 

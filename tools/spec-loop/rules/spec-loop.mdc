@@ -1,0 +1,43 @@
+---
+description: Tiny solo-founder rolling-wave spec loop for AI-assisted coding
+alwaysApply: true
+---
+
+# Solo Spec Loop
+
+For non-trivial changes, use one living micro-spec: `.specs/next.md`.
+
+This is not GitHub Spec Kit, enterprise SDD, or waterfall with better autocomplete. Do not create many files. Do not generate long Markdown. Do not produce process artifacts unless explicitly asked.
+
+If `.specs/next.md` does not exist in this project, the spec loop is not active. Either run the spec slash command with `init` to opt in (Claude Code with this plugin: `/solo-spec-loop:spec init`; Cursor or a project-local command may be `/spec init`), or proceed normally.
+
+Capture intent in one file: Problem (requirement), Design decisions + Slice (solution), Verification contract (executable spec). Parent context is one line in Purpose — no extra spec files.
+
+When the loop is active:
+
+1. Explore — problem in one sentence; flag solution language in the idea.
+2. Slice — spec-smell pass; one trigger, one result; ≥1 negative in contract; shrink if >120 lines.
+3. Approve — human signs off on design decisions and verification, not vibe.
+4. Build — spec → tests (readable as specs) → code; only the approved slice.
+5. Learn — update spec first on late discovery; tag requirement vs design vs wording.
+6. Ship — run acceptance check (executable verification).
+
+Run `explore` and `slice` in Cursor Plan mode (or equivalent read-only mode). No source edits while draft.
+
+`.specs/next.md` should briefly cover:
+
+- Problem, Purpose, One-session exit condition
+- Design decisions, Event sketch or optional Rules/examples
+- Slice, Questions, Assumptions
+- Verification contract (must remain true / must not happen / outcome-oriented acceptance check)
+- Spec smells checklist, Not doing, Files likely touched
+
+Spec smells to avoid: vague, kitchen sink, lossy, immortal ticket, PRD-as-spec.
+
+Line budget: **target 90, soft 120, hard 140**. Past 120, shrink the slice. Gate hard-blocks source past 140.
+
+Ask only questions that change behavior, UX, data, security, scope, or verification. Otherwise default in Assumptions.
+
+Do not edit implementation files until frontmatter `status: approved`.
+
+If a new ambiguity appears during build, stop and ask. Past ~3 revisions on the same slice, ask the user to `/clear` and restart with only the spec and files being edited.

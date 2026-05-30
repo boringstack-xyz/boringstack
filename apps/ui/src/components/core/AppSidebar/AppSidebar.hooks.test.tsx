@@ -61,8 +61,7 @@ const ownerMe: IMe = {
   features: {
     can_export: true,
     can_invite_team: true,
-    max_seats: 10,
-    max_widgets: 50
+    max_seats: 10
   },
   capabilities: {
     billing: false,
@@ -74,7 +73,7 @@ const ownerMe: IMe = {
 };
 
 describe("useAppSidebar", () => {
-  it("returns six nav items when billing is hidden", () => {
+  it("returns the non-billing nav items in canonical order", () => {
     const { result } = renderHook(() => useAppSidebar({}), {
       wrapper: makeWrapper(ownerMe, false)
     });
@@ -82,8 +81,8 @@ describe("useAppSidebar", () => {
     expect(result.current.items.map((i) => i.id)).toEqual([
       "dashboard",
       "notifications",
-      "widgets",
       "team",
+      "auditLog",
       "settings",
       "profile"
     ]);
@@ -97,8 +96,8 @@ describe("useAppSidebar", () => {
     expect(result.current.items.map((i) => i.id)).toEqual([
       "dashboard",
       "notifications",
-      "widgets",
       "team",
+      "auditLog",
       "settings",
       "billing",
       "profile"

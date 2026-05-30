@@ -113,9 +113,34 @@ const isUserRevokedSince = async (
   }
 };
 
+/**
+ * Reads the user's current revoke-before cutoff (seconds since epoch),
+ * or `0` if none is set or the cache is unreachable. Used at JWT issue
+ * time so a freshly minted token's `iat` can be lifted past a recent
+ * cutoff. Without this, a password-reset that revokes all sessions
+ * (cutoff = floor(now) + 1) would kill any login completing in the same
+ * wall-clock second — `iat < cutoff` rejects the brand-new token.
+ */
+const getUserRevokeCutoff = async (userId: string): Promise<number> => {
+  try {
+    const cutoff = await cacheService.get<number>(userRevokeKey(userId));
+
+    return cutoff ?? 0;
+  } catch (error: unknown) {
+    logger.warn("JWT revocation cutoff read failed (defaulting to 0)", {
+      event: "auth.jwt.revoke_cutoff_read_failed",
+      userId,
+      error: getErrorMessage(error),
+    });
+
+    return 0;
+  }
+};
+
 export const jwtRevocationService = {
   revokeJti,
   revokeAllForUser,
   isJtiRevoked,
+  getUserRevokeCutoff,
   isUserRevokedSince,
 };

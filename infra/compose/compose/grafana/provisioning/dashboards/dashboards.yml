@@ -1,15 +1,25 @@
 # Grafana dashboard provider — auto-loads any JSON file dropped into the
 # adjacent `dashboards/` directory at container start (and rescans every 30s).
 #
-# To add a dashboard:
+# Ships with five baseline dashboards:
+#   • API           — RED panels + Node.js runtime (heap, GC, event loop)
+#   • API logs      — error/warn stats, log volume by level, top error
+#                     events, live Pino stream with trace_id pivot
+#   • UI logs       — Vite + nginx output, error-like-line stats, HMR
+#                     activity, filterable live stream
+#   • Postgres      — connections, cache hit ratio, tx/s, deadlocks
+#   • Host          — CPU, memory, filesystem usage, network
+# These are the "first place to look" panels when something feels off.
+#
+# To add another dashboard:
 #   1. Export the dashboard JSON from grafana.com or your existing instance.
 #   2. Drop the file into compose/grafana/dashboards/<your-dashboard>.json.
 #   3. Restart grafana: `docker compose restart grafana` (or wait 30s).
 #
-# Suggested starter dashboards (search by ID on grafana.com → export JSON):
+# Heavier community dashboards if you want more depth (search by ID on
+# grafana.com → export JSON; remap any datasource UIDs to `prometheus`/`loki`):
 #   - Node Exporter Full           (id 1860)
 #   - Traefik 2 Dashboard          (id 17347)
-#   - PostgreSQL exporter quickstart(id 9628)
 #   - cAdvisor exporter            (id 14282)
 #   - Loki Logs                    (id 13186)
 

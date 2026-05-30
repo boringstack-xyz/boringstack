@@ -89,6 +89,64 @@ groups:
             for the api service. Verify the container is healthy and
             Traefik can reach it.
 
+      - alert: NodeEventLoopLagging
+        # Event loop lag p99 above 200ms means the loop is taking too
+        # long to dispatch callbacks — every request gets at least that
+        # much added latency on top of its own work. Common causes:
+        # sync FS calls, JSON.parse of large bodies, regex catastrophes,
+        # CPU-bound work outside a worker thread.
+        expr: |
+          nodejs_eventloop_lag_p99_seconds{app="boringstack-api"} > 0.2
+        for: 5m
+        labels:
+          severity: warn
+          component: api
+        annotations:
+          summary: "Node event-loop lag p99 above 200ms for 5 minutes"
+          description: |
+            p99 callback dispatch lag is {{ $value | humanizeDuration }}.
+            The loop can't keep up — investigate via Grafana → API
+            dashboard (Event-loop lag panel) and the Tempo traces for
+            slow spans. Profile candidates: sync APIs, large JSON
+            payloads, CPU-bound paths that should move to a worker.
+
+      - alert: NodeEventLoopBlocked
+        # p99 over 1 second means the service is effectively unresponsive
+        # to new work for noticeable stretches. Page immediately — at
+        # this point requests are queueing and users are seeing it.
+        expr: |
+          nodejs_eventloop_lag_p99_seconds{app="boringstack-api"} > 1
+        for: 2m
+        labels:
+          severity: page
+          component: api
+        annotations:
+          summary: "Node event-loop lag p99 above 1s — service effectively blocked"
+          description: |
+            The Node runtime can't keep up with the work queued on the
+            event loop. Requests are stacking. Most likely a single
+            blocking operation hot path — `process.stack` / profiler /
+            `bun --inspect` to find it.
+
+      - alert: NodeEventLoopSaturated
+        # ELU (event loop utilization) sustained above 90% means there's
+        # no headroom — the next burst of traffic tips you into queueing.
+        # Lag may still look fine if the loop is just keeping up.
+        expr: |
+          avg_over_time(nodejs_eventloop_utilization{app="boringstack-api"}[5m]) > 0.9
+        for: 10m
+        labels:
+          severity: warn
+          component: api
+        annotations:
+          summary: "Node event-loop utilization above 90% for 10 minutes"
+          description: |
+            ELU is {{ $value | humanizePercentage }} over the last 5
+            minutes. The loop is keeping up *for now* but has no
+            headroom. Either scale out, or find what's keeping the loop
+            busy via the Tempo trace waterfalls and refactor toward
+            async / worker threads.
+
   - name: boringstack-database
     interval: 30s
     rules:

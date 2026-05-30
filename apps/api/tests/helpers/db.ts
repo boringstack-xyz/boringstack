@@ -102,9 +102,9 @@ const TRUNCATE_TARGETS = [
   "auth.sessions",
   "auth.email_verification_tokens",
   "auth.password_reset_tokens",
+  "auth.mfa_recovery_codes",
   "auth.user_auth_providers",
   "auth.account_memberships",
-  "app.widgets",
   "app.account_feature_overrides",
   "app.account_invitations",
   "app.account_join_requests",
@@ -115,6 +115,7 @@ const TRUNCATE_TARGETS = [
   "notifications.notification_preference",
   "notifications.notification_dedup",
   "notifications.push_subscription",
+  "notifications.email_suppression",
   "app.accounts",
   "auth.users",
 ] as const;
@@ -150,7 +151,9 @@ export {
   accounts,
   auditLog,
   authSessions,
+  emailSuppression,
   emailVerificationTokens,
+  mfaRecoveryCodes,
   notification,
   notificationDedup,
   notificationDelivery,
@@ -163,7 +166,6 @@ export {
   stripeWebhookEvents,
   userAuthProviders,
   users,
-  widgets,
 } from "../../src/clients/postgres/schema";
 export type { IAccount, IAccountMembership } from "../../src/api/accounts";
 export type { IUser } from "../../src/api/users/users.types";

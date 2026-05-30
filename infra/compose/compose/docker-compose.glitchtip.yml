@@ -1,5 +1,5 @@
-# GlitchTip overlay — self-hosted error tracking (Sentry alternative).
-# Merged in by dev.sh when WITH_GLITCHTIP=1.
+# GlitchTip — self-hosted error tracking (Sentry alternative).
+# On by default for dev + prod via dev.sh. Opt out with WITH_GLITCHTIP=0.
 #
 # Architecture:
 #   - Reuses the base stack's `postgres` (separate `glitchtip` DB) and

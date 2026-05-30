@@ -281,35 +281,3 @@ export const accountOwnershipTransfers = app.table(
     }).onDelete("cascade"),
   ]
 );
-
-/*
- * @account-scoped accountId
- *
- * Sample account-scoped domain resource shipped with the template.
- * Replace `widgets` with your real product domain; the ESLint rule
- * `drizzle-conventions/account-scoped-tables-require-where` reads
- * the comment above and refuses to merge any query against this
- * table that doesn't include `accountId` in its `WHERE`.
- */
-export const widgets = app.table(
-  "widgets",
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    accountId: uuid("account_id").notNull(),
-    name: varchar({ length: 200 }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => [
-    index("idx_widgets_account_id").on(table.accountId),
-    foreignKey({
-      columns: [table.accountId],
-      foreignColumns: [accounts.id],
-      name: "widgets_account_id_fkey",
-    }).onDelete("cascade"),
-  ]
-);

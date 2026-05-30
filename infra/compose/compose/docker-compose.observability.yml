@@ -1,10 +1,15 @@
-# Optional overlay: full observability stack.
+# Full observability stack — on by default for dev + prod via dev.sh.
 #   - Prometheus + Alertmanager  → metrics + alerting
-#   - Grafana                    → dashboards
+#   - Grafana                    → dashboards (host port 3010)
 #   - Loki + Promtail            → log aggregation
+#   - Tempo                      → distributed trace storage (OTLP)
 #   - postgres-exporter          → Postgres metrics
 #   - node-exporter              → host metrics
-# Usage (from compose/):  WITH_OBSERVABILITY=1 ./dev.sh
+#
+# Opt out per-run with `WITH_OBSERVABILITY=0 ./dev.sh up`. The whole point
+# of running this in dev is so you've already used the dashboards before
+# prod day-one — disabling it means learning the panels during your first
+# real incident.
 
 services:
   prometheus:
@@ -36,10 +41,16 @@ services:
     profiles: ["observability"]
     image: prom/alertmanager:v0.27.0@sha256:e13b6ed5cb929eeaee733479dce55e10eb3bc2e9c4586c705a4e8da41e5eacf5
     restart: unless-stopped
-    command:
-      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    # entrypoint.sh renders alertmanager.yml from env vars on each boot,
+    # then execs the real Alertmanager binary. See the script for why
+    # (no native env-var support in Alertmanager config).
+    entrypoint: ["/bin/sh", "/etc/alertmanager/entrypoint.sh"]
+    environment:
+      ALERTMANAGER_SLACK_WEBHOOK_URL: ${ALERTMANAGER_SLACK_WEBHOOK_URL:-}
+      ALERTMANAGER_SLACK_CHANNEL: ${ALERTMANAGER_SLACK_CHANNEL:-#alerts}
+      ALERTMANAGER_WEBHOOK_URL: ${ALERTMANAGER_WEBHOOK_URL:-}
     volumes:
-      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/entrypoint.sh:/etc/alertmanager/entrypoint.sh:ro
     ports:
       - "9093:9093"
     networks:
@@ -71,6 +82,7 @@ services:
     depends_on:
       - prometheus
       - loki
+      - tempo
     deploy:
       resources:
         limits:
@@ -110,6 +122,22 @@ services:
         limits:
           cpus: "${PROMTAIL_LIMITS_CPUS:-0.25}"
           memory: "${PROMTAIL_LIMITS_MEMORY:-128M}"
+
+  tempo:
+    profiles: ["observability"]
+    image: grafana/tempo:2.6.1@sha256:ef4384fce6e8ad22b95b243d8fc165628cda655376fd50e7850536ad89d71d50
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - tempo_data:/var/tempo
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "${TEMPO_LIMITS_CPUS:-0.5}"
+          memory: "${TEMPO_LIMITS_MEMORY:-512M}"
 
   postgres-exporter:
     profiles: ["observability"]
@@ -153,3 +181,4 @@ volumes:
   prometheus_data:
   grafana_data:
   loki_data:
+  tempo_data:

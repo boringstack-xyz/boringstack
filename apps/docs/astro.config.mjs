@@ -93,10 +93,13 @@ function lastmodForUrl(absoluteUrl) {
 export default defineConfig({
   site: "https://boringstack.xyz",
   /*
-   * Fully static build — every page in this Starlight site is
+   * Fully static build. Every page in this Starlight site is
    * prerendered at build time and served by Cloudflare Pages as
-   * assets. Setting `output: "static"` keeps the @astrojs/cloudflare
-   * v13 adapter from spinning up a server prerender worker.
+   * static assets. There is no Cloudflare adapter (no SSR), so
+   * Astro emits HTML/JS/CSS into `dist/` and wrangler uploads it
+   * as an assets-only deploy (see `wrangler.jsonc`). `output:
+   * "static"` is the documented default for adapter-less sites
+   * and we pin it explicitly so the intent is unmistakable.
    */
   output: "static",
   redirects: {
@@ -226,6 +229,7 @@ export default defineConfig({
         Header: "./src/components/Header.astro",
         PageTitle: "./src/components/PageTitle.astro",
         Pagination: "./src/components/Pagination.astro",
+        ThemeProvider: "./src/components/ThemeProvider.astro",
       },
       head: [
         {
@@ -373,10 +377,7 @@ export default defineConfig({
           label: "Agent skills",
           items: [
             { label: "Overview", link: "/skills/" },
-            {
-              label: "First feature in 10 minutes",
-              link: "/skills/first-feature-tutorial/",
-            },
+            { label: "Spec loop", link: "/skills/spec-loop/" },
           ],
         },
         {
@@ -417,8 +418,10 @@ export default defineConfig({
           items: [
             { label: "Overview", link: "/api/overview/" },
             { label: "Authentication", link: "/api/auth/" },
+            { label: "Two-factor authentication", link: "/api/mfa/" },
             { label: "Billing", link: "/api/billing/" },
             { label: "Email", link: "/api/email/" },
+            { label: "Bounce handling", link: "/api/bounce-handling/" },
             { label: "Queues", link: "/api/queues/" },
             { label: "Audit log", link: "/api/audit-log/" },
             { label: "Notifications", link: "/api/notifications/" },
@@ -460,6 +463,8 @@ export default defineConfig({
             { label: "Cloudflare Email", link: "/topics/cloudflare-email/" },
             { label: "Error tracking", link: "/topics/error-tracking/" },
             { label: "Observability", link: "/topics/observability/" },
+            { label: "Distributed tracing", link: "/topics/tracing/" },
+            { label: "Alerts", link: "/topics/alerts/" },
             {
               label: "Provisioning with OpenTofu",
               link: "/topics/provisioning-with-tofu/",
@@ -521,6 +526,7 @@ export default defineConfig({
               label: "OAuth provider setup",
               link: "/runbooks/oauth-provider-setup/",
             },
+            { label: "Codecov setup", link: "/runbooks/codecov-setup/" },
           ],
         },
       ],

@@ -49,10 +49,10 @@ describe("ApiErrors factory", () => {
   });
 
   test("notFound() → 404", () => {
-    const err = ApiErrors.notFound("Widget");
+    const err = ApiErrors.notFound("Ticket");
 
     expect(err.statusCode).toBe(404);
-    expect(err.message).toBe("Widget not found");
+    expect(err.message).toBe("Ticket not found");
   });
 
   test("unauthorized() / invalidCredentials() / tokenExpired() → 401", () => {

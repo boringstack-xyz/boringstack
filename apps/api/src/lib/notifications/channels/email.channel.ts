@@ -96,7 +96,17 @@ class EmailChannel implements INotificationChannel {
     }
 
     try {
-      await sendTemplateNow(input);
+      const outcome = await sendTemplateNow(input);
+
+      if (outcome.status === "suppressed") {
+        await this.markSuppressedById(
+          deliveryId,
+          `recipient_suppressed:${outcome.reason}`
+        );
+
+        return;
+      }
+
       await this.markSent(deliveryId);
     } catch (error: unknown) {
       await this.markFailedById(deliveryId, getErrorMessage(error));
@@ -201,6 +211,22 @@ class EmailChannel implements INotificationChannel {
           eq(notificationDelivery.channel, NOTIFICATION_CHANNELS.EMAIL)
         )
       );
+  }
+
+  private async markSuppressedById(
+    deliveryId: string,
+    reason: string
+  ): Promise<void> {
+    const nowIso = now();
+
+    await db
+      .update(notificationDelivery)
+      .set({
+        status: DELIVERY_STATUS.SUPPRESSED,
+        updatedAt: nowIso,
+        error: reason,
+      })
+      .where(eq(notificationDelivery.id, deliveryId));
   }
 }
 

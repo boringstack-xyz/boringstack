@@ -3,82 +3,17 @@ title: Audit log
 description: Append-only, fire-and-forget log of security- and compliance-relevant events. Lives in its own Postgres schema.
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
+import { Aside } from "@astrojs/starlight/components";
 
-<PageIntro
-  eyebrow="Audit log"
-  actions={[
-    { label: "How writes work", href: "#how-a-write-happens" },
-    { label: "Operator queries", href: "#operator-queries" },
-  ]}
-  facts={[
-    { value: "audit schema", label: "isolated Postgres namespace" },
-    { value: "Fire-and-forget", label: "never blocks requests" },
-    { value: "Append-only", label: "by design" },
-  ]}
->
-  The audit log is the answer to "who did what, when?" Auth events, OAuth
-  link/unlink, billing actions, and mutations on flagged resources all land in
-  `audit.audit_log`. The shape is deliberately boring: append-only table,
-  structured `metadata` blob, time-ordered.
-</PageIntro>
+The audit log answers "who did what, when?" Auth events, OAuth link/unlink, billing actions, and mutations on flagged resources all land in `audit.audit_log`. The shape is deliberately boring: append-only table, structured `metadata` blob, time-ordered. Writes are fire-and-forget and never block the originating request.
 
 ## How a write happens
 
-```mermaid
-flowchart LR
-  caller["call site<br/>after action succeeds"] -->|record| service["AuditLogService"]
-  service -->|INSERT| db[(audit.audit_log)]
-  service -.->|on failure| log["structured log<br/>swallowed, never thrown"]
-```
+Audit writes happen after the action succeeds. A call site uses `void auditLogService.record({...})` to signal the caller is deliberately not awaiting. The service INSERTs into `audit.audit_log`; if the write fails, the error is logged and swallowed, never thrown. This pattern ensures audit can never break a customer action.
 
-The `void` prefix at call sites is load-bearing: it tells the reader (and the linter) the caller is deliberately not awaiting. Audit can't be allowed to fail a real request.
+## Design
 
-## Design choices
-
-<SignalGrid
-  columns={3}
-  items={[
-    {
-      label: "Isolation",
-      title: "Separate Postgres schema",
-      body: "Independent grants, retention, and archival; app migrations on public cannot touch audit rows.",
-    },
-    {
-      label: "Reliability",
-      title: "Fire-and-forget writes",
-      body: "Errors are logged and swallowed. A flaky audit table can never break a customer action.",
-    },
-    {
-      label: "Vocabulary",
-      title: "Centralized AUDIT_ACTIONS",
-      body: "Magic strings drift; admin queries depend on a stable action vocabulary.",
-    },
-  ]}
-/>
-
-<FaqGroup>
-  <FaqItem title="Separate Postgres schema (audit, not public)" open>
-    Independent grants, retention, and archival; app migrations on `public`
-    cannot touch audit rows.
-  </FaqItem>
-  <FaqItem title="Fire-and-forget writes (errors logged + swallowed)">
-    A flaky audit table can never break a customer action.
-  </FaqItem>
-  <FaqItem title="Nullable userId + ON DELETE SET NULL">
-    System events have no actor; "this account did X" history survives the user
-    being scrubbed.
-  </FaqItem>
-  <FaqItem title="jsonb metadata">
-    Add new fields without a migration; cost is no per-field index.
-  </FaqItem>
-  <FaqItem title="Centralized AUDIT_ACTIONS constant">
-    Magic strings drift; admin queries depend on a stable vocabulary.
-  </FaqItem>
-</FaqGroup>
+The audit schema is isolated from the app's public schema, so retentions, grants, and archival can move independently. Fire-and-forget writes mean a flaky audit table cannot break the API. System events (cron jobs, webhooks without user context) have a nullable `userId` and `ON DELETE SET NULL` so the history survives when a user is scrubbed. The `metadata` column is a jsonb blob, allowing new fields without migrations. Action names come from a centralized `AUDIT_ACTIONS` constant so they stay stable for admin queries.
 
 ## The action vocabulary
 
@@ -120,21 +55,9 @@ Structured context the action name doesn't capture. Keep it small and PII-free.
 
 The lint plugin flags common leak patterns (keys named `password`, `token`, raw `email`).
 
-## What userId should be
+## userId: authenticated, system, or admin
 
-<FaqGroup>
-  <FaqItem title="Authenticated user action" open>
-    Actor's id.
-  </FaqItem>
-  <FaqItem title="System action (cron, webhook with no user context)">
-    `null`.
-  </FaqItem>
-  <FaqItem title="Admin impersonating a user">
-    Acting admin's id, with `metadata.actingAs` set to the target.
-  </FaqItem>
-</FaqGroup>
-
-Never quietly attribute an admin's actions to the impersonated user.
+For an authenticated user action, pass the actor's id. For system actions (cron, webhook with no user context), pass `null`. For admin impersonating a user, pass the acting admin's id and set `metadata.actingAs` to the target. Never quietly attribute an admin's actions to the impersonated user.
 
 ## Adding a new event
 
@@ -212,7 +135,7 @@ LIMIT 20;
 
 ## Source
 
-[`src/lib/audit-log/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/audit-log); service, types, constants. [`src/clients/postgres/schema/audit.schema.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/clients/postgres/schema/audit.schema.ts); the table.
+[`src/lib/audit-log/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/audit-log): service, types, constants, and audit schema.
 
 ## Related
 

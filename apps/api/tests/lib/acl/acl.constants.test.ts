@@ -79,9 +79,8 @@ describe("FEATURES catalog", () => {
     }
   });
 
-  test("limit defaults match the Free-plan baseline (max_seats=1, max_widgets=5)", () => {
+  test("limit defaults match the Free-plan baseline (max_seats=1)", () => {
     expect(FEATURES.max_seats).toEqual({ kind: "limit", default: 1 });
-    expect(FEATURES.max_widgets).toEqual({ kind: "limit", default: 5 });
   });
 
   test("boolean defaults are false (paid features are off by default)", () => {

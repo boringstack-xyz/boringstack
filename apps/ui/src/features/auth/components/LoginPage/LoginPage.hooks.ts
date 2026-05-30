@@ -11,8 +11,13 @@ import { ApiError } from "@/lib/api/ApiError";
 import { useCapabilities } from "@/lib/api/queries/useCapabilities";
 import { type IOAuthProvider, startOAuth } from "@/lib/auth/oauth.service";
 import { getErrorMessage } from "@/lib/errors/getErrorMessage";
+import { isRecord } from "@/lib/guards/isRecord";
 import { logger } from "@/lib/logger/logger";
 
+import {
+  useMfaVerifyLogin,
+  useMfaVerifyRecovery
+} from "@/features/auth/Auth.mfa.challenge.mutations";
 import { loginInputSchema } from "@/features/auth/Auth.schemas";
 import { useLogin } from "@/features/auth/Auth.session.mutations";
 import { useResendVerification } from "@/features/auth/Auth.signup.mutations";
@@ -21,10 +26,6 @@ import { applyServerErrors } from "@/features/auth/Auth.utils";
 
 import { DEFAULT_REDIRECT_TO, OAUTH_LABEL_KEYS } from "./LoginPage.constants";
 import type { ILoginPageProps, ILoginPageView } from "./LoginPage.types";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 function routePart(value: unknown): string {
   return typeof value === "string" ? value : "";
@@ -51,8 +52,16 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
   const login = useLogin();
   const resend = useResendVerification();
   const capabilities = useCapabilities();
+  const verifyTotp = useMfaVerifyLogin();
+  const verifyRecovery = useMfaVerifyRecovery();
 
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [mfaChallengeToken, setMfaChallengeToken] = useState<string | null>(
+    null
+  );
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaError, setMfaError] = useState<string | null>(null);
+  const [mfaMode, setMfaMode] = useState<"totp" | "recovery">("totp");
 
   const {
     register,
@@ -78,9 +87,20 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
   const onSubmit = useCallback(
     async (input: ILoginInput): Promise<void> => {
       setPendingEmail(null);
+      setMfaError(null);
 
       try {
-        await login.mutateAsync(input);
+        const result = await login.mutateAsync(input);
+
+        if (result.kind === "mfa-required") {
+          setMfaChallengeToken(result.challengeToken);
+          setMfaCode("");
+          setMfaMode("totp");
+          logger.info({ event: "auth.mfa_challenge_issued" });
+
+          return;
+        }
+
         logger.info({ event: "auth.login_success" });
         await navigate(redirectTarget, { replace: true });
       } catch (error) {
@@ -178,6 +198,61 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
     [oauthProviders, onOAuth]
   );
 
+  const onMfaCodeChange = useCallback((value: string): void => {
+    setMfaCode(value);
+  }, []);
+
+  const onMfaModeToggle = useCallback((): void => {
+    setMfaMode((current) => (current === "totp" ? "recovery" : "totp"));
+    setMfaCode("");
+    setMfaError(null);
+  }, []);
+
+  const onMfaSubmit = useCallback((): void => {
+    if (mfaChallengeToken === null || mfaCode.trim() === "") {
+      return;
+    }
+
+    setMfaError(null);
+
+    const mutation = mfaMode === "totp" ? verifyTotp : verifyRecovery;
+
+    mutation.mutate(
+      { challengeToken: mfaChallengeToken, code: mfaCode.trim() },
+      {
+        onSuccess: () => {
+          logger.info({ event: "auth.mfa_login_success" });
+          setMfaChallengeToken(null);
+          setMfaCode("");
+          void navigate(redirectTarget, { replace: true });
+        },
+        onError: (error: unknown) => {
+          if (error instanceof ApiError && error.isUnauthorized) {
+            setMfaError(t("auth.login.mfa.invalidCode"));
+            setMfaCode("");
+
+            return;
+          }
+
+          setMfaError(t("auth.login.errors.network"));
+          logger.warn({
+            event: "auth.mfa_verify_failed",
+            status: error instanceof ApiError ? error.status : undefined
+          });
+        }
+      }
+    );
+  }, [
+    mfaChallengeToken,
+    mfaCode,
+    mfaMode,
+    navigate,
+    redirectTarget,
+    t,
+    verifyRecovery,
+    verifyTotp
+  ]);
+
   const onResendVerification = useCallback((): void => {
     if (pendingEmail === null) {
       return;
@@ -219,6 +294,14 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
     isLinkedinOAuthEnabled,
     pendingEmail,
     onResendVerification,
-    isResending: resend.isPending
+    isResending: resend.isPending,
+    mfaChallengeToken,
+    mfaCode,
+    onMfaCodeChange,
+    onMfaSubmit,
+    isMfaSubmitting: verifyTotp.isPending || verifyRecovery.isPending,
+    mfaError,
+    mfaMode,
+    onMfaModeToggle
   };
 }

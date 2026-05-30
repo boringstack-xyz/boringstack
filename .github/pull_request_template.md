@@ -4,7 +4,7 @@
 
 ## Test plan
 
-- [ ] `pnpm check` or targeted app checks (see below)
+- [ ] `bun run check` (or `bun run check:full` for the cross-app pass) from the repo root
 - [ ] Stack smoke if compose/infra touched: `cd infra/compose/compose && ./dev.sh up`
 
 ### App merge bars
@@ -13,8 +13,8 @@
 |------|---------|
 | API | `cd apps/api && bun run validate` |
 | UI | `cd apps/ui && bun run validate` |
-| Docs | `cd apps/docs && bun run check` |
-| Repo drift | `pnpm check` (from repo root) |
+| Docs | `cd apps/docs && bun run build:ci` |
+| Repo drift | `bun run check` (from repo root) |
 
 ## Conventions
 

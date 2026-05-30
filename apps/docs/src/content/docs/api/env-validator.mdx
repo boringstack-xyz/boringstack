@@ -3,34 +3,11 @@ title: Env validator
 description: TypeBox for shape, hand-written predicates for cross-field rules. Boot fails fast with every error listed; nothing else may read `process.env` directly.
 ---
 
-import CommandRun from "../../../components/docs-kit/CommandRun";
-import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
+Env is deploy-time configuration, not runtime state. The validator runs once at boot, lists every problem it finds, freezes the result, and exposes a typed env object to the rest of the app.
 
-<PageIntro
-  eyebrow="Env validation"
-  actions={[
-    { label: "Env reference", href: "/reference/env-vars/" },
-    { label: "Lint contract", href: "/architecture/lint-as-contract/" },
-  ]}
-  facts={[
-    { value: "TypeBox", label: "shape validation" },
-    { value: "freeze", label: "runtime config object" },
-    { value: "lint", label: "no direct process.env" },
-  ]}
->
-  Env is deploy-time configuration, not runtime state. The validator runs once
-  at boot, lists every problem it finds, freezes the result, and exposes a typed
-  env object to the rest of the app.
-</PageIntro>
+Two principles drive the design: no silent fallbacks in production (a missing or malformed var fails the boot with a readable error listing every problem), and one place to read `process.env`. Direct `process.env.FOO` outside the validator is a lint error.
 
-Two principles drive the design:
-
-- No silent fallbacks in production. A missing or malformed var fails the boot, with a readable error listing every problem, not just the first.
-- One place to read `process.env`. Direct `process.env.FOO` outside the validator is a lint error.
-
-## How boot validates env
+## How validation works
 
 ```mermaid
 flowchart LR
@@ -42,45 +19,11 @@ flowchart LR
   freeze --> ready[("env exported")]
 ```
 
-The two-pass split matters: running invariants on an already-shape-validated object means the error reads _"STRIPE_SECRET_KEY required when BILLING_ENABLED=true"_, not _"property STRIPE_SECRET_KEY should be string"_.
+The two-pass split matters: running invariants on an already-shape-validated object means errors read _"STRIPE_SECRET_KEY required when BILLING_ENABLED=true"_, not _"property STRIPE_SECRET_KEY should be string"_.
 
-## Design choices
+## Design
 
-<SignalGrid
-  columns={3}
-  items={[
-    {
-      label: "shape",
-      title: "TypeBox for field shape",
-      body: "Same library Elysia uses; no extra validation DSL to learn.",
-    },
-    {
-      label: "logic",
-      title: "Predicates for cross-field rules",
-      body: "If A then B rules stay readable as hand-written checks.",
-    },
-    {
-      label: "errors",
-      title: "All errors aggregate",
-      body: "One failed boot lists every missing var instead of one redeploy per problem.",
-    },
-    {
-      label: "runtime",
-      title: "Frozen derived env",
-      body: "Reads like env.isProduction, not repeated NODE_ENV string checks.",
-    },
-    {
-      label: "optional",
-      title: "Empty integration keys are allowed when off",
-      body: "Shape passes while invariants enforce keys when a feature is enabled.",
-    },
-    {
-      label: "tests",
-      title: "Test fallbacks are explicit",
-      body: "A few vars get nonEmpty(value, testFallback), never in production.",
-    },
-  ]}
-/>
+TypeBox handles field shape validation (the same library Elysia uses; no extra validation DSL to learn). Predicates handle cross-field rules: "if A then B" stays readable as hand-written checks. All errors aggregate, so one failed boot lists every missing var instead of one redeploy per problem. The frozen config object at runtime reads like `env.isProduction`, not repeated `NODE_ENV` string checks. Empty integration keys are allowed when a feature is off; shape passes while invariants enforce keys when enabled. Test fallbacks are explicit via `nonEmpty(value, testFallback)` and never leak to production.
 
 ## Shape vs. invariant
 
@@ -103,80 +46,27 @@ if (env.BILLING_ENABLED && env.STRIPE_SECRET_KEY === "") {
 
 Predicates each return `string[]` and fan into one aggregated check, so every problem surfaces in one boot attempt.
 
-## Current invariant set
+## Invariant rules
 
-<FeatureGrid
-  columns={3}
-  items={[
-    {
-      eyebrow: "cors",
-      title: "Production origins",
-      body: "Non-empty ALLOWED_ORIGINS entries must be https and wildcard-free.",
-    },
-    {
-      eyebrow: "email",
-      title: "Provider keys",
-      body: "Production requires the matching email-provider credentials.",
-    },
-    {
-      eyebrow: "urls",
-      title: "Public URLs",
-      body: "FRONTEND_URL, PUBLIC_API_URL, and notification settings URLs must be valid http(s) URLs.",
-    },
-    {
-      eyebrow: "oauth",
-      title: "OAuth pairs",
-      body: "Google, GitHub, and LinkedIn credentials must be supplied as client-id/client-secret pairs.",
-    },
-    {
-      eyebrow: "ai",
-      title: "AI provider keys",
-      body: "AI_ENABLED=true requires the matching OpenAI or Anthropic key.",
-    },
-    {
-      eyebrow: "stripe",
-      title: "Billing keys",
-      body: "BILLING_ENABLED=true requires Stripe secret, webhook secret, and price IDs.",
-    },
-    {
-      eyebrow: "valkey",
-      title: "Production password",
-      body: "Queues, cache, notification SSE, or OAuth require VALKEY_PASSWORD in production.",
-    },
-  ]}
-/>
+- **CORS**: Non-empty ALLOWED_ORIGINS entries must be https and wildcard-free.
+- **Email**: Production requires the matching email-provider credentials.
+- **URLs**: FRONTEND_URL, PUBLIC_API_URL, and notification settings URLs must be valid http(s) URLs.
+- **OAuth**: Google, GitHub, and LinkedIn credentials must be supplied as client-id/client-secret pairs.
+- **AI**: AI_ENABLED=true requires the matching OpenAI or Anthropic key.
+- **Stripe**: BILLING_ENABLED=true requires Stripe secret, webhook secret, and price IDs.
+- **Valkey**: Queues, cache, notification SSE, or OAuth require VALKEY_PASSWORD in production.
 
 `NODE_ENV=test` skips most of these so integration tests don't need real provider credentials.
 
-## What a bad boot looks like
+When boot fails, every problem is listed at once:
 
-<CommandRun
-  title="Bad boot output"
-  caption="one boot attempt, every fix listed"
-  command="bun run dev"
-  output={[
-    {
-      tone: "warn",
-      text: "JWT_SECRET: Expected string length greater or equal to 32",
-    },
-    {
-      tone: "warn",
-      text: "STRIPE_SECRET_KEY required when BILLING_ENABLED=true",
-    },
-    {
-      tone: "warn",
-      text: "STRIPE_WEBHOOK_SECRET required when BILLING_ENABLED=true",
-    },
-    {
-      tone: "warn",
-      text: "STRIPE_PRICE_ID_FREE required when BILLING_ENABLED=true",
-    },
-    {
-      tone: "warn",
-      text: "Google OAuth requires both client id and client secret",
-    },
-  ]}
-/>
+```
+JWT_SECRET: Expected string length greater or equal to 32
+STRIPE_SECRET_KEY required when BILLING_ENABLED=true
+STRIPE_WEBHOOK_SECRET required when BILLING_ENABLED=true
+STRIPE_PRICE_ID_FREE required when BILLING_ENABLED=true
+Google OAuth requires both client id and client secret
+```
 
 Several problems, one redeploy to fix all of them.
 
@@ -188,14 +78,14 @@ Several problems, one redeploy to fix all of them.
 4. Document it in `.env.example` (and in `compose/.env.example` if it flows through the prod profile).
 5. Use `env.MY_VAR` everywhere. Don't touch `process.env` directly; the lint plugin will catch it.
 
-## The lint contract
+## Lint contract
 
-[`@boring-stack-pkg/eslint-plugin-env-access`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-env-access) is what makes the validator load-bearing:
+[`@boring-stack-pkg/eslint-plugin-env-access`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-env-access) enforces the validator:
 
 - `process.env.X` is only allowed inside `src/config/env/`.
 - The matching rule applies to `import.meta.env` on the UI side.
 
-Without this rule, somebody eventually writes `const x = process.env.FEATURE_FLAG ?? "default"` deep in a handler; undocumented, untyped, unvalidated. The lint catches it on first try.
+Without this rule, code eventually gets written like `const x = process.env.FEATURE_FLAG ?? "default"` deep in a handler; undocumented, untyped, unvalidated. The lint catches it on first try.
 
 ## Source
 
