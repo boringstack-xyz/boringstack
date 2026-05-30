@@ -80,8 +80,9 @@ print_dev_urls() {
     row "Alertmanager"  "http://localhost:9093"
   fi
 
-  # GlitchTip defaults on; opt out with WITH_GLITCHTIP=0.
-  [[ "$with_glitch" != "0" ]] && row "GlitchTip"    "http://glitchtip.localhost"
+  # GlitchTip defaults on; opt out with WITH_GLITCHTIP=0. Dev publishes
+  # the web container on host port 8055 (Traefik is prod-only).
+  [[ "$with_glitch" != "0" ]] && row "GlitchTip"    "http://localhost:8055"
 
   echo
   echo "Sign in as demo@example.com / password123."

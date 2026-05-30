@@ -92,6 +92,12 @@ if [[ "$WITH_GLITCHTIP" == "1" && -f "$ROOT/docker-compose.glitchtip.yml" ]]; th
   if [[ "$STACK" == "prod" && -f "$ROOT/docker-compose.glitchtip-prod-labels.yml" ]]; then
     COMPOSE_FILES+=(-f "$ROOT/docker-compose.glitchtip-prod-labels.yml")
   fi
+  # In dev, publish glitchtip-web on host port 8055 so the operator
+  # can open it directly (Traefik is prod-only, so the Traefik labels
+  # in the base overlay don't route anything in dev).
+  if [[ "$STACK" == "dev" && -f "$ROOT/docker-compose.glitchtip-dev-ports.yml" ]]; then
+    COMPOSE_FILES+=(-f "$ROOT/docker-compose.glitchtip-dev-ports.yml")
+  fi
 fi
 
 if [[ "${WITH_BULLMQ:-}" == "" && "$STACK" == "dev" ]]; then
