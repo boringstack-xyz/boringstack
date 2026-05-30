@@ -3,50 +3,15 @@ title: Email in development
 description: Iterate on transactional email templates and flows locally without sending real mail. Capture every outbound message in Mailpit's web UI.
 ---
 
-import { Steps } from "@astrojs/starlight/components";
-
 Iterate on transactional email templates and signup flows locally without sending real mail. BoringStack includes Mailpit: SMTP on port 1025, web UI on port 8025.
 
 Test verify-email, password-reset, welcome, and notification flows without sending through Cloudflare Email Service, Resend, or SendGrid.
 
-## Boot Mailpit
+## How it works
 
-<Steps>
+Mailpit is on by default in dev. `./dev.sh up -d` boots the catcher alongside the rest of the stack, and the api-dev container is pre-wired with `EMAIL_PROVIDER=smtp`, `SMTP_HOST=mailpit`, and `SMTP_PORT=1025`. Trigger any flow that emits transactional mail (sign up, hit forgot-password) and open `http://localhost:8025` to inspect the captured message: full HTML, plain-text alt, headers, raw source.
 
-1. Start the dev stack with the Mailpit overlay:
-
-   ```bash
-   WITH_MAILPIT=1 ./dev.sh up -d
-   ```
-
-   Adds two host ports: `1025` (SMTP) and `8025` (web UI).
-
-2. Point the api at the catcher. In `infra/compose/compose/api.dev.env` (create if it doesn't exist):
-
-   ```bash
-   EMAIL_PROVIDER=smtp
-   SMTP_HOST=mailpit
-   SMTP_PORT=1025
-   # SMTP_USER + SMTP_PASS are optional. Mailpit accepts any.
-   ```
-
-3. Restart the api so it picks up the new env:
-
-   ```bash
-   ./dev.sh restart api-dev
-   ```
-
-4. Trigger an email: sign up, hit forgot-password, anything that emits transactional mail.
-
-5. Open the web UI:
-
-   ```bash
-   open http://localhost:8025
-   ```
-
-   Full HTML, plain-text alt, headers, raw source.
-
-</Steps>
+To opt out of Mailpit in dev (for instance, to pin a real SMTP target you're debugging), boot with `WITH_MAILPIT=0 ./dev.sh up -d` and override `SMTP_HOST` via `infra/compose/compose/api.dev.env`.
 
 ## Use this for
 
