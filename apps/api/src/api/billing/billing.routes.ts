@@ -2,7 +2,7 @@ import { Elysia } from "elysia";
 
 import { ApiErrors, createSuccessResponse } from "../../lib/errors";
 import { errorHandler } from "../../middleware/error-handler";
-import { createAuthMiddleware } from "../auth/auth.plugin";
+import { requireAuth } from "../auth/auth.plugin";
 
 import {
   CreateCheckoutSessionSchema,
@@ -18,7 +18,7 @@ import { resolveBillingAccount } from "./billing.utils";
 
 const billingRoutes = new Elysia()
   .use(
-    createAuthMiddleware()
+    requireAuth()
       .onError(({ code, error, set }) =>
         errorHandler({ code: String(code), error, set })
       )

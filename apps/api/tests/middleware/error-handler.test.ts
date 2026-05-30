@@ -1,5 +1,6 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 
+import { logger } from "../../src/config/logger";
 import { errorHandler } from "../../src/middleware/error-handler";
 import { ApiError, ApiErrors } from "../../src/lib/errors";
 
@@ -134,5 +135,68 @@ describe("errorHandler", () => {
 
     expect(set.status).toBe(400);
     expect(body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  test("ApiError(401) is logged at warn — not error — so anonymous-probe noise doesn't masquerade as server bugs", () => {
+    const warnSpy = spyOn(logger, "warn");
+    const errorSpy = spyOn(logger, "error");
+
+    try {
+      const set: ISet = {};
+
+      errorHandler({
+        code: "UNAUTHORIZED",
+        error: ApiErrors.unauthorized("Invalid token"),
+        set,
+      });
+
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(errorSpy).not.toHaveBeenCalled();
+    } finally {
+      warnSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+  });
+
+  test("ApiError(403) is logged at warn (forbidden is client-driven, not a server bug)", () => {
+    const warnSpy = spyOn(logger, "warn");
+    const errorSpy = spyOn(logger, "error");
+
+    try {
+      const set: ISet = {};
+
+      errorHandler({
+        code: "FORBIDDEN",
+        error: ApiErrors.forbidden(),
+        set,
+      });
+
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(errorSpy).not.toHaveBeenCalled();
+    } finally {
+      warnSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+  });
+
+  test("ApiError(500) still logs at error (a 5xx is a genuine server bug)", () => {
+    const warnSpy = spyOn(logger, "warn");
+    const errorSpy = spyOn(logger, "error");
+
+    try {
+      const set: ISet = {};
+
+      errorHandler({
+        code: "INTERNAL_SERVER_ERROR",
+        error: new ApiError("INTERNAL_SERVER_ERROR", "boom", 500),
+        set,
+      });
+
+      expect(errorSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy).not.toHaveBeenCalled();
+    } finally {
+      warnSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
   });
 });

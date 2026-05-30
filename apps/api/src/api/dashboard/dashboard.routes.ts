@@ -1,4 +1,4 @@
-import { createAuthMiddleware } from "../auth/auth.plugin";
+import { requireAuth } from "../auth/auth.plugin";
 import { errorHandler } from "../../middleware/error-handler";
 import {
   ActivityPageSchema,
@@ -8,7 +8,7 @@ import {
 import { dashboardService } from "./dashboard.service";
 import { parseDashboardLimit } from "./dashboard.utils";
 
-const dashboardRoutes = createAuthMiddleware()
+const dashboardRoutes = requireAuth()
   .onError(({ code, error, set }) =>
     errorHandler({ code: String(code), error, set })
   )

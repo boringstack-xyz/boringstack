@@ -1,5 +1,5 @@
 import { errorHandler } from "../../middleware/error-handler";
-import { createAuthMiddleware } from "../auth/auth.plugin";
+import { requireAuth } from "../auth/auth.plugin";
 import {
   PushSubscriptionsListResponse,
   SubscribePushBodySchema,
@@ -16,7 +16,7 @@ import { expirationToIso } from "./notifications.push.utils";
  * key is exposed to the UI via the `VITE_VAPID_PUBLIC_KEY` build-time env,
  * not a runtime endpoint here.
  */
-export const notificationsPushRoutes = createAuthMiddleware()
+export const notificationsPushRoutes = requireAuth()
   .onError(({ code, error, set }) =>
     errorHandler({ code: String(code), error, set })
   )

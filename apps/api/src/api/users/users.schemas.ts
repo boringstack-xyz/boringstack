@@ -42,7 +42,19 @@ const RuntimeCapabilitiesSchema = t.Object({
   webPush: t.Boolean(),
 });
 
-export const MeResponse = t.Object({
+/*
+ * `/me` is a probe endpoint: a logged-out browser hits it on every
+ * initial paint to discover whether a session exists. The two states
+ * are exposed as a `user`-discriminated union — anonymous responds 200
+ * with `user: null` (everything else absent); authenticated responds
+ * 200 with the full profile. A 401 from `/me` always means the cookie
+ * was present but invalid, which the UI treats as forced-logout.
+ */
+export const MeAnonymousResponse = t.Object({
+  user: t.Null(),
+});
+
+export const MeAuthenticatedResponse = t.Object({
   user: UserProfileResponse,
   account: t.Object({ id: t.String(), name: t.String() }),
   role: RoleSchema,
@@ -52,3 +64,8 @@ export const MeResponse = t.Object({
   authProviders: t.Array(t.String()),
   hasPasswordLogin: t.Boolean(),
 });
+
+export const MeResponse = t.Union([
+  MeAnonymousResponse,
+  MeAuthenticatedResponse,
+]);

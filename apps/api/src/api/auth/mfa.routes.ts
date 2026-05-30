@@ -9,7 +9,7 @@ import {
 import { ApiErrors, createSuccessResponse } from "../../lib/errors";
 import { buildJWTPayload, createJWTConfig } from "../../lib/jwt";
 import { errorHandler } from "../../middleware/error-handler";
-import { createAuthMiddleware } from "./auth.plugin";
+import { requireAuth, tryAuth } from "./auth.plugin";
 import { AuthResponse, MessageResponse } from "./auth.schemas";
 import { resolveActiveAccountId } from "./auth.utils";
 import {
@@ -128,11 +128,13 @@ const mfaUnauthenticatedRoutes = new Elysia()
   );
 
 /**
- * Authenticated MFA endpoints. Every route requires a valid session
- * cookie; sensitive routes additionally take the password in the body
- * as step-up auth (see `mfaService.assertPasswordValid`).
+ * MFA status probe. Settings pages read this on mount; for anonymous
+ * callers the answer is unambiguously "MFA not enabled" (there's no
+ * user to enable it for). Uses `tryAuth` so an anonymous boot responds
+ * 200 instead of 401, but a present-but-invalid cookie still surfaces
+ * as 401 (matches the contract in `docs/api/auth-contract`).
  */
-const mfaAuthenticatedRoutes = createAuthMiddleware()
+const mfaStatusRoute = tryAuth()
   .onError(({ code, error, set }) =>
     errorHandler({ code: String(code), error, set })
   )
@@ -140,7 +142,7 @@ const mfaAuthenticatedRoutes = createAuthMiddleware()
     "/mfa/status",
     ({ user }) =>
       createSuccessResponse({
-        enabled: user.mfaEnabledAt !== null,
+        enabled: user !== null && user.mfaEnabledAt !== null,
       }),
     {
       response: t.Object({
@@ -150,10 +152,20 @@ const mfaAuthenticatedRoutes = createAuthMiddleware()
       }),
       detail: {
         tags: ["Authentication"],
-        summary: "Report whether MFA is currently enabled for the user",
-        security: [{ cookieAuth: [] }],
+        summary:
+          "Report whether MFA is currently enabled. Anonymous callers get `enabled: false`.",
       },
     }
+  );
+
+/**
+ * Authenticated MFA endpoints. Every route requires a valid session
+ * cookie; sensitive routes additionally take the password in the body
+ * as step-up auth (see `mfaService.assertPasswordValid`).
+ */
+const mfaAuthenticatedRoutes = requireAuth()
+  .onError(({ code, error, set }) =>
+    errorHandler({ code: String(code), error, set })
   )
   .post(
     "/mfa/setup",
@@ -224,6 +236,7 @@ const mfaAuthenticatedRoutes = createAuthMiddleware()
 
 const mfaRoutes = new Elysia()
   .use(mfaUnauthenticatedRoutes)
+  .use(mfaStatusRoute)
   .use(mfaAuthenticatedRoutes);
 
 export default mfaRoutes;

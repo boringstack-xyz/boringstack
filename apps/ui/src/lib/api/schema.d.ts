@@ -258,7 +258,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Refresh the auth cookie using the refresh session */
+        /** Refresh the auth cookie using the refresh session. Anonymous callers receive 200 `{ user: null }`; an invalid/expired refresh cookie surfaces as 401. */
         post: operations["postApiV1AuthRefresh"];
         delete?: never;
         options?: never;
@@ -376,7 +376,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Report whether MFA is currently enabled for the user */
+        /** Report whether MFA is currently enabled. Anonymous callers get `enabled: false`. */
         get: operations["getApiV1AuthMfaStatus"];
         put?: never;
         post?: never;
@@ -461,7 +461,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get the current user, active account, memberships, and resolved features */
+        /** Get the current user, active account, memberships, and resolved features. Returns `{ user: null }` for anonymous callers. */
         get: operations["getApiV1UsersMe"];
         put?: never;
         post?: never;
@@ -1825,7 +1825,7 @@ export interface operations {
                                 firstName: string;
                                 lastName: string;
                                 emailVerified: boolean;
-                            };
+                            } | null;
                         };
                         timestamp: string;
                     };
@@ -1838,7 +1838,7 @@ export interface operations {
                                 firstName: string;
                                 lastName: string;
                                 emailVerified: boolean;
-                            };
+                            } | null;
                         };
                         timestamp: string;
                     };
@@ -1851,7 +1851,7 @@ export interface operations {
                                 firstName: string;
                                 lastName: string;
                                 emailVerified: boolean;
-                            };
+                            } | null;
                         };
                         timestamp: string;
                     };
@@ -2447,6 +2447,8 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        user: null;
+                    } | {
                         user: {
                             id: string;
                             email: string;
@@ -2480,6 +2482,8 @@ export interface operations {
                         hasPasswordLogin: boolean;
                     };
                     "multipart/form-data": {
+                        user: null;
+                    } | {
                         user: {
                             id: string;
                             email: string;
@@ -2513,6 +2517,8 @@ export interface operations {
                         hasPasswordLogin: boolean;
                     };
                     "text/plain": {
+                        user: null;
+                    } | {
                         user: {
                             id: string;
                             email: string;

@@ -25,6 +25,22 @@ export const AuthResponse = t.Object({
   timestamp: t.String(),
 });
 
+/*
+ * Refresh has a third state on top of the usual success/failure split:
+ * an anonymous caller (no refresh cookie at all) gets a 200 with
+ * `user: null`. A refresh cookie that exists but doesn't verify is
+ * still a 401 — see `tryAuth` for the matching contract on `/me`.
+ */
+export const RefreshSuccessData = t.Object({
+  user: t.Union([PublicUserSchema, t.Null()]),
+});
+
+export const RefreshResponse = t.Object({
+  success: t.Boolean(),
+  data: RefreshSuccessData,
+  timestamp: t.String(),
+});
+
 export const MessageResponse = t.Object({
   success: t.Boolean(),
   data: t.Object({ message: t.String() }),

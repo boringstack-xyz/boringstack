@@ -263,12 +263,12 @@ const generateIndex = (templates: ITemplateMetadata[]): void => {
   <style>
     body { margin: 0; padding: 40px 20px; background: #1a1a1a; color: #E8E8E8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     .container { max-width: 1200px; margin: 0 auto; }
-    h1 { color: #4A90E2; font-size: 32px; margin: 0 0 32px; }
+    h1 { color: #4ade80; font-size: 32px; margin: 0 0 32px; }
     section { margin-bottom: 32px; }
     h2 { color: #808080; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 16px; padding-bottom: 8px; border-bottom: 1px solid #404040; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
     .card { background: #2D2D2D; border: 1px solid #404040; border-radius: 8px; padding: 20px; transition: border-color 0.2s; }
-    .card:hover { border-color: #4A90E2; }
+    .card:hover { border-color: #4ade80; }
     .card a { color: #E8E8E8; text-decoration: none; display: block; }
     .name { font-weight: 500; margin-bottom: 8px; }
     .path { font-size: 12px; color: #808080; font-family: monospace; }

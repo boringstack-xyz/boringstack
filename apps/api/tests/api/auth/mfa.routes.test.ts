@@ -290,3 +290,56 @@ describe("MFA routes", () => {
     expect(res.headers.get("set-cookie") ?? "").toContain(AUTH_COOKIE_NAME);
   });
 });
+
+describe("GET /api/v1/auth/mfa/status — anonymous-vs-unauthorized contract", () => {
+  beforeEach(async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    await cleanDatabase();
+  });
+
+  test("no auth cookie → 200 `{ enabled: false }` (anonymous probe)", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const app = createApp();
+    const res = await app.handle(
+      new Request("http://localhost/api/v1/auth/mfa/status")
+    );
+
+    expect(res.status).toBe(200);
+
+    const body: unknown = await res.json();
+
+    if (
+      body === null ||
+      typeof body !== "object" ||
+      !("data" in body) ||
+      body.data === null ||
+      typeof body.data !== "object" ||
+      !("enabled" in body.data)
+    ) {
+      throw new Error("/mfa/status anonymous response missing `data.enabled`");
+    }
+
+    expect(body.data.enabled).toBe(false);
+  });
+
+  test("present-but-invalid auth cookie → 401 (forged credentials still reject)", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const app = createApp();
+    const res = await app.handle(
+      new Request("http://localhost/api/v1/auth/mfa/status", {
+        headers: { cookie: "auth_token=this-is-not-a-real-jwt" },
+      })
+    );
+
+    expect(res.status).toBe(401);
+  });
+});

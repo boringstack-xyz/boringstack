@@ -48,15 +48,18 @@ export type IMfaRecoveryCodesResponse = z.infer<
 export type IMfaStatusResponse = z.infer<typeof mfaStatusResponseSchema>;
 
 /*
- * /api/v1/users/me is the canonical authenticated-session payload. Shape is
- * pulled from the OpenAPI operation rather than restated in Zod because the
- * server owns the contract.
+ * /api/v1/users/me is a probe endpoint: it returns `{ user: null }` for
+ * anonymous callers and the full session payload otherwise. Shape is
+ * pulled from the OpenAPI operation rather than restated in Zod because
+ * the server owns the contract. `IMe` extracts the authenticated branch
+ * — the `null` branch is handled at the query layer (see
+ * `useMe()` in `Auth.queries.ts`).
  */
 type MeResponse =
   operations["getApiV1UsersMe"]["responses"][200]["content"]["application/json"];
 
-export type IMe = MeResponse;
-export type IMembershipRole = MeResponse["role"];
-export type IAccountSummary = MeResponse["account"];
-export type IMembershipSummary = MeResponse["memberships"][number];
-export type IResolvedFeatures = MeResponse["features"];
+export type IMe = Extract<MeResponse, { user: object }>;
+export type IMembershipRole = IMe["role"];
+export type IAccountSummary = IMe["account"];
+export type IMembershipSummary = IMe["memberships"][number];
+export type IResolvedFeatures = IMe["features"];
