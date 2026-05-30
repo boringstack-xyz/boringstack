@@ -163,15 +163,24 @@ const InvitationsPage: FC<IInvitationsPageProps> = () => {
             <h2 className='text-foreground text-lg font-semibold tracking-tight'>
               {t("accounts.invitations.locked.featureTitle")}
             </h2>
-            <p className='text-muted-foreground text-sm'>
+            <p className='text-muted-foreground text-sm leading-relaxed'>
               {t("accounts.invitations.locked.featureBody")}
             </p>
           </header>
-          <div>
+          <div className='flex flex-wrap gap-2'>
             <Button asChild size='sm'>
               <Link to='/account/billing'>
                 {t("accounts.invitations.locked.featureCta")}
               </Link>
+            </Button>
+            <Button asChild size='sm' variant='outline'>
+              <a
+                href='https://boringstack.xyz/api/acl/'
+                target='_blank'
+                rel='noreferrer'
+              >
+                {t("accounts.invitations.locked.featureDocsCta")}
+              </a>
             </Button>
           </div>
         </article>
@@ -179,15 +188,28 @@ const InvitationsPage: FC<IInvitationsPageProps> = () => {
 
       {lockedReason === "role" ? (
         <article
-          className='border-border-strong/40 bg-panel flex flex-col gap-2 rounded-2xl border p-6'
+          className='border-border-strong/40 bg-panel flex flex-col gap-3 rounded-2xl border p-6'
           data-testid='invite-locked-role'
         >
-          <h2 className='text-foreground text-lg font-semibold tracking-tight'>
-            {t("accounts.invitations.locked.roleTitle")}
-          </h2>
-          <p className='text-muted-foreground text-sm'>
-            {t("accounts.invitations.locked.roleBody")}
-          </p>
+          <header className='flex flex-col gap-1'>
+            <h2 className='text-foreground text-lg font-semibold tracking-tight'>
+              {t("accounts.invitations.locked.roleTitle")}
+            </h2>
+            <p className='text-muted-foreground text-sm leading-relaxed'>
+              {t("accounts.invitations.locked.roleBody")}
+            </p>
+          </header>
+          <div>
+            <Button asChild size='sm' variant='outline'>
+              <a
+                href='https://boringstack.xyz/api/acl/'
+                target='_blank'
+                rel='noreferrer'
+              >
+                {t("accounts.invitations.locked.roleDocsCta")}
+              </a>
+            </Button>
+          </div>
         </article>
       ) : null}
 

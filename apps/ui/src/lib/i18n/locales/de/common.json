@@ -475,11 +475,13 @@
         "viewer": "Betrachter"
       },
       "locked": {
-        "featureTitle": "Team-Einladungen sind in deinem Plan nicht enthalten",
-        "featureBody": "Dein aktueller Plan beinhaltet keine Team-Einladungen. Mit einem Upgrade kannst du Admins, Mitglieder und Betrachter zu diesem Konto hinzufügen.",
+        "featureTitle": "Einladungen sind durch das Plan-Feature `can_invite_team` gesperrt",
+        "featureBody": "Der aktive Plan dieses Kontos gewährt `can_invite_team` nicht, daher blendet die ACL dieses Formular aus. In der Entwicklung kannst du das Feature über `app.account_feature_overrides` aktivieren (oder den Benutzer auf einem passenden Plan seeden). In Produktion sehen deine Endnutzer diesen Zustand — ersetze Text und CTA durch deinen eigenen Upgrade-Flow.",
         "featureCta": "Pläne ansehen",
-        "roleTitle": "Deine Rolle kann keine Teammitglieder einladen",
-        "roleBody": "Nur Owner und Admins in diesem Konto können Einladungen versenden. Bitte einen Owner oder Admin, die Einladung zu verschicken oder deine Rolle zu erhöhen."
+        "featureDocsCta": "ACL & Feature-Auflösung",
+        "roleTitle": "Diese Rolle kann keine Teammitglieder einladen",
+        "roleBody": "Die aktive Mitgliedschaft ist viewer oder member, und die ACL gewährt `invite TeamMember` nur für owner und admin. Passe die Rollenregeln in `apps/ui/src/lib/acl/ability.ts` (und im Server-Spiegel `apps/api/src/lib/acl/ability.ts`) an, wenn weitere Rollen einladen dürfen sollen.",
+        "roleDocsCta": "ACL & Feature-Auflösung"
       }
     }
   },

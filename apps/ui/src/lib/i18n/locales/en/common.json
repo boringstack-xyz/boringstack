@@ -454,11 +454,13 @@
         "viewer": "Viewer"
       },
       "locked": {
-        "featureTitle": "Team invitations aren't included in your plan",
-        "featureBody": "Your current plan doesn't include inviting teammates. Upgrade to add admins, members, and viewers to this account.",
+        "featureTitle": "Invitations gated by the `can_invite_team` plan feature",
+        "featureBody": "The active account's plan doesn't grant `can_invite_team`, so the ACL hides this form. In dev, grant the feature via `app.account_feature_overrides` (or seed the user on a plan that includes it). In production, this is the empty state your end users will see — replace the copy and CTA with whatever upgrade flow you ship.",
         "featureCta": "View plans",
-        "roleTitle": "Your role can't invite teammates",
-        "roleBody": "Only Owners and Admins on this account can send invitations. Ask an Owner or Admin to send the invite, or to promote your role."
+        "featureDocsCta": "ACL & feature resolution",
+        "roleTitle": "This role can't invite teammates",
+        "roleBody": "The active membership is a viewer or member, and the ACL only grants `invite TeamMember` to owner and admin. Adjust the role grants in `apps/ui/src/lib/acl/ability.ts` (and its server mirror in `apps/api/src/lib/acl/ability.ts`) if you want other roles to invite.",
+        "roleDocsCta": "ACL & feature resolution"
       }
     }
   },
