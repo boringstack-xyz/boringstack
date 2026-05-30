@@ -31,7 +31,7 @@ const ResetPasswordPage: FC<IResetPasswordPageProps> = (props) => {
           <span className='text-primary text-xs font-medium tracking-[0.18em] uppercase'>
             {t("app.name")}
           </span>
-          <h1 className='text-foreground text-4xl leading-[1.05] font-bold tracking-tight md:text-5xl'>
+          <h1 className='text-foreground text-3xl leading-tight font-bold tracking-tight md:text-4xl'>
             {t("auth.resetPassword.invalidTokenTitle")}
           </h1>
           <p className='text-muted-foreground text-base md:text-lg'>
@@ -59,7 +59,7 @@ const ResetPasswordPage: FC<IResetPasswordPageProps> = (props) => {
           <span className='text-primary text-xs font-medium tracking-[0.18em] uppercase'>
             {t("app.name")}
           </span>
-          <h1 className='text-foreground text-4xl leading-[1.05] font-bold tracking-tight md:text-5xl'>
+          <h1 className='text-foreground text-3xl leading-tight font-bold tracking-tight md:text-4xl'>
             {t("auth.resetPassword.successTitle")}
           </h1>
           <p className='text-muted-foreground text-base md:text-lg'>
@@ -95,7 +95,7 @@ const ResetPasswordPage: FC<IResetPasswordPageProps> = (props) => {
           </span>
           <h1
             id='reset-password-title'
-            className='text-foreground text-4xl leading-[1.05] font-bold tracking-tight md:text-5xl'
+            className='text-foreground text-3xl leading-tight font-bold tracking-tight md:text-4xl'
           >
             {t("auth.resetPassword.title")}
           </h1>
