@@ -21,9 +21,10 @@ import FaqItem from "../../../components/FaqItem.tsx";
     { value: "5 min", label: "Provisioning time" },
   ]}
 >
-  One declarative `tofu apply` provisions a Hetzner VPS, configures Cloudflare
-  DNS firewalls, installs Docker runtime, and bootstraps your full-stack
-  docker-compose environment.
+  One declarative `tofu apply` provisions a Hetzner VPS, configures
+  Cloudflare DNS and a Hetzner firewall scoped to Cloudflare's IP ranges,
+  installs Docker runtime, and bootstraps your full-stack docker-compose
+  environment.
 </PageIntro>
 
 BoringStack's [Deployment](/topics/deployment/) path is manual: SSH into a VPS, install Docker, clone the monorepo, `compose pull && compose up -d`. Some operators prefer this.
@@ -100,7 +101,7 @@ flowchart LR
     { tone: "ok", text: "Success! The configuration is valid." },
     {
       tone: "ok",
-      text: "Apply complete! Resources: 5 added, 0 changed, 0 destroyed.",
+      text: "Apply complete! Resources: 9 added, 0 changed, 0 destroyed.",
     },
   ]}
 />
@@ -117,6 +118,20 @@ Bootstrap (Docker install, monorepo clone, GHCR image pulls, first `compose up -
   command={["ssh root@$(tofu output -raw vps_ipv4) 'cloud-init status --wait'"]}
   output={[{ tone: "ok", text: "status: done" }]}
 />
+
+<DocCallout type="note" title="`status: done` reflects cloud-init, not bootstrap.sh">
+  `cloud-init status` only knows whether its own steps ran — it goes
+  `done` even if the bootstrap script underneath failed mid-way (GHCR
+  pull error, `compose up` crash, etc.). If `curl /health` doesn't
+  return 200 after a few minutes, the real story is in:
+
+  ```bash
+  ssh root@$(tofu output -raw vps_ipv4)
+  tail -200 /var/log/cloud-init-output.log    # bootstrap.sh stdout/stderr
+  docker compose -f /opt/boringstack/infra/compose/compose/docker-compose.yml ps
+  docker compose logs traefik api ui          # whichever isn't healthy
+  ```
+</DocCallout>
 
 ## Verify
 
@@ -350,8 +365,14 @@ Wipes the Hetzner server, removes the Cloudflare records, deletes the firewall a
     Origin not responding: check `docker compose logs traefik api` on the
     server.
   </FaqItem>
-  <FaqItem title="Site returns 525 from Cloudflare">
-    TLS handshake failed; ACME has not issued yet: wait or check Traefik logs.
+  <FaqItem title="Site returns 525 from Cloudflare on first apply">
+    Expected for the first 2–5 minutes after `apply`. Traefik needs DNS
+    to propagate globally before Let's Encrypt can complete the HTTP-01
+    challenge; until the cert lands, Cloudflare can't validate the
+    origin and serves 525. Traefik retries on its own — confirm with
+    `docker compose logs traefik | grep -i acme`. If it's still
+    failing past ~10 min, check that the apex A/AAAA records resolve
+    publicly (`dig +short @1.1.1.1 <domain>`).
   </FaqItem>
   <FaqItem title="Unexpected attribute errors in the editor">
     Stale OpenTofu language-server cache. Run `tofu init` once and re-open.
