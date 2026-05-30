@@ -39,4 +39,13 @@ paths = [
 # string as a placeholder `challengeToken` value. The working tree was
 # updated to a clearly non-key string in a later commit; this
 # fingerprint pins the historical hit so CI doesn't re-flag it.
-commits = ["901fd55367183293112f393dbc4cb99127af3913"]
+commits = [
+  "901fd55367183293112f393dbc4cb99127af3913",
+  # The full-docs-rewrite commit shipped a Meilisearch compose recipe
+  # with an empty `MEILI_MASTER_KEY=` example line followed by
+  # `MEILI_LIMITS_CPUS=0.5`. Gitleaks's `generic-api-key` heuristic
+  # read the next line as the value of MEILI_MASTER_KEY and flagged
+  # `0.5` as a leaked key. The follow-up commit changed the example
+  # to use a placeholder; this fingerprint pins the historical hit.
+  "9262aa98aebe8b93d055b28a98fb44b72097935b",
+]
