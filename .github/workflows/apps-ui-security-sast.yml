@@ -54,8 +54,6 @@ jobs:
           filters: |
             code:
               - 'apps/ui/**'
-              - '!apps/ui/**/*.md'
-              - '!apps/ui/**/*.mdx'
               - '.github/workflows/apps-ui-security-sast.yml'
 
       - name: Compute baseline
