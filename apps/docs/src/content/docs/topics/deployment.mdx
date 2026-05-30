@@ -137,13 +137,7 @@ outcome; OpenTofu is faster and reproducible.
 
 ### Path A: OpenTofu (recommended)
 
-Install OpenTofu on your laptop:
-
-```bash
-brew install opentofu   # macOS; see opentofu.org/docs/intro/install for other OSes
-```
-
-Clone your fork and prepare the bootstrap directory:
+Install OpenTofu on your laptop ([install docs](https://opentofu.org/docs/intro/install/)), then clone your fork and prepare the bootstrap directory:
 
 ```bash
 git clone https://github.com/<you>/<your-fork>
@@ -354,26 +348,22 @@ same job.
 When all three checks pass, open `https://<your-domain>` and register
 the first user.
 
-### Post-deploy chores (do this week, not on day one)
+### After the first deploy
 
 - **Rotate the seed superuser password.** If you set `superuser_email` and `superuser_password` in `terraform.tfvars`, log in as that user, open the password-reset flow from **Profile → Security**, and rotate to a fresh value (stash in 1Password under `Production/Superuser/password`). The bootstrap value should never be the long-lived password.
 - **Run a backup-and-restore drill.** [Backups](/runbooks/backups/) covers `pg_dump` plus rclone offsite. The drill: take a backup with the script, drop a non-essential table, restore the backup, confirm the table is back. The first restore on a real outage is the wrong time to discover backup gaps.
 - **Wire alerts.** [Alerts](/topics/alerts/) covers Alertmanager's Slack and Discord receivers. Set `ALERTMANAGER_SLACK_WEBHOOK_URL` or `ALERTMANAGER_WEBHOOK_URL` in `compose/.env`, then `STACK=prod ./scripts/compose-up.sh up -d alertmanager` to apply.
 - **Trigger a test error.** From the VPS: `docker compose exec api bun -e 'throw new Error("first error")'`. The error should appear in GlitchTip within a few seconds. If GlitchTip is fresh, the DSN auto-wiring only runs once on first dev boot, not on prod. Set `SENTRY_DSN` and `VITE_SENTRY_DSN` in `compose/.env` from the GlitchTip project's Client Keys page.
 
-## Day-2 deploys
+## Shipping changes
 
-Code changes under `apps/api` or `apps/ui`: push and let WUD pick the
-new image up.
+To redeploy `apps/api` or `apps/ui`, push to `main`. The release workflow builds and publishes new GHCR images, and WUD on the VPS pulls the new `:latest` within about a minute and recreates the container.
 
 ```bash
 git push origin main
-# release.yml builds and pushes ghcr.io/<you>/<repo>-{api,ui}:latest
-# WUD on the VPS detects the new :latest within about a minute and recreates the container.
 ```
 
-Infra YAML, compose env changes, or anything else under `infra/`:
-`git pull` on the VPS, then bring the stack back up.
+Anything under `infra/` (compose files, env changes, Tofu modules) is git-pulled on the VPS, not auto-deployed. Bring the stack back up after pulling:
 
 ```bash
 ssh root@<vps>

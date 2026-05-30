@@ -1,6 +1,6 @@
 ---
 title: Authentication
-description: HttpOnly cookie auth with short-lived JWT access cookies, DB-backed refresh sessions, bcrypt-hashed passwords, and server-side OAuth.
+description: HttpOnly cookie auth with short-lived JWT access cookies, DB-backed refresh sessions, argon2id-hashed passwords, and server-side OAuth.
 ---
 
 import { Aside } from "@astrojs/starlight/components";
@@ -13,7 +13,7 @@ Once verified, the session uses two tokens. An `auth_token` is a 15-minute state
 
 ## Verify-before-account
 
-Password signup splits across two endpoints. `POST /auth/register` writes only the pending user row, the bcrypt hash, and a single-use verification token. No `app.accounts` row, no membership, no session cookies. The response is a `{ message }` envelope so the SPA can render "check your inbox at user@example.com." `POST /auth/verify-email` flips `users.email_verified_at`, atomically calls `provisionAfterVerification`, and _then_ issues the auth + refresh cookies. That's where the user gets their account.
+Password signup splits across two endpoints. `POST /auth/register` writes only the pending user row, the argon2id hash, and a single-use verification token. No `app.accounts` row, no membership, no session cookies. The response is a `{ message }` envelope so the SPA can render "check your inbox at user@example.com." `POST /auth/verify-email` flips `users.email_verified_at`, atomically calls `provisionAfterVerification`, and _then_ issues the auth + refresh cookies. That's where the user gets their account.
 
 ```mermaid
 sequenceDiagram
@@ -93,7 +93,7 @@ One user can hold a password and N OAuth links (two tables: `users` and `user_au
 
 No account exists without a verified email. `/register` writes only the pending user row. The personal account and owner membership are created only at verify-email time, or inline at the OAuth callback when the IdP asserts verified email. Abandoned signups don't leave orphan tenant rows.
 
-On `/login`, the password check order is: dummy-verify on lookup miss, then bcrypt, then check `email_verified_at`. This ensures an attacker who doesn't know the password cannot enumerate pending users by trying to login with unverified addresses.
+On `/login`, the password check order is: dummy-verify on lookup miss, then argon2id verify, then check `email_verified_at`. Legacy bcrypt hashes still verify (so existing users aren't locked out) and get rehashed into argon2id transparently on the next successful login. Constant-shape work on every attempt means an attacker who doesn't know the password can't enumerate pending users by trying to login with unverified addresses.
 
 ## The OAuth round-trip
 

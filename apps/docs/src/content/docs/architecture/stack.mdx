@@ -24,7 +24,7 @@ Runtime and dev dependencies, what each does, and why each piece exists. BoringS
 - **Database: Postgres.** Durable, well-tooled.
 - **Cache + queue store: Valkey.** OSS Redis-protocol fork (BSD-3); drop-in for Redis clients.
 - **Queues: BullMQ.** Canonical Valkey job queue.
-- **Auth.** bcryptjs + short-lived JWT access cookies + DB-backed refresh sessions + Arctic (OAuth).
+- **Auth.** argon2id passwords (via `Bun.password`) + short-lived JWT access cookies + DB-backed refresh sessions + Arctic (OAuth).
 - **Email.** Cloudflare Email (default), Resend, SendGrid, SMTP, noop. SMTP works with Mailpit in dev.
 - **Error tracking.** @sentry/bun → hosted Sentry or self-hosted GlitchTip.
 - **AI.** OpenAI SDK, Anthropic SDK, or noop. `OPENAI_BASE_URL` for compatible endpoints.

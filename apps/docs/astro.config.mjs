@@ -362,17 +362,23 @@ export default defineConfig({
       },
       lastUpdated: true,
       sidebar: [
-        { label: "Welcome", link: "/" },
-        { label: "Quickstart", link: "/quickstart/" },
         {
-          label: "First feature in 10 minutes",
-          link: "/skills/first-feature-tutorial/",
+          label: "Start here",
+          items: [
+            { label: "Welcome", link: "/" },
+            { label: "Before you build", link: "/before-you-build/" },
+            { label: "Quickstart", link: "/quickstart/" },
+            {
+              label: "First feature in 10 minutes",
+              link: "/skills/first-feature-tutorial/",
+            },
+            {
+              label: "Why BoringStack",
+              link: "/architecture/why-boringstack/",
+            },
+            { label: "Deployment", link: "/topics/deployment/" },
+          ],
         },
-        {
-          label: "Why BoringStack",
-          link: "/architecture/why-boringstack/",
-        },
-        { label: "Deployment", link: "/topics/deployment/" },
         {
           label: "Agent skills",
           items: [
@@ -529,6 +535,7 @@ export default defineConfig({
             { label: "Codecov setup", link: "/runbooks/codecov-setup/" },
           ],
         },
+        { label: "Resources", link: "/resources/" },
       ],
     }),
   ],
