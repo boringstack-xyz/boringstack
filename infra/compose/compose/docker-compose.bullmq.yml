@@ -8,6 +8,12 @@ services:
     profiles: [bullmq]
     restart: unless-stopped
     environment:
+      # Listen on 7332 instead of bull-board's default 3000. Port 3000 is
+      # the universal "default Node app" port and collides with most
+      # other dev tooling; staying in the BoringStack 733x range
+      # (api=7330, ui=7331, bullmq=7332) keeps the host's port table
+      # legible.
+      PORT: "7332"
       # bull-board's container reads REDIS_* (third-party naming). We
       # populate them from the operator-facing VALKEY_* values.
       REDIS_HOST: valkey
@@ -22,14 +28,14 @@ services:
       - backend
       - frontend
     ports:
-      - "3030:3000"
+      - "7332:7332"
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=backend"
       - "traefik.http.routers.bullmq.rule=Host(`bullmq.localhost`)"
       - "traefik.http.routers.bullmq.entrypoints=web"
       - "traefik.http.routers.bullmq.service=bullmq"
-      - "traefik.http.services.bullmq.loadbalancer.server.port=3000"
+      - "traefik.http.services.bullmq.loadbalancer.server.port=7332"
     deploy:
       resources:
         limits:
