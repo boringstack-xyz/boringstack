@@ -3,152 +3,66 @@ title: Distributed tracing
 description: OpenTelemetry-instrumented spans for HTTP, fetch, queues, and DB; stored in Tempo; clickable from logs in Grafana. Stops you guessing where the time goes.
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
-import DocCallout from "../../../components/DocCallout.tsx";
+import { Aside } from "@astrojs/starlight/components";
 
-<PageIntro
-  eyebrow="Tracing"
-  actions={[
-    { label: "What's traced", href: "#whats-traced" },
-    { label: "Use cases", href: "#what-you-do-with-traces" },
-  ]}
-  facts={[
-    { value: "OTLP", label: "Export protocol" },
-    { value: "Tempo", label: "Backend" },
-    { value: "Grafana", label: "Viewer" },
-  ]}
->
-  The third pillar alongside metrics and logs. The API ships W3C-standard
-  spans to Tempo via OTLP; Grafana queries Tempo by `trace_id`; the same
-  `trace_id` is on every Pino log record and every Sentry/GlitchTip
-  event. Result: a slow request becomes a waterfall you can read, not a
-  number you have to guess about.
-</PageIntro>
+The third pillar alongside metrics and logs. The API ships W3C-standard spans to Tempo via OTLP. Grafana queries Tempo by `trace_id`. The same `trace_id` is on every Pino log record and every Sentry/GlitchTip event. Result: a slow request becomes a waterfall you can read, not a number you have to guess about.
 
-## Why tracing exists
+## Your first trace
 
-Metrics tell you *something* is wrong ("p95 latency on `/dashboard` is
-1.2s"). Logs tell you *what happened* ("user logged in, query returned
-84 rows"). Neither tells you *where the time went* inside a single
-request. Tracing does — it records every operation in a request as a
-*span*, and the spans nest into a tree you can scroll through.
-
-A real example: `/api/v1/dashboard/summary` is slow. Without tracing
-you add `console.time` statements, redeploy, wait for the next spike,
-repeat. With tracing you open the trace and see:
-
-```
-GET /dashboard/summary ── 1180ms ─────────────────────────────
-  auth.plugin.derive ─── 12ms
-  SELECT * FROM notifications WHERE recipient_user_id = ... ─ 980ms
-  SELECT * FROM accounts WHERE id IN (...) ─ 8ms
-  Sentry hub flush ─ 4ms
-```
-
-The slow query is obvious. Total elapsed: 30 seconds of looking, not
-hours of guessing.
+Generate a slow request and find it in Grafana. Open Grafana → Explore → Tempo. Search by `service.name = boringstack-api` and `http.target = /your/endpoint`. Open a representative trace. You'll see a waterfall: parent span (the HTTP request) with child spans nested below it (auth plugin, database queries, external API calls, queue operations). Click a span to see its attributes and duration. The slowest span is usually the culprit. From the trace view, click "Logs for this span" to jump to every log line emitted while that span was active.
 
 ## What's traced
 
-The API initialises an OpenTelemetry SDK (`src/config/otel/`) before
-any other module imports. The auto-instrumentation patches several
-libraries at load time; the resulting spans flow through OTLP/HTTP to
-Tempo.
+## What's traced
 
-<FaqGroup>
-  <FaqItem title="Incoming HTTP (Elysia routes)" open>
-    Every request to the API becomes a parent span with method, route,
-    status, and duration attributes. This is the root of every other
-    span on the request's path.
-  </FaqItem>
-  <FaqItem title="Outgoing fetch / undici">
-    Calls to Stripe, Resend, OpenAI, OAuth providers, anything you
-    `fetch` — each is a child span. You can see exactly how long Stripe
-    took before blaming your own code.
-  </FaqItem>
-  <FaqItem title="ioredis / Valkey">
-    BullMQ's underlying ioredis driver is instrumented, so queue
-    enqueue + lock operations show up as spans. Useful when "why was
-    this job slow to start?" is the question.
-  </FaqItem>
-  <FaqItem title="BullMQ job processing (manual wrap)">
-    Every worker's `processJob` is wrapped in `withQueueSpan` (see
-    `src/lib/tracing/`), producing a `queue.<name>.process` span per
-    job with messaging.* attributes (queue name, job id, attempt
-    number). Failed jobs record the exception on the span.
-  </FaqItem>
-  <FaqItem title="Database queries (opt-in)">
-    `postgres-js` (Drizzle's underlying driver) has no upstream OTel
-    auto-instrumentation, so DB query spans are opt-in via a small
-    `withDbSpan` helper. Wrap hot-path queries:
-    ```ts
-    import { withDbSpan } from "@/lib/tracing";
+The API initializes an OpenTelemetry SDK (`src/config/otel/`) before any other module imports. Auto-instrumentation patches several libraries at load time. The resulting spans flow through OTLP/HTTP to Tempo.
 
-    const user = await withDbSpan(
-      "users.findById",
-      { "db.statement": "select id, email from users where id = $1" },
-      () => db.query.users.findFirst({ where: eq(users.id, userId) })
-    );
-    ```
-    Skip it for one-off queries; reach for it when a service method
-    is critical-path or you're benchmarking.
-  </FaqItem>
-  <FaqItem title="Browser → API trace continuation">
-    The UI's Sentry SDK (`@sentry/react` with
-    `browserTracingIntegration()`) adds `sentry-trace` + `traceparent`
-    headers to every `/api/*` fetch. The API's OTel SDK reads them and
-    continues the trace, so a single trace ID spans the browser action
-    and everything it triggered server-side.
+### Incoming HTTP (Elysia routes)
 
-    Sentry's browser `tracesSampleRate` is `0` and the API's
-    `SENTRY_TRACES_SAMPLE_RATE` defaults to `0` — Sentry is error-capture-only;
-    OTel is the single tracer that ships spans to Tempo. `@sentry/bun` v10+ is
-    built on `@sentry/opentelemetry`, so any non-zero Sentry sample rate
-    registers a second tracer on top of the OTel SDK and double-instruments
-    HTTP / fetch / DB. Flip it back if you want transactions in Sentry as well.
-  </FaqItem>
-</FaqGroup>
+Every request to the API becomes a parent span with method, route, status, and duration attributes. This is the root of every other span on the request's path.
 
-## What you do with traces
+### Outgoing fetch / undici
 
-<FaqGroup>
-  <FaqItem title="Find why an endpoint got slow" open>
-    Open Grafana → Explore → Tempo. Query by `service.name = boringstack-api`
-    and the endpoint name. Open a representative slow trace. The waterfall
-    shows you which child span dominates — DB, external API, queue, or
-    your own code.
-  </FaqItem>
-  <FaqItem title="Detect N+1 queries">
-    A trace with 30 identical `SELECT * FROM accounts WHERE id = ?`
-    spans stacked is unmistakable. Refactor to a single `WHERE id IN (...)`
-    and the trace flattens.
-  </FaqItem>
-  <FaqItem title="Diagnose background job lag">
-    A user reports "my welcome email took an hour." Search Tempo by
-    `userId` (set as a span attribute by the auth plugin), find the
-    `queue.email-delivery.process` span. The gap between enqueue and
-    process tells you whether the queue was backed up or the email
-    provider was slow.
-  </FaqItem>
-  <FaqItem title="Benchmark before vs after a refactor">
-    Capture trace IDs from representative requests before your change.
-    After deploying, capture the same requests again. Compare waterfalls
-    side by side — see exactly which span you made faster (or slower).
-  </FaqItem>
-  <FaqItem title="Pivot from a log line to its trace">
-    In Grafana Loki, expand any API log line. The `trace_id` field has a
-    clickable "View trace in Tempo" link (configured in the Loki
-    datasource's `derivedFields`). One click → trace view in the same
-    Grafana tab.
-  </FaqItem>
-  <FaqItem title="Pivot from a trace to its logs">
-    In Tempo's trace view, click a span. "Logs for this span" opens
-    Loki filtered to `{compose_service=~"api-dev|api"} | json | trace_id="..."`
-    — every log line that was emitted while that span was active.
-  </FaqItem>
-</FaqGroup>
+Calls to Stripe, Resend, OpenAI, OAuth providers, or anything you `fetch` each become a child span. You can see exactly how long Stripe took before blaming your own code.
+
+### ioredis / Valkey
+
+BullMQ's underlying ioredis driver is instrumented, so queue enqueue and lock operations show up as spans. Useful when "why was this job slow to start?" is the question.
+
+### BullMQ job processing (manual wrap)
+
+Every worker's `processJob` is wrapped in `withQueueSpan` (see `src/lib/tracing/`), producing a `queue.<name>.process` span per job with messaging attributes (queue name, job id, attempt number). Failed jobs record the exception on the span.
+
+### Database queries (opt-in)
+
+`postgres-js` (Drizzle's underlying driver) has no upstream OTel auto-instrumentation, so DB query spans are opt-in via a small `withDbSpan` helper. Wrap hot-path queries:
+
+```ts
+import { withDbSpan } from "@/lib/tracing";
+
+const user = await withDbSpan(
+  "users.findById",
+  { "db.statement": "select id, email from users where id = $1" },
+  () => db.query.users.findFirst({ where: eq(users.id, userId) })
+);
+```
+
+Skip it for one-off queries. Use it when a service method is critical-path or you're benchmarking.
+
+### Browser to API trace continuation
+
+The UI's Sentry SDK (`@sentry/react` with `browserTracingIntegration()`) adds `sentry-trace` and `traceparent` headers to every `/api/*` fetch. The API's OTel SDK reads them and continues the trace, so a single trace ID spans the browser action and everything it triggered server-side.
+
+Sentry's browser `tracesSampleRate` is `0` and the API's `SENTRY_TRACES_SAMPLE_RATE` defaults to `0`. Sentry is error-capture-only. OTel is the single tracer that ships spans to Tempo. `@sentry/bun` v10+ is built on `@sentry/opentelemetry`, so any non-zero Sentry sample rate registers a second tracer on top of the OTel SDK and double-instruments HTTP, fetch, and DB. Flip it back if you want transactions in Sentry as well.
+
+## Common use cases
+
+- **Find why an endpoint got slow**: open Grafana, Explore, Tempo. Query by `service.name = boringstack-api` and endpoint name. Open a representative slow trace. The waterfall shows which child span dominates: DB, external API, queue, or your own code.
+- **Detect N+1 queries**: a trace with 30 identical `SELECT * FROM accounts WHERE id = ?` spans stacked is unmistakable. Refactor to a single `WHERE id IN (...)` and the trace flattens.
+- **Diagnose background job lag**: a user reports "my welcome email took an hour." Search Tempo by `userId` (set as a span attribute by the auth plugin), find the `queue.email-delivery.process` span. The gap between enqueue and process tells you whether the queue was backed up or the email provider was slow.
+- **Benchmark before and after a refactor**: capture trace IDs from representative requests before your change. After deploying, capture the same requests again. Compare waterfalls side by side. See exactly which span you made faster (or slower).
+- **Pivot from a log line to its trace**: in Grafana Loki, expand any API log line. The `trace_id` field has a clickable "View trace in Tempo" link (configured in the Loki datasource's `derivedFields`). One click opens the trace view in the same Grafana tab.
+- **Pivot from a trace to its logs**: in Tempo's trace view, click a span. "Logs for this span" opens Loki filtered to `{compose_service=~"api-dev|api"} | json | trace_id="..."`. Every log line emitted while that span was active appears.
 
 ## Adding spans to your own code
 
@@ -176,16 +90,16 @@ const result = await tracer.startActiveSpan(
 
 The two ready-to-use helpers in `src/lib/tracing/`:
 
-- **`withQueueSpan(queueName, job, handler)`** — already applied to
+- **`withQueueSpan(queueName, job, handler)`**: already applied to
   every BullMQ worker. Pattern to copy when adding a new queue.
-- **`withDbSpan(name, attributes, handler)`** — opt-in DB query
+- **`withDbSpan(name, attributes, handler)`**: opt-in DB query
   wrapper. Useful around `db.query.X.findMany(...)` calls in service
   methods you're scrutinising.
 
 ## Storage + retention
 
 Tempo runs in single-binary mode (no separate distributor / ingester
-/ querier processes) — fine for a single-host BoringStack deployment.
+/ querier processes): fine for a single-host BoringStack deployment.
 Spans land on local disk at `/var/tempo` (a Docker volume named
 `tempo_data`). Default retention is **24 hours**; tune in
 `compose/tempo/tempo.yml` under `compactor.block_retention`. Traces
@@ -195,34 +109,25 @@ in production.
 Resource budget (defaults): 0.5 vCPU, 512MB RAM. Override via
 `TEMPO_LIMITS_CPUS` / `TEMPO_LIMITS_MEMORY` in `compose/.env`.
 
-<DocCallout
-  variant="tip"
-  title="Sampling"
-  eyebrow="When 100% is too much"
->
-  At low traffic (dev, small prod), every request is traced. As traffic
-  scales, sampling becomes important — 100% trace storage gets expensive
-  fast. OTel SDK supports head-based sampling via the
-  `OTEL_TRACES_SAMPLER` env (`parentbased_traceidratio`) and ratio via
-  `OTEL_TRACES_SAMPLER_ARG=0.1` (10%). Default is 100%; revisit when
-  Tempo disk pressure shows up.
-</DocCallout>
+<Aside type="tip" title="Sampling">
+At low traffic (dev, small prod), every request is traced. As traffic scales, sampling becomes important. 100% trace storage gets expensive fast. OTel SDK supports head-based sampling via the `OTEL_TRACES_SAMPLER` env (`parentbased_traceidratio`) and ratio via `OTEL_TRACES_SAMPLER_ARG=0.1` (10%). Default is 100%. Revisit when Tempo disk pressure shows up.
+</Aside>
 
 ## Source
 
-- [`apps/api/src/config/otel/otel.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/config/otel/otel.ts) — SDK init.
-- [`apps/api/src/instrument.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/instrument.ts) — bootstrap side-effect import (run before everything else).
-- [`apps/api/src/lib/tracing/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/tracing) — `withQueueSpan` + `withDbSpan` helpers.
-- [`compose/tempo/tempo.yml`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/tempo/tempo.yml) — Tempo backend config.
-- [`compose/grafana/provisioning/datasources/datasources.yml`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/grafana/provisioning/datasources/datasources.yml) — Tempo datasource + Loki↔Tempo click-through wiring.
+- [`apps/api/src/config/otel/otel.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/config/otel/otel.ts): SDK init.
+- [`apps/api/src/instrument.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/instrument.ts): bootstrap side-effect import (run before everything else).
+- [`apps/api/src/lib/tracing/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/tracing): `withQueueSpan` + `withDbSpan` helpers.
+- [`compose/tempo/tempo.yml`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/tempo/tempo.yml): Tempo backend config.
+- [`compose/grafana/provisioning/datasources/datasources.yml`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/grafana/provisioning/datasources/datasources.yml): Tempo datasource + Loki↔Tempo click-through wiring.
 
 ## Related
 
-- [Observability](/topics/observability/) — metrics + logs that traces
+- [Observability](/topics/observability/): metrics + logs that traces
   pivot to.
-- [Error tracking](/topics/error-tracking/) — `trace_id` flows through
+- [Error tracking](/topics/error-tracking/): `trace_id` flows through
   GlitchTip events too, so an error in GlitchTip has a clickable trace
   context.
-- [Alerts](/topics/alerts/) — when an alert fires, the trace timeline
+- [Alerts](/topics/alerts/): when an alert fires, the trace timeline
   for the same minute often shows what went wrong before the metric
   did.

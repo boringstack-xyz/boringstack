@@ -3,64 +3,21 @@ title: OpenAPI client
 description: A typed API client generated from the API app's OpenAPI schema. Drift between server and UI becomes a compile error.
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import DocCallout from "../../../components/DocCallout.tsx";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
-
-<PageIntro
-  eyebrow="OpenAPI client"
-  actions={[
-    { label: "Using it", href: "#using-it" },
-    { label: "Regenerating", href: "#regenerating" },
-  ]}
-  facts={[
-    { value: "Generated", label: "never hand-edited" },
-    { value: "Compile error", label: "on drift" },
-    { value: "Silent refresh", label: "on 401" },
-  ]}
->
-  The UI never hand-writes `fetch(...)`. It calls a generated, typed client that
-  knows every path, every request body, and every response shape the API
-  exposes. When the API changes, you regenerate; if the UI now calls a path that
-  no longer exists, TypeScript tells you before the user does.
-</PageIntro>
+The UI never hand-writes `fetch(...)`. It calls a generated, typed client that knows every path, every request body, and every response shape the API exposes. When the API changes, you regenerate; if the UI now calls a path that no longer exists, TypeScript tells you before the user does.
 
 ## How it stays in sync
 
-```mermaid
-flowchart LR
-  api["apps/api<br/>publishes /swagger/json"]
-  gen["bun run generate:api"]
-  schema["src/lib/api/schema.d.ts<br/>generated types"]
-  client["apiClient.GET / POST / ..."]
-  api --> gen
-  gen --> schema
-  schema --> client
-  client -.->|HTTP| api
-```
-
 `bun run generate:api` runs `openapi-typescript` against the live API (or a saved spec) and emits one big `.d.ts` of paths, params, and response components. `openapi-fetch` wraps native `fetch` and uses those types so every call is path- and shape-checked.
+
+The result: drift between server and client is a compile error, not a runtime 500.
 
 ## Design choices
 
-<FaqGroup>
-  <FaqItem title="Generated, never hand-edited" open>
-    Drift between server and client is a compile error, not a runtime 500.
-  </FaqItem>
-  <FaqItem title="One client module (apiClient); direct fetch/axios is a lint error">
-    Single place for base URL, cookie credentials, error mapping, refresh logic.
-  </FaqItem>
-  <FaqItem title="Throws ApiError on non-2xx">
-    TanStack Query `error` is typed and structured; no string parsing.
-  </FaqItem>
-  <FaqItem title="Silent refresh on 401 with a single in-flight guard">
-    Parallel queries do not trigger N refresh storms.
-  </FaqItem>
-  <FaqItem title="Refresh exempts /auth/refresh + /auth/login themselves">
-    No infinite loops when the refresh itself fails.
-  </FaqItem>
-</FaqGroup>
+**Generated, never hand-edited.** One client module (apiClient) is the single place for base URL, cookie credentials, error mapping, and refresh logic. Direct `fetch()` or `axios` outside `src/lib/api/` is a lint error.
+
+**Throws ApiError on non-2xx.** TanStack Query's `error` is typed and structured; no string parsing needed.
+
+**Silent refresh on 401 with a single in-flight guard.** Parallel queries do not trigger N refresh storms. Refresh exempts `/auth/refresh` and `/auth/login` themselves, so no infinite loops occur when refresh itself fails.
 
 ## Using it
 
@@ -90,33 +47,17 @@ useQuery({
 
 `openapi-fetch` is configured with `credentials: "include"`, so the browser sends `auth_token` and `refresh_token` cookies automatically. The UI never reads a JWT, stores a bearer token, or adds an `Authorization` header.
 
-`openapi-fetch` accepts middleware. The template ships one: on a 401, kick off a single `/auth/refresh` (with a module-level promise guarding against parallel triggers), then retry the original request. Refresh exempts itself + `/auth/login` so a failed refresh never recurses. If the refresh fails, the original 401 propagates and `ProtectedRoute` redirects to `/login`.
+`openapi-fetch` accepts middleware. The template ships one: on a 401, kick off a single `/auth/refresh` (with a module-level promise guarding against parallel triggers), then retry the original request. Refresh exempts itself and `/auth/login` so a failed refresh never recurses. If the refresh fails, the original 401 propagates and `ProtectedRoute` redirects to `/login`.
 
-<DocCallout
-  variant="note"
-  title="Why hand-rolled fetch wrappers are banned"
-  eyebrow="Lint boundary"
->
-  Direct `fetch()`, `axios`, and `XMLHttpRequest` outside `src/lib/api/` fail
-  the lint gate because re-implementing 401 refresh in twenty places is how
-  token-handling bugs ship.
-</DocCallout>
+Direct `fetch()`, `axios`, and `XMLHttpRequest` outside `src/lib/api/` fail the lint gate. Re-implementing 401 refresh in twenty places is how token-handling bugs ship.
 
 ## Regenerating
 
-<FaqGroup>
-  <FaqItem title="API spec changed (most common)" open>
-    Run `bun run generate:api` against the running dev API.
-  </FaqItem>
-  <FaqItem title="Working from a committed spec">
-    Point `generate:api` at a saved `.json`.
-  </FaqItem>
-  <FaqItem title="CI consistency check">
-    Run `bun run generate:api && git diff --exit-code src/lib/api/schema.d.ts`.
-  </FaqItem>
-</FaqGroup>
+**API spec changed (most common).** Run `bun run generate:api` against the running dev API.
 
-The CI check fails if a developer changed the API but forgot to regenerate; drift gets caught at PR time, not at runtime.
+**Working from a committed spec.** Point `generate:api` at a saved `.json`.
+
+**CI consistency check.** Run `bun run generate:api && git diff --exit-code src/lib/api/schema.d.ts`. The CI check fails if a developer changed the API but forgot to regenerate; drift gets caught at PR time, not at runtime.
 
 ## Adding a call
 

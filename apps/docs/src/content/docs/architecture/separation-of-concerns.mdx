@@ -2,47 +2,14 @@
 title: Separation of concerns
 description: API, UI, and infra each own one job. Clear boundaries, independent releases, and an OpenAPI contract between the app layers.
 ---
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
-import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
 
-<PageIntro
-  eyebrow="Layer boundaries"
-  actions={[
-    { label: "Why BoringStack", href: "/architecture/why-boringstack/" },
-    { label: "Repository layout", href: "/architecture/monorepo-layout/" },
-  ]}
-  facts={[
-    { value: "3", label: "isolated layers" },
-    { value: "OpenAPI", label: "type contract" },
-    { value: "0", label: "runtime bleeding" },
-  ]}
->
-  BoringStack splits the runtime into three layers. Each layer has one job, owns its own deployment pipeline, and talks to the others through typed boundaries.
-</PageIntro>
+BoringStack splits the runtime into three layers. Each layer has one job, owns its own deployment pipeline, and talks to the others through typed boundaries.
 
 ## What each layer delivers
 
-<SignalGrid
-  columns={3}
-  items={[
-    {
-      label: "API",
-      title: "apps/api",
-      body: "Owns security, databases, sessions, JWT cookies, background queues (BullMQ), email delivery, and the audit log trail.",
-    },
-    {
-      label: "UI",
-      title: "apps/ui",
-      body: "Owns the browser experience, local client states, i18n, queries, and routing via Vite and React 19.",
-    },
-    {
-      label: "INFRA",
-      title: "infra-template",
-      body: "Owns Traefik TLS routing, VPS setups via OpenTofu, container provisioning, backups, and metrics overlays.",
-    },
-  ]}
-/>
+- **API (apps/api).** Owns security, databases, sessions, JWT cookies, background queues (BullMQ), email delivery, and the audit log trail.
+- **UI (apps/ui).** Owns the browser experience, local client states, i18n, queries, and routing via Vite and React 19.
+- **Infra (infra-template).** Owns Traefik TLS routing, VPS setups via OpenTofu, container provisioning, backups, and metrics overlays.
 
 ## How the layers connect
 
@@ -65,31 +32,10 @@ In production, Traefik serves the SPA and API on one apex host (`/` and `/api/*`
 
 ## What you gain
 
-<FeatureGrid
-  columns={2}
-  items={[
-    {
-      eyebrow: "independency",
-      title: "Independent Deploys",
-      body: "Change the UI codebase without rebuilding or redeploying the API image. Tweak styling or text with absolute isolation.",
-    },
-    {
-      eyebrow: "fast-feedback",
-      title: "Optimized Runtimes",
-      body: "Vite + React keep local UI feedback instant, while Elysia + Bun keep API endpoints and queue processing fast.",
-    },
-    {
-      eyebrow: "security",
-      title: "Hardened Boundaries",
-      body: "Auth, database access, and environment variables stay locked in the API container. No credentials ever bleed to the browser.",
-    },
-    {
-      eyebrow: "focus",
-      title: "Focused Workspaces",
-      body: "Load only the repository you are actively working on. Teammates and agents stay bounded by their specific layer rules.",
-    },
-  ]}
-/>
+- **Independent Deploys.** Change the UI codebase without rebuilding or redeploying the API image. Tweak styling or text with absolute isolation.
+- **Optimized Runtimes.** Vite + React keep local UI feedback instant, while Elysia + Bun keep API endpoints and queue processing fast.
+- **Hardened Boundaries.** Auth, database access, and environment variables stay locked in the API container. No credentials ever bleed to the browser.
+- **Focused Workspaces.** Load only the repository you are actively working on. Teammates and agents stay bounded by their specific layer rules.
 
 ## Related
 

@@ -3,96 +3,11 @@ title: Multi-tenant model
 description: Accounts, memberships, invitations, ownership transfer, and soft-delete + hard-delete lifecycle. Multi-tenant from day one; solo users are the degenerate case.
 ---
 
-import DocFileTree from "../../../components/DocFileTree";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
+Accounts, memberships, invitations, and billing plans ship as product infrastructure. A solo user is just one user with one account, so the app can grow into teams without a second data model. This is the tenant boundary and how isolation is enforced.
 
-<PageIntro
-  eyebrow="Tenant boundary from day one"
-  actions={[
-    { label: "ACL resolver", href: "/api/acl/" },
-    { label: "Authentication", href: "/api/auth/" },
-  ]}
-  facts={[
-    { value: "account", label: "tenant boundary" },
-    { value: "aid", label: "active account JWT claim" },
-    { value: "owner", label: "single active owner index" },
-  ]}
->
-  Accounts, memberships, invitations, and billing plans ship as product
-  infrastructure. A solo user is just one user with one account, so the app can
-  grow into teams without a second data model.
-</PageIntro>
+User identity lives in `auth.users` and `auth.user_auth_providers`. The `auth.account_memberships` table is the join between users and accounts, carrying role and revocation state. `app.accounts` is the tenant boundary itself. Every account-scoped product table carries `account_id` explicitly. Routes derive that ID from the JWT (the `aid` claim, populated at login, refresh, register, or OAuth callback), never from URL params.
 
-## The shape
-
-<DocFileTree
-  root="tenant graph"
-  title="Multi-tenant data spine"
-  caption="user identity is separate from account ownership"
-  nodes={[
-    {
-      name: "auth.users",
-      detail: "identity and auth providers",
-      children: [
-        {
-          name: "auth.account_memberships",
-          detail: "user-account join with role and revocation state",
-          children: [
-            {
-              name: "app.accounts",
-              detail: "tenant boundary",
-              children: [
-                {
-                  name: "app.account_invitations",
-                  detail: "hashed one-time invite tokens",
-                },
-                {
-                  name: "app.account_feature_overrides",
-                  detail: "manual feature gates",
-                },
-                {
-                  name: "billing.account_plans",
-                  detail: "Stripe-backed plan state",
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ]}
-/>
-
-Every account-scoped row carries `account_id`. Routes derive that ID from the JWT (the `aid` claim, populated at login / refresh / register / OAuth callback), never from URL params.
-
-<SignalGrid
-  columns={4}
-  items={[
-    {
-      label: "scope",
-      title: "account_id on scoped rows",
-      body: "Every product table that belongs to a tenant carries the tenant key explicitly.",
-    },
-    {
-      label: "jwt",
-      title: "aid comes from session",
-      body: "Handlers derive the active account from the cookie-backed JWT, not from request params.",
-    },
-    {
-      label: "owner",
-      title: "one active owner",
-      body: "A partial unique index keeps each account from ever having two active owners.",
-    },
-    {
-      label: "audit",
-      title: "soft deletes preserve history",
-      body: "Revoked memberships and deleted accounts keep enough state for audit trails and grace windows.",
-    },
-  ]}
-/>
+A partial unique index prevents each account from ever having two active owners. Soft-delete (via `revoked_at` and `deleted_at`) preserves history so audit trails and grace windows survive.
 
 ## Signup
 
@@ -123,7 +38,7 @@ The OAuth callback uses the same provision function inline at the end of the cal
 
 ## Memberships
 
-`auth.account_memberships` is the (user, account, role) join. Two partial unique indexes lock down the invariants the application logic depends on:
+`auth.account_memberships` is the (user, account, role) join. Two partial unique indexes enforce the invariants:
 
 - `uniq_account_memberships_active_user`: `(account_id, user_id) WHERE revoked_at IS NULL`. At most one active membership per `(user, account)`.
 - `uniq_account_memberships_active_owner`: `(account_id) WHERE role = 'owner' AND revoked_at IS NULL`. At most one active owner per account.
@@ -132,90 +47,37 @@ Revoked memberships keep their row (soft-delete via `revoked_at`) so the audit t
 
 ## Invitations
 
-```ts
-POST   /api/v1/accounts/:id/invitations           // owner | admin
-POST   /api/v1/invitations/accept                 // any authenticated user holding the raw token
-POST   /api/v1/accounts/:id/invitations/:iid/resend
-DELETE /api/v1/accounts/:id/invitations/:iid
-```
+Invitation tokens are opaque, single-use, and hashed at rest. The route response carries the raw token exactly once (so the caller can hand it to email). The database stores only `sha256(token + pepper)`. Resending rotates the token, invalidating any leaked old links. The daily `cleanExpiredInvitationsJob` background sweep also soft-revokes unaccepted invitations past their TTL.
 
-<FaqGroup>
-  <FaqItem title="Tokens are opaque, single-use, hashed at rest" open>
-    The route response carries the raw token exactly once (so the caller can
-    hand it to whatever email pipeline they want). The DB only stores
-    `sha256(token + pepper)`.
-  </FaqItem>
-  <FaqItem title="Resend rotates the token">
-    Rotating on resend invalidates any leaked old link. The caller re-emails the
-    new raw token. Old emails stop working immediately.
-  </FaqItem>
-  <FaqItem title="Revoke is a soft-delete (`revoked_at`)">
-    Subsequent accept attempts fail with `invitation_revoked`. The daily
-    `cleanExpiredInvitationsJob` background sweep also soft-revokes unaccepted
-    invitations past their TTL.
-  </FaqItem>
-  <FaqItem title="Seat-limit check fires twice">
-    At invitation creation AND at acceptance time. An admin could revoke a seat
-    between create + accept; the second check catches that.
-  </FaqItem>
-</FaqGroup>
+Revoke is a soft-delete via `revoked_at`; subsequent accept attempts fail with `invitation_revoked`. Seat-limit checks fire twice (at creation and acceptance), so if an admin revokes a seat between create and accept, the second check catches it.
+
+Routes:
+- `POST /api/v1/accounts/:id/invitations` (owner | admin)
+- `POST /api/v1/invitations/accept` (any authenticated user holding the raw token)
+- `POST /api/v1/accounts/:id/invitations/:iid/resend`
+- `DELETE /api/v1/accounts/:id/invitations/:iid`
 
 ## Owner lifecycle
 
-<FaqGroup>
-  <FaqItem title="Transfer ownership" open>
-    `POST /api/v1/accounts/:id/transfer-ownership` (owner-only, cache-bypassing
-    `resolveFreshMembership`). Atomically demotes the current owner to `admin`,
-    promotes the target to `owner`. The partial unique index is never violated
-    mid-transaction. `accountsService.transferOwnership` demotes the outgoing
-    owner FIRST so the index never sees two owners simultaneously.
-  </FaqItem>
-  <FaqItem title="Cannot leave without transferring">
-    An owner cannot leave their account; they must transfer first or delete the
-    account. An owner cannot be removed by an admin.
-  </FaqItem>
-  <FaqItem title="Soft-delete with 30-day grace">
-    `DELETE /api/v1/accounts/:id` (owner-only) sets `accounts.deleted_at =
-    now()`. The `hardDeleteSoftDeletedAccountsJob` background sweep hard-deletes
-    rows past the grace window, cascading to memberships, invitations, feature
-    overrides, account_plans, and every `@account-scoped` application table.
-    `audit.audit_log` survives by design. GDPR redaction (hash the user id, keep
-    the row) is a separate path.
-  </FaqItem>
-</FaqGroup>
+**Transfer ownership**: `POST /api/v1/accounts/:id/transfer-ownership` (owner-only, cache-bypassing). Atomically demotes the current owner to `admin`, promotes the target to `owner`. The partial unique index is never violated mid-transaction because `accountsService.transferOwnership` demotes the outgoing owner FIRST.
+
+**Cannot leave without transferring**: An owner cannot leave their account; they must transfer first or delete the account. An owner cannot be removed by an admin.
+
+**Soft-delete with 30-day grace**: `DELETE /api/v1/accounts/:id` (owner-only) sets `accounts.deleted_at = now()`. The `hardDeleteSoftDeletedAccountsJob` background sweep hard-deletes rows past the grace window, cascading to memberships, invitations, feature overrides, account_plans, and every account-scoped table. `audit.audit_log` survives by design. GDPR redaction (hash the user id, keep the row) is a separate path.
 
 ## Domain claiming (optional, B2B mode)
 
-Off by default. Flip `ACCOUNT_DOMAIN_CLAIMING=true` and the first verified signup with a non-public email domain claims that domain on its personal account. Subsequent verified signups from the same domain fail with `DOMAIN_CLAIMED` (409) and the existing account's name in the error message + accountId in details. The blocked user can still be invited via the standard `account_invitations` flow.
+Off by default. Flip `ACCOUNT_DOMAIN_CLAIMING=true` and the first verified signup with a non-public email domain claims that domain on its personal account. Subsequent verified signups from the same domain fail with `DOMAIN_CLAIMED` (409) and return the existing account's name and accountId. The blocked user can still be invited via standard `account_invitations`.
 
-The flag is the right shape for a B2B product where one email domain maps to one workspace (think Linear, Vercel, or Dreamdata's signup). For consumer products, leave it off; the public-email allowlist would be moot anyway.
+This flag suits B2B products where one email domain maps to one workspace (Linear, Vercel, Dreamdata). For consumer products, leave it off.
 
-<FaqGroup>
-  <FaqItem title="Email verification is the proof of ownership" open>
-    Clicking the verification link demonstrates control of an inbox at the
-    domain. That's enough for a starter template; harder evidence (DNS TXT
-    records, SAML/SCIM) is a follow-up an operator can layer on without changing
-    the claim mechanism.
-  </FaqItem>
-  <FaqItem title="Public domains never claim">
-    `src/lib/email-domain/public-domains.ts` ships a 51-entry allowlist
-    (gmail.com, outlook.com, proton.me, …). Signups from those addresses always
-    get a fresh personal account because no single company owns those domains.
-  </FaqItem>
-  <FaqItem title="Active-only partial unique index">
-    `uniq_accounts_claimed_domain_active` is the DB-level safety net.
-    Soft-deleted accounts (`deleted_at IS NOT NULL`) release their claim, so a
-    successor signup after a deletion gets the domain back. Two live accounts
-    can never share a claim.
-  </FaqItem>
-  <FaqItem title="Approve / deny scaffolded, not wired">
-    `app.account_join_requests` is in the schema with the partial unique index
-    `uniq_account_join_requests_pending`. The request / approve / deny endpoints
-    are intentionally not shipped. Operators flipping the flag on can wire that
-    surface to whatever notification model suits their product (Slack ping,
-    in-app inbox, email approval).
-  </FaqItem>
-</FaqGroup>
+Email verification is the proof of ownership: clicking the link demonstrates control of an inbox at the domain. That's enough for a starter template; harder evidence (DNS TXT records, SAML/SCIM) can layer on without changing the claim mechanism.
+
+Public domains never claim. A 51-entry allowlist (`src/lib/email-domain/public-domains.ts`) covers gmail.com, outlook.com, proton.me, and others. Signups from those addresses always get a fresh personal account.
+
+The partial unique index `uniq_accounts_claimed_domain_active` is the database-level safety net. Soft-deleted accounts (`deleted_at IS NOT NULL`) release their claim, so a successor signup after deletion gets the domain back. Two live accounts can never share a claim.
+
+The `app.account_join_requests` table and the request/approve/deny endpoints are scaffolded but not wired. Operators flipping the flag on can wire that surface to whatever notification model suits their product (Slack ping, in-app inbox, email approval).
 
 ```mermaid
 sequenceDiagram
@@ -239,23 +101,11 @@ The decision lives entirely inside `provisionAfterVerification`: read the flag, 
 
 ## Cross-account isolation
 
-The guarantee is mechanical, not anecdotal. The
-`drizzle-conventions/account-scoped-tables-require-where` ESLint rule
-reads the `@account-scoped` marker on every account-scoped table and
-refuses to merge any `db.query.<table>.findX` that omits the scope
-column from its `WHERE`. The CASL ability matrix in
-`tests/lib/acl/ability.test.ts` then exercises every role × subject ×
-action combination across two accounts so a regression in
-`buildAbility` surfaces immediately. When you add a new account-scoped
-resource, the lint rule enforces the scoping for free; copy the
-ability matrix's "owner cannot touch resources in a different account"
-test for your new subject.
+The guarantee is mechanical, not anecdotal. The `drizzle-conventions/account-scoped-tables-require-where` ESLint rule reads the `@account-scoped` marker on every account-scoped table and refuses to merge any `db.query.<table>.findX` that omits the scope column from its `WHERE`. The CASL ability matrix in `tests/lib/acl/ability.test.ts` exercises every role × subject × action combination across two accounts so a regression surfaces immediately. When you add a new account-scoped resource, the lint rule enforces scoping for free; copy the ability matrix's "owner cannot touch resources in a different account" test for your new subject.
 
 ## Source
 
-- [`src/api/accounts/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/accounts)
-- [`src/clients/postgres/schema/app.schema.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/clients/postgres/schema/app.schema.ts): `accounts`, `account_invitations`, `account_feature_overrides`.
-- [`src/clients/postgres/schema/memberships.schema.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/clients/postgres/schema/memberships.schema.ts): `account_memberships` with both partial unique indexes.
+[`src/api/accounts/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/accounts), [`src/clients/postgres/schema/app.schema.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/clients/postgres/schema/app.schema.ts), and [`src/clients/postgres/schema/memberships.schema.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/clients/postgres/schema/memberships.schema.ts).
 
 ## Operator queries
 

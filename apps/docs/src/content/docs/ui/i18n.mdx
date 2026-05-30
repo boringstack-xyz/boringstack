@@ -3,51 +3,15 @@ title: i18n
 description: react-i18next with type-safe keys, a single namespace by default, and a lint rule that bans hardcoded JSX strings.
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import DocCallout from "../../../components/DocCallout.tsx";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
+The apps/ui uses [react-i18next](https://react.i18next.com) for translation. Keys are type-safe (typos fail the build) and hardcoded strings in JSX are a lint error, so a forgotten translation never ships.
 
-<PageIntro
-  eyebrow="Internationalisation"
-  actions={[
-    { label: "Adding a locale", href: "#adding-a-locale" },
-    { label: "Adding a key", href: "#adding-a-key" },
-  ]}
-  facts={[
-    { value: "Type-safe", label: "translation keys" },
-    { value: "2", label: "locales out of the box" },
-    { value: "Lint-enforced", label: "no hardcoded strings" },
-  ]}
->
-  The apps/ui uses [react-i18next](https://react.i18next.com) for
-  translation. Keys are type-safe (typos fail the build) and hardcoded strings
-  in JSX are a lint error, so a forgotten translation can't ship.
-</PageIntro>
+## How it works
 
-## Design choices
+Single common namespace by default. Keep it simple; split into more namespaces only when one grows past around 200 keys.
 
-<FaqGroup>
-  <FaqItem title="Single common namespace by default" open>
-    Keep it simple; split into more namespaces only when one balloons past ~200
-    keys.
-  </FaqItem>
-  <FaqItem title="Locales detected from the browser, fallback to first in VITE_LOCALES">
-    Friendly default for international visitors; predictable for tests.
-  </FaqItem>
-  <FaqItem title="English + German out of the box">
-    Two locales prove the pipeline; pick any two you actually need and replace.
-  </FaqItem>
-  <FaqItem title="Catalog files are plain JSON">
-    Trivial to diff, translate, and review.
-  </FaqItem>
-  <FaqItem title="No Suspense for translations">
-    Avoids a flash of fallback UI during i18n init.
-  </FaqItem>
-  <FaqItem title="Hardcoded JSX strings rejected by lint">
-    Forgotten translations cannot ship; the linter catches the JSX literal.
-  </FaqItem>
-</FaqGroup>
+Locales are detected from the browser, falling back to the first in `VITE_LOCALES`. This is friendly for international visitors and predictable for tests. English and German are included by default. Pick any two locales you need and replace them. Catalog files are plain JSON, trivial to diff, translate, and review.
+
+No Suspense for translations. This avoids a flash of fallback UI during i18n init. Hardcoded JSX strings are rejected by lint, so forgotten translations cannot ship; the linter catches the JSX literal directly.
 
 ## How it's wired
 
@@ -102,18 +66,11 @@ For interpolation, [react-i18next docs](https://react.i18next.com/guides/quick-s
 
 ## Patterns to avoid
 
-<DocCallout
-  variant="note"
-  title="Patterns to avoid"
-  eyebrow="Translation hygiene"
->
-  - **Fragment concatenation:** `t("the") + " " + t("button")`. Word order is
-  language-specific; build full sentences as keys. - **Sentence-as-ID:**
-  `t("Click here to continue")`. Hard to refactor when copy changes; use
-  semantic keys like `t("checkout.continue")`. - **Hardcoded `aria-label` /
-  `placeholder`:** these are content, not technical strings. The lint rule
-  applies.
-</DocCallout>
+**Fragment concatenation:** `t("the") + " " + t("button")`. Word order is language-specific; build full sentences as keys.
+
+**Sentence-as-ID:** `t("Click here to continue")`. Hard to refactor when copy changes; use semantic keys like `t("checkout.continue")`.
+
+**Hardcoded `aria-label` or `placeholder`:** these are content, not technical strings. The lint rule applies to all of them.
 
 ## Lint coverage
 

@@ -1,38 +1,33 @@
 ---
 title: First feature in 10 minutes
-description: Build a working account-scoped resource end-to-end from a fresh BoringStack fork using the /add-full-feature skill.
+description: Build a working account-scoped resource end-to-end using the /add-full-feature skill.
 ---
 
-End-to-end means: a database table, an API route, a typed UI page, tests on both sides, all of it green through `bun run validate`. The agent writes most of the code. You read diffs and check the validate output.
+Build your first feature end-to-end: database table, API route, typed UI page, tests on both sides, all passing `bun run validate`. The agent writes most of the code. You read diffs and check output.
 
-## What you need first
+## Setup
 
-A fresh fork from [boringstack-xyz/boringstack](https://github.com/boringstack-xyz/boringstack) on GitHub (click **Use this template**), Docker (or OrbStack) running, and an agent open in the repo root.
+Clone a fresh fork from [boringstack-xyz/boringstack](https://github.com/boringstack-xyz/boringstack), then:
 
-From the cloned repo:
-
-```sh
+```bash
 ./setup.sh --up
 ```
 
-That copies `.env`, generates the GlitchTip secret, and brings the full Compose stack up: Postgres, Valkey, api-dev with migrations applied, ui-dev on `localhost:7331`, OpenAPI client generated. No local Bun or Postgres needed.
+This copies `.env`, generates the GlitchTip secret, and brings up the full Compose stack: Postgres, Valkey, api-dev with migrations, ui-dev on `localhost:7331`. No local Bun or Postgres needed.
 
 Sign in at `http://localhost:7331` as `demo@example.com / password123`.
 
-## Two paths through this tutorial
+## Two paths
 
-Pick the one that matches how much ceremony you want around the agent.
+**Fast path**  - use `/add-full-feature` directly. The agent drafts a spec, you approve, it builds. Best for small slices and exploratory work.
 
-- **Fast path** — `/add-full-feature` directly. The agent drafts a spec, you eyeball it, then it builds. Default for small slices and exploratory work. The rest of this page uses this path.
-- **Spec-loop path** — `bun run spec:init` once per fork, then `/spec explore`, `/spec slice`, `/spec approve`, `/spec build`. The agent **cannot** write source files until you flip `status: approved` in `.specs/next.md`. A PreToolUse hook enforces it (Claude Code + Cursor). Default for anything that touches auth, billing, multi-tenant data, or cross-app contracts. See [Spec loop](/skills/spec-loop/) for the full workflow.
+**Spec-loop path**  - run `bun run spec:init` once, then use `/spec explore`, `/spec slice`, `/spec approve`, `/spec build`. The agent cannot write source files until you set `status: approved` in `.specs/next.md`. Best for anything touching auth, billing, multi-tenant data, or cross-app contracts.
 
-Either path lands the same code at the end. The spec loop adds one explicit checkpoint; the fast path collapses spec + build into one turn.
+Both paths land identical code. The spec loop adds one explicit approval gate. This page uses the fast path.
 
 ## 1. Pick something to build
 
-Say you want **support tickets**. Each account lists tickets, creates them, closes them. That's a backend resource (table + service + routes) and a UI page (list + create form).
-
-The skill to use is `/add-full-feature`. It runs the API loop first, regenerates the OpenAPI client, then runs the UI loop against the new endpoint.
+Say you want **support tickets**. Each account lists tickets, creates them, closes them. Backend: table + service + routes. Frontend: list page + create form.
 
 ## 2. Run the skill
 
@@ -47,40 +42,42 @@ Fields: subject (text, required), body (text, optional), status (open/closed, de
 UI: list page + create form
 ```
 
-The agent writes a spec and asks you to confirm. Read it before approving. The spec is cheap to amend; ripping out half-built code is not.
+The agent writes a spec and asks you to confirm. Read it before saying yes.
 
-## 3. Approve, then watch the diff
+## 3. Approve and watch
 
 On the API side the agent:
 
-1. Adds the `tickets` table to `apps/api/src/clients/postgres/schema/app.schema.ts` with an `accountId` FK, indexes, and the `@account-scoped accountId` marker that the `drizzle-conventions` ESLint rule reads.
-2. Runs `bun run db:generate`. A new `drizzle/000X_*.sql` lands.
-3. Writes the five-file resource quintet (`service`, `routes`, `utils`, `constants`, `types`, `schemas`) that `module-boundaries` enforces. Each one gets a sibling test under `tests/api/tickets/`. `lint:meta` fails the PR otherwise.
-4. Wires `auditLogService.record(...)` on every mutation. If you asked for one, a notification event too.
-5. Runs `bun run validate`. If anything goes red, it loops back and fixes. You don't have to step in unless it gets stuck.
+1. Adds the `tickets` table to `apps/api/src/clients/postgres/schema/app.schema.ts` with `accountId` FK, indexes, and the `@account-scoped` marker.
+2. Runs `bun run db:generate` to create a migration.
+3. Writes the five-file resource pattern: service, routes, utils, constants, types, schemas. Each file gets a sibling test.
+4. Wires `auditLogService.record(...)` on every mutation.
+5. Runs `bun run validate`. If anything fails, it loops back and fixes.
 
-Then it regenerates the OpenAPI types in `apps/ui/` so `apiClient.GET("/api/v1/tickets")` is typed against the new route.
+Then it regenerates the OpenAPI types in `apps/ui/` so `apiClient.GET("/api/v1/tickets")` is typed.
 
-On the UI side, the same kind of pass:
+On the UI side:
 
-1. New feature folder: `apps/ui/src/features/tickets/{components,Tickets.queries.ts,Tickets.mutations.ts,Tickets.schemas.ts,...}`.
-2. TanStack Query against `apiClient`. The lint rule blocks raw `fetch` anywhere outside `openapi.ts`.
-3. shadcn components for the list and a create form (React Hook Form + Zod via the regenerated schemas), plus error states.
-4. Every JSX string lifts to `apps/ui/src/lib/i18n/locales/en/common.json` and the German parallel. The `no-hardcoded-jsx-strings` rule won't let anything else compile.
-5. RTL tests for the page and form.
+1. New feature folder: `apps/ui/src/features/tickets/` with components, queries, mutations, schemas.
+2. TanStack Query + typed apiClient.
+3. shadcn components for the list and create form.
+4. Every JSX string lifted to i18n (English and German).
+5. RTL tests for the page.
 6. `bun run validate` again.
 
 ## 4. See it work
 
-Open `http://localhost:7331/tickets`. The page renders, the create form posts, the list updates. From the terminal:
+Open `http://localhost:7331/tickets`. The page renders, the form posts, the list updates.
 
-```sh
+From the terminal:
+
+```bash
 curl http://localhost:7330/api/v1/tickets
 ```
 
 ## 5. Ship it
 
-```sh
+```bash
 git checkout -b feat/tickets
 git add -A
 git commit -m "feat: tickets resource end-to-end"
@@ -90,16 +87,16 @@ gh pr create --fill
 
 CI runs the same `bun run validate`. Local green means CI green. Squash-merge.
 
-## Why this fits in 10 minutes
+## Why this works
 
-Most of the work isn't writing code, it's holding the project's conventions in your head while you write it. The skill holds them for you: which files to touch, in what order, which sibling tests `lint:meta` will demand, which lint rules block which patterns.
+Building a feature usually means holding the project's conventions in your head: which files, which order, which sibling tests `lint:meta` demands, which lint rules block which patterns. The skill holds all that.
 
-The merge gate is `bun run validate`, the same script in CI. The OpenAPI client is generated from the running API, so a missing field on one side shows up as a type error on the other. Nothing in this loop is hand-wired.
+The merge gate is `bun run validate`, the same script in CI. The OpenAPI client is generated from the running API, so a missing field on one side is a type error on the other. Nothing is hand-wired.
 
-## After the first one
+## Next steps
 
-- `/add-audit-event` to instrument something the agent didn't.
+- `/add-audit-event` to instrument something the agent missed.
 - `/add-notification-event` to fire a notification when a ticket closes.
 - `/security-review` before opening the PR.
-- [Spec loop](/skills/spec-loop/) when the next slice is risky enough to deserve an explicit approval gate.
+- [Spec loop](/skills/spec-loop/) when the next slice deserves an explicit approval gate.
 - [Add Stripe Checkout](/recipes/add-stripe/) to put the feature behind a paid plan.

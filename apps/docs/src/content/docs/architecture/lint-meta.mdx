@@ -1,29 +1,11 @@
 ---
 title: lint:meta rules
-description: Static repo guardrails that run alongside ESLint, package.json pins, CI parity, env cascade drift, source-text bans, and test coverage contracts.
+description: Static repo enforcement rules that run alongside ESLint, package.json pins, CI parity, env cascade drift, source-text bans, and test coverage contracts.
 ---
 
 import { Aside } from "@astrojs/starlight/components";
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import LintMetaCatalog from "../../../components/docs-kit/LintMetaCatalog";
 
-<PageIntro
-  eyebrow="lint:meta"
-  actions={[
-    { label: "ESLint contract", href: "/architecture/lint-as-contract/" },
-    { label: "Scripts & tooling", href: "/reference/scripts-tooling/" },
-  ]}
-  facts={[
-    { value: "lint:meta", label: "merge-gate layer" },
-    { value: "ui + api", label: "template catalogs" },
-    { value: "registry.ts", label: "source of truth" },
-  ]}
->
-  ESLint enforces architecture inside TypeScript modules. <code>lint:meta</code>{" "}
-  catches repo-level drift ESLint cannot see: unpinned GitHub Actions, env
-  cascade gaps, forbidden inline disables, cross-repo imports, and missing test
-  siblings. It runs inside <code>bun run check</code> / <code>bun run check</code>.
-</PageIntro>
+ESLint enforces architecture inside TypeScript modules. `lint:meta` catches repo-level drift ESLint cannot see: unpinned GitHub Actions, env cascade gaps, forbidden inline disables, cross-repo imports, and missing test siblings. It runs inside `bun run validate`.
 
 ## Merge gate stack
 
@@ -56,13 +38,7 @@ The apps/api catalog adds backend test contracts:
 
 Both templates share supply-chain, CI, env, artifact, and config rules (exact deps, pre-push CI parity, engine pin parity, generated artifact banners, forbidden inline disables, raw role literals, logic-file test siblings).
 
-## apps/ui catalog
-
-<LintMetaCatalog template="ui" />
-
-## apps/api catalog
-
-<LintMetaCatalog template="api" />
+See the ESLint plugin inventory and implementation under `scripts/lint-meta/` in the boringstack repo.
 
 ## Adding a rule
 

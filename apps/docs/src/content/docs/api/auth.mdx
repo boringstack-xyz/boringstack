@@ -4,62 +4,12 @@ description: HttpOnly cookie auth with short-lived JWT access cookies, DB-backed
 ---
 
 import { Aside } from "@astrojs/starlight/components";
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
 
-<PageIntro
-  eyebrow="Auth contract"
-  actions={[
-    { label: "Request flow", href: "#how-a-request-gets-authenticated" },
-    { label: "Refresh flow", href: "#how-refresh-works" },
-  ]}
-  facts={[
-    { value: "15 min", label: "access cookie" },
-    { value: "30 days", label: "refresh session" },
-    { value: "0", label: "tokens in frontend storage" },
-  ]}
->
-  Authentication follows one browser contract: HttpOnly cookies, server-side
-  OAuth, verify-before-account signup, and DB-backed refresh sessions that can
-  be rotated or revoked without exposing tokens to the UI.
-</PageIntro>
+Authentication follows one browser contract: HttpOnly cookies, server-side OAuth, verify-before-account signup, and DB-backed refresh sessions that can be rotated or revoked without exposing tokens to the UI.
 
-Two login flows share that contract:
+Two login flows share this contract: password (register, verify-email, login, forgot-password, reset-password) and OAuth (Google, GitHub, LinkedIn). Both converge at one place: `accountsService.provisionAfterVerification`, which creates the personal account and owner membership. Without verification, there is no account.
 
-- Password: register / verify-email / login / forgot-password / reset-password.
-- OAuth: Google, GitHub, LinkedIn. Server-side; the SPA never holds a client secret.
-
-Both converge at the same point: `accountsService.provisionAfterVerification`, the single place that creates the personal account and owner membership. Without verification, there is no account, so abandoned signups leave no orphan tenant rows in the database.
-
-Once verified, a session ends the same way regardless of which flow produced it:
-
-- `auth_token`: a 15-minute stateless JWT in an `HttpOnly` cookie. The frontend never reads or stores it.
-- `refresh_token`: a 30-day opaque `HttpOnly` cookie. The API stores only its HMAC hash in `auth.sessions`, rotates it on every refresh, and can revoke it on logout or password reset.
-
-The model is hybrid: fast stateless access checks, stateful refresh sessions for revocation and safer long-lived login.
-
-<SignalGrid
-  columns={3}
-  items={[
-    {
-      label: "signup",
-      title: "No account before verification",
-      body: "Register writes a pending user and verification token. The tenant row appears only after email verification or verified OAuth.",
-    },
-    {
-      label: "browser",
-      title: "Frontend never stores tokens",
-      body: "The SPA relies on browser-managed HttpOnly cookies and the generated OpenAPI client.",
-    },
-    {
-      label: "session",
-      title: "Refresh is stateful",
-      body: "Long-lived login lives in auth.sessions as a hash, which can be rotated, revoked, or deleted on password reset.",
-    },
-  ]}
-/>
+Once verified, the session uses two tokens. An `auth_token` is a 15-minute stateless JWT in an HttpOnly cookie (frontend never reads it). A `refresh_token` is a 30-day opaque HttpOnly cookie; the API stores only its HMAC hash in `auth.sessions`, rotates it on every refresh, and can revoke it on logout or password reset. The model is hybrid: fast stateless access checks, stateful refresh sessions for revocation.
 
 ## Verify-before-account
 
@@ -135,49 +85,15 @@ sequenceDiagram
 
 Refresh-token rotation means a replayed old refresh token no longer matches a row. Logout deletes the current refresh session. Password reset deletes all refresh sessions for that user.
 
-## Design choices
+## Key decisions
 
-<FaqGroup>
-  <FaqItem title="JWT in HttpOnly cookie (not localStorage)" open>
-    XSS cannot read the access token because it is never exposed to JavaScript.
-  </FaqItem>
-  <FaqItem title="SameSite=strict in prod, lax in dev">
-    CSRF protection without breaking same-origin dev.
-  </FaqItem>
-  <FaqItem title="Short access JWT (15 minutes)">
-    Normal API requests stay cheap: verify the cookie signature and expiry, then
-    load the user row.
-  </FaqItem>
-  <FaqItem title="Stateful refresh sessions">
-    Long-lived login lives in `auth.sessions`, keyed by a hash of an opaque
-    token. The API can revoke one session or all sessions for a user.
-  </FaqItem>
-  <FaqItem title="Frontend never stores tokens">
-    The SPA relies on browser-managed cookies and the generated OpenAPI client.
-    Auth responses return `user`, not a bearer token.
-  </FaqItem>
-  <FaqItem title="Two tables: users and user_auth_providers">
-    One user can hold a password and N OAuth links; no nullable password column.
-  </FaqItem>
-  <FaqItem title="OAuth state in Valkey, not in a cookie">
-    State must survive the cross-origin redirect; cookies on the IdP domain do
-    not work.
-  </FaqItem>
-  <FaqItem title="Read-and-delete state consumption">
-    Replay attacks fail by construction.
-  </FaqItem>
-  <FaqItem title="No account exists without a verified email">
-    `/register` writes only the pending user row. The personal account + owner
-    membership get created only at verify-email time (or inline at the OAuth
-    callback when the IdP asserts the email is verified). Abandoned signups
-    don't leave orphan tenant rows.
-  </FaqItem>
-  <FaqItem title="`EMAIL_NOT_VERIFIED` (403) fires only after correct password">
-    Password order on `/login` is: dummy-verify on lookup miss, then bcrypt,
-    then check `email_verified_at`. An attacker who doesn't know the password
-    can't enumerate pending users.
-  </FaqItem>
-</FaqGroup>
+JWT lives in HttpOnly cookies, not localStorage, so XSS cannot read the access token. SameSite is strict in prod, lax in dev, for CSRF protection without breaking same-origin dev. The access JWT is short-lived (15 minutes), keeping normal API requests cheap. Refresh is stateful, living in `auth.sessions` keyed by a hash of an opaque token; the API can revoke one session or all sessions for a user.
+
+One user can hold a password and N OAuth links (two tables: `users` and `user_auth_providers`), no nullable password column. OAuth state lives in Valkey, not a cookie, since state must survive the cross-origin redirect. State is read-and-deleted, so replay attacks fail by construction.
+
+No account exists without a verified email. `/register` writes only the pending user row. The personal account and owner membership are created only at verify-email time, or inline at the OAuth callback when the IdP asserts verified email. Abandoned signups don't leave orphan tenant rows.
+
+On `/login`, the password check order is: dummy-verify on lookup miss, then bcrypt, then check `email_verified_at`. This ensures an attacker who doesn't know the password cannot enumerate pending users by trying to login with unverified addresses.
 
 ## The OAuth round-trip
 
@@ -203,26 +119,17 @@ sequenceDiagram
 
 The state record holds the PKCE code verifier. Reading it consumes it; a second callback with the same `state` finds nothing. The 10-minute TTL accommodates a slow IdP without leaving stale state lying around.
 
-## Using it
+## Using auth in routes
 
-A protected route looks like:
+A protected route uses `createAuthMiddleware()` to get a typed `user` on the context:
 
 ```ts
-new Elysia().use(createAuthMiddleware()).get("/me", ({ user }) => ({ user })); // user: IUser, type-safe
+new Elysia().use(createAuthMiddleware()).get("/me", ({ user }) => ({ user }));
 ```
 
-Unauthenticated callers get a categorized 401 (`tokenExpired`, `invalidToken`, `missingCookie`). The UI client tries one guarded `/auth/refresh` when it sees a 401, then retries the original request. If refresh fails, `ProtectedRoute` redirects to login.
+Unauthenticated callers get a categorized 401 (`tokenExpired`, `invalidToken`, `missingCookie`). The UI client retries with a guarded `/auth/refresh` when it sees a 401, then retries the original request. If refresh fails, the SPA redirects to login.
 
-## Session storage
-
-The `auth.sessions` table stores:
-
-- `user_id`
-- `token_hash` (HMAC-SHA256 of the opaque refresh token, never the raw token)
-- `expires_at`
-- timestamps
-
-Email-verification and password-reset tokens follow the same rule: raw token only goes to the user, hash goes to Postgres.
+The `auth.sessions` table stores `user_id`, `token_hash` (HMAC-SHA256 of the opaque refresh token, never the raw token), `expires_at`, and timestamps. Email-verification and password-reset tokens follow the same rule: raw token only goes to the user, hash goes to Postgres.
 
 ## Adding an OAuth provider
 
@@ -234,20 +141,15 @@ The lint plugins refuse to merge a provider that skips the state-consume or PKCE
 
 ## Lint coverage
 
-- [`@boring-stack-pkg/eslint-plugin-jwt-cookies`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-jwt-cookies); cookie attributes and JWT verify call sites.
-- [`@boring-stack-pkg/eslint-plugin-oauth-security`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-oauth-security); state + PKCE invariants on the callback path.
-
-See [Lint as the contract](/architecture/lint-as-contract/) for why these matter.
+[`@boring-stack-pkg/eslint-plugin-jwt-cookies`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-jwt-cookies) checks cookie attributes and JWT verify call sites. [`@boring-stack-pkg/eslint-plugin-oauth-security`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-oauth-security) enforces state and PKCE invariants on the callback path. See [Lint as the contract](/architecture/lint-as-contract/) for why these matter.
 
 <Aside type="caution" title="Rotating JWT_SECRET">
-  Rotating `JWT_SECRET` invalidates access cookies and makes existing refresh
-  token hashes impossible to match. That's the right behavior after a suspected
-  leak; don't rotate casually.
+Rotating `JWT_SECRET` invalidates access cookies and makes existing refresh token hashes impossible to match. That's the right behavior after a suspected leak; don't rotate casually.
 </Aside>
 
 ## Source
 
-[`src/api/auth/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/auth) and [`src/lib/oauth/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/oauth) on GitHub; the routes, the services, the OAuth state store, and the providers.
+[`src/api/auth/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/auth) and [`src/lib/oauth/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/oauth): routes, services, OAuth state store, and providers.
 
 ## Related
 

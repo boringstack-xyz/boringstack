@@ -1,198 +1,119 @@
 ---
 title: Cloudflare Email setup
-description: End-to-end; enable Workers Paid, enable Email Service on your domain, capture the account ID, scope a token, smoke-test.
+description: Enable Workers Paid, enable Email Service on your domain, scope an API token, and send mail.
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import CommandRun from "../../../components/docs-kit/CommandRun";
-import DocCallout from "../../../components/DocCallout.tsx";
-import { Steps } from "@astrojs/starlight/components";
+import { Aside } from "@astrojs/starlight/components";
 
-<PageIntro
-  eyebrow="Cloudflare email"
-  actions={[
-    { label: "Prerequisites", href: "#prerequisites" },
-    { label: "Step-by-Step Setup", href: "#setup" },
-  ]}
-  facts={[
-    { value: "Paid", label: "Workers plan needed" },
-    { value: "Zero", label: "DNS hand-edits" },
-    { value: "Bearer", label: "auth header" },
-  ]}
->
-  From a fresh Cloudflare account to sending mail via Cloudflare Email Service.
-  One-time setup; later rotations are step 4 only.
-</PageIntro>
+Set up Cloudflare Email Service to send transactional mail from your domain. This is a one-time setup; token rotation afterwards is step 4 only. The setup auto-provisions SPF, DKIM, and DMARC because your zone is on Cloudflare.
 
-For _why_ Cloudflare is the default, see [Cloudflare Email Service](/topics/cloudflare-email/).
+For the reasoning behind choosing Cloudflare as the default email provider, see [Cloudflare Email Service](/topics/cloudflare-email/).
 
 ## Prerequisites
 
-- A Cloudflare account that owns (or proxies) the domain you'll send from.
+- A Cloudflare account that owns the domain you'll send from.
 - Admin access to that account.
-- A real email address for the API token's audit trail.
+- A real email address for audit logs on the API token.
 
-## How the pieces fit
+## 1. Upgrade to Workers Paid
 
-```mermaid
-flowchart LR
-  paid["Workers Paid plan"]
-  domain["Email Service enabled<br/>on your domain"]
-  dns["SPF / DKIM / DMARC<br/>auto-provisioned"]
-  acct["Account ID<br/>scope for the endpoint"]
-  token["API Token<br/>Email Sending: Edit"]
-  api["apps/api<br/>EMAIL_PROVIDER=cloudflare"]
-  paid --> domain --> dns
-  domain --> acct --> api
-  domain --> token --> api
+Cloudflare dashboard → **Workers & Pages** → **Plans** → **Upgrade to Workers Paid**.
+
+Email Service is bundled; no separate charge. Check [current pricing](https://www.cloudflare.com/plans/developer-platform/) for the current cost.
+
+## 2. Enable Email Service on your domain
+
+Dashboard → **Email** → **Email Routing** (or **Email Sending**) → enable for your domain.
+
+Cloudflare auto-provisions SPF, DKIM, and DMARC records. Wait for the dashboard to show all three as **Active** (usually under a minute). This is the step that eliminates manual DNS hand-edits, where most email setups fail.
+
+## 3. Capture the Account ID
+
+Dashboard → your domain → right sidebar → **Account ID** (32 hex characters).
+
+Add it to `compose/.env`:
+
+```bash
+echo 'CLOUDFLARE_ACCOUNT_ID=your_32_hex_account_id' >> compose/.env
 ```
 
-<p class="bs-diagram-caption">
-  Cloudflare Email setup chain: a Workers Paid plan unlocks the Email Service;
-  enabling it on your domain auto-provisions SPF, DKIM, and DMARC; from there
-  you capture the Account ID (used in the endpoint URL) and a scoped API token
-  (used in the bearer header). The apps/api reads both via{" "}
-  <code>EMAIL_PROVIDER=cloudflare</code>.
-</p>
+## 4. Create a scoped API token
 
-You need both the account ID (in the endpoint URL) and the API token (in the bearer header). Lose either and sends fail.
+Dashboard → **My Profile** → **API Tokens** → **Create Token** → **Custom Token**.
 
-## Setup
+Permissions: set **Email Sending** to **Edit** only. Account resources: include this specific account. TTL: leave indefinite; you'll rotate quarterly.
 
-<Steps>
+Copy the token (you won't see it again) and add it to `compose/.env`:
 
-1. Enable Workers Paid. Cloudflare dashboard → Workers & Pages → Plans → upgrade to Workers Paid. Email Service is bundled into this plan; there's no separate billing line. ([Current pricing](https://www.cloudflare.com/plans/developer-platform/).)
+```bash
+echo 'CLOUDFLARE_EMAIL_API_TOKEN=your_scoped_token' >> compose/.env
+```
 
-2. Enable Email Service on your domain. Dashboard → Email → Email Routing or Email Sending → enable for the domain. Cloudflare auto-provisions the required DNS records (SPF, DKIM, DMARC) because the zone is on Cloudflare. That removes the usual hand-edited DNS step, where most transactional-email setups go wrong. Wait for the dashboard to show all three records as Active (usually under a minute).
+## 5. Set the sender and provider
 
-3. Capture the Account ID. Dashboard → any domain → right sidebar → "Account ID". 32 hex characters. Drop it into `compose/.env`:
+```bash
+echo 'EMAIL_PROVIDER=cloudflare' >> compose/.env
+echo 'EMAIL_FROM=noreply@yourdomain.com' >> compose/.env
+```
 
-   <CommandRun
-     title="Configure Account ID"
-     caption="inject the account ID into compose/.env"
-     command={[
-       "echo 'CLOUDFLARE_ACCOUNT_ID=your_32_hex_account_id' >> compose/.env",
-     ]}
-   />
+The `EMAIL_FROM` address must be on a domain where you've enabled Email Service. Sending from a domain that isn't enabled returns a 403.
 
-4. Scope an API token. Dashboard → My Profile → API Tokens → Create Token → Custom Token with:
-   - Permissions: `Email Sending: Edit` only, scoped to this account.
-   - Account resources: include the specific account.
-   - TTL: indefinite for now; rotate quarterly or after any staff change.
+## 6. Smoke-test
 
-   Copy the token (you can't view it again). Drop it into `compose/.env`:
+Restart the API and watch for a send:
 
-   <CommandRun
-     title="Configure API Token"
-     caption="inject the scoped API token into compose/.env"
-     command={[
-       "echo 'CLOUDFLARE_EMAIL_API_TOKEN=your_scoped_api_token' >> compose/.env",
-     ]}
-   />
+```bash
+./dev.sh restart api
+./dev.sh logs -f api | grep email
+```
 
-5. Set the sender + provider.
+Expected output:
 
-   <CommandRun
-     title="Configure Outbound Sender & Provider"
-     caption="configure the email provider and verified sender domain"
-     command={[
-       "echo 'EMAIL_PROVIDER=cloudflare' >> compose/.env",
-       "echo 'EMAIL_FROM=noreply@yourdomain.com' >> compose/.env",
-     ]}
-   />
+```
+event="email_sent" provider="cloudflare" to="user@example.com"
+```
 
-   `EMAIL_FROM` must be on a domain you've enabled Email Service for. Sending from a domain that isn't enabled returns a 403.
+If it fails, check the logs for the response body. Common mistakes: unverified domain, or missing `Email Sending` permission on the API token.
 
-6. Smoke-test.
+## Validate the DNS records
 
-   <CommandRun
-     title="Smoke-Test Outbound Delivery"
-     caption="restart the API container and monitor sending telemetry"
-     command={["./dev.sh restart api", "./dev.sh logs -f api | grep email"]}
-     output={[
-       { tone: "ok", text: "api restarted successfully" },
-       { tone: "info", text: "Streaming api logs matching 'email'..." },
-       {
-         tone: "ok",
-         text: 'event="email_sent" provider="cloudflare" to="user@example.com"',
-       },
-     ]}
-   />
+After the dashboard shows records active, verify them from the terminal:
 
-   Success looks like `event="email_sent" provider="cloudflare"`. Failure logs the response body; usually an unverified-domain error or a permission-scope mistake.
+```bash
+dig +short TXT yourdomain.com | grep 'v=spf1'
+dig +short TXT cf-xxxx._domainkey.yourdomain.com
+dig +short TXT _dmarc.yourdomain.com
+```
 
-</Steps>
+All three should return a value. If any are empty, re-toggle Email Service in the dashboard.
 
-<DocCallout
-  eyebrow="Verification gotcha"
-  title="New-Account Verified Senders lock"
-  variant="caution"
->
-  Brand-new Cloudflare accounts have a sender-verification lock: you can only
-  send to addresses you've verified, until the account is approved for
-  unrestricted sending. The check is usually automatic within a few days for
-  legitimate use. If you need to ship before then: - **Verify recipient
-  addresses:** In the dashboard under Email → verify recipient. - **Fast-track
-  approval:** Contact Cloudflare support explaining your use case.
-</DocCallout>
+<Aside type="caution" title="New-account verified-senders lock">
+Brand-new Cloudflare accounts can only send to verified addresses until the account is approved for unrestricted sending (usually automatic within a few days). If you need to ship before approval, either verify recipient addresses in the dashboard, or contact Cloudflare support.
+</Aside>
 
-## Validating SPF / DKIM / DMARC
-
-Once the dashboard shows the records active, verify them from your terminal:
-
-<CommandRun
-  title="Validate DNS Records"
-  caption="query DNS to confirm SPF, DKIM, and DMARC TXT entries"
-  command={[
-    "dig +short TXT yourdomain.com | grep 'v=spf1'",
-    "dig +short TXT cf-xxxx._domainkey.yourdomain.com",
-    "dig +short TXT _dmarc.yourdomain.com",
-  ]}
-  output={[
-    { tone: "ok", text: '"v=spf1 include:cloudflare.net ~all"' },
-    {
-      tone: "ok",
-      text: '"v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQ..."',
-    },
-    { tone: "ok", text: '"v=DMARC1; p=quarantine; pct=100;"' },
-  ]}
-/>
-
-All three should return a value. If any are empty, the Cloudflare auto-provision didn't complete; re-toggle Email Service in the dashboard.
-
-## Rotation
+## Rotating the token
 
 Every quarter, or after any staff change:
 
-1. Create a new API token with the same scope.
+1. Create a new token with the same scope in the dashboard.
 2. Update `CLOUDFLARE_EMAIL_API_TOKEN` in `compose/.env`.
-3. `./dev.sh restart api`.
-4. Confirm a send works with the new token.
+3. Restart the API: `./dev.sh restart api`.
+4. Confirm a send works.
 5. Revoke the old token in the dashboard.
 
-## Switching to Resend / SendGrid
+## Switching to Resend or SendGrid
 
-The apps/api is provider-agnostic. Swapping is one env var:
+The API is provider-agnostic. Change one env var:
 
-<CommandRun
-  title="Switch Provider to Resend"
-  caption="change the provider flag and provide the vendor API key"
-  command={[
-    "echo 'EMAIL_PROVIDER=resend' >> compose/.env",
-    "echo 'RESEND_API_KEY=re_your_resend_api_key' >> compose/.env",
-  ]}
-/>
+```bash
+echo 'EMAIL_PROVIDER=resend' >> compose/.env
+echo 'RESEND_API_KEY=re_your_resend_api_key' >> compose/.env
+```
 
-The env validator refuses to boot in production if the matching key is missing. See [Email](/api/email/) and [Cloudflare Email Service](/topics/cloudflare-email/) for the abstraction.
-
-## Source
-
-- Provider implementation: [`src/lib/email/providers/cloudflare.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/lib/email/providers/cloudflare.ts) in the apps/api.
-- Cloudflare's own docs: [developers.cloudflare.com/email-service](https://developers.cloudflare.com/email-service/).
+The env validator will refuse to boot in production if the matching key is missing. See [Email](/api/email/) for the provider abstraction.
 
 ## Related
 
-- [Cloudflare Email Service](/topics/cloudflare-email/); why it's the default and how it compares.
-- [Email](/api/email/); the pluggable provider abstraction behind every backend.
-- [Email in development](/topics/email-in-dev/); Mailpit when you don't want to hit a real provider.
-- [Env validator](/api/env-validator/); the boot-time check that catches a missing token before prod.
+- [Cloudflare Email Service](/topics/cloudflare-email/)  - the reasoning and comparisons.
+- [Email](/api/email/)  - the pluggable provider interface.
+- [Email in development](/topics/email-in-dev/)  - Mailpit for local testing without hitting real providers.
