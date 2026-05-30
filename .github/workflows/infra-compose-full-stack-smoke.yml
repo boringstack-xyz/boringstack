@@ -13,12 +13,15 @@ on:
       - "apps/api/**"
       - "apps/ui/**"
       - ".github/workflows/infra-compose-full-stack-smoke.yml"
+  # Intentionally no `paths:` filter on pull_request: this job is a required
+  # check in branch protection, and a path-filtered workflow that never runs
+  # never reports a status — leaving docs-only PRs perpetually blocked. The
+  # body uses dorny/paths-filter and gates every real step on
+  # `if: steps.filter.outputs.code == 'true'`, so a docs-only PR runs just
+  # the checkout + filter (~30s) and exits success with the required check
+  # name reported green. The full smoke loop only runs when code paths
+  # actually change.
   pull_request:
-    paths:
-      - "infra/compose/**"
-      - "apps/api/**"
-      - "apps/ui/**"
-      - ".github/workflows/infra-compose-full-stack-smoke.yml"
   workflow_dispatch:
 
 concurrency:
