@@ -452,6 +452,13 @@
         "admin": "Admin",
         "member": "Member",
         "viewer": "Viewer"
+      },
+      "locked": {
+        "featureTitle": "Team invitations aren't included in your plan",
+        "featureBody": "Your current plan doesn't include inviting teammates. Upgrade to add admins, members, and viewers to this account.",
+        "featureCta": "View plans",
+        "roleTitle": "Your role can't invite teammates",
+        "roleBody": "Only Owners and Admins on this account can send invitations. Ask an Owner or Admin to send the invite, or to promote your role."
       }
     }
   },

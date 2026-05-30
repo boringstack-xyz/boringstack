@@ -473,6 +473,13 @@
         "admin": "Admin",
         "member": "Mitglied",
         "viewer": "Betrachter"
+      },
+      "locked": {
+        "featureTitle": "Team-Einladungen sind in deinem Plan nicht enthalten",
+        "featureBody": "Dein aktueller Plan beinhaltet keine Team-Einladungen. Mit einem Upgrade kannst du Admins, Mitglieder und Betrachter zu diesem Konto hinzufügen.",
+        "featureCta": "Pläne ansehen",
+        "roleTitle": "Deine Rolle kann keine Teammitglieder einladen",
+        "roleBody": "Nur Owner und Admins in diesem Konto können Einladungen versenden. Bitte einen Owner oder Admin, die Einladung zu verschicken oder deine Rolle zu erhöhen."
       }
     }
   },

@@ -36,7 +36,10 @@ function makeWrapper() {
   return { Wrapper };
 }
 
-function mockMe(canInvite: boolean): void {
+function mockMe(
+  canInvite: boolean,
+  role: "owner" | "admin" | "member" | "viewer" = "owner"
+): void {
   apiMock.GET.mockImplementation((path: string) => {
     if (path === "/api/v1/users/me") {
       return Promise.resolve({
@@ -47,7 +50,8 @@ function mockMe(canInvite: boolean): void {
             firstName: "",
             lastName: ""
           },
-          account: { id: "acc-1", name: "P", role: "owner" },
+          account: { id: "acc-1", name: "P" },
+          role,
           memberships: [],
           features: { can_invite_team: canInvite },
           capabilities: {
@@ -70,7 +74,7 @@ beforeEach(() => {
 });
 
 describe("useInvitationsPage", () => {
-  it("returns canInvite=false when the feature is not granted", async () => {
+  it("returns canInvite=false + lockedReason='feature' when can_invite_team is off", async () => {
     mockMe(false);
 
     const { Wrapper } = makeWrapper();
@@ -79,11 +83,28 @@ describe("useInvitationsPage", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.canInvite).toBe(false);
+      expect(result.current.lockedReason).toBe("feature");
     });
+
+    expect(result.current.canInvite).toBe(false);
   });
 
-  it("returns canInvite=true + the accountId once /me resolves with the feature", async () => {
+  it("returns canInvite=false + lockedReason='role' when feature is on but role can't invite", async () => {
+    mockMe(true, "viewer");
+
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useInvitationsPage(), {
+      wrapper: Wrapper
+    });
+
+    await waitFor(() => {
+      expect(result.current.lockedReason).toBe("role");
+    });
+
+    expect(result.current.canInvite).toBe(false);
+  });
+
+  it("returns canInvite=true + the accountId once /me resolves with feature + owner role", async () => {
     mockMe(true);
 
     const { Wrapper } = makeWrapper();
@@ -95,6 +116,7 @@ describe("useInvitationsPage", () => {
       expect(result.current.canInvite).toBe(true);
     });
 
+    expect(result.current.lockedReason).toBeNull();
     expect(result.current.accountId).toBe("acc-1");
   });
 

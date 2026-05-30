@@ -1,8 +1,8 @@
 import type { FC } from "react";
+import { Link } from "react-router-dom";
 
 import { useTranslation } from "react-i18next";
 
-import { Can } from "@/lib/acl/Can";
 import { ROLE } from "@/lib/acl/acl.types";
 
 import { AppPage } from "@/components/core/AppPage";
@@ -17,6 +17,8 @@ import { formatExpiresAt, makeIdHandler } from "./InvitationsPage.utils";
 const InvitationsPage: FC<IInvitationsPageProps> = () => {
   const { t } = useTranslation();
   const {
+    canInvite,
+    lockedReason,
     invitations,
     form,
     isSubmitting,
@@ -74,7 +76,7 @@ const InvitationsPage: FC<IInvitationsPageProps> = () => {
       title={t("accounts.invitations.pageTitle")}
       subtitle={t("accounts.invitations.pageSubtitle")}
     >
-      <Can I='invite' a='TeamMember'>
+      {canInvite ? (
         <article className='border-border-strong/40 bg-panel flex flex-col gap-4 rounded-2xl border p-6'>
           <header className='flex flex-col gap-1'>
             <h2 className='text-foreground text-lg font-semibold tracking-tight'>
@@ -150,7 +152,44 @@ const InvitationsPage: FC<IInvitationsPageProps> = () => {
             </p>
           ) : null}
         </article>
-      </Can>
+      ) : null}
+
+      {lockedReason === "feature" ? (
+        <article
+          className='border-border-strong/40 bg-panel flex flex-col gap-3 rounded-2xl border p-6'
+          data-testid='invite-locked-feature'
+        >
+          <header className='flex flex-col gap-1'>
+            <h2 className='text-foreground text-lg font-semibold tracking-tight'>
+              {t("accounts.invitations.locked.featureTitle")}
+            </h2>
+            <p className='text-muted-foreground text-sm'>
+              {t("accounts.invitations.locked.featureBody")}
+            </p>
+          </header>
+          <div>
+            <Button asChild size='sm'>
+              <Link to='/account/billing'>
+                {t("accounts.invitations.locked.featureCta")}
+              </Link>
+            </Button>
+          </div>
+        </article>
+      ) : null}
+
+      {lockedReason === "role" ? (
+        <article
+          className='border-border-strong/40 bg-panel flex flex-col gap-2 rounded-2xl border p-6'
+          data-testid='invite-locked-role'
+        >
+          <h2 className='text-foreground text-lg font-semibold tracking-tight'>
+            {t("accounts.invitations.locked.roleTitle")}
+          </h2>
+          <p className='text-muted-foreground text-sm'>
+            {t("accounts.invitations.locked.roleBody")}
+          </p>
+        </article>
+      ) : null}
 
       <article className='border-border-strong/40 bg-panel flex flex-col gap-4 rounded-2xl border p-6'>
         <header>
