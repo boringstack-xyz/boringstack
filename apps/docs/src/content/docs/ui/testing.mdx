@@ -3,27 +3,7 @@ title: Testing
 description: Vitest for units, Testing Library for components, Playwright for end-to-end (Chromium + WebKit) with visual baselines. No MSW.
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
-
-<PageIntro
-  eyebrow="UI Test Strategy"
-  actions={[
-    { label: "Design choices", href: "#design-choices" },
-    { label: "Patterns", href: "#patterns" },
-  ]}
-  facts={[
-    { value: "3", label: "test layers" },
-    { value: "No MSW", label: "no mock drift" },
-    { value: "Chromium + WebKit", label: "e2e browsers" },
-  ]}
->
-  Three test layers, each earning its keep: Vitest for pure logic, Testing
-  Library for component rendering, Playwright for end-to-end against the real
-  Compose stack. No mock service workers. Anything HTTP-shaped is e2e.
-</PageIntro>
+Three test layers, each earning its keep: Vitest for pure logic, Testing Library for component rendering, Playwright for end-to-end against the real Compose stack. No mock service workers. Anything HTTP-shaped is e2e.
 
 ```mermaid
 flowchart LR
@@ -43,54 +23,27 @@ flowchart LR
 
 ## Design choices
 
-<SignalGrid
-  columns={3}
-  items={[
-    {
-      label: "Layered",
-      title: "Three layers, not one",
-      body: "Unit tests cannot catch routing bugs; e2e cannot catch every hook edge case.",
-    },
-    {
-      label: "No drift",
-      title: "No MSW",
-      body: "Hand-written mocks drift from the real backend; HTTP-shaped tests run e2e instead.",
-    },
-    {
-      label: "Real stack",
-      title: "e2e against ./dev.sh",
-      body: "Catches API-shape drift and integration regressions without any extra scaffolding.",
-    },
-  ]}
-/>
+**Three layers, not one.** Unit tests cannot catch routing bugs; e2e cannot catch every hook edge case. Each layer earns its place.
 
-<FaqGroup>
-  <FaqItem title="Playwright with Chromium + WebKit" open>
-    Safari behavior bugs surface in CI, not from a user report.
-  </FaqItem>
-  <FaqItem title="Visual snapshots per-platform">
-    macOS vs Linux font rendering differs; baselines committed per OS.
-  </FaqItem>
-  <FaqItem title="Coverage excludes *.stories.tsx, *.types.ts, *.constants.ts">
-    Numbers only count files you can meaningfully test.
-  </FaqItem>
-</FaqGroup>
+**No MSW.** Hand-written mocks drift from the real backend; HTTP-shaped tests run e2e instead.
+
+**E2e against ./dev.sh.** This catches API-shape drift and integration regressions without any extra scaffolding.
+
+**Playwright with Chromium + WebKit.** Safari behavior bugs surface in CI, not from a user report.
+
+**Visual snapshots per-platform.** macOS vs Linux font rendering differs; baselines are committed per OS.
+
+**Coverage excludes *.stories.tsx, *.types.ts, *.constants.ts.** Numbers only count files you can meaningfully test.
 
 ## What lives where
 
-<FaqGroup>
-  <FaqItem title="Unit / component" open>
-    Location: `src/**/*.test.ts` colocated with source. Run: `bun run test`.
-  </FaqItem>
-  <FaqItem title="e2e">
-    Location: `e2e/*.spec.ts`. Run: `bun run e2e` (needs dev stack up).
-  </FaqItem>
-  <FaqItem title="Visual baselines">
-    Location: `e2e/visual.spec.ts-snapshots/`. Run: `bun run e2e:visual:update` to
-    refresh.
-  </FaqItem>
-  <FaqItem title="Coverage">Run via `bun run test:ci`.</FaqItem>
-</FaqGroup>
+**Unit and component tests.** Location: `src/**/*.test.ts` colocated with source. Run: `bun run test`.
+
+**E2e tests.** Location: `e2e/*.spec.ts`. Run: `bun run e2e` (needs dev stack up).
+
+**Visual baselines.** Location: `e2e/visual.spec.ts-snapshots/`. Run: `bun run e2e:visual:update` to refresh.
+
+**Coverage.** Run via `bun run test:ci`.
 
 ## Why no mock layer
 

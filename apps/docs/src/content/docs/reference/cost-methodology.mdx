@@ -4,30 +4,13 @@ description: "How the cost figures on the Why BoringStack page were derived: ass
 verifiedOn: "2026-05"
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import DocCallout from "../../../components/DocCallout.tsx";
+import { Aside } from "@astrojs/starlight/components";
 
-<PageIntro
-  eyebrow="Cost methodology"
-  actions={[
-    { label: "Four stages", href: "#the-four-stages" },
-    { label: "VPS column", href: "#column-1-boringstack-vps--cloudflare--b2" },
-  ]}
-  facts={[
-    { value: "2026-05", label: "rate cards as of" },
-    { value: "3 columns", label: "solution categories" },
-    { value: "Rounded up", label: "on purpose" },
-  ]}
->
-  The [cost calculator](/architecture/why-boringstack/#cost-calc-title) on the Why BoringStack page compares three solution categories at four usage stages. Prices reflect public list rate cards as of **2026-05**. Numbers are rounded up on purpose so the columns sit on the same scale, not to predict your bill to the cent.
-</PageIntro>
+The [cost calculator](/architecture/why-boringstack/) compares three solution categories at four usage stages. Prices reflect public list rate cards as of 2026-05. Numbers are rounded up on purpose so the columns sit on the same scale, not to predict your bill to the cent.
 
-<DocCallout eyebrow="Caveat" title="These are categories, not vendors" variant="caution">
-  The "Managed-PaaS bundle" and "Hosted SaaS platform" columns do **not**
-  represent a single named product. Each is a *shape* of solution priced by
-  picking representative rate cards from that shape. Your actual vendor may be
-  cheaper or pricier depending on which features you use.
-</DocCallout>
+<Aside type="caution" title="Categories, not vendors">
+The "Managed-PaaS bundle" and "Hosted SaaS platform" columns do not represent a single named product. Each is a shape of solution priced by picking representative rate cards from that shape. Your actual vendor may be cheaper or pricier depending on which features you use.
+</Aside>
 
 ## The four stages
 
@@ -98,13 +81,13 @@ The all-in-one shape: auth + DB + background work + email + analytics bundled in
 ## What this comparison does not measure
 
 - **Engineering time.** The PaaS and SaaS columns save days of setup. The BoringStack column trades some of that day-1 time for long-term ownership. Calculator-row cost is *infra only*.
-- **Reliability differences.** Multi-AZ managed Postgres has stronger guarantees out of the box than one VPS. The Scale-tier BoringStack figure assumes you've added a hot standby or moved to managed Postgres voluntarily. See the [Decision Log](/architecture/decisions/) on Postgres.
+- **Reliability differences.** Multi-AZ managed Postgres has stronger guarantees by default than one VPS. The Scale-tier BoringStack figure assumes you've added a hot standby or moved to managed Postgres voluntarily. See the [Decision Log](/architecture/decisions/) on Postgres.
 - **Enterprise sales pricing.** Every column shows public list price. Real enterprise deals are negotiated and can shift any column by 30–60%.
 - **Free-tier edge cases.** New-account credits, promotional pricing, and pre-revenue waivers can make the early stages cheaper than shown for all three columns.
 
 ## How to update these numbers
 
-Edit `src/components/landing/costData.ts`. That's the single source of truth for the calculator and these tables. Update the `pricingAsOf` constant at the same time so the published-date footer stays honest.
+Edit `src/components/landing/costData.ts`. That file defines all the figures for the calculator and these tables. Update the `pricingAsOf` constant at the same time so the published-date footer stays current.
 
 ## Related
 

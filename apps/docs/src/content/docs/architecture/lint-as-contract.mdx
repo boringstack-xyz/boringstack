@@ -4,30 +4,8 @@ description: Custom ESLint plugins encode the architecture. Machine-checked rule
 ---
 
 import { Aside } from "@astrojs/starlight/components";
-import CommandRun from "../../../components/docs-kit/CommandRun";
-import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
 
-<PageIntro
-  eyebrow="Lint contract"
-  actions={[
-    { label: "API overview", href: "/api/overview/" },
-    { label: "UI rules", href: "/ui/architecture-rules/" },
-  ]}
-  facts={[
-    { value: "validate", label: "merge gate" },
-    { value: "ESLint", label: "machine-readable contract" },
-    { value: "agents", label: "same feedback as humans" },
-  ]}
->
-  This is the load-bearing piece of
-  <a href="/architecture/why-boringstack/"> Why BoringStack</a>: architecture
-  lives in tooling, with prose for context. The docs explain intent; lint makes
-  drift visible before review.
-</PageIntro>
+Architecture lives in tooling, with prose for context. The docs explain intent; lint makes drift visible before review.
 
 ## The problem
 
@@ -42,187 +20,76 @@ Every template ships prose contracts and lint gates together. The prose says whe
 `bun run validate` / `bun run validate` is the merge gate: if lint fails, the diff does not ship. Prose is the why; lint is what ships.
 
 <Aside type="tip" title="The hierarchy">
-  Prose docs (`AGENTS.md`) are *aspirational*. Lint rules are *load-bearing*.
-  When the two disagree, fix the lint rule or add a new one, then update the
-  prose.
+  Prose docs (`AGENTS.md`) are aspirational. Lint rules are enforced.
+  When the two disagree, fix the lint rule or add a new one, then update the prose.
 </Aside>
 
 ## What gets enforced
 
-<FeatureGrid
-  columns={3}
-  items={[
-    {
-      eyebrow: "layers",
-      title: "Layer boundaries",
-      body: "Routes stay thin, services own business logic, components render view objects, and feature folders keep one semantic concern per file.",
-    },
-    {
-      eyebrow: "data",
-      title: "Data safety",
-      body: "Account-scoped queries require filters, multi-write paths require transactions, cache keys are namespaced, and Stripe webhooks are idempotent.",
-    },
-    {
-      eyebrow: "security",
-      title: "Security invariants",
-      body: "JWT cookies, OAuth state/PKCE, raw webhook bodies, env access, and secret-safe logging are checked mechanically.",
-    },
-    {
-      eyebrow: "ops",
-      title: "Operational hygiene",
-      body: "Structured log events, test placement, dead-code detection, env/schema drift checks, and no inline disables keep the merge gate honest.",
-    },
-    {
-      eyebrow: "agents",
-      title: "Agent-friendly feedback",
-      body: "Violations point at the file, rule, and local fix. Humans and agents get the same contract.",
-    },
-    {
-      eyebrow: "review",
-      title: "Review focuses on behavior",
-      body: "Reviewers spend energy on behavior instead of rediscovering folder and boundary rules enforced by ESLint.",
-    },
-  ]}
-/>
+- **Layer boundaries.** Routes stay thin, services own business logic, components render view objects, and feature folders keep one semantic concern per file.
+- **Data safety.** Account-scoped queries require filters, multi-write paths require transactions, cache keys are namespaced, and Stripe webhooks are idempotent.
+- **Security invariants.** JWT cookies, OAuth state/PKCE, raw webhook bodies, env access, and secret-safe logging are checked mechanically.
+- **Operational hygiene.** Structured log events, test placement, dead-code detection, env/schema drift checks, and no inline disables keep the merge gate honest.
+- **Agent-friendly feedback.** Violations point at the file, rule, and local fix. Humans and agents get the same contract.
+- **Review focuses on behavior.** Reviewers spend energy on behavior instead of rediscovering folder and boundary rules enforced by ESLint.
 
 ## Plugin inventory
 
-Use this as the reference catalog after the mental model makes sense.
+Use this as the reference catalog once the overview above makes sense.
 
 ### Shared across apps/api + apps/ui
 
-<FaqGroup>
-  <FaqItem title="resource-architecture" open>
-    [`@boring-stack-pkg/eslint-plugin-resource-architecture`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-resource-architecture):
-    per-feature route/service/types split. No business logic in routes; no HTTP
-    in services.
-  </FaqItem>
-  <FaqItem title="module-boundaries">
-    [`@boring-stack-pkg/eslint-plugin-module-boundaries`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-module-boundaries):
-    single-semantic-module files. No mixed-concern dumps.
-  </FaqItem>
-  <FaqItem title="structured-logging">
-    [`@boring-stack-pkg/eslint-plugin-structured-logging`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-structured-logging):
-    Pino discipline. No `console.log`, no string-interpolated log lines, no
-    logging secrets. The `typed-event-names` rule validates every `logger.
-    {level}({event})` literal against the canonical `LOG_EVENTS` const tuple so
-    log events stay a closed set.
-  </FaqItem>
-  <FaqItem title="env-access">
-    [`@boring-stack-pkg/eslint-plugin-env-access`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-env-access):
-    `process.env` / `import.meta.env` only inside the env validator; everywhere
-    else uses validated config.
-  </FaqItem>
-  <FaqItem title="test-conventions">
-    [`@boring-stack-pkg/eslint-plugin-test-conventions`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-test-conventions):
-    `tests/` mirrors `src/`; no orphan tests.
-  </FaqItem>
-  <FaqItem title="code-flow">
-    [`@boring-stack-pkg/eslint-plugin-code-flow`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-code-flow):
-    control-flow discipline. `prefer-early-return` (no needless nesting after a
-    guard) and `no-template-trim-empty-ternary` (bans the inline `${a} ${b}
-    `.trim() === "" ? fallback : ...` anti-pattern: extract to a named util like
-    `buildDisplayName(...)` so the construction is testable in one place); also
-    enforces blank-line padding before `throw` and `return` so the exit branch
-    is visually distinct.
-  </FaqItem>
-  <FaqItem title="comment-hygiene">
-    [`@boring-stack-pkg/eslint-plugin-comment-hygiene`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-comment-hygiene):
-    `no-narration-comments` flags AI-generated narration like "Here we…" / "Now
-    we…" / "Let's…"; `no-pr-reference-comments` flags `#123` / `PR 42` / GitHub
-    URLs embedded in code (they belong in the PR description, not the source).
-  </FaqItem>
-</FaqGroup>
+- **resource-architecture.** [`@boring-stack-pkg/eslint-plugin-resource-architecture`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-resource-architecture). Per-feature route/service/types split. No business logic in routes; no HTTP in services.
+
+- **module-boundaries.** [`@boring-stack-pkg/eslint-plugin-module-boundaries`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-module-boundaries). Single-semantic-module files. No mixed-concern dumps.
+
+- **structured-logging.** [`@boring-stack-pkg/eslint-plugin-structured-logging`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-structured-logging). Pino discipline. No `console.log`, no string-interpolated log lines, no logging secrets. The `typed-event-names` rule validates every `logger.{level}({event})` literal against the canonical `LOG_EVENTS` const tuple so log events stay a closed set.
+
+- **env-access.** [`@boring-stack-pkg/eslint-plugin-env-access`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-env-access). `process.env` / `import.meta.env` only inside the env validator; everywhere else uses validated config.
+
+- **test-conventions.** [`@boring-stack-pkg/eslint-plugin-test-conventions`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-test-conventions). `tests/` mirrors `src/`; no orphan tests.
+
+- **code-flow.** [`@boring-stack-pkg/eslint-plugin-code-flow`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-code-flow). Control-flow discipline. `prefer-early-return` (no needless nesting after a guard) and `no-template-trim-empty-ternary` (bans the inline `${a} ${b}`.trim() === "" ? fallback : ...` anti-pattern; extract to a named util like `buildDisplayName(...)` so the construction is testable in one place). Also enforces blank-line padding before `throw` and `return` so the exit branch is visually distinct.
+
+- **comment-hygiene.** [`@boring-stack-pkg/eslint-plugin-comment-hygiene`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-comment-hygiene). `no-narration-comments` flags AI-generated narration like "Here we…" / "Now we…" / "Let's…". `no-pr-reference-comments` flags `#123` / `PR 42` / GitHub URLs embedded in code (they belong in the PR description, not the source).
 
 ### Built-in + third-party rules wired at the same gate
 
 Two non-custom rules earn their place alongside the `@boring-stack-pkg` plugins:
 
-<FaqGroup>
-  <FaqItem title="eslint-comments/no-use" open>
-    [`@eslint-community/eslint-plugin-eslint-comments`](https://github.com/eslint-community/eslint-plugin-eslint-comments): `no-use` is set to `error` with `{ allow: [] }`. Zero inline disables; defence-in-depth on top of the source-text ban that `lint:meta` already enforces.
-  </FaqItem>
-  <FaqItem title="multiline-comment-style: starred-block">
-    Built-in ESLint rule. Any `//`-style block that spans three or more consecutive lines must be a single `/* … */` block. Auto-fixable; keeps WHY-comments visually distinct from inline notes.
-  </FaqItem>
-  <FaqItem title="no-restricted-syntax: ban inline new Date().toISOString()">
-    Built-in ESLint rule with a project-specific selector. Every call site must use the `now()` util from `src/lib/time/now.ts` so timestamps have a single mockable source and a single place to change formatting if the contract ever shifts.
-  </FaqItem>
-</FaqGroup>
+- **eslint-comments/no-use.** [`@eslint-community/eslint-plugin-eslint-comments`](https://github.com/eslint-community/eslint-plugin-eslint-comments). `no-use` is set to `error` with `{ allow: [] }`. Zero inline disables; defence-in-depth on top of the source-text ban that `lint:meta` already enforces.
+
+- **multiline-comment-style: starred-block.** Built-in ESLint rule. Any `//`-style block that spans three or more consecutive lines must be a single `/* … */` block. Auto-fixable; keeps WHY-comments visually distinct from inline notes.
+
+- **no-restricted-syntax: ban inline new Date().toISOString().** Built-in ESLint rule with a project-specific selector. Every call site must use the `now()` util from `src/lib/time/now.ts` so timestamps have a single mockable source and a single place to change formatting if the contract ever shifts.
 
 ### apps/api only
 
-<FaqGroup>
-  <FaqItem title="elysia" open>
-    [`@boring-stack-pkg/eslint-plugin-elysia`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-elysia):
-    TypeBox on every route, no untyped handlers, plugin registration patterns.
-    `route-must-check-ability` requires every handler that destructures
-    `membership` from context to authorize explicitly: either read
-    `membership.role` or call `requireAbility` / `enforceLimit`.
-  </FaqItem>
-  <FaqItem title="drizzle-conventions">
-    [`@boring-stack-pkg/eslint-plugin-drizzle-conventions`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-drizzle-conventions):
-    schema and query patterns, index naming, `with` usage.
-    `account-scoped-tables-require-where` requires every query against an
-    account-scoped table (`accountMemberships`, `accountInvitations`,
-    `accountFeatureOverrides`, `accountPlans`) to filter by `accountId` (tenant
-    isolation enforced at the query level).
-  </FaqItem>
-  <FaqItem title="db-transactions">
-    [`@boring-stack-pkg/eslint-plugin-db-transactions`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-db-transactions):
-    multi-write paths inside a transaction.
-  </FaqItem>
-  <FaqItem title="jwt-cookies">
-    [`@boring-stack-pkg/eslint-plugin-jwt-cookies`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-jwt-cookies):
-    cookie attributes and JWT verify call sites.
-  </FaqItem>
-  <FaqItem title="oauth-security">
-    [`@boring-stack-pkg/eslint-plugin-oauth-security`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-oauth-security):
-    OAuth state + PKCE on the server flow.
-  </FaqItem>
-  <FaqItem title="bullmq">
-    [`@boring-stack-pkg/eslint-plugin-bullmq`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-bullmq):
-    queue/worker idempotency, failed handlers, name discipline.
-  </FaqItem>
-  <FaqItem title="cache-keys">
-    [`@boring-stack-pkg/eslint-plugin-cache-keys`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-cache-keys):
-    namespaced cache keys and TTL discipline.
-  </FaqItem>
-  <FaqItem title="audit-log">
-    [`@boring-stack-pkg/eslint-plugin-audit-log`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-audit-log):
-    audit writes on flagged mutations.
-  </FaqItem>
-  <FaqItem title="stripe-webhooks">
-    [`@boring-stack-pkg/eslint-plugin-stripe-webhooks`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-stripe-webhooks):
-    signature verification, idempotency, raw-body access.
-  </FaqItem>
-</FaqGroup>
+- **elysia.** [`@boring-stack-pkg/eslint-plugin-elysia`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-elysia). TypeBox on every route, no untyped handlers, plugin registration patterns. `route-must-check-ability` requires every handler that destructures `membership` from context to authorize explicitly: either read `membership.role` or call `requireAbility` / `enforceLimit`.
+
+- **drizzle-conventions.** [`@boring-stack-pkg/eslint-plugin-drizzle-conventions`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-drizzle-conventions). Schema and query patterns, index naming, `with` usage. `account-scoped-tables-require-where` requires every query against an account-scoped table (`accountMemberships`, `accountInvitations`, `accountFeatureOverrides`, `accountPlans`) to filter by `accountId` (tenant isolation enforced at the query level).
+
+- **db-transactions.** [`@boring-stack-pkg/eslint-plugin-db-transactions`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-db-transactions). Multi-write paths inside a transaction.
+
+- **jwt-cookies.** [`@boring-stack-pkg/eslint-plugin-jwt-cookies`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-jwt-cookies). Cookie attributes and JWT verify call sites.
+
+- **oauth-security.** [`@boring-stack-pkg/eslint-plugin-oauth-security`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-oauth-security). OAuth state and PKCE on the server flow.
+
+- **bullmq.** [`@boring-stack-pkg/eslint-plugin-bullmq`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-bullmq). Queue/worker idempotency, failed handlers, name discipline.
+
+- **cache-keys.** [`@boring-stack-pkg/eslint-plugin-cache-keys`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-cache-keys). Namespaced cache keys and TTL discipline.
+
+- **audit-log.** [`@boring-stack-pkg/eslint-plugin-audit-log`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-audit-log). Audit writes on flagged mutations.
+
+- **stripe-webhooks.** [`@boring-stack-pkg/eslint-plugin-stripe-webhooks`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-stripe-webhooks). Signature verification, idempotency, raw-body access.
 
 ### apps/ui only
 
-<FaqGroup>
-  <FaqItem title="react-component-architecture" open>
-    [`@boring-stack-pkg/eslint-plugin-react-component-architecture`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-react-component-architecture):
-    component anatomy, hooks, `className` discipline, file naming, prop
-    ordering. The `max-hooks-per-file` rule caps top-level hooks per file
-    (default 4) so god-modules like a 7-hook `*.queries.ts` either get split or
-    fail the gate.
-  </FaqItem>
-  <FaqItem title="tanstack-query-cache">
-    [`@boring-stack-pkg/eslint-plugin-tanstack-query-cache`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-tanstack-query-cache):
-    on `*.queries.ts`, when keys are built as `[...PREFIX, …]`, cache writes
-    must use matcher-style APIs (`setQueriesData`, `cancelQueries` with `exact:
-    false` / `predicate`, etc.) instead of `setQueryData` / `getQueryData` on
-    the bare prefix alone; otherwise only one entry updates while hooks still
-    read the spread key.
-  </FaqItem>
-  <FaqItem title="i18n-keys">
-    [`@boring-stack-pkg/eslint-plugin-i18n-keys`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-i18n-keys):
-    **static** string keys in `t("…")` / `i18n.t("…")` must exist in the
-    canonical English catalog (`src/lib/i18n/locales/en/common.json` in the
-    template). Catches typos and orphan keys at lint time.
-  </FaqItem>
-</FaqGroup>
+- **react-component-architecture.** [`@boring-stack-pkg/eslint-plugin-react-component-architecture`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-react-component-architecture). Component anatomy, hooks, `className` discipline, file naming, prop ordering. The `max-hooks-per-file` rule caps top-level hooks per file (default 4) so god-modules like a 7-hook `*.queries.ts` either get split or fail the gate.
+
+- **tanstack-query-cache.** [`@boring-stack-pkg/eslint-plugin-tanstack-query-cache`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-tanstack-query-cache). On `*.queries.ts`, when keys are built as `[...PREFIX, …]`, cache writes must use matcher-style APIs (`setQueriesData`, `cancelQueries` with `exact: false` / `predicate`, etc.) instead of `setQueryData` / `getQueryData` on the bare prefix alone; otherwise only one entry updates while hooks still read the spread key.
+
+- **i18n-keys.** [`@boring-stack-pkg/eslint-plugin-i18n-keys`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-i18n-keys). Static string keys in `t("…")` / `i18n.t("…")` must exist in the canonical English catalog (`src/lib/i18n/locales/en/common.json` in the template). Catches typos and orphan keys at lint time.
 
 ## How they're wired
 
@@ -230,17 +97,14 @@ Each template's flat ESLint config (`eslint.config.mjs` in apps/ui, `eslint.conf
 
 Where `lint:meta` is wired (`bun run lint:meta` / `bun run lint:meta`), it adds extra contract checks on top of ESLint, package.json pin parity, CI/pre-push parity, env cascade drift, source-text bans, and test-sibling requirements. The full machine-readable catalog lives on [lint:meta rules](/architecture/lint-meta/); implementation is under `scripts/lint-meta/cli.ts` with fixture-based tests in `tests/lint-meta/`. For which script runs each merge-gate command, see [Scripts & tooling](/reference/scripts-tooling/).
 
-<CommandRun
-  title="Merge gate"
-  caption="same contract in apps/api and apps/ui"
-  command={["bun run validate", "bun run lint", "bun run lint:fix", "bun run knip"]}
-  output={[
-    { text: "validate: typecheck + lint + knip + tests" },
-    { text: "lint: architecture rules only" },
-    { text: "lint:fix: autofix what can be fixed mechanically" },
-    { text: "knip: unused files, exports, and dependencies" },
-  ]}
-/>
+**Merge gate** (same contract in apps/api and apps/ui):
+
+```bash
+bun run validate   # typecheck + lint + knip + tests
+bun run lint       # architecture rules only
+bun run lint:fix   # autofix what can be fixed mechanically
+bun run knip       # unused files, exports, and dependencies
+```
 
 The same merge gate runs in three places so a broken change cannot reach `main`. A husky `pre-commit` hook runs `bun run lint-staged` against the staged files, the cheap, scoped check on every commit. A husky `pre-push` hook (installed via `prepare` on `bun run install` / `bun install`; for `infra/compose` and `.github`, run `./scripts/install-hooks.sh` once) then runs the full `validate` locally before anything leaves your machine: typecheck, lint, knip, tests, build, `osv-scanner` against the lockfile, and (when workspace apps are present) an OpenAPI schema drift check across apps/api and apps/ui. CI re-runs the same gate so a `--no-verify` push is still caught.
 
@@ -259,7 +123,7 @@ The plugins are MIT-licensed and developed in the open. If you find a gap, file 
 ## Related
 
 - [Why BoringStack](/architecture/why-boringstack/); where this fits the broader product thesis.
-- [lint:meta rules](/architecture/lint-meta/); static repo guardrails that run alongside ESLint.
+- [lint:meta rules](/architecture/lint-meta/); static repo enforcement rules that run alongside ESLint.
 - [Scripts & tooling](/reference/scripts-tooling/); which script file each merge-gate command runs.
 - [Agent docs as an index](/architecture/agent-docs/); the docs side of the same loop. `AGENTS.md` is a navigation table over `docs/agents/`.
 - [Stack at a glance](/architecture/stack/); the dependency inventory.

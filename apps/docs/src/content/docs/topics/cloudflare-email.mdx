@@ -3,62 +3,21 @@ title: Cloudflare Email Service
 description: Why we default to Cloudflare's transactional email API. The cheapest deliverability path that exists at non-trivial volume.
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import DataMatrix from "../../../components/docs-kit/DataMatrix";
-import CommandRun from "../../../components/docs-kit/CommandRun";
-import DocCallout from "../../../components/DocCallout.tsx";
+import { Aside } from "@astrojs/starlight/components";
 
-<PageIntro
-  eyebrow="Outbound email"
-  actions={[
-    { label: "Why Cloudflare", href: "#why-its-the-default" },
-    { label: "Quickstart", href: "#dev-quickstart" },
-  ]}
-  facts={[
-    { value: "Zero", label: "per-message cost" },
-    { value: "Pluggable", label: "providers" },
-    { value: "Beta", label: "release status" },
-  ]}
->
-  The apps/api ships [Cloudflare Email Service](https://developers.cloudflare.com/email-service/) as the default outbound mail provider. Bundled into Workers Paid with no documented per-message charge, it is usually the cheapest transactional path at non-trivial volume among the providers wired into this template.
-</PageIntro>
+The apps/api ships [Cloudflare Email Service](https://developers.cloudflare.com/email-service/) as the default outbound mail provider. It's bundled into Workers Paid with no documented per-message charge, making it usually the cheapest transactional path at non-trivial volume among the providers wired into this template.
 
 ## Why it's the default
 
-<DataMatrix
-  caption="Outbound Email Provider Comparison"
-  columns={["Provider", "Cost Dynamics", "Setup Path", "Preconditions"]}
-  rows={[
-    {
-      cells: [
-        "Cloudflare Email",
-        "Workers Paid bundle ($5/mo flat; zero per-message cost)",
-        "Auto-provisioned SPF/DKIM/DMARC",
-        "DNS zone must be managed on Cloudflare"
-      ]
-    },
-    {
-      cells: [
-        "Resend",
-        "Free tier, then pay-per-message usage",
-        "Manual DNS TXT records validation",
-        "None (vendor-neutral API key)"
-      ]
-    },
-    {
-      cells: [
-        "SendGrid",
-        "Free tier, then pay-per-message usage",
-        "Manual DNS TXT records validation",
-        "None (vendor-neutral API key)"
-      ]
-    }
-  ]}
-/>
+| Provider | Cost Dynamics | Setup Path | Preconditions |
+|---|---|---|---|
+| Cloudflare Email | Workers Paid bundle ($5/mo flat; zero per-message cost) | Auto-provisioned SPF/DKIM/DMARC | DNS zone must be managed on Cloudflare |
+| Resend | Free tier, then pay-per-message usage | Manual DNS TXT records validation | None (vendor-neutral API key) |
+| SendGrid | Free tier, then pay-per-message usage | Manual DNS TXT records validation | None (vendor-neutral API key) |
 
-Pricing tiers, free-tier limits, and per-message rates all evolve. See [Cloudflare](https://developers.cloudflare.com/email-service/) · [Resend](https://resend.com/pricing) · [SendGrid](https://sendgrid.com/en-us/pricing) for current numbers.
+Pricing tiers, free-tier limits, and per-message rates evolve. See [Cloudflare](https://developers.cloudflare.com/email-service/), [Resend](https://resend.com/pricing), and [SendGrid](https://sendgrid.com/en-us/pricing) for current numbers.
 
-If you're already paying for Workers, Cloudflare Email has no per-message cost. BoringStack defaults to it because marginal cost is zero.
+If you're already paying for Workers, Cloudflare Email has no per-message cost. BoringStack defaults to it because the marginal cost is zero.
 
 ## Integration
 
@@ -68,20 +27,16 @@ See [Email](/api/email/) for the abstraction shape and how dispatch works.
 
 ## Dev quickstart
 
-Dev with no Cloudflare keys → the noop provider logs the rendered payload to stdout instead of sending.
+By default, dev with no Cloudflare keys uses the noop provider, which logs the rendered payload to stdout instead of sending.
 
-To actually send from dev, inject the following secrets:
+To actually send from dev, inject Cloudflare credentials and a verified sender into `compose/.env`:
 
-<CommandRun
-  title="Configure Local Development outbound Mail"
-  caption="inject Cloudflare credentials and verified sender into compose/.env"
-  command={[
-    "echo 'EMAIL_PROVIDER=cloudflare' >> compose/.env",
-    "echo 'EMAIL_FROM=noreply@yourdomain.com' >> compose/.env",
-    "echo 'CLOUDFLARE_ACCOUNT_ID=your_account_id' >> compose/.env",
-    "echo 'CLOUDFLARE_EMAIL_API_TOKEN=your_scoped_api_token' >> compose/.env",
-  ]}
-/>
+```bash
+echo 'EMAIL_PROVIDER=cloudflare' >> compose/.env
+echo 'EMAIL_FROM=noreply@yourdomain.com' >> compose/.env
+echo 'CLOUDFLARE_ACCOUNT_ID=your_account_id' >> compose/.env
+echo 'CLOUDFLARE_EMAIL_API_TOKEN=your_scoped_api_token' >> compose/.env
+```
 
 ## Production setup
 
@@ -89,29 +44,21 @@ The step-by-step walkthrough lives in the [Cloudflare Email setup runbook](/runb
 
 ## Switching to Resend or SendGrid
 
-Change env vars to switch to Resend or SendGrid:
+Change env vars to switch providers. For Resend:
 
-<CommandRun
-  title="Switch Outbound Mail Provider"
-  caption="swap provider flags and add target secret keys"
-  command={[
-    "echo 'EMAIL_PROVIDER=resend' >> compose/.env",
-    "echo 'RESEND_API_KEY=re_your_resend_api_key' >> compose/.env",
-  ]}
-/>
+```bash
+echo 'EMAIL_PROVIDER=resend' >> compose/.env
+echo 'RESEND_API_KEY=re_your_resend_api_key' >> compose/.env
+```
 
-Or for SendGrid:
+For SendGrid:
 
-<CommandRun
-  title="Switch Provider to SendGrid"
-  caption="swap provider flags and add target secret keys"
-  command={[
-    "echo 'EMAIL_PROVIDER=sendgrid' >> compose/.env",
-    "echo 'SENDGRID_API_KEY=SG.your_sendgrid_key' >> compose/.env",
-  ]}
-/>
+```bash
+echo 'EMAIL_PROVIDER=sendgrid' >> compose/.env
+echo 'SENDGRID_API_KEY=SG.your_sendgrid_key' >> compose/.env
+```
 
-The [env validator](/api/env-validator/) refuses to boot in production if the matching key is missing; switching providers is a one-redeploy operation, not a code change.
+The [env validator](/api/env-validator/) refuses to boot in production if the matching key is missing. Switching providers is a one-redeploy operation, not a code change.
 
 ## Caveats
 

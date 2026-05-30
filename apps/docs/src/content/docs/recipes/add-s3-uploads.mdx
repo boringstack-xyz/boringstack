@@ -1,130 +1,150 @@
 ---
 title: "Recipe: Add S3-compatible uploads"
-description: Direct-to-bucket browser uploads via presigned URLs. Works with Cloudflare R2, AWS S3, Backblaze B2, MinIO. Goal, Prereqs, Steps, Verify, and what changes in code.
+description: Direct-to-bucket browser uploads via presigned URLs. Estimated 60 minutes.
 verifiedOn: "2026-05"
 ---
 
-import { Steps } from "@astrojs/starlight/components";
-import DocCallout from "../../../components/DocCallout.tsx";
-import HowToSchema from "../../../components/HowToSchema.astro";
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import CommandRun from "../../../components/docs-kit/CommandRun";
-import DocFileTree from "../../../components/DocFileTree";
+Let users upload files directly to an S3-compatible bucket (Cloudflare R2, AWS S3, Backblaze B2, or MinIO). The browser talks to the bucket; the API only signs URLs and records metadata.
 
-<HowToSchema
-  name="Add S3-compatible uploads to BoringStack"
-  description="Direct-to-bucket browser uploads via presigned URLs. Works with Cloudflare R2, AWS S3, Backblaze B2, MinIO."
-  totalTime="PT60M"
-  steps={[
-    "Add S3 credentials (endpoint, region, bucket, access key, secret) to compose/.env and to the API's env schema.",
-    "Install @aws-sdk/client-s3 and @aws-sdk/s3-request-presigner in apps/api.",
-    "Scaffold an uploads feature folder with bun run new:resource uploads.",
-    "Implement uploads.service.ts to sign a 5-minute PUT URL keyed by accountId and uuid.",
-    "Add a media table with a Drizzle migration; finalize each upload via a transactional insert.",
-    "Wire the UI to POST /api/uploads/sign, PUT to the returned URL, then POST /api/uploads/finalize.",
-  ]}
-/>
+Estimated time: 60 minutes.
 
-<PageIntro
-  eyebrow="Recipes"
-  actions={[
-    { label: "Steps", href: "#steps" },
-    { label: "Verification", href: "#verify" },
-  ]}
-  facts={[
-    { value: "60 min", label: "Estimated duration" },
-    { value: "S3 API", label: "Protocol" },
-    { value: "R2 / S3", label: "Backends" },
-  ]}
->
-  Add direct-to-bucket file uploads from the browser with S3 presigned URLs. File bytes stay off your API servers.
-</PageIntro>
+## Overview
 
-## Goal
+1. Add S3 credentials to env.
+2. Install AWS SDK in the API.
+3. Scaffold an uploads feature.
+4. Implement sign and finalize endpoints.
+5. Add a media table.
+6. Wire the UI.
 
-Let an authenticated user upload a file straight from the browser into an S3-compatible bucket. The bytes never touch the API host; the API only signs a short-lived PUT URL and records the resulting object in Postgres.
+## 1. Add S3 credentials
 
-## Prereqs
+```bash
+echo 'S3_ENDPOINT=https://<accountid>.r2.cloudflarestorage.com' >> compose/.env
+echo 'S3_REGION=auto' >> compose/.env
+echo 'S3_BUCKET=your-bucket-name' >> compose/.env
+echo 'S3_ACCESS_KEY_ID=...' >> compose/.env
+echo 'S3_SECRET_ACCESS_KEY=...' >> compose/.env
+echo 'S3_PUBLIC_BASE_URL=https://files.example.com' >> compose/.env
+```
 
-- A working local stack.
-- A bucket with S3-compatible credentials. Recommended: [Cloudflare R2](https://developers.cloudflare.com/r2/), which has zero egress fees and the same auth model as S3. AWS S3, Backblaze B2, and a local MinIO container also work.
-- The bucket configured with a CORS rule that allows your origin to PUT.
+For Cloudflare R2, the endpoint is `https://<account-id>.r2.cloudflarestorage.com` and region is `auto`. For AWS S3, use your region like `us-east-1`.
 
-## Steps
+## 2. Install the AWS SDK
 
-<Steps>
+```bash
+cd apps/api && bun add @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+```
 
-1. Add bucket credentials to `compose/.env`:
+## 3. Scaffold the uploads feature
 
-   ```bash
-   S3_ENDPOINT=https://<accountid>.r2.cloudflarestorage.com   # or AWS region URL
-   S3_REGION=auto                                             # or us-east-1 etc.
-   S3_BUCKET=your-bucket-name
-   S3_ACCESS_KEY_ID=...
-   S3_SECRET_ACCESS_KEY=...
-   S3_PUBLIC_BASE_URL=https://files.example.com               # CDN-fronted public URL, optional
-   ```
+```bash
+cd apps/api && bun run new:resource uploads
+```
 
-   Add them to `src/config/env.schema.ts` so the [env validator](/api/env-validator/) refuses to boot if they're missing in prod.
+This writes `uploads.routes.ts`, `uploads.service.ts`, `uploads.types.ts` and registers them in `config/routes.ts`.
 
-2. Add the AWS SDK to the API:
+## 4. Implement the sign endpoint
 
-   ```bash
-   cd apps/api && bun add @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
-   ```
+In `uploads.service.ts`, sign a PUT URL:
 
-3. Create a new feature folder. Use the scaffold so the layer split is correct from the start:
+```ts
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-   ```bash
-   cd apps/api && bun run new:resource uploads
-   ```
+export async function signUploadUrl(
+  accountId: string,
+  mimeType: string,
+): Promise<{ uploadUrl: string; objectKey: string; publicUrl: string }> {
+  const objectKey = `${accountId}/${crypto.randomUUID()}`;
+  
+  const command = new PutObjectCommand({
+    Bucket: env.S3_BUCKET,
+    Key: objectKey,
+    ContentType: mimeType,
+  });
+  
+  const uploadUrl = await getSignedUrl(s3Client, command, {
+    expiresIn: 300, // 5 minutes
+  });
+  
+  const publicUrl = `${env.S3_PUBLIC_BASE_URL}/${objectKey}`;
+  return { uploadUrl, objectKey, publicUrl };
+}
+```
 
-   That writes `uploads.routes.ts`, `uploads.service.ts`, `uploads.types.ts` and wires the routes into `config/routes.ts`.
+Add the routes to `uploads.routes.ts`:
 
-4. In `uploads.service.ts`, sign a PUT URL keyed by `accountId + uuid`. Return `{ uploadUrl, objectKey, publicUrl }`. Use `@aws-sdk/s3-request-presigner` `getSignedUrl(...)` with a 5-minute TTL.
+```ts
+POST /api/v1/uploads/sign
+  → calls signUploadUrl()
+  → returns { uploadUrl, objectKey, publicUrl }
 
-5. Add a `media` table to the schema. Minimum columns: `id`, `account_id`, `object_key`, `mime_type`, `size_bytes`, `created_at`. After a successful PUT, the UI POSTs a `finalize` request to the API which inserts the row inside a transaction.
+POST /api/v1/uploads/finalize
+  → inserts the media row
+  → returns the media record
+```
 
-6. UI side. The UI app's `lib/api` client already has the typed routes (regenerate with `bun run generate:api`). A simple file picker:
+## 5. Add a media table
 
-   ```ts
-   const { uploadUrl, objectKey, publicUrl } =
-     await apiClient.POST("/api/uploads/sign", { body: { mime, size } });
-   await fetch(uploadUrl, { method: "PUT", body: file });
-   await apiClient.POST("/api/uploads/finalize", { body: { objectKey } });
-   ```
+In `src/clients/postgres/schema/app.schema.ts`:
 
-</Steps>
+```ts
+export const media = pgTable("media", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  account_id: uuid("account_id")
+    .notNull()
+    .references(() => accounts.id),
+  object_key: text("object_key").notNull(),
+  mime_type: text("mime_type").notNull(),
+  size_bytes: integer("size_bytes").notNull(),
+  created_at: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+```
+
+Generate the migration:
+
+```bash
+bun run db:generate
+```
+
+## 6. Wire the UI
+
+In the UI component:
+
+```ts
+// Step 1: get a signed URL
+const { uploadUrl, objectKey, publicUrl } = await apiClient.POST(
+  "/api/v1/uploads/sign",
+  { body: { mime: file.type, size: file.size } }
+);
+
+// Step 2: upload the file directly to the bucket
+await fetch(uploadUrl, { method: "PUT", body: file });
+
+// Step 3: finalize in the database
+await apiClient.POST("/api/v1/uploads/finalize", {
+  body: { objectKey, mimeType: file.type, sizeBytes: file.size }
+});
+```
 
 ## Verify
 
-- Browser DevTools network tab: the PUT goes straight to your bucket origin, not to your API host.
-- The bucket dashboard shows the new object under `<accountId>/<uuid>` (or whatever key pattern you chose).
-- A row appears in the `media` table:
+- Browser network tab: the PUT request goes to the S3 endpoint, not your API.
+- Bucket dashboard: new object appears at the key you chose.
+- Database: `SELECT * FROM media ORDER BY created_at DESC LIMIT 5;`
+- Audit log: `SELECT * FROM audit.audit_log WHERE event = 'media.upload_finalized' LIMIT 5;`
 
-  ```sql
-  SELECT id, account_id, object_key, mime_type FROM media ORDER BY created_at DESC LIMIT 5;
-  ```
+## Key points
 
-- The audit log shows `media.upload_finalized`.
-
-## What changes in code
-
-- `apps/api/src/config/env.schema.ts`: add the six S3 env vars to the [TypeBox env shape](/api/env-validator/).
-- `apps/api/src/api/uploads/`: new feature folder, follows the [route/service/types split](/api/overview/).
-- `apps/api/src/clients/postgres/schema/media.ts`: new Drizzle table.
-- `apps/api/drizzle/0xxx_add_media_table.sql`: generated migration (`bun run db:generate`).
-- `apps/ui/src/features/<wherever-you-need-uploads>/`: picker + progress UI calling the typed client.
-
-<DocCallout eyebrow="Safety" title="Don't return public URLs you can't revoke" variant="caution">
-  Make `S3_PUBLIC_BASE_URL` an authenticated reader (signed-URL GET) for
-  anything sensitive. R2's "public bucket" toggle is convenient but is
-  permanent until you flip it off. Easy to leak with.
-</DocCallout>
+- **CORS**: The bucket must allow PUT from your origin. Test with: `curl -X OPTIONS -H "Origin: https://example.com" https://your-bucket/...`
+- **Public URLs**: If you set `S3_PUBLIC_BASE_URL` to a public bucket, anyone with the URL can download. For sensitive files, use signed-URL GETs instead.
+- **Presigned URL TTL**: 5 minutes is standard. Adjust if users need more time to upload large files.
 
 ## Related
 
-- [Env validator](/api/env-validator/); how to declare the bucket vars cleanly.
-- [API overview](/api/overview/); the per-feature folder shape this recipe follows.
-- [Multi-tenant model](/api/multi-tenant/); scoping uploads by `accountId`.
-- [Audit log](/api/audit-log/); recording upload lifecycle events.
+- [Env validator](/api/env-validator/)  - declare S3 vars in the schema.
+- [API overview](/api/overview/)  - route/service/types pattern.
+- [Multi-tenant model](/api/multi-tenant/)  - scoping uploads by accountId.

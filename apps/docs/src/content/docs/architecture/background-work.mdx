@@ -3,48 +3,13 @@ title: Background work
 description: Email, notifications, and BullMQ jobs inside the API. Ready on day one, with a clear path when a piece needs its own process.
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
-
-<PageIntro
-  eyebrow="Background jobs"
-  actions={[
-    { label: "What ships", href: "#what-ships" },
-    { label: "Notifications flow", href: "#notifications-flow" },
-  ]}
-  facts={[
-    { value: "BullMQ", label: "queue engine" },
-    { value: "Valkey", label: "queue backend" },
-    { value: "Inline", label: "fallback when off" },
-  ]}
->
-  Products need work off the HTTP critical path: email, notifications, retries. BoringStack puts that work in the API with BullMQ on Valkey, shared queue patterns, and dispatch helpers. You ship events and mail without standing up a separate job platform first.
-</PageIntro>
+Products need work off the HTTP critical path: email, notifications, retries. BoringStack puts that work in the API with BullMQ on Valkey, shared queue patterns, and dispatch helpers. You ship events and mail without standing up a separate job platform first.
 
 ## What ships
 
-<SignalGrid
-  columns={3}
-  items={[
-    {
-      label: "Queues",
-      title: "BullMQ + QueueManager",
-      body: "Named queues and workers; centralized lifecycle, retries, and shutdown. See Queues.",
-    },
-    {
-      label: "Email",
-      title: "Pluggable providers",
-      body: "Precompiled templates, queue-aware sendTemplate(). Cloudflare, Resend, SendGrid, SMTP, or noop.",
-    },
-    {
-      label: "Notifications",
-      title: "Event registry",
-      body: "Typed events, dispatch job, channels, dedup, preferences, and SSE pub/sub via Valkey.",
-    },
-  ]}
-/>
+- **Queues.** BullMQ + QueueManager: named queues and workers, centralized lifecycle, retries, and shutdown. See [Queues](/api/queues/).
+- **Email.** Pluggable providers: precompiled templates, queue-aware sendTemplate(). Cloudflare, Resend, SendGrid, SMTP, or noop.
+- **Notifications.** Event registry: typed events, dispatch job, channels, dedup, preferences, and SSE pub/sub via Valkey.
 
 ## Notifications flow
 

@@ -4,30 +4,12 @@ description: Stripe subscriptions with configured plans, cookie-protected custom
 ---
 
 import { Aside } from "@astrojs/starlight/components";
-import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
-import PageIntro from "../../../components/docs-kit/PageIntro";
 
-<PageIntro
-  eyebrow="Stripe without platform lock-in"
-  actions={[
-    { label: "ACL resolver", href: "/api/acl/" },
-    { label: "Env validator", href: "/api/env-validator/" },
-  ]}
-  facts={[
-    { value: "404", label: "when billing is disabled" },
-    { value: "raw", label: "webhook body verification" },
-    { value: "SQL", label: "idempotency claim" },
-  ]}
->
-  Billing is optional. When BILLING_ENABLED=false, the billing route group
-  returns 404 and the API does not instantiate Stripe. When it is true, the env
-  validator requires the Stripe secret key, webhook secret, and price IDs before
-  the app listens.
-</PageIntro>
+Billing is optional. When `BILLING_ENABLED=false`, the billing route group returns 404 and the API does not instantiate Stripe. When true, the env validator requires the Stripe secret key, webhook secret, and price IDs before the app listens.
 
-The template ships the subscription spine, not a pricing strategy. It wires Stripe Checkout, Stripe Customer Portal, plan persistence, webhooks, audit events, and redirect safety. Forks can rename plans or add tiers once the product shape is real.
+The template ships the subscription spine: Stripe Checkout, Stripe Customer Portal, plan persistence, webhooks, audit events, and redirect safety. Forks can rename plans or add tiers once the product shape is real.
 
-## How checkout works
+## Checkout and portal flow
 
 ```mermaid
 sequenceDiagram
@@ -47,43 +29,11 @@ sequenceDiagram
 
 The customer portal follows the same pattern: authenticated user, `returnUrl` allowlisted against `FRONTEND_URL`, Stripe returns a hosted URL.
 
-## Design choices
+## Design
 
-<FeatureGrid
-  columns={3}
-  items={[
-    {
-      eyebrow: "flag",
-      title: "Billing is feature-flagged",
-      body: "Local apps boot without Stripe credentials. Production billing only boots when required env vars are present.",
-    },
-    {
-      eyebrow: "plans",
-      title: "Plans come from env",
-      body: "STRIPE_PRICE_ID_FREE and STRIPE_PRICE_ID_PRO upsert default plan rows without manual SQL.",
-    },
-    {
-      eyebrow: "cookie",
-      title: "Customer routes are protected",
-      body: "Checkout, portal, and plan reads use the same cookieAuth OpenAPI contract as the rest of the API.",
-    },
-    {
-      eyebrow: "return",
-      title: "Redirect URLs are allowlisted",
-      body: "Stripe-hosted flows may only return to the configured FRONTEND_URL origin.",
-    },
-    {
-      eyebrow: "webhook",
-      title: "Raw body verification",
-      body: "The webhook route passes the exact request payload to Stripe signature verification.",
-    },
-    {
-      eyebrow: "idempotent",
-      title: "Postgres-backed idempotency",
-      body: "Every Stripe event id is claimed in the same transaction as the side effect.",
-    },
-  ]}
-/>
+Billing is feature-flagged so local apps boot without Stripe credentials. Plans come from env (`STRIPE_PRICE_ID_FREE` and `STRIPE_PRICE_ID_PRO`) and upsert default plan rows without manual SQL. Customer routes (checkout, portal, plan reads) use the same cookie-auth OpenAPI contract as the rest of the API. Stripe-hosted flows may only return to the configured `FRONTEND_URL` origin.
+
+The webhook route passes the exact request payload to Stripe signature verification (raw body verification). Every Stripe event ID is claimed in the same transaction as the side effect, providing Postgres-backed idempotency.
 
 ## Webhook flow
 
@@ -112,33 +62,12 @@ Handled events:
 
 Unknown event types are logged at debug level and ignored. Late or out-of-order deliveries are tolerated because every status transition is keyed by `(account_id, stripe_event_received_at)`.
 
-## Required env
+## Env configuration
 
-<FeatureGrid
-  columns={4}
-  items={[
-    {
-      eyebrow: "toggle",
-      title: "BILLING_ENABLED",
-      body: "Turns the route group on; false means all billing paths return 404.",
-    },
-    {
-      eyebrow: "sdk",
-      title: "STRIPE_SECRET_KEY",
-      body: "Used by the Stripe SDK for Checkout, Portal, and webhook construction.",
-    },
-    {
-      eyebrow: "webhook",
-      title: "STRIPE_WEBHOOK_SECRET",
-      body: "Used to verify Stripe-Signature on raw webhook payloads.",
-    },
-    {
-      eyebrow: "plans",
-      title: "STRIPE_PRICE_ID_FREE / PRO",
-      body: "Seeds and keeps the built-in plan rows aligned with Stripe.",
-    },
-  ]}
-/>
+- `BILLING_ENABLED`: Turns the route group on; false means all billing paths return 404.
+- `STRIPE_SECRET_KEY`: Used by the Stripe SDK for Checkout, Portal, and webhook construction.
+- `STRIPE_WEBHOOK_SECRET`: Used to verify Stripe-Signature on raw webhook payloads.
+- `STRIPE_PRICE_ID_FREE` / `STRIPE_PRICE_ID_PRO`: Seeds and keeps the built-in plan rows aligned with Stripe.
 
 <Aside type="tip" title="Local webhook testing">
   Keep billing off unless you are actively testing Stripe. When billing is on

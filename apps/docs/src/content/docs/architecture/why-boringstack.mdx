@@ -3,175 +3,55 @@ title: Why BoringStack
 description: Production-grade product infrastructure on day one. Start on your idea, not on auth and billing for the hundredth time.
 ---
 
-import CostCalculator from "../../../components/landing/CostCalculator.tsx";
-import DocCallout from "../../../components/DocCallout.tsx";
-import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
+Build the product that solves a problem. Skip rebuilding the infrastructure every SaaS needs from scratch.
 
-<PageIntro
-  eyebrow="Why this exists"
-  actions={[
-    { label: "Quickstart", href: "/quickstart/" },
-    { label: "First feature", href: "/skills/first-feature-tutorial/" },
-  ]}
-  facts={[
-    { value: "2008", label: "shipping commercial products" },
-    { value: "Day 1", label: "auth, billing, jobs, deploy" },
-    { value: "validate", label: "blocks bad merges" },
-  ]}
->
-  Build the product that solves a problem. Skip rebuilding the infrastructure
-  every SaaS needs from scratch.
-</PageIntro>
+## What is BoringStack
 
-<SignalGrid
-  columns={2}
-  items={[
-    {
-      label: "01",
-      title: "Production features on day one",
-      body: "Auth, billing, email, jobs, tenancy, deploy. Your first sprint is domain work.",
-    },
-    {
-      label: "02",
-      title: "One repo, clear layers",
-      body: "API, UI, infra separated. Deploy together now; split out later if you need to.",
-    },
-    {
-      label: "03",
-      title: "Judgment since 2008",
-      body: "Layout, env, queues, deploy defaults. Decisions from commercial startups, already made.",
-    },
-    {
-      label: "04",
-      title: "Guardrails for agents",
-      body: "Skills, OpenAPI, validate. Architecture rules run in CI, not in README prose.",
-    },
-  ]}
-/>
+BoringStack is a pre-built SaaS template for login-based products. It includes auth, billing, email, background jobs, tenancy, deployment infrastructure, and architecture enforcement. The first sprint is your domain work, not reinventing the infra wheel.
 
-## What ships on first clone
+One monorepo with API (Bun + Elysia), UI (React + Vite), and infra (Docker Compose + OpenTofu). Deploy together initially; split layers later if you need to. Most products never do.
 
-<FeatureGrid
-  columns={3}
-  items={[
-    {
-      eyebrow: "Auth",
-      title: "Sign-in and sessions",
-      body: "Register, verify email, OAuth, password reset, MFA hooks. HttpOnly cookies; tokens stay off the client.",
-      href: "/api/auth/",
-    },
-    {
-      eyebrow: "Teams",
-      title: "Multi-tenant accounts",
-      body: "Organizations, members, roles, plan features. Permissions enforced on the server.",
-      href: "/api/multi-tenant/",
-    },
-    {
-      eyebrow: "Billing",
-      title: "Stripe ready",
-      body: "Webhooks, subscription lifecycle, plan entitlements. Add your prices when you need them.",
-      href: "/api/billing/",
-    },
-    {
-      eyebrow: "Email",
-      title: "Transactional mail",
-      body: "Templates, outbound queues, in-app notifications. Mailpit in dev; your provider in prod.",
-      href: "/api/email/",
-    },
-    {
-      eyebrow: "Jobs",
-      title: "Background work",
-      body: "BullMQ on Valkey. Audit log on mutations. Work stays in the API, not the browser.",
-      href: "/architecture/background-work/",
-    },
-    {
-      eyebrow: "Deploy",
-      title: "Local and production",
-      body: "Docker Compose on your machine. GHCR images, Traefik, backups on a VPS.",
-      href: "/topics/deployment/",
-    },
-  ]}
-/>
+## What ships on day one
 
-## How the stack is shaped
+- **Auth.** Sign-in and sessions: register, verify email, OAuth, password reset, MFA hooks. HttpOnly cookies; tokens stay off the client. See [Auth](/api/auth/).
+- **Teams.** Multi-tenant accounts: organizations, members, roles, plan features. Permissions enforced on the server. See [Multi-tenant](/api/multi-tenant/).
+- **Billing.** Stripe ready: webhooks, subscription lifecycle, plan entitlements. Add your prices when you need them. See [Billing](/api/billing/).
+- **Email.** Transactional mail: templates, outbound queues, in-app notifications. Mailpit in dev; your provider in prod. See [Email](/api/email/).
+- **Jobs.** Background work: BullMQ on Valkey. Audit log on mutations. Work stays in the API, not the browser. See [Background work](/architecture/background-work/).
+- **Deploy.** Local and production: Docker Compose on your machine. GHCR images, Traefik, backups on a VPS. See [Deployment](/topics/deployment/).
 
-<SignalGrid
-  columns={3}
-  items={[
-    {
-      label: "API",
-      title: "apps/api",
-      body: "Auth, billing, queues, email, audit, persistence. The system of record and background workers.",
-    },
-    {
-      label: "UI",
-      title: "apps/ui",
-      body: "React SPA, i18n, client state. Calls the API through a generated OpenAPI client.",
-    },
-    {
-      label: "Infra",
-      title: "infra/compose",
-      body: "Postgres, Valkey, Docker Compose locally. Traefik, TLS, backups on a VPS in prod.",
-    },
-  ]}
-/>
+## Core principles
 
-One monorepo. Layers you can deploy separately when growth asks for it. Postgres and Valkey on hardware you run. A single VPS carries most products a long way.
-
-[Separation of concerns](/architecture/separation-of-concerns/) · [Stack at a glance](/architecture/stack/) · [Repository layout](/architecture/monorepo-layout/)
-
-## Built from experience since 2008
-
-<DocCallout eyebrow="Since 2008" title="Commercial products, not tutorial repos" variant="note">
-  Folder layout, feature shape, env handling, queues, deploy defaults. Judgment
-  from shipping startups since 2008. Extend what is there and spend your time on
-  the product.
-</DocCallout>
-
-## Agents, tokens, guardrails
-
-<SignalGrid
-  columns={3}
-  items={[
-    {
-      label: "Skills",
-      title: "Fixed workflows",
-      body: "add-full-feature and related skills. Paste-ready steps that match the repo layout.",
-    },
-    {
-      label: "validate",
-      title: "Merge gate",
-      body: "Typecheck, ESLint, lint:meta, tests. Same script locally and in CI.",
-    },
-    {
-      label: "OpenAPI",
-      title: "Contract",
-      body: "Generated client keeps UI and API aligned. Drift fails the build.",
-    },
-  ]}
-/>
-
-[Agent skills](/skills/) · [Lint as the contract](/architecture/lint-as-contract/) · [Spec loop](/skills/spec-loop/) (optional approval gate before edits)
+- **Production judgment since 2008.** Layout, env, queues, deploy defaults. Decisions from commercial startups, already made.
+- **Architecture enforced in CI.** ESLint plugins block bad merges. Rules are machine-readable, not prose in a README.
+- **OpenAPI contract between layers.** API auto-emits schema; UI generates a typed client. Drift is a compile error.
+- **Agents and humans speak the same language.** Lint violations, OpenAPI boundaries, and AGENTS.md docs read the same to both.
 
 ## Who this is for
 
-<DocCallout eyebrow="Built for" title="Products people log into" variant="tip">
-  SaaS with accounts, billing, or shared data. You want production infrastructure
-  in the repo on day one and a VPS you control. Stripe, email, and other
-  providers plug in when you are ready for them.
-</DocCallout>
+SaaS with accounts, billing, or shared data. You want production infrastructure in the repo on day one and a VPS you control. Stripe, email, and other providers plug in when you are ready for them.
+
+## How the stack is shaped
+
+- **API (apps/api).** Auth, billing, queues, email, audit, persistence. The system of record and background workers.
+- **UI (apps/ui).** React SPA, i18n, client state. Calls the API through a generated OpenAPI client.
+- **Infra (infra/compose).** Postgres, Valkey, Docker Compose locally. Traefik, TLS, backups on a VPS in prod.
+
+One monorepo. Layers you can deploy separately when growth asks for it. Postgres and Valkey on hardware you run. A single VPS carries most products a long way.
 
 ## Running costs
 
-<CostCalculator client:load />
-
 Postgres and Valkey on one VPS. Bill tracks server size, not per-request meters.
+
+Most products under 50k MAU fit on a CPX31 (4 vCPU, 8 GB, around 11 EUR/month). GHCR images are free if public. Hetzner storage backups are a few euros per month. Stripe and email providers charge on volume, not fixed monthly fees.
+
+See [Cost methodology](/reference/cost-methodology/) for the full breakdown.
 
 ## Related
 
+- [Separation of concerns](/architecture/separation-of-concerns/)
+- [Stack at a glance](/architecture/stack/)
+- [Lint as the contract](/architecture/lint-as-contract/)
+- [Decision log](/architecture/decisions/)
 - [Quickstart](/quickstart/)
 - [First feature in 10 minutes](/skills/first-feature-tutorial/)
-- [Repository layout](/architecture/monorepo-layout/)
-- [Lint as the contract](/architecture/lint-as-contract/)

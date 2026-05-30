@@ -1,70 +1,28 @@
 ---
 title: Codecov setup
-description: How coverage uploads are wired for the api and ui templates, what the per-flag thresholds mean, and how to plug in the upload token when forking into a private repo.
+description: Set up coverage uploads to Codecov for api and ui, scoped by flag. For private forks, wire the upload token.
 ---
 
-import CommandRun from "../../../components/docs-kit/CommandRun";
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
+The repo uploads test coverage to Codecov on every push and PR. Both `api` and `ui` apps upload under their own flag so trends are scoped per-app instead of blended. This runbook covers the three-step fork setup and explains what the thresholds do.
 
-<PageIntro
-  eyebrow="Coverage tracking"
-  actions={[
-    { label: "Per-flag setup", href: "#per-flag-uploads" },
-    { label: "Token for forks", href: "#enabling-on-a-fork" },
-  ]}
-  facts={[
-    { value: "2", label: "uploads (api + ui)" },
-    { value: "lcov", label: "report format" },
-    { value: "flags", label: "per-app scoping" },
-  ]}
->
-  Both the api and the ui workflows upload coverage to
-  [Codecov](https://about.codecov.io/) on every push and PR. Coverage
-  is uploaded under a flag per app so trends, drift, and PR diffs are
-  scoped per template instead of blended into a meaningless monorepo
-  average.
-</PageIntro>
+## Coverage flags and thresholds
 
-## Per-flag uploads
+The `codecov.yml` at the repo root defines:
 
-The repo defines two flags in `codecov.yml`:
+- `api` flag: paths under `apps/api/`. Project floor 65%, patch floor 70%.
+- `ui` flag: paths under `apps/ui/`. Project floor 70%, patch floor 70%.
 
-- `api`, paths under `apps/api/`. Floor: 65% project, 70% patch.
-- `ui`, paths under `apps/ui/`. Floor: 70% project, 70% patch.
+`apps/docs/` is excluded (no executable code). Templates, migrations, and generated schemas are also ignored.
 
-`apps/docs/` is excluded entirely; the site has no executable code worth
-measuring. Templates, build artifacts, migrations, and the generated
-openapi schema are also ignored.
+**How thresholds work:**
 
-<SignalGrid
-  columns={3}
-  items={[
-    {
-      label: "carryforward",
-      title: "Last known coverage carries forward",
-      body:
-        "When one app changes and the other isn't rebuilt by path-filter, the previous run's coverage is reused so PR comments don't show false drops for untouched code.",
-    },
-    {
-      label: "thresholds",
-      title: "1% tolerance, project target 'auto'",
-      body:
-        "The project status compares to base; a small drop within 1% does not fail the PR. The hard floor catches sustained regression, not statistical noise.",
-    },
-    {
-      label: "patch",
-      title: "Patch coverage gated at 70%",
-      body:
-        "New code in a PR is held to a higher bar than the project as a whole. Forces test-first thinking when touching uncovered modules.",
-    },
-  ]}
-/>
+- **Carryforward**: When one app changes but the other doesn't, Codecov reuses the previous run's coverage so you don't see a false drop for untouched code.
+- **1% tolerance**: The project status allows a small drop within 1% without failing the PR. The hard floor catches sustained regression, not noise.
+- **Patch floor at 70%**: New code is held to a higher bar than the project average. This encourages test-first thinking.
 
-## How the upload works
+## For public repos (tokenless)
 
-Both workflows produce an lcov report and then call
-[`codecov/codecov-action`](https://github.com/codecov/codecov-action):
+Codecov is free for public repositories. The workflows already include the upload step:
 
 ```yaml
 - name: Upload coverage to Codecov
@@ -74,55 +32,40 @@ Both workflows produce an lcov report and then call
     flags: api
     name: api-coverage
     fail_ci_if_error: false
-    token: ${{ secrets.CODECOV_TOKEN }}
 ```
 
-The action is SHA-pinned per the workflow lint-meta rule. `flags: api`
-or `flags: ui` is the only thing that differs between the two
-workflows.
+The action is SHA-pinned per the lint-meta rule. `flags: api` or `flags: ui` is the only difference between workflows. No token needed.
 
-## Enabling on a fork
+## For private forks
 
-Codecov is tokenless on public repos. Forks targeting private repos need
-a token:
+Private repos need a Codecov repository upload token:
 
-<CommandRun
-  title="Wire CODECOV_TOKEN"
-  caption="generate a repo upload token from Codecov and stash it as a GitHub secret"
-  command={[
-    "# 1. Visit https://app.codecov.io/gh/<owner>/<repo>/settings",
-    "# 2. Copy the 'Repository Upload Token'.",
-    "gh secret set CODECOV_TOKEN --repo <owner>/<repo> --body '<token>'",
-  ]}
-/>
+1. Visit [https://app.codecov.io/gh/your-owner/your-repo/settings](https://app.codecov.io/gh/your-owner/your-repo/settings).
+2. Copy the **Repository Upload Token**.
+3. Add it to your fork as a GitHub secret:
 
-`fail_ci_if_error: false` keeps the workflow green when the Codecov
-service is degraded, coverage tracking is observability, not a merge
-gate. The PR-status thresholds in `codecov.yml` are the actual gate.
+```bash
+gh secret set CODECOV_TOKEN --repo <owner>/<repo> --body '<token>'
+```
 
-## Why this and not something else
+The workflow reads `${{ secrets.CODECOV_TOKEN }}` and uses it on the next push.
 
-We considered the alternatives:
+Note: `fail_ci_if_error: false` means the workflow stays green even if Codecov is down. Coverage tracking is observability, not a merge gate. The actual gate is the PR status threshold in `codecov.yml`.
 
-- **Coveralls.** Comparable feature set. Codecov's per-flag handling and
-  PR comment ergonomics are stronger for monorepos.
-- **Self-hosted coverage report.** Doable but a fresh GitHub Pages site
-  per fork is a maintenance burden the template should not impose.
-- **No coverage tracking.** What we had until now. Catches regressions
-  only when someone runs the gate locally. PR-time visibility is
-  better.
+## Why Codecov
 
-## Source
+- **Per-flag scoping**: Monorepo coverage is blended and meaningless. Codecov flags let api and ui trends stay separate.
+- **PR comments**: Codecov comments on PRs with coverage delta, missing coverage, and per-flag details.
+- **Low maintenance**: No GitHub Pages site to manage per fork.
 
-- `codecov.yml` at the repo root, flags, thresholds, ignore patterns.
-- `.github/workflows/apps-api-ci.yml`, api upload step.
-- `.github/workflows/apps-ui-validate.yml`, ui upload step.
-- `apps/api/scripts/quality/check-coverage.ts`, local coverage gate
-  the api test suite runs in CI before the Codecov upload.
+## Source files
+
+- `codecov.yml`  - flags, thresholds, ignore patterns
+- `.github/workflows/apps-api-ci.yml`  - api upload step
+- `.github/workflows/apps-ui-validate.yml`  - ui upload step
+- `apps/api/scripts/quality/check-coverage.ts`  - local coverage gate (runs before Codecov upload)
 
 ## Related
 
-- [Image updates](/runbooks/image-updates/); how SHA-pinned actions are
-  bumped across the workflow set.
-- [Env backup and secrets](/runbooks/env-backup-and-secrets/); where the
-  `CODECOV_TOKEN` lives once issued.
+- [Image updates](/runbooks/image-updates/)  - how SHA-pinned GitHub Actions are bumped.
+- [Env backup and secrets](/runbooks/env-backup-and-secrets/)  - where `CODECOV_TOKEN` lives.

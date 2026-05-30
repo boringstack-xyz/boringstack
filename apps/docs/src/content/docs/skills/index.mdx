@@ -1,71 +1,47 @@
 ---
 title: Agent skills
-description: The slash-command skills shipped with BoringStack. Each one encodes one task, the conventions it needs to respect, and a paste-ready prompt.
+description: Slash-command skills shipped with BoringStack. Each one encodes a task, its conventions, and a ready-to-paste prompt.
 ---
 
-BoringStack ships slash-command skills in `apps/api/.claude/skills/` and `apps/ui/.claude/skills/`. Each one is a markdown file with frontmatter (`name`, `description`) plus the prompt the agent follows. Type the command in Claude Code, the agent runs the workflow. A fresh fork inherits all of them.
+BoringStack ships agent skills in `apps/api/.claude/skills/` and `apps/ui/.claude/skills/`. Each skill is a markdown file with a prompt that an agent follows. Type the skill name (e.g., `/add-full-feature`) in Claude Code or Cursor and the agent runs the workflow.
 
-## Full-stack and vertical-slice skills
+## Full-stack skills
 
-### `/build-feature`
+### /add-full-feature
 
-Builds a feature inside one template. In `apps/api/` that's an endpoint, a CRUD resource, a BullMQ job, an audit-log event, a notification event, or an ACL flag. In `apps/ui/` it's a page, a component, a vertical UI slice, or wiring an existing API endpoint into the SPA.
+Builds a resource that needs both an API endpoint and a UI page. Runs the API feature builder, regenerates the OpenAPI client, then runs the UI feature builder against the new endpoint. Use this for pages, forms, and any cross-app slices.
 
-Triggers: "add a feature", "add an endpoint", "scaffold a resource", "build X", "wire up X", "new route".
+Example: `Resource: support-tickets, account-scoped, fields: subject + body + status, UI: list + create form`
 
-### `/add-full-feature`
+### /build-feature
 
-For resources that need both an API endpoint and a UI page. Runs `/build-feature` on the API, regenerates the OpenAPI client, runs `/build-feature` on the UI against the new endpoint. Use it when the feature crosses the api/ui boundary.
-
-Triggers: "add a full feature", "build X end to end", "new feature, api + ui", "full vertical slice for X", "wire X from db to screen".
+Builds a feature inside one template only. In `apps/api/`: endpoints, CRUD resources, BullMQ jobs, audit-log events, notification events, ACL flags. In `apps/ui/`: pages, components, UI slices, wiring existing endpoints into the SPA.
 
 ## Focused skills
 
-Each of these does one thing. The full-stack skills above delegate to them. You can call them directly when you only want that one thing.
+### /add-audit-event
 
-### `/add-audit-event` (api)
+Adds a single `auditLogService.record(...)` call to an existing service. Picks an action name from constants, decides what metadata is safe (no PII), wires it in, writes the test.
 
-Adds a single `auditLogService.record(...)` call to an existing service. Picks an action name from the constants, decides what metadata is safe (no PII), wires it into the right place, writes the sibling test.
+### /add-email-template
 
-### `/add-email-template` (api)
+Walk-through for manual email template creation: write Handlebars files, regenerate the precompiled JSON, call `sendTemplate(...)`, inspect in Mailpit.
 
-No scaffolder for this one. The skill walks the manual flow: write the Handlebars files, regenerate the precompiled JSON, call `sendTemplate(...)` from the right site, inspect in Mailpit.
+### /add-notification-event
 
-### `/add-notification-event` (api)
-
-Wraps `bun run new:notification-event` with the dedup-strategy decision, the render functions, and the dispatcher call. Use it when a new event type belongs in the notifications system.
+Wraps `bun run new:notification-event` with dedup-strategy decisions, render functions, and dispatcher wiring.
 
 ## Review skills
 
-### `/security-review` (api / ui)
+### /security-review
 
-Reviews a branch or PR for security regressions. Runs the Layer 1 CI scanners locally (gitleaks, osv-scanner, bun audit), kicks off Layer 2 agent skills in parallel (differential-review, insecure-defaults, sharp-edges, supply-chain-risk-auditor), then checks BoringStack-specific invariants.
+Reviews a branch or PR for security regressions. Runs Layer 1 scanners locally (gitleaks, osv-scanner, bun audit) and kicks off Layer 2 agents (differential-review, insecure-defaults, sharp-edges, supply-chain-risk-auditor).
 
-On the API: ACL ability checks on every route, multi-tenant `accountId` scoping, Stripe webhook signature handling, rate limits on credential routes, audit-log coverage on mutations, idempotent BullMQ jobs.
+Checks BoringStack-specific invariants: ACL ability checks on every route, multi-tenant `accountId` scoping, Stripe webhook signature handling, rate limits on credential routes, audit-log coverage on mutations, idempotent BullMQ jobs.
 
-On the UI: no raw `fetch` outside `openapi.ts`, no `dangerouslySetInnerHTML`, no `import.meta.env` outside `src/lib/env/`, no token storage in `localStorage`, no JSX-level user-supplied strings without i18n, CSRF + content-type validation on user-data flows.
+On the UI: no raw `fetch` outside `openapi.ts`, no `dangerouslySetInnerHTML`, no `import.meta.env` outside `src/lib/env/`, no token storage in `localStorage`, no JSX strings without i18n, CSRF + content-type validation.
 
-Triggers: "security review", "any vulnerabilities in this branch", "audit this PR", "is this safe to merge".
+## Related
 
-## Files
-
-```
-apps/api/.claude/skills/
-├── add-audit-event.md
-├── add-email-template.md
-├── add-full-feature.md
-├── add-notification-event.md
-├── build-feature.md
-└── security-review.md
-
-apps/ui/.claude/skills/
-├── add-full-feature.md
-├── build-feature.md
-└── security-review.md
-```
-
-Open the file to read the exact workflow the agent runs. Editing any of them is editing the prompt the next agent in your fork will follow.
-
-## See also
-
-- [First feature in 10 minutes](/skills/first-feature-tutorial/), an end-to-end walkthrough using `/add-full-feature`.
+- [First feature in 10 minutes](/skills/first-feature-tutorial/)  - end-to-end walkthrough.
+- [Spec loop](/skills/spec-loop/)  - approval gate for risky slices.

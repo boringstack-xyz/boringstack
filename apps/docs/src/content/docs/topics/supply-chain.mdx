@@ -3,81 +3,25 @@ title: Supply-chain protection
 description: Every BoringStack repo refuses to install npm package versions younger than seven days. A short delay against rug-pull and account-hijack attacks on fresh publishes.
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import SignalGrid from "../../../components/docs-kit/SignalGrid";
-import DocCallout from "../../../components/DocCallout.tsx";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
+import { Aside } from "@astrojs/starlight/components";
 
-<PageIntro
-  eyebrow="Supply chain"
-  actions={[
-    { label: "How it works", href: "#how-it-works-per-package-manager" },
-    { label: "Overriding", href: "#overriding-for-a-specific-package" },
-  ]}
-  facts={[
-    { value: "7 days", label: "minimum release age" },
-    { value: "All repos", label: "enforced uniformly" },
-    { value: "Zero config", label: "to activate" },
-  ]}
->
-  Supply-chain attacks follow a predictable timeline: a maintainer's account is compromised, a malicious version is published, the community detects and yanks it within hours to days. The undetected window is short but exploitable. Every BoringStack repo enforces a **seven-day minimum release age** to block installs inside that window.
-</PageIntro>
+Supply-chain attacks follow a predictable timeline: a maintainer's account is compromised, a malicious version is published, the community detects and yanks it within hours to days. The undetected window is short but exploitable. Every BoringStack repo enforces a seven-day minimum release age to block installs inside that window.
 
-<SignalGrid
-  columns={3}
-  items={[
-    {
-      label: "Attack window",
-      title: "Hours to days",
-      body: "Malicious versions typically get yanked within 24–72 hours of detection.",
-    },
-    {
-      label: "Our gate",
-      title: "7-day hold",
-      body: "Packages younger than 7 days won't install. The window closes before the gate opens.",
-    },
-    {
-      label: "Detection",
-      title: "Community signal",
-      body: "OSV scanner, npm audit, and human review all have time to flag the package before it lands.",
-    },
-  ]}
-/>
+The timeline: malicious versions typically get yanked within 24-72 hours of detection. Our gate holds packages younger than 7 days. The window closes before the gate opens. OSV scanner, npm audit, and human review all have time to flag the package before it lands.
 
 ## How it works per package manager
 
-<FaqGroup>
-  <FaqItem title="apps/api (Bun)" open>
-    `bunfig.toml`: `[install] minimumReleaseAge = 604800` (seconds).
-  </FaqItem>
-  <FaqItem title="apps/ui (Bun)" open>
-    `bunfig.toml`: `[install] minimumReleaseAge = 604800` (seconds), with per-package excludes for high-churn and first-party packages.
-  </FaqItem>
-  <FaqItem title="apps/docs (Bun)">
-    `bunfig.toml`: `[install] minimumReleaseAge = 604800` (seconds).
-  </FaqItem>
-  <FaqItem title="infra/compose">
-    No JS deps; n/a.
-  </FaqItem>
-  <FaqItem title="infra/bootstrap">
-    No JS deps; n/a.
-  </FaqItem>
-</FaqGroup>
+- **apps/api (Bun)**: `bunfig.toml`: `[install] minimumReleaseAge = 604800` (seconds).
+- **apps/ui (Bun)**: `bunfig.toml`: `[install] minimumReleaseAge = 604800` (seconds), with per-package excludes for high-churn and first-party packages.
+- **apps/docs (Bun)**: `bunfig.toml`: `[install] minimumReleaseAge = 604800` (seconds).
+- **infra/compose**: No JS deps.
+- **infra/bootstrap**: No JS deps.
 
 ## Trade-offs
 
-<FaqGroup>
-  <FaqItem title="First-time installs may fail when the range resolves to a brand-new release" open>
-    Pin to a specific older version or wait.
-  </FaqItem>
-  <FaqItem title="Critical security patches are delayed seven days">
-    Override per-package via Bun/npmrc exclusions when a real CVE drops.
-  </FaqItem>
-  <FaqItem title="Slightly behind the bleeding edge">
-    This is the point.
-  </FaqItem>
-</FaqGroup>
+- **First-time installs may fail when the range resolves to a brand-new release**: pin to a specific older version or wait.
+- **Critical security patches are delayed seven days**: override per-package via Bun/npmrc exclusions when a real CVE drops.
+- **Slightly behind the bleeding edge**: this is the point.
 
 ## Overriding for a specific package
 
@@ -92,9 +36,9 @@ minimumReleaseAgeExcludes = [
 
 Glob patterns are supported, useful for platform-variant packages like `@tailwindcss/oxide-*`.
 
-<DocCallout variant="note" title="Use sparingly" eyebrow="Override discipline">
-  Each exclusion weakens the threat model slightly. The default `apps/ui/bunfig.toml` already excludes several high-churn packages whose latest versions fall within the seven-day window. Only add exclusions when a specific CVE or release justifies it. Document the reason in a comment.
-</DocCallout>
+<Aside type="note" title="Use sparingly">
+Each exclusion weakens the threat model slightly. The default `apps/ui/bunfig.toml` already excludes several high-churn packages whose latest versions fall within the seven-day window. Only add exclusions when a specific CVE or release justifies it. Document the reason in a comment.
+</Aside>
 
 ## Why not just trust npm?
 
@@ -107,5 +51,5 @@ npm's audit signal lags detection. By the time `npm audit` reports a malicious v
 ## Related
 
 - [Security pipeline](/topics/security/); CI scans, SAST, and dependency review that pair with the install delay.
-- [Lint as the contract](/architecture/lint-as-contract/); architecture-level guardrails the merge gate enforces.
+- [Lint as the contract](/architecture/lint-as-contract/); architecture-level constraints the merge gate enforces.
 - [Commands cheatsheet](/reference/commands/); where `bun run validate` and `bun run validate` live.

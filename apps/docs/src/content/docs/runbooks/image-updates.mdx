@@ -1,109 +1,122 @@
 ---
 title: Image updates
-description: "WUD (What's Up Docker) defaults on in production and runs a hybrid policy: auto-deploy app images, notify-only for base images."
+description: WUD detects container image updates. App images auto-deploy; base images notify-only.
 ---
 
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import CommandRun from "../../../components/docs-kit/CommandRun";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
+WUD (What's Up Docker) watches your running containers and applies a hybrid policy in production. When you push to the api or ui, new GHCR tags are auto-pulled and deployed. Base services like Postgres, Valkey, and Traefik only generate notifications so you can review release notes before updating.
 
-<PageIntro
-  eyebrow="Image Update Detection"
-  actions={[
-    { label: "Setup", href: "#setup" },
-    { label: "Hybrid policy", href: "#hybrid-policy" },
-  ]}
-  facts={[
-    { value: "WUD", label: "watch engine" },
-    { value: "Hybrid", label: "deploy policy" },
-    { value: ":3033", label: "WUD dashboard" },
-  ]}
->
-  In production (`STACK=prod`), `WITH_WUD=1` is the default and enables
-  [WUD](https://getwud.github.io/wud/). WUD watches running images and applies a
-  hybrid policy: `api` and `ui` auto-pull + auto-recreate on new GHCR tags,
-  while base services stay notify-only for operator review.
-</PageIntro>
+## How WUD reads container labels
 
-## Hybrid policy
+WUD checks the labels in your compose files to decide which images to auto-update and which to notify-only. In `docker-compose.yml`, labels like this control the behavior:
 
-<FaqGroup>
-  <FaqItem title="App images (api, ui): auto-deploy" open>
-    WUD uses a Docker trigger for app containers. When GHCR publishes a newer
-    image tag, WUD pulls and recreates those containers automatically.
-  </FaqItem>
-  <FaqItem title="Base images (postgres, valkey, traefik): notify-only">
-    WUD reports updates, but does not recreate base services. You review release
-    notes, schedule maintenance, then update manually.
-  </FaqItem>
-  <FaqItem title="Notifications are optional">
-    Dashboard at `:3033` always works. Discord and Slack notifications are
-    enabled only when the corresponding env vars are set.
-  </FaqItem>
-</FaqGroup>
+```yaml
+services:
+  api:
+    image: ghcr.io/your-org/your-fork-api:latest
+    labels:
+      wud.trigger: docker
+```
+
+The `wud.trigger: docker` label tells WUD to watch this image and auto-recreate the container when a new tag is published. Without this label, WUD reports updates but doesn't recreate.
 
 ## Setup
 
-1. Optional notifications in `compose/.env` (Discord, Slack, or both):
+Add optional notification channels to `compose/.env`:
 
-```dotenv
+```bash
+# Discord
 WUD_DISCORD_WEBHOOK=https://discord.com/api/webhooks/...
+
+# Slack
 WUD_SLACK_BOT_TOKEN=xoxb-...
 WUD_SLACK_CHANNEL=docker-updates
 ```
 
-2. Optional private GHCR auth:
+For private GHCR images:
 
-```dotenv
+```bash
 WUD_GHCR_USERNAME=your-gh-username
 WUD_GHCR_TOKEN=ghp_xxx
 ```
 
-3. Optional schedule override:
+Override the check schedule if needed:
 
-```dotenv
-WUD_SCHEDULE="0 */6 * * *"
+```bash
+WUD_SCHEDULE="0 */6 * * *"   # every 6 hours instead of the default
 ```
 
-4. Boot production stack:
+Boot production:
 
-<CommandRun
-  title="Boot prod with WUD"
-  command={["STACK=prod ./scripts/compose-up.sh"]}
-  output={[
-    { tone: "ok", text: "WUD started" },
-    { tone: "ok", text: "Dashboard at http://localhost:3033/" },
-  ]}
-/>
+```bash
+STACK=prod ./scripts/compose-up.sh
+```
 
-## Operational flow
+WUD will start. Access the dashboard at `http://<vps-ip>:3033/` or `http://localhost:3033/` if you're on the VPS.
 
-1. A push that touches `apps/api` or `apps/ui` publishes new GHCR image tags.
-2. WUD detects tag movement on schedule.
-3. App containers auto-pull + auto-recreate.
-4. Base-image updates only generate notifications.
+## Hybrid policy explained
 
-## Manual base-image update
+**App images (api, ui):**
 
-For Postgres, Valkey, and Traefik:
+- Labeled with `wud.trigger: docker` in the compose file.
+- WUD auto-pulls new `:latest` tags and recreates containers.
+- No downtime (rolling restart during the pull).
 
-1. Read upstream release notes.
-2. Take required backups.
-3. Bump pinned tag(s) in infra compose files.
-4. Pull and recreate the specific service.
+**Base images (postgres, valkey, traefik):**
+
+- No trigger label, or labeled differently.
+- WUD reports available updates on the dashboard and via notifications.
+- You read release notes, take backups (especially for Postgres), then update manually.
+
+**Manual base-image updates:**
+
+When you decide to upgrade Postgres or Traefik:
+
+1. Take a backup (see [Backups](/runbooks/backups/)).
+2. Edit the pinned tag in `infra/compose/compose/docker-compose.yml`:
+
+```yaml
+postgres:
+  image: postgres:17.1   # was postgres:17.0
+```
+
+3. Recreate the service:
+
+```bash
+docker compose pull postgres
+docker compose up -d postgres
+```
+
+4. Check the logs:
+
+```bash
+docker compose logs postgres | tail -20
+```
+
+## Notifications
+
+Dashboard at `:3033` always works. Slack and Discord integration is optional; enable only the channels you want. WUD delivers notifications for:
+
+- New app image tags (auto-deploying).
+- New base image tags (notify-only, for you to review).
+- Failed check runs (network issues, etc.).
 
 ## Disable WUD
+
+If you don't want automatic app deployments:
 
 ```bash
 WITH_WUD=0 STACK=prod ./scripts/compose-up.sh
 ```
 
-## Source
+Then manually trigger updates with:
 
-[`infra/compose/docs/image-update-detection.md`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/docs/image-update-detection.md) · [WUD docs](https://getwud.github.io/wud/)
+```bash
+docker compose pull api ui
+docker compose up -d api ui
+```
 
 ## Related
 
-- [Deployment](/topics/deployment/)
-- [Profiles & overlays](/infra/profiles-and-overlays/)
+- [Deployment](/topics/deployment/)  - the production workflow WUD fits into.
+- [Backups](/runbooks/backups/)  - how to snapshot before upgrading Postgres.
+- [Profiles & overlays](/infra/profiles-and-overlays/)  - how `WITH_WUD=1` works.

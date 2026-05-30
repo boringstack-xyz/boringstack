@@ -3,77 +3,21 @@ title: ACL & feature resolution
 description: CASL ability model, role rules, feature resolution order (override > plan > catalog default), and how account-scoping is enforced end-to-end.
 ---
 
-import DocCallout from "../../../components/DocCallout.tsx";
-import DataMatrix from "../../../components/docs-kit/DataMatrix";
-import FeatureGrid from "../../../components/docs-kit/FeatureGrid";
-import FaqGroup from "../../../components/FaqGroup.tsx";
-import FaqItem from "../../../components/FaqItem.tsx";
-import PageIntro from "../../../components/docs-kit/PageIntro";
+import { Aside } from "@astrojs/starlight/components";
 
-<PageIntro
-  eyebrow="Authorization and feature gates"
-  actions={[
-    { label: "Multi-tenant model", href: "/api/multi-tenant/" },
-    { label: "Billing", href: "/api/billing/" },
-  ]}
-  facts={[
-    { value: "role", label: "what the user can do" },
-    { value: "plan", label: "what the account paid for" },
-    { value: "CASL", label: "server-side ability builder" },
-  ]}
->
-  ACL is multi-tenant from day one. Solo-user products are the degenerate case:
-  every signup creates a personal account, owner membership, and Free plan row
-  in one transaction. The team UI appears only when memberships make it real.
-</PageIntro>
+ACL is multi-tenant from day one. Solo-user products are the degenerate case: every signup creates a personal account, owner membership, and Free plan row in one transaction. The team UI appears only when memberships make it real.
 
-## The three axes that feed every authorization check
+Every authorization check hinges on three axes: role (what the user plays in the account), entitlement (what the account paid for), and resource ownership (does this row belong to this account). These three feed a CASL ability builder on the server.
 
-<DataMatrix
-  caption="Authorization inputs"
-  columns={["Axis", "Question", "Changes", "Source"]}
-  rows={[
-    {
-      cells: [
-        "Role",
-        "What does this user play in this account?",
-        "Rarely",
-        "auth.account_memberships.role",
-      ],
-    },
-    {
-      cells: [
-        "Entitlement",
-        "What did this account pay for?",
-        "Per Stripe webhook",
-        "billing.account_plans + app.account_feature_overrides",
-      ],
-    },
-    {
-      cells: [
-        "Resource ownership",
-        "Does this row belong to this account?",
-        "Per request",
-        "CASL condition { accountId } on role rules",
-      ],
-    },
-  ]}
-/>
+## The three axes
+
+Role (from `auth.account_memberships.role`) describes what the user plays in the account: owner, admin, member, or viewer. Entitlement (from `billing.account_plans` and `app.account_feature_overrides`) is what the account paid for. Resource ownership is whether a row belongs to this account (encoded as a CASL condition on the role rules).
 
 Stripe never knows about feature keys or roles. The app never queries Stripe at request time. The two systems touch only at the webhook boundary.
 
-## The critical invariant
-
-<DocCallout
-  variant="danger"
-  title="Server authorization MUST NEVER depend on serialized client rules"
-  eyebrow="Critical invariant"
->
-  `/me.rules` is a UI-rendering hint only. Every privileged API handler rebuilds
-  the ability server-side from trusted DB state (`account_memberships` +
-  resolved features), or wraps the DB call in `requireAbility(...)`. A modified
-  client cannot escalate by sending crafted rules.
-</DocCallout>
+<Aside type="danger" title="Critical: server authorization must rebuild from DB state">
+`/me.rules` is a UI-rendering hint only. Every privileged API handler rebuilds the ability server-side from trusted DB state, or wraps the DB call in `requireAbility(...)`. A modified client cannot escalate by sending crafted rules.
+</Aside>
 
 ## Resolution order
 
@@ -87,33 +31,12 @@ First match wins. The CASL ability is built from the resolved feature set after 
 
 ## Roles
 
-Four roles ship by default, **per-membership** (a user is `owner` of Account A, `viewer` of Account B):
+Four roles ship by default, per-membership (a user is `owner` of Account A and `viewer` of Account B):
 
-<FeatureGrid
-  columns={4}
-  items={[
-    {
-      eyebrow: "owner",
-      title: "Account creator",
-      body: "Manages billing, deletes the account, transfers ownership. Exactly one active owner per account.",
-    },
-    {
-      eyebrow: "admin",
-      title: "Account admin",
-      body: "Manages members and settings, but does not bypass plan checks.",
-    },
-    {
-      eyebrow: "member",
-      title: "Product user",
-      body: "Default authenticated role. Reads and writes account-scoped resources they own.",
-    },
-    {
-      eyebrow: "viewer",
-      title: "Read-only access",
-      body: "Guest, support, and demo role. Never writes.",
-    },
-  ]}
-/>
+- **owner**: Manages billing, deletes the account, transfers ownership. Exactly one active owner per account.
+- **admin**: Manages members and settings, but does not bypass plan checks.
+- **member**: Default authenticated role. Reads and writes account-scoped resources they own.
+- **viewer**: Read-only access. Guest, support, and demo role. Never writes.
 
 Role rules carry CASL conditions (`{ accountId: membership.accountId }`) so resource ownership is encoded right at the rule, not duplicated in every handler.
 
@@ -146,78 +69,22 @@ The lint rule is the mechanical guarantee. Defense-in-depth at the unit-test lay
 
 ## Runtime helpers
 
-<FaqGroup>
-  <FaqItem title="resolveActiveMembership(userId, accountId)" open>
-    Per-request DB lookup with a 30s in-process TTL cache. Confirms
-    the JWT-claimed `(user, account)` still maps to an active
-    membership and that the parent account is not soft-deleted.
-  </FaqItem>
-  <FaqItem title="resolveFreshMembership(userId, accountId)">
-    Cache-bypassing variant for the highest-stakes calls: account
-    deletion, ownership transfer, billing-portal creation, member
-    removal, role changes. Always refetches.
-  </FaqItem>
-  <FaqItem title="scopedTo(membership)">
-    Returns `{ accountId }` so account-scoped queries pull their
-    `WHERE` argument from one place.
-  </FaqItem>
-  <FaqItem title="requireAbility(ability, action, subject)">
-    Throws `ApiErrors.forbidden()` with the action+subject in the
-    message when the ability denies. Wraps every privileged DB call.
-  </FaqItem>
-  <FaqItem title="enforceLimit(feature, current, limit)">
-    Throws `ApiErrors.limitExceeded` (status 402) with
-    `{ feature, current, limit }` so the UI can render an inline
-    upgrade CTA. Wrap inside a transaction for race safety.
-  </FaqItem>
-</FaqGroup>
+See [`src/lib/acl/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/acl) for the implementation. Key functions:
 
-## /me response shape
+- `resolveActiveMembership(userId, accountId)`: Per-request DB lookup with 30s TTL. Confirms the JWT-claimed `(user, account)` pair still maps to an active membership.
+- `resolveFreshMembership(userId, accountId)`: Cache-bypassing variant for high-stakes calls (account deletion, ownership transfer, billing). Always refetches.
+- `scopedTo(membership)`: Returns `{ accountId }` so account-scoped queries pull their `WHERE` consistently.
+- `requireAbility(ability, action, subject)`: Throws `ApiErrors.forbidden()` when the ability denies. Wraps every privileged DB call.
+- `enforceLimit(feature, current, limit)`: Throws status 402 when a limit is exceeded. Wrap inside a transaction for race safety.
 
-```json
-{
-  "user": {
-    "id": "...",
-    "email": "...",
-    "firstName": "...",
-    "lastName": "...",
-    "emailVerified": true
-  },
-  "account": { "id": "...", "name": "..." },
-  "role": "owner",
-  "memberships": [
-    { "accountId": "...", "accountName": "...", "role": "owner" }
-  ],
-  "features": {
-    "can_export": false,
-    "can_invite_team": false,
-    "max_seats": 1
-  }
-}
-```
+## /me response
 
-Single endpoint, every piece the UI needs to render the right buttons. The `features` block is the _resolved_ set; overrides have already been applied.
+The `GET /api/v1/me` endpoint returns user, account, role, all memberships, and resolved features. The `features` block is the resolved set after override and plan rules have been applied. The response includes everything the UI needs to render the correct buttons and gates.
 
-<DocCallout
-  variant="contract"
-  title="`isPlatformAdmin` is NOT in the payload"
-  eyebrow="Response contract"
->
-  Platform-admin status is a server-side flag (`users.is_platform_admin`) gating
-  the separate `/admin/*` route mount and `requirePlatformAdmin` middleware. It
-  never ships to the SPA. The product UI has no concept of "this user is also an
-  admin," and `requireAbility` checks rebuild from DB state on every privileged
-  call. If a fork wants admin tooling, build it as a separate app behind its own
-  auth gate.
-</DocCallout>
+<Aside type="note" title="isPlatformAdmin is server-only">
+Platform-admin status lives on the server as a flag (`users.is_platform_admin`), gating the separate `/admin/*` route mount. It never ships to the SPA. The product UI has no concept of "this user is also an admin," and `requireAbility` checks rebuild from DB state on every privileged call.
+</Aside>
 
-## Source
-
-- [`src/lib/acl/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/acl): types, constants, feature-resolution, ability builder, `scopedTo`, `enforceLimit`.
-- [`src/api/accounts/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/accounts): `accountsService`, `invitationsService`, routes.
-- [`src/api/admin/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/admin): `adminBillingService` (grantFeature / revokeFeature / grantPlan).
-- [`src/middleware/require-active-membership.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/middleware/require-active-membership.ts): runtime membership recheck.
-- [`src/queues/account-maintenance/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/queues/account-maintenance): five daily idempotent sweep jobs (expire overrides, expire admin plans, downgrade canceled Stripe plans, hard-delete soft-deleted accounts, clean expired invitations).
 
 ## Related
 

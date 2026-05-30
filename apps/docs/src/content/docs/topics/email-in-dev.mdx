@@ -2,26 +2,12 @@
 title: Email in development
 description: Iterate on transactional email templates and flows locally without sending real mail. Capture every outbound message in Mailpit's web UI.
 ---
-import PageIntro from "../../../components/docs-kit/PageIntro";
-import CommandRun from "../../../components/docs-kit/CommandRun";
+
 import { Steps } from "@astrojs/starlight/components";
 
-<PageIntro
-  eyebrow="Local email"
-  actions={[
-    { label: "Boot Mailpit", href: "#boot-mailpit" },
-    { label: "Usage cases", href: "#use-this-for" },
-  ]}
-  facts={[
-    { value: "Mailpit", label: "SMTP Catcher" },
-    { value: "1025", label: "SMTP Port" },
-    { value: "8025", label: "Web Port" },
-  ]}
->
-  Iterate on transactional email templates and signup flows locally without sending real mail. BoringStack includes Mailpit: SMTP on :1025, web UI on :8025.
-</PageIntro>
+Iterate on transactional email templates and signup flows locally without sending real mail. BoringStack includes Mailpit: SMTP on port 1025, web UI on port 8025.
 
-Test verify-email, password-reset, welcome, and notification flows locally without sending through Cloudflare Email Service, Resend, or SendGrid.
+Test verify-email, password-reset, welcome, and notification flows without sending through Cloudflare Email Service, Resend, or SendGrid.
 
 ## Boot Mailpit
 
