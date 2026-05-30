@@ -72,6 +72,13 @@ jobs:
           # even though the env was set. Keeping the env: line above as
           # belt-and-braces for any future action version that flips back.
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          # The action spawns `npm run build` in its own subprocess, which
+          # does NOT inherit the job-level `defaults.run.working-directory`.
+          # Without `directory:` it runs from the repo root, where there
+          # is no `build` script, and every UI-touching PR fails with
+          # `npm error Missing script: "build"`. Pin the action's CWD to
+          # apps/ui so it runs npm against the UI package.json.
+          directory: apps/ui
           package_manager: npm
           script: build
           skip_step: install
