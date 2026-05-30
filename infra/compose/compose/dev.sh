@@ -119,6 +119,12 @@ fi
 if [[ "${WITH_MAILPIT:-0}" == "1" && "$STACK" == "dev" && -f "$ROOT/docker-compose.mailpit.yml" ]]; then
   COMPOSE_FILES+=(-f "$ROOT/docker-compose.mailpit.yml")
   PROFILE_ARGS+=(--profile mailpit)
+  # Point api-dev at the mailpit catcher only when STACK=dev. The smoke
+  # profile shares the api-dev service but doesn't run mailpit, so the
+  # SMTP target only makes sense in dev.
+  export API_DEV_EMAIL_PROVIDER="${API_DEV_EMAIL_PROVIDER:-smtp}"
+  export API_DEV_SMTP_HOST="${API_DEV_SMTP_HOST:-mailpit}"
+  export API_DEV_SMTP_PORT="${API_DEV_SMTP_PORT:-1025}"
 fi
 
 if [[ $# -eq 0 ]]; then
