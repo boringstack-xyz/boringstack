@@ -49,6 +49,28 @@ acme_email        = "ops@example.com"  # real address; Let's Encrypt rejects exa
 # monorepo_repo = "https://github.com/boringstack-xyz/boringstack"
 
 # ----------------------------------------------------------------------------
+# Private GHCR auth  (optional; required if your fork pushes images to a
+# private GitHub Container Registry — leave empty for public images.)
+#
+# GitHub PAT (classic) with `read:packages` scope. Set both or neither;
+# the bootstrap renders a `docker login ghcr.io` only when both are set.
+# ----------------------------------------------------------------------------
+
+# ghcr_username = ""
+# ghcr_token    = ""
+
+# ----------------------------------------------------------------------------
+# First-boot superuser seed  (optional)
+#
+# When both are set, the api-migrate job creates this user as an admin on
+# first boot. Skip both to register through the UI yourself after apply.
+# Rotate the password from the UI's password-reset flow once you're in.
+# ----------------------------------------------------------------------------
+
+# superuser_email    = ""
+# superuser_password = ""  # min length enforced by the API env validator
+
+# ----------------------------------------------------------------------------
 # Email provider  (optional; leave empty to disable)
 #
 # Cloudflare Email Service is cheapest at scale (bundled into Workers Paid).
