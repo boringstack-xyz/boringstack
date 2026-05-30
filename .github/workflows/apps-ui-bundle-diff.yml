@@ -1,44 +1,49 @@
 name: bundle-diff
 
 on:
+  # No top-level `paths:` filter — the `size-diff` check is in branch
+  # protection's required-checks list, so the workflow must report a
+  # status on every PR or branch protection sits in "Expected — Waiting"
+  # forever. The expensive build + size-limit steps are gated on the
+  # internal paths-filter below, so PRs that don't touch the UI bundle
+  # report green without doing real work.
   pull_request:
     branches: [main]
-    paths:
-      - "apps/ui/src/**"
-      - "apps/ui/package.json"
-      - "apps/ui/bun.lock"
-      - "apps/ui/vite.config.ts"
-      - "apps/ui/.size-limit.json"
-      - ".github/workflows/apps-ui-bundle-diff.yml"
 
 concurrency:
   group: apps-ui-bundle-diff-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
   pull-requests: write
 
 jobs:
+  # Build apps/ui with bun (matching local dev), then enforce the
+  # `.size-limit.json` budgets with `bunx size-limit`. size-limit exits
+  # non-zero when any chunk exceeds its `limit:` value, so this job is a
+  # hard gate against bundle bloat. The full table prints in the job log
+  # so reviewers can scan deltas.
+  #
+  # Why a hand-rolled workflow instead of `andresz1/size-limit-action`:
+  # the action's npm-based install is incompatible with apps/ui's eslint
+  # peerDep tree (bun resolves leniently, npm 7+ does not), and patching
+  # around its install/exec quirks burned through three CI cycles. Going
+  # straight bun keeps the toolchain consistent with local dev.
   size-diff:
-    # Dependabot PRs run with a read-only GITHUB_TOKEN, so the size-limit-action
-    # can't post the comparison comment and fails with "Parameter token or
-    # opts.auth is required". The comment isn't useful on bot bumps anyway.
     if: github.actor != 'dependabot[bot]'
-    defaults:
-      run:
-        working-directory: apps/ui
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Detect relevant changes
+      - name: Detect UI bundle changes
         uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
         id: filter
         with:
           filters: |
-            code:
+            ui:
               - 'apps/ui/src/**'
               - 'apps/ui/package.json'
               - 'apps/ui/bun.lock'
@@ -46,32 +51,27 @@ jobs:
               - 'apps/ui/.size-limit.json'
               - '.github/workflows/apps-ui-bundle-diff.yml'
 
+      - name: No-op notice for non-UI PRs
+        if: steps.filter.outputs.ui != 'true'
+        run: echo "No UI bundle inputs changed in this PR — size check skipped."
+
       - name: Set up Bun
-        if: steps.filter.outputs.code == 'true'
+        if: steps.filter.outputs.ui == 'true'
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.3.14
 
       - name: Install
-        if: steps.filter.outputs.code == 'true'
+        if: steps.filter.outputs.ui == 'true'
+        working-directory: apps/ui
         run: bun install --frozen-lockfile
 
-      # size-limit-action runs install + build on both branches internally
-      # unless skip_step is set. We pre-install with bun and use npm as the
-      # runner because bun's node_modules layout is npm-compatible.
-      - name: Comment with bundle-size diff
-        if: steps.filter.outputs.code == 'true'
-        uses: andresz1/size-limit-action@94bc357df29c36c8f8d50ea497c3e225c3c95d1d # v1.8.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          # v1.8.0 doesn't reliably fall back to env GITHUB_TOKEN — it
-          # initialises Octokit before reading the env, so the token must
-          # be passed explicitly as a `with:` input. Without this, every
-          # PR run fails with "Parameter token or opts.auth is required"
-          # even though the env was set. Keeping the env: line above as
-          # belt-and-braces for any future action version that flips back.
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          package_manager: npm
-          script: build
-          skip_step: install
+      - name: Build
+        if: steps.filter.outputs.ui == 'true'
+        working-directory: apps/ui
+        run: bun run build
+
+      - name: Enforce bundle-size budgets
+        if: steps.filter.outputs.ui == 'true'
+        working-directory: apps/ui
+        run: bunx size-limit

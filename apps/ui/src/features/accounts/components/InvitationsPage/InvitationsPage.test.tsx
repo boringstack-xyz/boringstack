@@ -110,7 +110,7 @@ describe("InvitationsPage", () => {
     expect(screen.getByTestId("invite-submit")).toBeInTheDocument();
   });
 
-  it("hides the invite form when can_invite_team is false (feature gate)", () => {
+  it("renders the upgrade prompt when can_invite_team is false (feature gate)", () => {
     renderPage(
       buildMe({
         features: {
@@ -122,12 +122,27 @@ describe("InvitationsPage", () => {
     );
 
     expect(screen.queryByTestId("invite-submit")).toBeNull();
+    expect(screen.getByTestId("invite-locked-feature")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /view plans/i })).toHaveAttribute(
+      "href",
+      "/account/billing"
+    );
+    expect(screen.queryByTestId("invite-locked-role")).toBeNull();
   });
 
-  it("hides the invite form for viewer role even when the feature is on", () => {
+  it("renders the role-locked explainer for viewer role when the feature is on", () => {
     renderPage(buildMe({ role: "viewer" }));
 
     expect(screen.queryByTestId("invite-submit")).toBeNull();
+    expect(screen.getByTestId("invite-locked-role")).toBeInTheDocument();
+    expect(screen.queryByTestId("invite-locked-feature")).toBeNull();
+  });
+
+  it("renders the role-locked explainer for member role when the feature is on", () => {
+    renderPage(buildMe({ role: "member" }));
+
+    expect(screen.queryByTestId("invite-submit")).toBeNull();
+    expect(screen.getByTestId("invite-locked-role")).toBeInTheDocument();
   });
 
   it("renders the empty state when there are no pending invitations", () => {

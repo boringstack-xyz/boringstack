@@ -17,13 +17,27 @@ import {
   useResendInvitation,
   useRevokeInvitation
 } from "../../Invitations.mutations";
-import type { IInvitationsPageView } from "./InvitationsPage.types";
+import type {
+  IInvitationsLockedReason,
+  IInvitationsPageView
+} from "./InvitationsPage.types";
 
 export function useInvitationsPage(): IInvitationsPageView {
   const { t } = useTranslation();
   const me = useMe();
   const accountId = me.data?.account.id;
-  const canInvite = me.data?.features.can_invite_team === true;
+
+  let lockedReason: IInvitationsLockedReason = null;
+
+  if (me.data != null) {
+    if (!me.data.features.can_invite_team) {
+      lockedReason = "feature";
+    } else if (me.data.role !== ROLE.owner && me.data.role !== ROLE.admin) {
+      lockedReason = "role";
+    }
+  }
+
+  const canInvite = me.data != null && lockedReason === null;
 
   const invitations = useInvitations(accountId);
   const inviteMutation = useInviteMember(accountId);
@@ -73,6 +87,7 @@ export function useInvitationsPage(): IInvitationsPageView {
 
   return {
     canInvite,
+    lockedReason,
     accountId,
     isLoading: me.isPending || invitations.isPending,
     invitations: invitations.data ?? [],

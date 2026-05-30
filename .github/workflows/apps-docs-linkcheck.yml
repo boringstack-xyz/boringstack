@@ -15,14 +15,14 @@ on:
       - "apps/docs/package.json"
       - "apps/docs/bun.lock"
       - ".github/workflows/apps-docs-linkcheck.yml"
-  pull_request:
-    paths:
-      - "apps/docs/src/**"
-      - "apps/docs/scripts/**"
-      - "apps/docs/astro.config.mjs"
-      - "apps/docs/package.json"
-      - "apps/docs/bun.lock"
-      - ".github/workflows/apps-docs-linkcheck.yml"
+  # PR trigger has NO `paths:` filter — the `linkcheck` check is in
+  # branch protection's required-checks list, so the workflow must run
+  # on every PR or branch protection will wait forever for a status
+  # that never comes ("Expected — Waiting for status to be reported").
+  # The expensive build + lychee steps are gated on the internal
+  # paths-filter below, so PRs that don't touch docs report green
+  # without doing any real work.
+  pull_request: {}
   workflow_dispatch:
 
 permissions:
@@ -41,34 +41,58 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Detect docs changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            docs:
+              - 'apps/docs/src/**'
+              - 'apps/docs/scripts/**'
+              - 'apps/docs/astro.config.mjs'
+              - 'apps/docs/package.json'
+              - 'apps/docs/bun.lock'
+              - '.github/workflows/apps-docs-linkcheck.yml'
+
+      - name: No-op notice for non-docs PRs
+        if: steps.filter.outputs.docs != 'true'
+        run: echo "No docs files changed in this PR — link check skipped."
+
       - uses: oven-sh/setup-bun@v2
+        if: steps.filter.outputs.docs == 'true'
         with:
           bun-version: 1.3.14
 
       - name: Install docs deps
+        if: steps.filter.outputs.docs == 'true'
         run: bun install --frozen-lockfile
 
       - name: Install apps/ui deps for lint-meta export
+        if: steps.filter.outputs.docs == 'true'
         working-directory: apps/ui
         run: bun install --frozen-lockfile
 
       - name: Install apps/api deps for lint-meta export
+        if: steps.filter.outputs.docs == 'true'
         working-directory: apps/api
         run: bun install --frozen-lockfile
 
       - name: Verify generated docs data
+        if: steps.filter.outputs.docs == 'true'
         env:
           BORINGSTACK_UI_DIR: ${{ github.workspace }}/apps/ui
           BORINGSTACK_API_DIR: ${{ github.workspace }}/apps/api
         run: bun run check:docs-data
 
       - name: Build docs site
+        if: steps.filter.outputs.docs == 'true'
         env:
           BORINGSTACK_UI_DIR: ${{ github.workspace }}/apps/ui
           BORINGSTACK_API_DIR: ${{ github.workspace }}/apps/api
         run: bun run build:ci
 
       - name: Internal link check (fail on broken)
+        if: steps.filter.outputs.docs == 'true'
         uses: lycheeverse/lychee-action@v2
         with:
           args: >-
@@ -79,6 +103,7 @@ jobs:
           fail: true
 
       - name: External link check (warning only)
+        if: steps.filter.outputs.docs == 'true'
         uses: lycheeverse/lychee-action@v2
         continue-on-error: true
         with:
