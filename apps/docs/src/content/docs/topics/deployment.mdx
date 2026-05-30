@@ -1,6 +1,6 @@
 ---
 title: Deployment
-description: Production deploy in four steps — accounts, secrets into 1Password, provision (OpenTofu or manual), verify. Get to a live HTTPS site in ~30 minutes.
+description: Production deploy in four steps. Accounts, secrets into 1Password, provision (OpenTofu or manual), verify. Live HTTPS site in about 30 minutes.
 ---
 
 import { Aside } from "@astrojs/starlight/components";
@@ -10,9 +10,9 @@ import PageIntro from "../../../components/docs-kit/PageIntro";
 <PageIntro
   eyebrow="Production deploy"
   actions={[
-    { label: "1 — Accounts", href: "#1--accounts" },
-    { label: "2 — Secrets", href: "#2--secrets-into-1password" },
-    { label: "3 — Provision", href: "#3--provision" },
+    { label: "1. Accounts", href: "#1-accounts" },
+    { label: "2. Secrets", href: "#2-secrets-into-1password" },
+    { label: "3. Provision", href: "#3-provision" },
   ]}
   facts={[
     { value: "~30 min", label: "first deploy" },
@@ -20,58 +20,93 @@ import PageIntro from "../../../components/docs-kit/PageIntro";
     { value: "1Password", label: "secret store" },
   ]}
 >
-  Four steps to a live HTTPS site. Same prep for both paths — OpenTofu
-  (one `tofu apply`, recommended) or manual (SSH, `compose up -d`).
+  Four steps to a live HTTPS site. Same prep for both paths. OpenTofu
+  (one `tofu apply`, recommended) or manual SSH and `compose up -d`.
 </PageIntro>
 
-## 1 — Accounts
+## 1. Accounts
 
 | Account | Why |
 |---|---|
-| [Cloudflare](https://dash.cloudflare.com/sign-up) | DNS + edge proxy + TLS termination. Domain must be on a Cloudflare zone. |
-| [Hetzner Cloud](https://accounts.hetzner.com/signUp) | The VPS. New accounts can sit in fraud review ~1 day — start here. |
+| [Cloudflare](https://dash.cloudflare.com/sign-up) | DNS, edge proxy, and TLS termination. Your domain must be on a Cloudflare zone. |
+| [Hetzner Cloud](https://accounts.hetzner.com/signUp) | The VPS. New accounts can sit in fraud review for about a day, so start the signup first. |
 | [GitHub](https://github.com/join) | Holds your fork; publishes images to GHCR. |
-| [1Password](https://1password.com/) | Single source of truth for every secret below. Alternatives: Vault / Infisical / Doppler / SOPS — same shape, different CLI. |
+| [1Password](https://1password.com/) | Stores every secret below. Alternatives: Vault, Infisical, Doppler, SOPS. Same shape, different CLI. |
 
-## 2 — Secrets into 1Password
+## 2. Secrets into 1Password
 
-Pattern: **generate / mint on your laptop, push to 1Password, then never re-type.** Raw values never live in a file on the VPS — `op://` references do.
+The pattern: generate or mint each value on your laptop, push it into 1Password, then never re-type it. Raw values never live in a file on the VPS. Only `op://` references do.
 
-**Generate stack secrets** locally:
+### 2.1 Generate stack secrets locally
 
 ```bash
 JWT=$(openssl rand -base64 48)   # JWT signing
-MFA=$(openssl rand -base64 32)   # MFA encryption — CANNOT be rotated post-enrolment
+MFA=$(openssl rand -base64 32)   # MFA encryption; CANNOT be rotated post-enrolment
 PG=$(openssl rand -base64 32)    # Postgres password
 VK=$(openssl rand -base64 32)    # Valkey password
 ```
 
-**Mint the Hetzner API token.** Hetzner Console → your project → **Security** → **API Tokens** → **Generate**. Permission: **Read & Write**. Copy now — Hetzner shows it once.
+<Aside type="caution" title="MFA_ENCRYPTION_KEY cannot be rotated">
+  Once users enrol TOTP, their secrets are AES-256-GCM encrypted with this key. Losing it means every MFA user re-enrols. Back the 1Password entry up to a hardware key or printed paper.
+</Aside>
 
-**Mint the Cloudflare API token.** Cloudflare → **My Profile** → **API Tokens** → **Create Token** → **Custom Token**. Permissions: `Zone:DNS:Edit`, `Zone:Zone Settings:Edit`, `Zone:Rulesets:Edit`. Zone Resources: include the specific zone (not all zones). Copy now. Grab the **Zone ID** and **Account ID** from the zone overview's right sidebar while you're there.
+### 2.2 Mint the Hetzner API token
 
-**SSH key** (skip if you have one):
+In the [Hetzner Console](https://console.hetzner.cloud), pick (or create) your project. Then **Security → API Tokens → Generate**. Permission **Read & Write**. Copy the token now; Hetzner shows it exactly once.
+
+### 2.3 Mint the Cloudflare API token
+
+In the [Cloudflare dashboard](https://dash.cloudflare.com), open **My Profile → API Tokens → Create Token → Custom Token**. Permissions:
+
+- `Zone : DNS : Edit`
+- `Zone : Zone Settings : Edit`
+- `Zone : Rulesets : Edit`
+
+**Zone Resources:** include the specific zone you're deploying to, not all zones. Copy the token now.
+
+While you're in the dashboard, copy the **Zone ID** and **Account ID** from the zone's overview page (right sidebar).
+
+### 2.4 SSH key
+
+Skip if you already have an ed25519 key you want to use:
 
 ```bash
 ssh-keygen -t ed25519 -C "boringstack-vps" -f ~/.ssh/boringstack
 ```
 
-**Vault layout** (in 1Password GUI, or via CLI — see snippet below):
+### 2.5 Vault layout
+
+Create a `Production` vault in 1Password with these items and fields:
 
 ```text
 Vault: Production
-├── Auth           jwt_secret · mfa_encryption_key
-├── Postgres       password
-├── Valkey         password
-├── Hetzner        api_token
-├── Cloudflare     api_token · zone_id · account_id
-├── SSH            public_key · private_key
-└── ACME           email   ← real address; Let's Encrypt rejects example.com
+├── Auth
+│   ├── jwt_secret           ← from 2.1
+│   └── mfa_encryption_key   ← from 2.1
+├── Postgres
+│   └── password             ← from 2.1
+├── Valkey
+│   └── password             ← from 2.1
+├── Hetzner
+│   └── api_token            ← from 2.2
+├── Cloudflare
+│   ├── api_token            ← from 2.3
+│   ├── zone_id              ← from 2.3
+│   └── account_id           ← from 2.3
+├── SSH
+│   ├── public_key           ← from 2.4 (~/.ssh/boringstack.pub)
+│   └── private_key          ← from 2.4 (~/.ssh/boringstack)
+└── ACME
+    └── email                ← real address; Let's Encrypt rejects example.com
 ```
 
+### 2.6 CLI alternative
+
+If you've installed the [1Password CLI](https://developer.1password.com/docs/cli/get-started/) and signed in, push the random-string items in three commands:
+
 <CommandRun
-  title="Push secrets via CLI (optional)"
-  caption="alternative to clicking through the 1Password GUI"
+  title="Push generated secrets via op CLI"
+  caption="Use after running the openssl commands in 2.1"
   command={[
     "op vault create Production  # skip if it exists",
     "op item create --vault=Production --category=password --title=Auth jwt_secret=\"$JWT\" mfa_encryption_key=\"$MFA\"",
@@ -80,109 +115,271 @@ Vault: Production
   ]}
 />
 
-<Aside type="caution" title="MFA_ENCRYPTION_KEY cannot be rotated">
-  Once users enrol TOTP, their secrets are AES-256-GCM encrypted with this key. Losing it means every MFA user re-enrols. Back the 1Password entry up to a hardware key or printed paper.
-</Aside>
+The other items (Hetzner, Cloudflare, SSH, ACME) you'll create through the 1Password GUI since they involve copy-paste from external dashboards.
 
-**Optional, fill later:** OAuth client pairs ([runbook](/runbooks/oauth-provider-setup/)), Stripe keys, email provider ([Cloudflare Email](/runbooks/cloudflare-email-setup/)), GHCR PAT (only if your fork's images are private). Create empty entries now so you remember.
+### 2.7 Optional items (fill later, after first deploy)
 
-## 3 — Provision
+Create empty 1Password entries now so you remember to come back:
 
-### 3a — OpenTofu (recommended)
+- **OAuth client pairs** for Google, GitHub, or LinkedIn: [OAuth provider setup](/runbooks/oauth-provider-setup/) walks through each console.
+- **Stripe keys**: skip if you don't have a paid plan yet.
+- **Email provider keys**: [Cloudflare Email Service](/runbooks/cloudflare-email-setup/) is the cheapest path. Resend and SendGrid both work too.
+- **GHCR PAT**: only if your fork's image packages are private. Public packages need no auth.
+- **Sentry / GlitchTip DSNs**: only if you self-host away from BoringStack's bundled GlitchTip. Otherwise auto-wired at first dev boot.
+
+## 3. Provision
+
+### 3a. OpenTofu (recommended)
+
+Install OpenTofu:
 
 ```bash
-brew install opentofu                                         # or: opentofu.org/docs/intro/install
-git clone https://github.com/<you>/<your-fork>
-cd <your-fork>/infra/bootstrap
-cp terraform.tfvars.example terraform.tfvars
-# fill terraform.tfvars by pasting from 1Password — or use `op inject`:
-#   op inject -i terraform.tfvars.tpl -o terraform.tfvars
-tofu init && tofu apply
+brew install opentofu   # macOS; see opentofu.org/docs/intro/install for other OSes
 ```
 
-Wait for cloud-init (Docker + image pull + `compose up -d` runs in the background after apply returns, ~3–5 min):
+Clone your fork (skip if already done) and prepare the bootstrap directory:
+
+```bash
+git clone https://github.com/<you>/<your-fork>
+cd <your-fork>/infra/bootstrap
+```
+
+Two ways to populate `terraform.tfvars`. The straightforward way is to copy `terraform.tfvars.example` and paste each value from 1Password by hand. The clean way uses `op inject` so plaintext never sits in your editor's undo history. Write this template once as `terraform.tfvars.tpl` (gitignored):
+
+```hcl
+# terraform.tfvars.tpl  (run `op inject -i terraform.tfvars.tpl -o terraform.tfvars`)
+
+# Provider credentials
+hetzner_api_token    = "op://Production/Hetzner/api_token"
+cloudflare_api_token = "op://Production/Cloudflare/api_token"
+cloudflare_zone_id   = "op://Production/Cloudflare/zone_id"
+
+# Domain + access
+domain         = "your-domain.example"
+ssh_public_key = "op://Production/SSH/public_key"
+
+# Stack secrets
+jwt_secret        = "op://Production/Auth/jwt_secret"
+postgres_password = "op://Production/Postgres/password"
+valkey_password   = "op://Production/Valkey/password"
+acme_email        = "op://Production/ACME/email"
+
+# Optional integrations (uncomment after first deploy)
+# email_provider             = "cloudflare"
+# email_from                 = "noreply@your-domain.example"
+# cloudflare_account_id      = "op://Production/Cloudflare/account_id"
+# cloudflare_email_api_token = "op://Production/Cloudflare-Email/api_token"
+# google_oauth_client_id     = "op://Production/Google-OAuth/client_id"
+# google_oauth_client_secret = "op://Production/Google-OAuth/client_secret"
+# stripe_secret_key          = "op://Production/Stripe/secret_key"
+# stripe_webhook_secret      = "op://Production/Stripe/webhook_secret"
+# superuser_email            = "ops@your-domain.example"
+# superuser_password         = "op://Production/Superuser/password"
+```
+
+The nine required variables above are the same nine listed without defaults in [`terraform.tfvars.example`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/bootstrap/terraform.tfvars.example). Everything else has a default; see the example file for the complete list with comments.
+
+Render and apply:
+
+<CommandRun
+  title="Render tfvars and apply"
+  caption="from infra/bootstrap"
+  command={[
+    "op inject -i terraform.tfvars.tpl -o terraform.tfvars",
+    "tofu init",
+    "tofu apply",
+  ]}
+  output={[
+    { tone: "ok", text: "Initializing provider plugins..." },
+    { tone: "ok", text: "Apply complete! Resources: 9 added." },
+  ]}
+/>
+
+Wait for cloud-init. Docker install, image pulls, and the first `compose up -d` run in the background after `apply` returns. Three to five minutes on a clean run.
 
 ```bash
 ssh root@$(tofu output -raw vps_ipv4) 'cloud-init status --wait'
 ```
 
-Full walkthrough + troubleshooting: [Provisioning with OpenTofu](/topics/provisioning-with-tofu/).
+Full walkthrough plus troubleshooting (including what to do when `cloud-init status` reports `done` but `/health` never returns 200): [Provisioning with OpenTofu](/topics/provisioning-with-tofu/).
 
-### 3b — Manual
+### 3b. Manual
 
-1. **Create the VPS.** Hetzner Console → Servers → Add Server. Image: Ubuntu 24.04. Type: CPX31 (4 vCPU / 8 GB). Paste the SSH public key.
-2. **Configure DNS.** Cloudflare zone → add proxied `A` (apex → IPv4) + `AAAA` (apex → IPv6) records. SSL/TLS mode: **Full (strict)**.
-3. **Lock the firewall to Cloudflare IPs** — see [Firewall & TLS](/runbooks/firewall-and-tls/) for the rules.
-4. **Bring up the stack on the VPS:**
+Use this path if you'd rather click through Hetzner's console and SSH in yourself.
 
-<CommandRun
-  title="On the VPS"
-  caption="ssh root@<vps-ipv4>"
-  command={[
-    "curl -fsSL https://get.docker.com | sh",
-    "git clone https://github.com/<you>/<your-fork> /opt/boringstack",
-    "cd /opt/boringstack/infra/compose/compose",
-    "cp .env.example .env.production",
-    "# edit .env.production: PUBLIC_UI_HOST, ACME_EMAIL, IMAGE_OWNER, and op:// refs for secrets",
-    "op run --env-file=.env.production -- ./scripts/compose-up.sh up -d",
-  ]}
-/>
+1. **Create the VPS.** Hetzner Console → **Servers → Add Server**. Image **Ubuntu 24.04**. Type **CPX31** (4 vCPU, 8 GB, about €11/mo) or larger. Paste your SSH public key. Buy.
 
-`op run` substitutes `op://` references as env vars without writing plaintext to disk.
+2. **Configure DNS.** In Cloudflare, on the target zone, add:
+   - `A` record on the apex pointing at the VPS IPv4. **Proxied**.
+   - `AAAA` record on the apex pointing at the VPS IPv6. **Proxied**.
+   - `CNAME` for `www` to `@` if you want www-to-apex (optional).
 
-## 4 — Verify
+   Then **SSL/TLS → Overview → Full (strict)**. **Edge Certificates → HSTS on, TLS 1.2 minimum**.
+
+3. **Lock the firewall to Cloudflare IPs.** See [Firewall & TLS](/runbooks/firewall-and-tls/) for the exact ufw rules. (The tofu path applies this automatically.)
+
+4. **Render the two env files locally**, then upload them. The prod stack reads two env files:
+   - `compose/.env`: base stack config (Postgres credentials, public host, ACME email, image owner).
+   - `compose/api.prod.env`: API-specific secrets (JWT, MFA key, public URLs, email provider).
+
+   Write each as an `op inject` template alongside your repo clone:
+
+   ```bash
+   # compose/.env.tpl  (gitignored; run `op inject -i compose/.env.tpl -o compose/.env`)
+   STACK=prod
+
+   POSTGRES_USER=app
+   POSTGRES_PASSWORD=op://Production/Postgres/password
+   POSTGRES_DB=app
+
+   PUBLIC_UI_HOST=your-domain.example
+   ACME_EMAIL=op://Production/ACME/email
+
+   # Your fork's GHCR org (lowercase). Defaults point at upstream boringstack.
+   IMAGE_OWNER=your-github-org
+   # API_IMAGE_NAME=your-fork-api    # only if you renamed
+   # UI_IMAGE_NAME=your-fork-ui
+   ```
+
+   ```bash
+   # compose/api.prod.env.tpl  (gitignored; render the same way)
+   JWT_SECRET=op://Production/Auth/jwt_secret
+   MFA_ENCRYPTION_KEY=op://Production/Auth/mfa_encryption_key
+
+   FRONTEND_URL=https://your-domain.example
+   PUBLIC_API_URL=https://your-domain.example
+   ALLOWED_ORIGINS=
+
+   # Email; optional but recommended. See /runbooks/cloudflare-email-setup/
+   EMAIL_PROVIDER=cloudflare
+   EMAIL_FROM=noreply@your-domain.example
+   CLOUDFLARE_ACCOUNT_ID=op://Production/Cloudflare/account_id
+   CLOUDFLARE_EMAIL_API_TOKEN=op://Production/Cloudflare-Email/api_token
+   ```
+
+5. **Render, upload, boot.** Two files render locally; both go onto the VPS:
+
+   <CommandRun
+     title="Render templates and bring the stack up"
+     caption="from your repo on your laptop, then on the VPS"
+     command={[
+       "# On your laptop:",
+       "op inject -i compose/.env.tpl -o compose/.env",
+       "op inject -i compose/api.prod.env.tpl -o compose/api.prod.env",
+       "scp compose/.env compose/api.prod.env root@<vps-ipv4>:/opt/boringstack/infra/compose/compose/",
+       "",
+       "# On the VPS:",
+       "ssh root@<vps-ipv4>",
+       "curl -fsSL https://get.docker.com | sh",
+       "git clone https://github.com/<you>/<your-fork> /opt/boringstack",
+       "cd /opt/boringstack/infra/compose/compose",
+       "STACK=prod ./scripts/compose-up.sh pull",
+       "STACK=prod ./scripts/compose-up.sh up -d",
+     ]}
+   />
+
+   If you'd rather not store rendered env files on disk at all, you can render them with `op inject`, pipe through `ssh`, and let the VPS write them in `/dev/shm` (RAM-only). Reasonable upgrade once the deploy is working end-to-end; not needed for the first run.
+
+## 4. Verify
+
+Three checks, in order. All three must pass before you trust the deploy.
 
 ```bash
-# Site responds with HTTPS through Cloudflare
-curl -sI https://<your-domain>/health     # → HTTP/2 200, server: cloudflare
+# 1. The site responds with HTTPS through Cloudflare
+curl -sI https://<your-domain>/health
+# Expect: HTTP/2 200; server: cloudflare; cf-ray: ...
 
-# Cert is from Let's Encrypt (not Cloudflare Universal)
+# 2. The cert came from Let's Encrypt, not Cloudflare Universal SSL
 echo | openssl s_client -connect <your-domain>:443 -servername <your-domain> 2>/dev/null \
-  | openssl x509 -noout -issuer            # → issuer=...Let's Encrypt...
+  | openssl x509 -noout -issuer
+# Expect: issuer=... Let's Encrypt ...
 
-# Direct origin is blocked
-curl -sI http://<vps-ipv4>/health --max-time 5    # → timeout or refused
+# 3. Direct origin access is blocked (firewall is doing its job)
+curl -sI http://<vps-ipv4>/health --max-time 5
+# Expect: connection timeout or connection refused
 ```
 
-All three pass → open `https://<your-domain>`, register the first user.
+**If check 1 fails (HTTPS doesn't return 200):**
 
-**Post-deploy chores** (do this week, not on day 1):
-- Rotate the seed superuser password via the reset flow.
-- Run a backup + restore drill: [Backups](/runbooks/backups/).
-- Wire alerts: [Alerts](/topics/alerts/).
+- Cloudflare 525 for the first few minutes after apply is normal. Traefik needs DNS to propagate before Let's Encrypt can issue. Wait ten minutes, then retry.
+- After ten minutes: SSH to the VPS, then `docker compose -f /opt/boringstack/infra/compose/compose/docker-compose.yml ps`. Any service not `running (healthy)` is the suspect.
+- Look at the api container's logs: `docker logs ai-starter-infra-api-1 2>&1 | tail -50`. The env validator prints the exact missing or placeholder variable when it rejects boot.
+- Cert issuance specifically: `docker logs ai-starter-infra-traefik-1 2>&1 | grep -i acme`.
+
+**If check 2 fails (cert is from Cloudflare Universal SSL):**
+
+The origin TLS handshake is failing, so Cloudflare is terminating with its own cert. Same diagnosis as check 1; usually means Traefik couldn't reach Let's Encrypt or the DNS isn't pointing at the right IP.
+
+**If check 3 succeeds (direct curl returns a response):**
+
+The firewall isn't blocking. Check the Hetzner firewall in the console; the tofu path scopes 80/443 to Cloudflare IPs automatically, but the manual path requires the [Firewall & TLS runbook's](/runbooks/firewall-and-tls/) ufw rules.
+
+When all three checks pass, open `https://<your-domain>` in a browser and register the first user.
+
+### Post-deploy chores
+
+Do these this week, not on day one.
+
+- **Rotate the seed superuser password.** If you set `superuser_email` and `superuser_password` in `terraform.tfvars`, log in as that user, open the password-reset flow from **Profile → Security**, and rotate to a fresh value (stash in 1Password under `Production/Superuser/password`). The boot value should never be the long-lived password.
+- **Run a backup + restore drill.** [Backups](/runbooks/backups/) covers `pg_dump` plus rclone offsite. The drill is: take a backup with the script, drop a non-essential table, restore the backup, confirm the table is back. First restore on a real outage is the wrong place to discover backup gaps.
+- **Wire alerts.** [Alerts](/topics/alerts/) covers Alertmanager's Slack and Discord receivers. Set `ALERTMANAGER_SLACK_WEBHOOK_URL` or `ALERTMANAGER_WEBHOOK_URL` in `compose/.env`, then `STACK=prod ./scripts/compose-up.sh up -d alertmanager` to apply.
+- **Trigger a test error.** `docker compose exec api bun -e 'throw new Error("first error")'` from the VPS. Verify it appears in GlitchTip within a few seconds. If GlitchTip is fresh, the DSN auto-wiring runs once on first dev boot but not on prod, so set `SENTRY_DSN` and `VITE_SENTRY_DSN` in `compose/.env` from the GlitchTip project's Client Keys page.
 
 ## Day-2 deploys
 
-Code changes under `apps/api` or `apps/ui` — push, WUD picks it up:
+Code changes under `apps/api` or `apps/ui`: push and let WUD pick the new image up.
 
 ```bash
 git push origin main
-# → release.yml pushes ghcr.io/<you>/<repo>-{api,ui}:latest
-# → WUD detects new :latest within ~60s and recreates the container
+# release.yml builds and pushes ghcr.io/<you>/<repo>-{api,ui}:latest
+# WUD on the VPS detects the new :latest within about a minute and recreates the container.
 ```
 
-Infra YAML or env changes — pull on the box:
+Infra YAML, env, or compose changes: `git pull` on the VPS, then re-up.
 
 ```bash
-ssh root@<vps> 'cd /opt/boringstack && git pull && cd infra/compose/compose && \
-  STACK=prod ./scripts/compose-up.sh up -d'
+ssh root@<vps>
+cd /opt/boringstack
+git pull
+cd infra/compose/compose
+STACK=prod ./scripts/compose-up.sh up -d
 ```
+
+You don't clone `apps/api` or `apps/ui` on the VPS. Their built images come from GHCR.
 
 ## Rollback
 
+Pin the api or ui to a previous tag and re-up.
+
+Find the previous tag (either a 7-character SHA or a semver release):
+
 ```bash
-# On the VPS, in compose/.env:
-echo "API_IMAGE_TAG=sha-<previous-7>" >> /opt/boringstack/infra/compose/compose/.env
-docker compose pull && docker compose up -d
+# Locally, list recent release runs:
+gh run list --workflow=apps-api-release.yml --branch=main --limit 10 \
+  --json headSha,createdAt --jq '.[] | "\(.createdAt[:16])  sha-\(.headSha[:7])"'
+
+# Or from the GHCR UI: github.com/<you>/<fork>/pkgs/container/<fork>-api
 ```
 
-`API_IMAGE_TAG` / `UI_IMAGE_TAG` accept `sha-<7>` or `:<semver>`. Schema changes are forward-only by convention — snapshot Postgres before high-stakes deploys: [Backups](/runbooks/backups/).
+Apply the pin on the VPS:
+
+```bash
+ssh root@<vps>
+cd /opt/boringstack/infra/compose/compose
+# Edit .env: set API_IMAGE_TAG and/or UI_IMAGE_TAG to the target sha or semver
+echo "API_IMAGE_TAG=sha-abc1234" >> .env
+docker compose pull
+docker compose up -d
+```
+
+`API_IMAGE_TAG` and `UI_IMAGE_TAG` both accept `sha-<7chars>` or `:<semver>` (e.g. `:0.3.0`). Postgres schema is the one thing this won't roll back. Schema changes are forward-only by convention, so most rollbacks still run. For high-stakes deploys, snapshot Postgres first; see [Backups](/runbooks/backups/).
 
 ---
 
 ## Related
 
-- [Provisioning with OpenTofu](/topics/provisioning-with-tofu/) — the full reference for step 3a.
-- [Firewall & TLS](/runbooks/firewall-and-tls/), [Backups](/runbooks/backups/), [Image updates](/runbooks/image-updates/), [OAuth setup](/runbooks/oauth-provider-setup/), [Cloudflare Email](/runbooks/cloudflare-email-setup/).
-- [Architecture decisions](/architecture/decisions/) — why single-host first, GHCR images, same-origin routing.
-- [Env backup and secrets](/runbooks/env-backup-and-secrets/) — vault backup discipline.
+- [Provisioning with OpenTofu](/topics/provisioning-with-tofu/), the full reference for step 3a.
+- [Firewall & TLS](/runbooks/firewall-and-tls/), the ufw + Cloudflare-IP-allowlist rules referenced by step 3b.
+- [Backups](/runbooks/backups/), [Image updates](/runbooks/image-updates/), [OAuth provider setup](/runbooks/oauth-provider-setup/), [Cloudflare Email setup](/runbooks/cloudflare-email-setup/).
+- [Architecture decisions](/architecture/decisions/), the reasoning behind single-host first, GHCR images, and same-origin routing.
+- [Env backup and secrets](/runbooks/env-backup-and-secrets/), the vault-backup discipline so the day you lose your 1Password vault isn't the day you also lose production.
