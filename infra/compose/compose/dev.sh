@@ -94,6 +94,10 @@ if [[ "$WITH_GLITCHTIP" == "1" && -f "$ROOT/docker-compose.glitchtip.yml" ]]; th
   fi
 fi
 
+if [[ "${WITH_BULLMQ:-}" == "" && "$STACK" == "dev" ]]; then
+  WITH_BULLMQ=1
+fi
+
 if [[ "${WITH_BULLMQ:-0}" == "1" && "$STACK" == "dev" && -f "$ROOT/docker-compose.bullmq.yml" ]]; then
   COMPOSE_FILES+=(-f "$ROOT/docker-compose.bullmq.yml")
   PROFILE_ARGS+=(--profile bullmq)
@@ -106,6 +110,10 @@ fi
 if [[ "${WITH_WUD:-0}" == "1" && -f "$ROOT/docker-compose.wud.yml" ]]; then
   COMPOSE_FILES+=(-f "$ROOT/docker-compose.wud.yml")
   PROFILE_ARGS+=(--profile wud)
+fi
+
+if [[ "${WITH_MAILPIT:-}" == "" && "$STACK" == "dev" ]]; then
+  WITH_MAILPIT=1
 fi
 
 if [[ "${WITH_MAILPIT:-0}" == "1" && "$STACK" == "dev" && -f "$ROOT/docker-compose.mailpit.yml" ]]; then
@@ -130,12 +138,30 @@ if [[ "$STACK" == "dev" && "$WITH_GLITCHTIP" == "1" && "${1:-}" == "up" ]]; then
   done
 fi
 
-if [[ "$WIRE_GLITCHTIP" == "1" ]]; then
+# Auto-wire VAPID keypair on the first detached `up` of the dev stack.
+# Skipped for prod (operator manages keypair rotation explicitly), smoke
+# (no push channel under test), and non-up actions.
+WIRE_VAPID=0
+if [[ "$STACK" == "dev" && "${1:-}" == "up" ]]; then
+  for arg in "$@"; do
+    if [[ "$arg" == "-d" || "$arg" == "--detach" ]]; then
+      WIRE_VAPID=1
+      break
+    fi
+  done
+fi
+
+if [[ "$WIRE_GLITCHTIP" == "1" || "$WIRE_VAPID" == "1" ]]; then
   docker compose "${COMPOSE_FILES[@]}" "${PROFILE_ARGS[@]}" "$@"
-  # Background — GlitchTip's first-boot bootstrap can take a minute and
-  # we don't want to hold the dev loop. The fetch script is idempotent
-  # and silent when wiring is already done.
-  ( "$ROOT/../scripts/glitchtip-fetch-dsn.sh" --quiet & ) >/dev/null 2>&1
+  # Background — both scripts are idempotent and silent when wiring is
+  # already done. Foregrounding them would hold the dev loop on every
+  # `up` for first-boot bootstraps that only matter once.
+  if [[ "$WIRE_GLITCHTIP" == "1" ]]; then
+    ( "$ROOT/../scripts/glitchtip-fetch-dsn.sh" --quiet & ) >/dev/null 2>&1
+  fi
+  if [[ "$WIRE_VAPID" == "1" ]]; then
+    ( "$ROOT/../scripts/dev-vapid-init.sh" --quiet & ) >/dev/null 2>&1
+  fi
 else
   exec docker compose "${COMPOSE_FILES[@]}" "${PROFILE_ARGS[@]}" "$@"
 fi

@@ -141,8 +141,7 @@ else to the ui container, all on one domain.
 ## Common next steps
 
 - **Regenerate cross-app contracts:** `bun run regen` from the repo root. The api must be on :7330 for the OpenAPI fetch to succeed.
-- **Observability and error tracking ship on by default.** Grafana at `http://localhost:3010`, GlitchTip at `http://glitchtip.localhost`. Opt out with `WITH_OBSERVABILITY=0` or `WITH_GLITCHTIP=0`. See [Observability](/topics/observability/) and [Error tracking](/topics/error-tracking/).
-- **Local email testing:** `WITH_MAILPIT=1 ./scripts/compose-up.sh`. See [Email in development](/topics/email-in-dev/).
+- **Everything ships wired in dev.** Cache (Valkey), real-time SSE notifications, Web Push (VAPID keys auto-generated on first boot), Bull-board, Mailpit, observability, and error tracking are all on by default. Inspect them at: Grafana `http://localhost:3010`, GlitchTip `http://glitchtip.localhost`, Bull-board `http://bullmq.localhost`, Mailpit `http://localhost:8025`. See [Profiles & overlays](/infra/profiles-and-overlays/) for the full default matrix and the off switches.
 - **Production deploy:** [Deployment](/topics/deployment/) covers GHCR images, TLS, firewall, and backups.
 
 ## Stop the stack
