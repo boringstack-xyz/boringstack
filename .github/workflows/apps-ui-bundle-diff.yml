@@ -1,15 +1,14 @@
 name: bundle-diff
 
 on:
+  # No top-level `paths:` filter — the `size-diff` check is in branch
+  # protection's required-checks list, so the workflow must report a
+  # status on every PR or branch protection sits in "Expected — Waiting"
+  # forever. The expensive build + size-limit steps are gated on the
+  # internal paths-filter below, so PRs that don't touch the UI bundle
+  # report green without doing real work.
   pull_request:
     branches: [main]
-    paths:
-      - "apps/ui/src/**"
-      - "apps/ui/package.json"
-      - "apps/ui/bun.lock"
-      - "apps/ui/vite.config.ts"
-      - "apps/ui/.size-limit.json"
-      - ".github/workflows/apps-ui-bundle-diff.yml"
 
 concurrency:
   group: apps-ui-bundle-diff-${{ github.ref }}
@@ -31,7 +30,7 @@ jobs:
   # peerDep tree (bun resolves leniently, npm 7+ does not), and patching
   # around its install/exec quirks burned through three CI cycles. Going
   # straight bun keeps the toolchain consistent with local dev.
-  size:
+  size-diff:
     if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -39,19 +38,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
+      - name: Detect UI bundle changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            ui:
+              - 'apps/ui/src/**'
+              - 'apps/ui/package.json'
+              - 'apps/ui/bun.lock'
+              - 'apps/ui/vite.config.ts'
+              - 'apps/ui/.size-limit.json'
+              - '.github/workflows/apps-ui-bundle-diff.yml'
+
+      - name: No-op notice for non-UI PRs
+        if: steps.filter.outputs.ui != 'true'
+        run: echo "No UI bundle inputs changed in this PR — size check skipped."
+
       - name: Set up Bun
+        if: steps.filter.outputs.ui == 'true'
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.3.14
 
       - name: Install
+        if: steps.filter.outputs.ui == 'true'
         working-directory: apps/ui
         run: bun install --frozen-lockfile
 
       - name: Build
+        if: steps.filter.outputs.ui == 'true'
         working-directory: apps/ui
         run: bun run build
 
       - name: Enforce bundle-size budgets
+        if: steps.filter.outputs.ui == 'true'
         working-directory: apps/ui
         run: bunx size-limit
