@@ -34,6 +34,10 @@ paths = [
   # synthetic MFA key as the "good" baseline. No live secret reaches
   # this file.
   '''apps/api/tests/config/env/validate\.test\.ts''',
+  # Boot-invariants tests verify the AES-256 key decoder accepts a
+  # valid 32-byte base64 fixture and rejects too-short / too-long
+  # values. The fixture is generated for the test, not a live key.
+  '''apps/api/tests/boot/invariants\.test\.ts''',
 ]
 # Historical finding from an MFA test stub that used a 16-char hex
 # string as a placeholder `challengeToken` value. The working tree was

@@ -8,6 +8,15 @@ interface ISet {
   status?: number | string;
 }
 
+function hasStatusCode(payload: unknown): payload is { statusCode: unknown } {
+  return (
+    payload !== null && typeof payload === "object" && "statusCode" in payload
+  );
+}
+
+const readStatusCode = (payload: unknown): unknown =>
+  hasStatusCode(payload) ? payload.statusCode : undefined;
+
 describe("errorHandler", () => {
   test("ApiError pass-through: status comes from the error, body is the canonical envelope", () => {
     const set: ISet = {};
@@ -44,7 +53,7 @@ describe("errorHandler", () => {
     expect(body.error.code).toBe("NOT_FOUND");
   });
 
-  test("Elysia VALIDATION code becomes a 400 with the field carried through", () => {
+  test("Elysia VALIDATION code becomes a 400 with the field lifted into fieldErrors", () => {
     const set: ISet = {};
     const raw = new Error("password too weak");
 
@@ -54,10 +63,12 @@ describe("errorHandler", () => {
 
     expect(set.status).toBe(400);
     expect(body.error.code).toBe("VALIDATION_ERROR");
-    expect(body.error.field).toBe("password");
+    expect(body.error.fieldErrors).toEqual({
+      password: "password too weak",
+    });
   });
 
-  test("VALIDATION without a 'field' property still 400s (field is optional)", () => {
+  test("VALIDATION without a 'field' property still 400s (fieldErrors is optional)", () => {
     const set: ISet = {};
 
     const body = errorHandler({
@@ -68,7 +79,7 @@ describe("errorHandler", () => {
 
     expect(set.status).toBe(400);
     expect(body.error.code).toBe("VALIDATION_ERROR");
-    expect(body.error.field).toBeUndefined();
+    expect(body.error.fieldErrors).toBeUndefined();
   });
 
   test("Unknown error type maps to 500 internal — does NOT leak the original message", () => {
@@ -197,6 +208,58 @@ describe("errorHandler", () => {
     } finally {
       warnSpy.mockRestore();
       errorSpy.mockRestore();
+    }
+  });
+
+  /*
+   * Invariant: the `statusCode` carried by the warn log payload equals
+   * the final response status. Observability tools (Grafana, GlitchTip)
+   * read the log value, so any drift between log and wire status would
+   * mis-attribute 4xx counts.
+   */
+  test("log entry's statusCode matches the response status (no stale set.status)", () => {
+    const warnSpy = spyOn(logger, "warn");
+
+    try {
+      const set: ISet = {};
+
+      errorHandler({
+        code: "NOT_FOUND",
+        error: ApiErrors.notFound("Ticket"),
+        set,
+      });
+
+      expect(set.status).toBe(404);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+
+      const [, payload] = warnSpy.mock.calls[0] ?? [];
+
+      expect(readStatusCode(payload)).toBe(404);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  test("log entry's statusCode matches response status for Elysia codes", () => {
+    const warnSpy = spyOn(logger, "warn");
+
+    try {
+      const set: ISet = {};
+
+      errorHandler({
+        code: "PARSE",
+        error: new Error("Unexpected end of JSON input"),
+        set,
+      });
+
+      expect(set.status).toBe(400);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+
+      const [, payload] = warnSpy.mock.calls[0] ?? [];
+
+      expect(readStatusCode(payload)).toBe(400);
+    } finally {
+      warnSpy.mockRestore();
     }
   });
 });

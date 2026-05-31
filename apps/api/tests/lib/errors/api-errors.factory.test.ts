@@ -5,22 +5,22 @@ import { ApiErrors } from "../../../src/lib/errors/api-errors.factory";
 import { ErrorCodes } from "../../../src/lib/errors/errors.constants";
 
 describe("ApiErrors factory", () => {
-  test("validation → 400 with the supplied field and details", () => {
+  test("validation → 400 with the supplied field lifted into fieldErrors", () => {
     const err = ApiErrors.validation("bad", "email", { reason: "format" });
 
     expect(err).toBeInstanceOf(ApiError);
     expect(err.code).toBe(ErrorCodes.VALIDATION_ERROR);
     expect(err.statusCode).toBe(400);
-    expect(err.field).toBe("email");
+    expect(err.fieldErrors).toEqual({ email: "bad" });
     expect(err.details).toEqual({ reason: "format" });
   });
 
-  test("invalidInput → 400 + INVALID_INPUT code", () => {
+  test("invalidInput → 400 + INVALID_INPUT code + field lifted into fieldErrors", () => {
     const err = ApiErrors.invalidInput("bad", "id");
 
     expect(err.statusCode).toBe(400);
     expect(err.code).toBe(ErrorCodes.INVALID_INPUT);
-    expect(err.field).toBe("id");
+    expect(err.fieldErrors).toEqual({ id: "bad" });
   });
 
   test("missingField → 400 + names the field in the message", () => {
@@ -90,13 +90,17 @@ describe("ApiErrors factory", () => {
     expect(ApiErrors.rateLimit().code).toBe(ErrorCodes.RATE_LIMIT_EXCEEDED);
   });
 
-  test("limitExceeded → 402 + LIMIT_EXCEEDED + carries current/limit context", () => {
+  test("limitExceeded → 402 + LIMIT_EXCEEDED + carries current/limit/feature in details (not a field error)", () => {
     const err = ApiErrors.limitExceeded("seats", { current: 10, limit: 5 });
 
     expect(err.statusCode).toBe(402);
     expect(err.code).toBe(ErrorCodes.LIMIT_EXCEEDED);
-    expect(err.field).toBe("seats");
-    expect(err.details).toEqual({ current: 10, limit: 5 });
+    expect(err.fieldErrors).toBeUndefined();
+    expect(err.details).toEqual({
+      current: 10,
+      limit: 5,
+      feature: "seats",
+    });
   });
 
   test("internal → 500", () => {

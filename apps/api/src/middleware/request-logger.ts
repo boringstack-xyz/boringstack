@@ -2,8 +2,14 @@ import { Elysia } from "elysia";
 import { logger } from "../config/logger";
 import { redactSensitiveInfo } from "./request-logger.utils";
 
-export const requestLogger = new Elysia()
-  .derive(({ request }) => {
+/*
+ * `as: "scoped"` propagates the derive + onAfterHandle hooks to the
+ * routes registered on the parent app that does `.use(requestLogger)`.
+ * Without it the hooks stay local to this Elysia instance and `x-request-id`
+ * is absent from outbound responses.
+ */
+export const requestLogger = new Elysia({ name: "request-logger" })
+  .derive({ as: "scoped" }, ({ request }) => {
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
 
@@ -28,7 +34,7 @@ export const requestLogger = new Elysia()
       requestId,
     };
   })
-  .onAfterHandle(({ set, requestId }) => {
+  .onAfterHandle({ as: "scoped" }, ({ set, requestId }) => {
     if (typeof requestId === "string") {
       set.headers["x-request-id"] = requestId;
     }

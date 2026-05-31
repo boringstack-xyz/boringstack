@@ -21,8 +21,14 @@ describe("toInt", () => {
     expect(toInt("", 7)).toBe(7);
   });
 
-  it("falls back when not a number", () => {
-    expect(toInt("not-a-number", 7)).toBe(7);
+  it("throws on non-numeric input (no silent fallback)", () => {
+    expect(() => toInt("not-a-number", 7, "PORT")).toThrow(
+      /PORT.*not-a-number/
+    );
+  });
+
+  it("throws without a name label using a generic placeholder", () => {
+    expect(() => toInt("garbage", 0)).toThrow(/<int>/);
   });
 });
 
@@ -43,8 +49,10 @@ describe("toFloat", () => {
     expect(toFloat("", 0.1)).toBe(0.1);
   });
 
-  it("falls back when not a number", () => {
-    expect(toFloat("not-a-float", 0.1)).toBe(0.1);
+  it("throws on non-numeric input (no silent fallback)", () => {
+    expect(() =>
+      toFloat("not-a-float", 0.1, "SENTRY_TRACES_SAMPLE_RATE")
+    ).toThrow(/SENTRY_TRACES_SAMPLE_RATE.*not-a-float/);
   });
 });
 
@@ -67,16 +75,39 @@ describe("nonEmpty", () => {
 });
 
 describe("toBool", () => {
-  it("returns true only for the literal string 'true'", () => {
+  it("returns true for canonical truthy tokens (case-insensitive)", () => {
     expect(toBool("true")).toBe(true);
+    expect(toBool("TRUE")).toBe(true);
+    expect(toBool("True")).toBe(true);
+    expect(toBool("1")).toBe(true);
+    expect(toBool("yes")).toBe(true);
+    expect(toBool("YES")).toBe(true);
+    expect(toBool("on")).toBe(true);
+    expect(toBool("ON")).toBe(true);
+    expect(toBool(" true ")).toBe(true);
   });
 
-  it("returns false for everything else", () => {
+  it("returns false for canonical falsy tokens", () => {
     expect(toBool("false")).toBe(false);
-    expect(toBool("1")).toBe(false);
+    expect(toBool("FALSE")).toBe(false);
+    expect(toBool("0")).toBe(false);
+    expect(toBool("no")).toBe(false);
+    expect(toBool("off")).toBe(false);
     expect(toBool("")).toBe(false);
     expect(toBool(undefined)).toBe(false);
-    expect(toBool("True")).toBe(false);
+  });
+
+  it("throws on garbage input — names the variable in the error", () => {
+    expect(() => toBool("truee", "BILLING_ENABLED")).toThrow(
+      /BILLING_ENABLED.*invalid boolean.*truee/
+    );
+    expect(() => toBool("maybe", "TRUST_PROXY")).toThrow(
+      /TRUST_PROXY.*invalid boolean/
+    );
+  });
+
+  it("throws without a name label using a generic placeholder", () => {
+    expect(() => toBool("garbage")).toThrow(/<bool>/);
   });
 });
 
@@ -111,6 +142,42 @@ const seedValid = (): TestEnv => ({
   RESEND_API_KEY: "rk_test",
 });
 
+const REAL_JWT_SECRET = "x".repeat(40);
+const REAL_MFA_KEY = "RGdmRXJVbmlrV3VqWUFwR2VVZkdLUlBmYWxsa2VBQ08=";
+
+/*
+ * Tests that flip NODE_ENV to production need to satisfy the additional
+ * prod-only invariants the validator enforces: https public URLs and a
+ * non-empty MFA encryption key. This helper layers those on top of a
+ * test's existing assignments so each test keeps its specific intent
+ * focused (e.g. "VALKEY_PASSWORD required") without restating the full
+ * production seed.
+ */
+const applyProdDefaults = (env: TestEnv): void => {
+  env.FRONTEND_URL = "https://app.example.test";
+  env.PUBLIC_API_URL = "https://api.example.test";
+  env.MFA_ENCRYPTION_KEY = REAL_MFA_KEY;
+};
+
+/*
+ * Self-contained production-ready seed used by the placeholder-secrets
+ * and HTTPS-only blocks. Other blocks compose smaller mutations onto
+ * `testEnv` via `applyProdDefaults`.
+ */
+const seedProd = (): TestEnv => ({
+  NODE_ENV: "production",
+  DATABASE_URL: "postgresql://x:y@localhost:5432/db",
+  JWT_SECRET: REAL_JWT_SECRET,
+  MFA_ENCRYPTION_KEY: REAL_MFA_KEY,
+  FRONTEND_URL: "https://app.example.test",
+  PUBLIC_API_URL: "https://app.example.test/api",
+  ALLOWED_ORIGINS: "",
+  EMAIL_PROVIDER: "resend",
+  EMAIL_FROM: "noreply@app.example.test",
+  RESEND_API_KEY: "rk_test",
+  VALKEY_PASSWORD: "secret",
+});
+
 beforeEach(() => {
   testEnv = seedValid();
 });
@@ -131,6 +198,7 @@ describe("validateEnv", () => {
     testEnv.EMAIL_PROVIDER = "resend";
     testEnv.RESEND_API_KEY = "rk_test";
     testEnv.VALKEY_PASSWORD = "secret";
+    applyProdDefaults(testEnv);
     expect(() => validateEnv(testEnv)).not.toThrow();
   });
 
@@ -138,6 +206,7 @@ describe("validateEnv", () => {
     testEnv.NODE_ENV = "production";
     testEnv.ALLOWED_ORIGINS = "http://example.com";
     testEnv.RESEND_API_KEY = "rk_test";
+    applyProdDefaults(testEnv);
     expect(() => validateEnv(testEnv)).toThrow(/HTTPS/);
   });
 
@@ -145,6 +214,7 @@ describe("validateEnv", () => {
     testEnv.NODE_ENV = "production";
     testEnv.ALLOWED_ORIGINS = "https://*.example.com";
     testEnv.RESEND_API_KEY = "rk_test";
+    applyProdDefaults(testEnv);
     expect(() => validateEnv(testEnv)).toThrow(/HTTPS|wildcard/);
   });
 
@@ -161,6 +231,7 @@ describe("validateEnv", () => {
     testEnv.EMAIL_PROVIDER = "sendgrid";
     testEnv.SENDGRID_API_KEY = "";
     testEnv.RESEND_API_KEY = "";
+    applyProdDefaults(testEnv);
     expect(() => validateEnv(testEnv)).toThrow(/Email provider/);
   });
 
@@ -239,6 +310,7 @@ describe("validateEnv", () => {
     testEnv.RESEND_API_KEY = "rk_test";
     testEnv.QUEUES_ENABLED = "true";
     testEnv.VALKEY_PASSWORD = "";
+    applyProdDefaults(testEnv);
     expect(() => validateEnv(testEnv)).toThrow(/VALKEY_PASSWORD/);
   });
 
@@ -250,6 +322,7 @@ describe("validateEnv", () => {
     testEnv.EMAIL_FROM = "noreply@boringstack.test";
     testEnv.QUEUES_ENABLED = "false";
     testEnv.VALKEY_PASSWORD = "secret";
+    applyProdDefaults(testEnv);
     expect(() => validateEnv(testEnv)).toThrow(/QUEUES_ENABLED/);
   });
 
@@ -270,6 +343,8 @@ describe("validateEnv", () => {
     testEnv.EMAIL_PROVIDER = "resend";
     testEnv.RESEND_API_KEY = "rk_test";
     testEnv.EMAIL_FROM = "noreply@example.com";
+    testEnv.VALKEY_PASSWORD = "secret";
+    applyProdDefaults(testEnv);
     expect(() => validateEnv(testEnv)).toThrow(/placeholder domain/);
   });
 
@@ -279,6 +354,8 @@ describe("validateEnv", () => {
     testEnv.EMAIL_PROVIDER = "resend";
     testEnv.RESEND_API_KEY = "rk_test";
     testEnv.EMAIL_FROM = "noreply@mail.example.com";
+    testEnv.VALKEY_PASSWORD = "secret";
+    applyProdDefaults(testEnv);
     expect(() => validateEnv(testEnv)).toThrow(/placeholder domain/);
   });
 
@@ -293,6 +370,8 @@ describe("validateEnv", () => {
     testEnv.EMAIL_PROVIDER = "smtp";
     testEnv.SMTP_HOST = "";
     testEnv.RESEND_API_KEY = "";
+    testEnv.VALKEY_PASSWORD = "secret";
+    applyProdDefaults(testEnv);
     expect(() => validateEnv(testEnv)).toThrow(/SMTP_HOST/);
   });
 
@@ -303,6 +382,7 @@ describe("validateEnv", () => {
     testEnv.SMTP_HOST = "mailpit";
     testEnv.SMTP_PORT = "1025";
     testEnv.VALKEY_PASSWORD = "secret";
+    applyProdDefaults(testEnv);
     expect(() => validateEnv(testEnv)).not.toThrow();
   });
 
@@ -331,23 +411,6 @@ describe("validateEnv", () => {
   });
 
   describe("placeholder secrets in production", () => {
-    const realJwt = "x".repeat(40);
-    const realMfaKey = "RGdmRXJVbmlrV3VqWUFwR2VVZkdLUlBmYWxsa2VBQ08=";
-
-    const seedProd = (): TestEnv => ({
-      NODE_ENV: "production",
-      DATABASE_URL: "postgresql://x:y@localhost:5432/db",
-      JWT_SECRET: realJwt,
-      MFA_ENCRYPTION_KEY: realMfaKey,
-      FRONTEND_URL: "https://app.example.test",
-      PUBLIC_API_URL: "https://app.example.test/api",
-      ALLOWED_ORIGINS: "",
-      EMAIL_PROVIDER: "resend",
-      EMAIL_FROM: "noreply@app.example.test",
-      RESEND_API_KEY: "rk_test",
-      VALKEY_PASSWORD: "secret",
-    });
-
     it("baseline: production accepts real JWT_SECRET + MFA_ENCRYPTION_KEY", () => {
       expect(() => validateEnv(seedProd())).not.toThrow();
     });
@@ -450,6 +513,67 @@ describe("validateEnv", () => {
       testEnv.JWT_SECRET = "";
       testEnv.FRONTEND_URL = "";
       testEnv.RESEND_API_KEY = "";
+      expect(() => validateEnv(testEnv)).not.toThrow();
+    });
+  });
+
+  describe("HTTPS-only public URLs in production", () => {
+    it("rejects http:// FRONTEND_URL in production", () => {
+      const env = seedProd();
+
+      env.FRONTEND_URL = "http://app.example.test";
+      expect(() => validateEnv(env)).toThrow(/FRONTEND_URL.*https/);
+    });
+
+    it("rejects http:// PUBLIC_API_URL in production", () => {
+      const env = seedProd();
+
+      env.PUBLIC_API_URL = "http://api.example.test";
+      expect(() => validateEnv(env)).toThrow(/PUBLIC_API_URL.*https/);
+    });
+
+    it("rejects http:// NOTIFICATION_SETTINGS_URL in production", () => {
+      const env = seedProd();
+
+      env.NOTIFICATION_SETTINGS_URL = "http://app.example.test/settings";
+      expect(() => validateEnv(env)).toThrow(
+        /NOTIFICATION_SETTINGS_URL.*https/
+      );
+    });
+
+    it("allows empty NOTIFICATION_SETTINGS_URL in production (optional field)", () => {
+      const env = seedProd();
+
+      env.NOTIFICATION_SETTINGS_URL = "";
+      expect(() => validateEnv(env)).not.toThrow();
+    });
+
+    it("allows http://localhost in development", () => {
+      // testEnv seed is already development with http://localhost values.
+      expect(() => validateEnv(testEnv)).not.toThrow();
+    });
+  });
+
+  describe("MFA_ENCRYPTION_KEY required in production", () => {
+    const seedProdNoMfa = (): TestEnv => ({
+      ...seedProd(),
+      MFA_ENCRYPTION_KEY: "",
+    });
+
+    it("rejects empty MFA_ENCRYPTION_KEY in production", () => {
+      expect(() => validateEnv(seedProdNoMfa())).toThrow(
+        /MFA_ENCRYPTION_KEY is required in production/
+      );
+    });
+
+    it("error message names the generator command", () => {
+      expect(() => validateEnv(seedProdNoMfa())).toThrow(
+        /openssl rand -base64 32/
+      );
+    });
+
+    it("allows empty MFA_ENCRYPTION_KEY in development (MFA can be opted-out)", () => {
+      testEnv.MFA_ENCRYPTION_KEY = "";
       expect(() => validateEnv(testEnv)).not.toThrow();
     });
   });

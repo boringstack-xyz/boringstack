@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { performRefresh } from "@/lib/api/openapi";
 import { logger } from "@/lib/logger/logger";
+import { sanitizeTargetPath } from "@/lib/web-push/sw-url-sanitize";
 
 import { useMe } from "@/features/auth/Auth.queries";
 
@@ -58,15 +59,27 @@ export function useNotificationStream(enabled = true): void {
 
         const ctaUrl = notification.ctaUrl;
         const ctaLabel = notification.ctaLabel ?? t("notifications.openCta");
+        /*
+         * Untrusted source: the notification payload travels through the
+         * dispatcher pipeline (worker, queue, broadcaster) before reaching
+         * the browser. The same allowlist the service worker uses for push
+         * CTAs guards in-app toasts too — off-origin/malformed URLs
+         * collapse to "/" instead of letting the toast navigate the focused
+         * window off-domain.
+         */
+        const safeCtaPath =
+          ctaUrl !== null
+            ? sanitizeTargetPath(ctaUrl, window.location.origin)
+            : null;
 
         toast(notification.title, {
           description: notification.body,
           action:
-            ctaUrl !== null
+            safeCtaPath !== null
               ? {
                   label: ctaLabel,
                   onClick: () => {
-                    void navigate(ctaUrl);
+                    void navigate(safeCtaPath);
                   }
                 }
               : undefined

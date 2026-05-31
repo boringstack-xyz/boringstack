@@ -4,8 +4,14 @@ import { logger } from "@/lib/logger/logger";
 
 import type { INotificationStreamMessage } from "./Notifications.types";
 
+/*
+ * Trailing-slash strip matches the openapi-fetch BASE_URL pattern in
+ * `apps/ui/src/lib/api/openapi.ts` so a `VITE_API_URL` ending in `/`
+ * doesn't produce a `//api/v1/...` path (Traefik and nginx reject the
+ * double-slash as a redirect loop).
+ */
 export function buildStreamUrl(): string {
-  return `${env.VITE_API_URL}/api/v1/notifications/stream`;
+  return `${env.VITE_API_URL.replace(/\/$/, "")}/api/v1/notifications/stream`;
 }
 
 export function parseStreamMessage(

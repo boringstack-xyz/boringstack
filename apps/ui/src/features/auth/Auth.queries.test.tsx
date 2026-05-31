@@ -60,16 +60,17 @@ beforeEach(() => {
 });
 
 describe("useMe", () => {
-  it("returns null when the API responds 401 (the queryFn swallows it)", async () => {
+  it("propagates 401 as an ApiError (consumer distinguishes auth failure from anonymous)", async () => {
     apiMock.GET.mockRejectedValueOnce(
       new ApiError(401, { message: "Unauthorized" })
     );
     const { result } = renderHook(() => useMe(), { wrapper: wrapper() });
 
     await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
+      expect(result.current.isError).toBe(true);
     });
-    expect(result.current.data).toBeNull();
+    expect(result.current.error).toBeInstanceOf(ApiError);
+    expect((result.current.error as ApiError).isUnauthorized).toBe(true);
   });
 
   it("returns the full session payload when the API responds 200 with the authenticated shape", async () => {
@@ -117,14 +118,15 @@ describe("useMe", () => {
     expect(result.current.error).toBeInstanceOf(ApiError);
   });
 
-  it("returns null for network errors (treats as unauthenticated)", async () => {
+  it("propagates network errors so the offline fallback can render", async () => {
     apiMock.GET.mockRejectedValueOnce(new Error("network is down"));
     const { result } = renderHook(() => useMe(), { wrapper: wrapper() });
 
     await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
+      expect(result.current.isError).toBe(true);
     });
-    expect(result.current.data).toBeNull();
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect(result.current.error).not.toBeInstanceOf(ApiError);
   });
 });
 
@@ -199,7 +201,7 @@ describe("useMfaStatus", () => {
     });
   });
 
-  it("returns null when the API rejects with 401", async () => {
+  it("propagates 401 as an ApiError", async () => {
     apiMock.GET.mockRejectedValueOnce(
       new ApiError(401, { message: "Unauthorized" })
     );
@@ -207,17 +209,18 @@ describe("useMfaStatus", () => {
     const { result } = renderHook(() => useMfaStatus(), { wrapper: wrapper() });
 
     await waitFor(() => {
-      expect(result.current.data).toBeNull();
+      expect(result.current.isError).toBe(true);
     });
+    expect(result.current.error).toBeInstanceOf(ApiError);
   });
 
-  it("returns null on a thrown non-ApiError", async () => {
+  it("propagates non-ApiError failures", async () => {
     apiMock.GET.mockRejectedValueOnce(new Error("network blip"));
 
     const { result } = renderHook(() => useMfaStatus(), { wrapper: wrapper() });
 
     await waitFor(() => {
-      expect(result.current.data).toBeNull();
+      expect(result.current.isError).toBe(true);
     });
   });
 });

@@ -12,22 +12,23 @@ Run `bun run lint:meta --list-rules` for the machine-readable list from the regi
 
 ## Rules
 
-| Rule ID                             | Category     | CI-critical | What it guards                                                                                      |
-| ----------------------------------- | ------------ | ----------- | --------------------------------------------------------------------------------------------------- |
-| `package-json-exact-deps`           | supply-chain | no          | dependencies and devDependencies must use exact versions (no ranges).                               |
-| `no-overlapping-libs`               | supply-chain | no          | package.json must not list forbidden overlapping library pairs.                                     |
-| `github-actions-permissions`        | ci           | no          | GitHub Actions workflows require permissions block and SHA-pinned uses: refs.                       |
-| `github-actions-permissions:verify` | ci           | no          | Pinned action SHAs resolve on github.com (lint:meta:verify only).                                   |
-| `pre-push-ci-parity`                | ci           | no          | CI workflow must include every command listed in scripts/ci/pre-push.manifest.json.                 |
-| `engine-pin-parity`                 | ci           | no          | Bun version pin must stay aligned across package.json, Docker, and CI.                              |
-| `env-cascade-drift`                 | env          | no          | TypeBox env schema keys must align with .env.example documentation.                                 |
-| `generated-artifact-contract`       | artifacts    | no          | Sibling apps/ui generated ACL and OpenAPI files must carry required banner text.                    |
-| `forbidden-text`                    | source-text  | no          | Source files must not contain inline lint/TS suppression comments.                                  |
-| `no-inline-lint-disable`            | source-text  | no          | Inline ESLint disables are not allowed.                                                             |
-| `no-ts-ignore`                      | source-text  | no          | TypeScript suppression comments are not allowed.                                                    |
-| `canonical-helpers-single-home`     | source-text  | no          | Helpers in the canonical registry must only be declared in their single source-of-truth file.       |
-| `no-raw-role-literal`               | source-text  | no          | Use ROLE.* from acl.constants.ts instead of raw owner/admin/member/viewer string literals.          |
-| `routes-require-test-sibling`       | testing      | no          | Route modules must ship with a matching HTTP-level test under tests/api/.                           |
-| `logic-files-require-test-sibling`  | testing      | no          | Logic modules must ship with a matching tests/**/*.test.ts sibling.                                 |
-| `touch-tests-too`                   | testing      | no          | Modified logic/route files must include a matching test change (opt-in via LINT_META_TOUCHED_BASE). |
-| `eslint-config-no-warn`             | config       | no          | ESLint severities must be "error" or "off", not "warn".                                             |
+| Rule ID                             | Category     | CI-critical | What it guards                                                                                                                                  |
+| ----------------------------------- | ------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `package-json-exact-deps`           | supply-chain | no          | dependencies and devDependencies must use exact versions (no ranges).                                                                           |
+| `no-overlapping-libs`               | supply-chain | no          | package.json must not list forbidden overlapping library pairs.                                                                                 |
+| `github-actions-permissions`        | ci           | no          | GitHub Actions workflows require permissions block and SHA-pinned uses: refs.                                                                   |
+| `github-actions-permissions:verify` | ci           | no          | Pinned action SHAs resolve on github.com (lint:meta:verify only).                                                                               |
+| `pre-push-ci-parity`                | ci           | no          | CI workflow must include every command listed in scripts/ci/pre-push.manifest.json.                                                             |
+| `engine-pin-parity`                 | ci           | no          | Bun version pin must stay aligned across package.json, Docker, and CI.                                                                          |
+| `env-cascade-drift`                 | env          | no          | TypeBox env schema keys must align with .env.example documentation.                                                                             |
+| `env-no-direct-process-env`         | env          | no          | Single entry point for env: every source file outside validate.ts must import the typed `env` object instead of reading `process.env` directly. |
+| `generated-artifact-contract`       | artifacts    | no          | Sibling apps/ui generated ACL and OpenAPI files must carry required banner text.                                                                |
+| `forbidden-text`                    | source-text  | no          | Source files must not contain inline lint/TS suppression comments.                                                                              |
+| `no-inline-lint-disable`            | source-text  | no          | Inline ESLint disables are not allowed.                                                                                                         |
+| `no-ts-ignore`                      | source-text  | no          | TypeScript suppression comments are not allowed.                                                                                                |
+| `canonical-helpers-single-home`     | source-text  | no          | Helpers in the canonical registry must only be declared in their single source-of-truth file.                                                   |
+| `no-raw-role-literal`               | source-text  | no          | Use ROLE.* from acl.constants.ts instead of raw owner/admin/member/viewer string literals.                                                      |
+| `routes-require-test-sibling`       | testing      | no          | Route modules must ship with a matching HTTP-level test under tests/api/.                                                                       |
+| `logic-files-require-test-sibling`  | testing      | no          | Logic modules must ship with a matching tests/**/*.test.ts sibling.                                                                             |
+| `touch-tests-too`                   | testing      | no          | Modified logic/route files must include a matching test change (opt-in via LINT_META_TOUCHED_BASE).                                             |
+| `eslint-config-no-warn`             | config       | no          | ESLint severities must be "error" or "off", not "warn".                                                                                         |

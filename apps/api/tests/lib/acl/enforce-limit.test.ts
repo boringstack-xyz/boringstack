@@ -62,8 +62,12 @@ describe("enforceLimit", () => {
       throw new Error("expected an ApiError");
     }
 
-    expect(caught.field).toBe("max_seats");
-    expect(caught.details).toEqual({ current: 10, limit: 5 });
+    expect(caught.fieldErrors).toBeUndefined();
+    expect(caught.details).toEqual({
+      current: 10,
+      limit: 5,
+      feature: "max_seats",
+    });
   });
 
   test("throws when currentCount equals zero and limit is zero", () => {

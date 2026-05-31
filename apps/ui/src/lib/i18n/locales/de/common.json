@@ -11,6 +11,12 @@
     "loadingAria": "Wird geladen",
     "close": "Schließen"
   },
+  "offline": {
+    "title": "Server nicht erreichbar",
+    "body": "Die App konnte keine Antwort vom Server erhalten. Prüfe deine Verbindung und versuche es erneut — deine Sitzung ist noch gültig, du musst dich nicht neu anmelden.",
+    "retry": "Erneut versuchen",
+    "retrying": "Wird versucht…"
+  },
   "auth": {
     "login": {
       "title": "Anmelden",
@@ -503,7 +509,7 @@
     "categories": {
       "essential": {
         "title": "Essenziell",
-        "body": "Authentifizierung, CSRF-Token, Spracheinstellung. Immer aktiv — ohne diese funktioniert die App nicht."
+        "body": "Authentifizierung, Spracheinstellung. Immer aktiv — ohne diese funktioniert die App nicht."
       },
       "analytics": {
         "title": "Analyse",

@@ -11,6 +11,12 @@
     "loadingAria": "Loading",
     "close": "Close"
   },
+  "offline": {
+    "title": "Can't reach the server",
+    "body": "The app couldn't get a response from the API. Check your connection and try again — your session is still valid, so no need to sign in.",
+    "retry": "Try again",
+    "retrying": "Retrying…"
+  },
   "auth": {
     "login": {
       "title": "Sign in",
@@ -503,7 +509,7 @@
     "categories": {
       "essential": {
         "title": "Essential",
-        "body": "Authentication, CSRF tokens, language preference. Always on — the app cannot function without these."
+        "body": "Authentication, language preference. Always on — the app cannot function without these."
       },
       "analytics": {
         "title": "Analytics",

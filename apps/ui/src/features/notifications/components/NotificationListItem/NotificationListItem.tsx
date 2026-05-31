@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/classnames";
+import { sanitizeTargetPath } from "@/lib/web-push/sw-url-sanitize";
 
 import { Button } from "@/components/ui/button";
 
@@ -42,7 +43,17 @@ const NotificationListItem: FC<INotificationListItemProps> = (props) => {
       <div className='mt-2 flex items-center gap-2'>
         {notification.ctaUrl !== null ? (
           <Button asChild type='button' variant='link' size='sm'>
-            <Link to={notification.ctaUrl}>
+            {/*
+             * sanitizeTargetPath collapses off-origin / malformed CTA URLs
+             * to "/" — same allowlist the web-push service worker uses, so
+             * push and in-app render paths can't drift apart.
+             */}
+            <Link
+              to={sanitizeTargetPath(
+                notification.ctaUrl,
+                window.location.origin
+              )}
+            >
               {notification.ctaLabel ?? t("notifications.openCta")}
             </Link>
           </Button>
