@@ -7,6 +7,7 @@ import type {
 import { getValkeyAppClientOptions } from "../../clients/valkey";
 import { logger } from "../../config/logger";
 import { getErrorMessage } from "../errors";
+import { nowMs } from "../time/now";
 
 /**
  * Valkey-backed `Context` for elysia-rate-limit. Replace the default
@@ -68,7 +69,7 @@ export class ValkeyRateLimitContext implements RateLimitContext {
     requestTime?: number
   ): Promise<IIncrementResult> {
     const fullKey = buildKey(key);
-    const now = requestTime ?? Date.now();
+    const now = requestTime ?? nowMs();
     const durationMs = duration ?? this.durationMs;
 
     if (durationMs <= 0) {
@@ -176,7 +177,7 @@ export class ValkeyRateLimitContext implements RateLimitContext {
    * even when Valkey is unhappy.
    */
   private permissiveFallback(
-    requestTime = Date.now(),
+    requestTime = nowMs(),
     durationMs = this.durationMs
   ): IIncrementResult {
     return {

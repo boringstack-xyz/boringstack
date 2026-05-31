@@ -12,7 +12,7 @@ import { AUDIT_ACTIONS, auditLogService } from "../../lib/audit-log";
 import { sendTemplate } from "../../lib/email";
 import { ApiErrors, getErrorMessage } from "../../lib/errors";
 import { notifications } from "../../lib/notifications";
-import { now } from "../../lib/time/now";
+import { now, nowMs } from "../../lib/time/now";
 import { generateOpaqueToken, hashOpaqueToken } from "../../lib/tokens";
 import { accountInvitationAcceptedEvent } from "../notifications/events";
 
@@ -242,7 +242,7 @@ export class InvitationsService {
         throw ApiErrors.notFound("Invitation");
       }
 
-      if (new Date(invitation.expiresAt) <= new Date()) {
+      if (new Date(invitation.expiresAt) <= new Date(nowMs())) {
         throw ApiErrors.validation("Invitation has expired");
       }
 

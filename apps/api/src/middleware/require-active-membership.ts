@@ -2,6 +2,7 @@ import { membershipMemo } from "./require-active-membership.memo";
 import { lookupActiveMembership } from "./require-active-membership.service";
 
 import type { ActiveMembership } from "./require-active-membership.types";
+import { nowMs } from "../lib/time/now";
 
 /** Test-only helper. Clears the in-process membership memo. */
 export const clearMembershipCacheForTests = (): void => {
@@ -25,8 +26,8 @@ export const resolveActiveMembership = async (
   userId: string,
   accountId: string
 ): Promise<ActiveMembership> => {
-  const nowMs = Date.now();
-  const cached = membershipMemo.read(userId, accountId, nowMs);
+  const ts = nowMs();
+  const cached = membershipMemo.read(userId, accountId, ts);
 
   if (cached !== null) {
     return cached;
@@ -34,7 +35,7 @@ export const resolveActiveMembership = async (
 
   const membership = await lookupActiveMembership(userId, accountId);
 
-  membershipMemo.write(userId, accountId, membership, nowMs);
+  membershipMemo.write(userId, accountId, membership, ts);
 
   return membership;
 };
@@ -48,10 +49,10 @@ export const resolveFreshMembership = async (
   userId: string,
   accountId: string
 ): Promise<ActiveMembership> => {
-  const nowMs = Date.now();
+  const ts = nowMs();
   const membership = await lookupActiveMembership(userId, accountId);
 
-  membershipMemo.write(userId, accountId, membership, nowMs);
+  membershipMemo.write(userId, accountId, membership, ts);
 
   return membership;
 };

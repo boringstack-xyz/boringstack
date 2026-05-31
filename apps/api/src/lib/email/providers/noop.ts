@@ -6,6 +6,7 @@ import type {
   IEmailService,
 } from "../email.types";
 import { maskEmailForLogging, validateEmailMessage } from "../email.utils";
+import { nowMs } from "../../time/now";
 
 /**
  * Used in tests / development when no provider key is configured. Never
@@ -17,7 +18,7 @@ export class NoopEmailService implements IEmailService {
 
   send(message: IEmailMessage): Promise<IEmailResult> {
     validateEmailMessage(message, env.EMAIL_FROM);
-    const id = `noop_${String(Date.now())}_${Math.random().toString(36).slice(2, 11)}`;
+    const id = `noop_${String(nowMs())}_${crypto.randomUUID().slice(0, 9)}`;
 
     logger.info("📧 [noop] email not sent (no provider configured)", {
       event: "email_noop",

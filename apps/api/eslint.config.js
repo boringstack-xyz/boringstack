@@ -106,6 +106,11 @@ export default tseslint.config(
     rules: {
       "prettier/prettier": "error",
       "code-flow/prefer-early-return": "error",
+      "code-flow/no-bare-date-now": [
+        "error",
+        { allowedPaths: ["src/lib/time/"] },
+      ],
+      "comment-hygiene/no-historical-comments": "error",
       "comment-hygiene/no-narration-comments": "error",
       "comment-hygiene/no-pr-reference-comments": "error",
 
@@ -1009,6 +1014,10 @@ export default tseslint.config(
       // Test-time env overrides (e.g. `TEST_BASE_URL`) live in the
       // shell, not the validated boot schema, by design.
       "env-access/no-direct-process-env": "off",
+      // Tests measure elapsed time, verify clock behaviour, and stamp
+      // fixture timestamps — direct `Date.now()` / `new Date()` is the
+      // right tool here. Production code routes through `nowMs()`.
+      "code-flow/no-bare-date-now": "off",
     },
   },
   {

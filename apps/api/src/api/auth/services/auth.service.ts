@@ -29,6 +29,7 @@ import type {
   IRegisterInput,
 } from "../auth.types";
 import { toPublicUser } from "../auth.utils";
+import { nowMs } from "../../../lib/time/now";
 
 /**
  * Password authentication. Registration writes only the `users` row,
@@ -55,7 +56,7 @@ export class AuthService {
 
     const passwordHash = await passwordService.hash(data.password);
     const verificationToken = generateOpaqueToken();
-    const expiresAt = new Date(Date.now() + VERIFICATION_TTL_MS).toISOString();
+    const expiresAt = new Date(nowMs() + VERIFICATION_TTL_MS).toISOString();
 
     const created = await db.transaction(async (tx) => {
       const [user] = await tx

@@ -193,6 +193,11 @@ export default tseslint.config(
       curly: ["error", "all"],
       "nonblock-statement-body-position": ["error", "below"],
       "code-flow/prefer-early-return": "error",
+      "code-flow/no-bare-date-now": [
+        "error",
+        { allowedPaths: ["src/lib/time/"] }
+      ],
+      "comment-hygiene/no-historical-comments": "error",
       "comment-hygiene/no-narration-comments": "error",
       "comment-hygiene/no-pr-reference-comments": "error",
       /*
@@ -848,6 +853,10 @@ export default tseslint.config(
       // Tests mix mocks, fixtures, helpers, and the test body itself; that's
       // the natural unit and shouldn't be split across files.
       "module-boundaries/single-semantic-module": "off",
+      // Tests measure elapsed time, verify clock behaviour, and stamp
+      // fixture timestamps — direct Date.now() / new Date() is the right
+      // tool here. Production code routes through nowMs().
+      "code-flow/no-bare-date-now": "off",
       "no-restricted-syntax": [
         "error",
         {

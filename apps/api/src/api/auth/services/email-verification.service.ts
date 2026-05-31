@@ -15,7 +15,7 @@ import {
 } from "../../../lib/email";
 import { ApiErrors, getErrorMessage } from "../../../lib/errors";
 import { notifications } from "../../../lib/notifications";
-import { now } from "../../../lib/time/now";
+import { now, nowMs } from "../../../lib/time/now";
 import { generateOpaqueToken, hashOpaqueToken } from "../../../lib/tokens";
 import { accountsService } from "../../accounts";
 import { authWelcomeEvent } from "../../notifications/events";
@@ -175,9 +175,7 @@ export class EmailVerificationService {
 
     if (user?.emailVerifiedAt === null) {
       const token = generateOpaqueToken();
-      const expiresAt = new Date(
-        Date.now() + VERIFICATION_TTL_MS
-      ).toISOString();
+      const expiresAt = new Date(nowMs() + VERIFICATION_TTL_MS).toISOString();
 
       await db.transaction(async (tx) => {
         await tx

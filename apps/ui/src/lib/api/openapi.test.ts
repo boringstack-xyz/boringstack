@@ -292,10 +292,10 @@ describe("throwOnError middleware", () => {
   it("unwraps the api envelope when error fields are nested under `error`", async () => {
     /*
      * The api ships a `{ success: false, error: { code, message,
-     * fieldErrors?, timestamp } }` envelope. Before the fix the
-     * middleware read `body.code` from the envelope itself, so every
-     * thrown ApiError carried `code: undefined` and downstream checks
-     * like `isEmailNotVerified` were always false.
+     * fieldErrors?, timestamp } }` envelope. The middleware unwraps
+     * the nested `error` object so the thrown ApiError carries
+     * `code` straight from the payload and downstream guards like
+     * `isEmailNotVerified` see the right value.
      */
     fetchMock.mockResolvedValueOnce(
       new Response(

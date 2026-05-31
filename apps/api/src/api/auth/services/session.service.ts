@@ -1,4 +1,4 @@
-import { now } from "../../../lib/time/now";
+import { now, nowMs } from "../../../lib/time/now";
 import { and, eq, gt, or } from "drizzle-orm";
 import { db } from "../../../clients/postgres";
 import { authSessions, users } from "../../../clients/postgres/schema";
@@ -178,7 +178,7 @@ export class SessionService {
   }
 
   private nextExpiry(): string {
-    return new Date(Date.now() + REFRESH_SESSION_TTL_MS).toISOString();
+    return new Date(nowMs() + REFRESH_SESSION_TTL_MS).toISOString();
   }
 }
 

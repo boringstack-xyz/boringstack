@@ -1,4 +1,5 @@
 import { ApiErrors } from "../errors";
+import { nowMs } from "../time/now";
 
 import { FEATURES } from "./acl.constants";
 import type { FeatureKey } from "./acl.types";
@@ -114,7 +115,7 @@ const resolveLimitFeature = (
 export function resolveFeatures(
   planFeatures: readonly IPlanFeatureRow[],
   overrides: readonly IFeatureOverrideRow[],
-  now: Date = new Date()
+  now: Date = new Date(nowMs())
 ): ResolvedFeatures {
   return {
     can_export: resolveBooleanFeature(

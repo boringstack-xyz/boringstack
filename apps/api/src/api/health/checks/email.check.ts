@@ -1,5 +1,6 @@
 import { emailService } from "../../../lib/email";
 import type { IReadinessCheck, IReadinessResult } from "../health.types";
+import { nowMs } from "../../../lib/time/now";
 
 /**
  * Email check is *configuration-only* — we don't probe the provider over
@@ -12,13 +13,13 @@ import type { IReadinessCheck, IReadinessResult } from "../health.types";
  *   real  → "ok"
  */
 const runEmailCheck = (): Promise<IReadinessResult> => {
-  const start = Date.now();
+  const start = nowMs();
 
   if (emailService.providerName === "noop") {
     return Promise.resolve({
       name: "email",
       status: "degraded",
-      latencyMs: Date.now() - start,
+      latencyMs: nowMs() - start,
       message: "Email provider is 'noop' — outbound mail is logged, not sent",
     });
   }
@@ -26,7 +27,7 @@ const runEmailCheck = (): Promise<IReadinessResult> => {
   return Promise.resolve({
     name: "email",
     status: "ok",
-    latencyMs: Date.now() - start,
+    latencyMs: nowMs() - start,
   });
 };
 

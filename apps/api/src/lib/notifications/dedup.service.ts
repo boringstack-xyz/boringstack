@@ -1,4 +1,4 @@
-import { now } from "../time/now";
+import { now, nowMs } from "../time/now";
 import { lt, lte } from "drizzle-orm";
 import { db } from "../../clients/postgres";
 import { notificationDedup } from "../../clients/postgres/schema";
@@ -27,7 +27,7 @@ export class DedupService {
   }): Promise<boolean> {
     const nowIso = now();
     const expiresAt = new Date(
-      Date.now() + input.windowSeconds * 1000
+      nowMs() + input.windowSeconds * 1000
     ).toISOString();
 
     const inserted = await db

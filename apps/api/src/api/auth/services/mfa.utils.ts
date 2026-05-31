@@ -1,6 +1,7 @@
 import { Secret, TOTP } from "otpauth";
 
 import { env } from "../../../config/env";
+import { nowMs } from "../../../lib/time/now";
 import { generateOpaqueToken } from "../../../lib/tokens";
 import {
   MFA_DEFAULT_ISSUER,
@@ -16,7 +17,7 @@ import {
  * matched step for replay-guard checks.
  */
 export const currentTotpStep = (): number =>
-  Math.floor(Date.now() / 1000 / MFA_TOTP_STEP_SECONDS);
+  Math.floor(nowMs() / 1000 / MFA_TOTP_STEP_SECONDS);
 
 /**
  * Build the otpauth `TOTP` instance the service uses to both render
