@@ -34,7 +34,7 @@ export function HeroSection() {
             target="_blank"
           >
             <GitHubIcon className="h-[1.05rem] w-[1.05rem]" />
-            View on GitHub
+            Star on GitHub
           </a>
           <a className={`${actionClass} bg-transparent text-[var(--bs-muted-strong)] hover:text-[var(--bs-text)]`} href="/architecture/why-boringstack/">
             Why BoringStack
