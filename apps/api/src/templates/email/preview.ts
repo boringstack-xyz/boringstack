@@ -285,14 +285,40 @@ const generateIndex = (templates: ITemplateMetadata[]): void => {
   fs.writeFileSync(path.join(PREVIEW_DIR, "index.html"), indexHtml, "utf8");
 };
 
+/*
+ * Containment check. `path.resolve` normalises away `..` segments so a
+ * crafted URL like `/../../etc/passwd` resolves outside PREVIEW_DIR and
+ * gets rejected. The `+ path.sep` suffix prevents a sibling like
+ * `/private/var/folders/.../preview-2` from passing the prefix test
+ * against `/private/var/folders/.../preview`.
+ */
+const isInsidePreviewDir = (candidate: string): boolean =>
+  candidate === PREVIEW_DIR || candidate.startsWith(PREVIEW_DIR + path.sep);
+
 const startServer = (port: number): void => {
   const server = http.createServer((req, res) => {
-    let filePath = path.join(
-      PREVIEW_DIR,
-      req.url === "/" ? "index.html" : (req.url ?? "")
-    );
+    /*
+     * Strip query / fragment, decode percent-encoded segments, and drop
+     * any leading slashes so the URL is treated as a relative path under
+     * PREVIEW_DIR rather than an absolute filesystem path. Empty / "/"
+     * URLs serve the index.
+     */
+    const rawUrl = req.url ?? "";
+    const decoded = (() => {
+      try {
+        return decodeURIComponent(rawUrl.split("?")[0]?.split("#")[0] ?? "");
+      } catch {
+        return "";
+      }
+    })();
+    const relUrl =
+      decoded === "" || decoded === "/"
+        ? "index.html"
+        : decoded.replace(/^\/+/, "");
 
-    if (!filePath.startsWith(PREVIEW_DIR)) {
+    let filePath = path.resolve(PREVIEW_DIR, relUrl);
+
+    if (!isInsidePreviewDir(filePath)) {
       res.writeHead(403);
       res.end("Forbidden");
 
@@ -303,12 +329,25 @@ const startServer = (port: number): void => {
       const stat = fs.statSync(filePath);
 
       if (stat.isDirectory()) {
-        filePath = path.join(filePath, "index.html");
+        filePath = path.resolve(filePath, "index.html");
       }
     } catch {
       if (!filePath.endsWith(".html")) {
-        filePath += ".html";
+        filePath = `${filePath}.html`;
       }
+    }
+
+    /*
+     * Re-validate after the directory/extension fallback. None of those
+     * transforms can introduce traversal (the inputs are already
+     * sanitised), but CodeQL can't see that statically — a second check
+     * makes the contract explicit at the read site.
+     */
+    if (!isInsidePreviewDir(filePath)) {
+      res.writeHead(403);
+      res.end("Forbidden");
+
+      return;
     }
 
     if (!fs.existsSync(filePath)) {

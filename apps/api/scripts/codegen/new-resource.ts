@@ -180,9 +180,17 @@ export const ${filePrefix}Relations = relations(${filePrefix}, ({ one }) => ({
   const manyLine = `  ${filePrefix}: many(${filePrefix}),`;
 
   if (!next.includes(manyLine)) {
+    /*
+     * Capture the `usersRelations` block body so we can insert a new
+     * `many: many(...)` line just before the closing `}));`. The body
+     * uses `[\s\S]*?` rather than the earlier `(?:[^}]*\n)*?` — a
+     * quantifier-inside-a-quantifier pattern that CodeQL flags as
+     * ReDoS-prone on input with many bare newlines. Single lazy
+     * quantifier = linear scan, no backtracking blowup.
+     */
     const usersBlock =
-      /(export const usersRelations = relations\(users, \({ many }\) => \({\n(?:[^}]*\n)*?)(}\)\);)/;
-    const patched = next.replace(usersBlock, `$1${manyLine}\n$2`);
+      /(export const usersRelations = relations\(users, \({ many }\) => \({\n)([\S\s]*?)(}\)\);)/;
+    const patched = next.replace(usersBlock, `$1$2${manyLine}\n$3`);
 
     if (patched === next) {
       console.warn(
