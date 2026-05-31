@@ -21,6 +21,7 @@ import {
   checkExactDependencyVersions,
   checkForbiddenText,
   checkLogicFilesHaveTests,
+  checkNoDirectProcessEnv,
   checkRouteFilesHaveTests,
   checkTouchedTests,
   checkWorkflowShas,
@@ -426,6 +427,98 @@ describe("checkTouchedTests", () => {
       expect(violations).toEqual([]);
     } finally {
       rmSync(repo, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkNoDirectProcessEnv", () => {
+  const TMPDIR_PREFIX = "lint-meta-env-";
+
+  test("flags `process.env.X` access outside the env validator", () => {
+    const root = mkdtempSync(join(tmpdir(), TMPDIR_PREFIX));
+
+    try {
+      mkdirSync(join(root, "src", "api", "billing"), { recursive: true });
+      const file = join(root, "src", "api", "billing", "billing.service.ts");
+
+      writeFileSync(
+        file,
+        "export const key = process.env.STRIPE_SECRET_KEY ?? '';\n"
+      );
+
+      const violations = checkNoDirectProcessEnv(root, [file]);
+
+      expect(
+        violations.some((row) => row.rule === "env-no-direct-process-env")
+      ).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("allows the env validator itself to read process.env", () => {
+    const root = mkdtempSync(join(tmpdir(), TMPDIR_PREFIX));
+
+    try {
+      mkdirSync(join(root, "src", "config", "env"), { recursive: true });
+      const file = join(root, "src", "config", "env", "validate.ts");
+
+      writeFileSync(
+        file,
+        "export const validateEnv = (source = process.env) => source;\n"
+      );
+
+      expect(checkNoDirectProcessEnv(root, [file])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("allows the email-preview CLI to read PREVIEW_PORT", () => {
+    const root = mkdtempSync(join(tmpdir(), TMPDIR_PREFIX));
+
+    try {
+      mkdirSync(join(root, "src", "templates", "email"), { recursive: true });
+      const file = join(root, "src", "templates", "email", "preview.ts");
+
+      writeFileSync(file, "const port = process.env.PREVIEW_PORT;\n");
+
+      expect(checkNoDirectProcessEnv(root, [file])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("ignores references inside comments", () => {
+    const root = mkdtempSync(join(tmpdir(), TMPDIR_PREFIX));
+
+    try {
+      mkdirSync(join(root, "src", "utils"), { recursive: true });
+      const file = join(root, "src", "utils", "doc.ts");
+
+      writeFileSync(
+        file,
+        "// Documentation that mentions process.env.PORT inline.\nexport const x = 1;\n"
+      );
+
+      expect(checkNoDirectProcessEnv(root, [file])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("ignores files outside src/ (tests, scripts)", () => {
+    const root = mkdtempSync(join(tmpdir(), TMPDIR_PREFIX));
+
+    try {
+      mkdirSync(join(root, "tests"), { recursive: true });
+      const file = join(root, "tests", "setup.ts");
+
+      writeFileSync(file, "process.env.DATABASE_URL = 'postgres://...';\n");
+
+      expect(checkNoDirectProcessEnv(root, [file])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
     }
   });
 });

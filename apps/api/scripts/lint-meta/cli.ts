@@ -22,6 +22,7 @@ import { checkDependencyPairs } from "./rules/supply-chain/no-overlapping-libs";
 import { checkExactDependencyVersions } from "./rules/supply-chain/package-json-exact-deps";
 import { checkEslintConfigNoWarn } from "./rules/config/eslint-config-no-warn";
 import { checkEnvSchemaDrift } from "./rules/env/env-cascade-drift";
+import { checkNoDirectProcessEnv } from "./rules/env/no-direct-process-env";
 import { checkGeneratedArtifactContracts } from "./rules/artifacts/generated-artifact-contract";
 import { checkWorkflowShas } from "./rules/ci/github-actions-permissions";
 import { checkPrePushParity } from "./rules/ci/pre-push-ci-parity";
@@ -94,6 +95,7 @@ export {
   checkForbiddenText,
   checkGeneratedArtifactContracts,
   checkLogicFilesHaveTests,
+  checkNoDirectProcessEnv,
   checkNoRawRoleLiterals,
   checkPrePushParity,
   checkRouteFilesHaveTests,
