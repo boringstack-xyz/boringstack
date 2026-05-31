@@ -71,9 +71,9 @@ export function useLeaveAccount(
     },
     onSuccess: () => {
       /*
-       * The user no longer holds a membership on the active account.
-       * The next /me will resolve a different default account (or
-       * none at all). Drop cached data the same way we do on switch.
+       * Leaving an account invalidates every account-scoped cache key:
+       * the next /me resolves a different default account (or none),
+       * so drop everything the same way the account-switch flow does.
        */
       qc.clear();
     }

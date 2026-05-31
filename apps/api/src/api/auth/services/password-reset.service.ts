@@ -1,4 +1,4 @@
-import { now } from "../../../lib/time/now";
+import { now, nowMs } from "../../../lib/time/now";
 import { and, eq, gt } from "drizzle-orm";
 import { db } from "../../../clients/postgres";
 import {
@@ -47,7 +47,7 @@ export class PasswordResetService {
 
     const user = row.user;
     const token = generateOpaqueToken();
-    const expiresAt = new Date(Date.now() + RESET_TTL_MS).toISOString();
+    const expiresAt = new Date(nowMs() + RESET_TTL_MS).toISOString();
 
     await db.transaction(async (tx) => {
       await tx
@@ -117,7 +117,7 @@ export class PasswordResetService {
     }
 
     const token = generateOpaqueToken();
-    const expiresAt = new Date(Date.now() + RESET_TTL_MS).toISOString();
+    const expiresAt = new Date(nowMs() + RESET_TTL_MS).toISOString();
 
     await db.transaction(async (tx) => {
       await tx

@@ -1,5 +1,6 @@
 import { env } from "../../../config/env";
 import type { IReadinessCheck, IReadinessResult } from "../health.types";
+import { nowMs } from "../../../lib/time/now";
 
 /**
  * AI check is *configuration-only* — like the email check, we don't probe
@@ -13,8 +14,8 @@ import type { IReadinessCheck, IReadinessResult } from "../health.types";
  *   otherwise                                   → "ok"
  */
 const runAICheck = (): Promise<IReadinessResult> => {
-  const start = Date.now();
-  const latency = (): number => Date.now() - start;
+  const start = nowMs();
+  const latency = (): number => nowMs() - start;
 
   if (!env.AI_ENABLED) {
     return Promise.resolve({ name: "ai", status: "ok", latencyMs: latency() });

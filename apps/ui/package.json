@@ -86,8 +86,8 @@
     "zustand": "5.0.13"
   },
   "devDependencies": {
-    "@boring-stack-pkg/eslint-plugin-code-flow": "0.1.1",
-    "@boring-stack-pkg/eslint-plugin-comment-hygiene": "0.1.1",
+    "@boring-stack-pkg/eslint-plugin-code-flow": "0.2.0",
+    "@boring-stack-pkg/eslint-plugin-comment-hygiene": "0.2.0",
     "@boring-stack-pkg/eslint-plugin-env-access": "0.1.1",
     "@boring-stack-pkg/eslint-plugin-i18n-keys": "0.1.1",
     "@boring-stack-pkg/eslint-plugin-module-boundaries": "0.1.1",

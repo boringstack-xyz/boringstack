@@ -1,3 +1,4 @@
+import { nowMs } from "../../time/now";
 import type {
   CacheProviderName,
   ICacheService,
@@ -20,7 +21,7 @@ export class MemoryCacheService implements ICacheService {
     value: unknown;
     expiresAt: number | null;
   }): boolean {
-    return entry.expiresAt !== null && entry.expiresAt <= Date.now();
+    return entry.expiresAt !== null && entry.expiresAt <= nowMs();
   }
 
   get<T>(key: string): Promise<T | null> {
@@ -42,7 +43,7 @@ export class MemoryCacheService implements ICacheService {
   set(key: string, value: unknown, options?: ICacheSetOptions): Promise<void> {
     const expiresAt =
       options?.ttlSeconds !== undefined
-        ? Date.now() + options.ttlSeconds * 1000
+        ? nowMs() + options.ttlSeconds * 1000
         : null;
 
     this.store.set(key, { value, expiresAt });

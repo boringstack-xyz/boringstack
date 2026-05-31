@@ -9,6 +9,7 @@ import {
 } from "../../lib/email";
 import { ApiErrors } from "../../lib/errors";
 import { logger } from "../../config/logger";
+import { nowMs } from "../../lib/time/now";
 import type {
   IResendEventBase,
   IResendVerifiedHeaders,
@@ -98,7 +99,7 @@ export const verifyResendWebhook = (
   options: IResendVerifyOptions
 ): IResendEventBase => {
   const tolerance = options.toleranceSeconds ?? DEFAULT_TOLERANCE_SECONDS;
-  const nowSeconds = Math.floor((options.now?.() ?? Date.now()) / 1000);
+  const nowSeconds = Math.floor((options.now?.() ?? nowMs()) / 1000);
   const timestampSeconds = Number.parseInt(headers.svixTimestamp, 10);
 
   if (Number.isNaN(timestampSeconds)) {

@@ -6,6 +6,7 @@
  * Used on endpoints that trigger external email delivery (resend-verification,
  * forgot-password) to prevent inbox-spam attacks from distributed IPs.
  */
+import { nowMs } from "../time/now";
 
 class EmailRateLimiter {
   private static readonly windowMs = 300_000; // 5 minutes
@@ -21,7 +22,7 @@ class EmailRateLimiter {
   }
 
   check(email: string): boolean {
-    const now = Date.now();
+    const now = nowMs();
     const key = email.toLowerCase().trim();
     const timestamps = this.attempts.get(key) ?? [];
 
@@ -47,7 +48,7 @@ class EmailRateLimiter {
    * Called automatically every 10 minutes; safe to call manually in tests.
    */
   sweep(): void {
-    const now = Date.now();
+    const now = nowMs();
 
     for (const [key, timestamps] of this.attempts) {
       const valid = timestamps.filter(

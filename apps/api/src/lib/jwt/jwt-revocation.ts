@@ -2,6 +2,7 @@ import { logger } from "../../config/logger";
 import { cacheService } from "../cache";
 import { getErrorMessage } from "../errors";
 import { JWT_TTL_SECONDS } from "./jwt.constants";
+import { nowMs } from "../time/now";
 
 const JTI_KEY_PREFIX = "jwt:revoked:";
 const USER_KEY_PREFIX = "jwt:user:";
@@ -27,7 +28,7 @@ const userRevokeKey = (userId: string): string =>
  * correctness one, so a cache outage must not break logout.
  */
 const revokeJti = async (jti: string, expSeconds: number): Promise<void> => {
-  const nowSeconds = Math.floor(Date.now() / 1000);
+  const nowSeconds = Math.floor(nowMs() / 1000);
   const ttlSeconds =
     Math.max(0, expSeconds - nowSeconds) + REVOKE_TTL_SLACK_SECONDS;
 
@@ -52,7 +53,7 @@ const revokeJti = async (jti: string, expSeconds: number): Promise<void> => {
  * attacker racing the call).
  */
 const revokeAllForUser = async (userId: string): Promise<void> => {
-  const cutoffSeconds = Math.floor(Date.now() / 1000) + 1;
+  const cutoffSeconds = Math.floor(nowMs() / 1000) + 1;
 
   try {
     await cacheService.set(userRevokeKey(userId), cutoffSeconds, {

@@ -9,7 +9,7 @@ import {
   users,
 } from "../../clients/postgres/schema";
 import { logger } from "../../config/logger";
-import { now } from "../../lib/time/now";
+import { now, nowMs } from "../../lib/time/now";
 
 const MS_PER_DAY = 86_400_000;
 const HARD_DELETE_GRACE_DAYS = 30;
@@ -104,7 +104,7 @@ export const hardDeleteSoftDeletedAccountsJob = async (): Promise<{
   swept: number;
 }> => {
   const cutoff = new Date(
-    Date.now() - HARD_DELETE_GRACE_DAYS * MS_PER_DAY
+    nowMs() - HARD_DELETE_GRACE_DAYS * MS_PER_DAY
   ).toISOString();
   const result = await db
     .delete(accounts)
@@ -127,7 +127,7 @@ export const cleanStalePendingUsersJob = async (): Promise<{
   swept: number;
 }> => {
   const cutoff = new Date(
-    Date.now() - PENDING_USER_GRACE_DAYS * MS_PER_DAY
+    nowMs() - PENDING_USER_GRACE_DAYS * MS_PER_DAY
   ).toISOString();
   const result = await db
     .delete(users)

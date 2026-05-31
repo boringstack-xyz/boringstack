@@ -2,6 +2,7 @@ import { jwt } from "@elysiajs/jwt";
 import { env } from "../../config/env";
 import { JWT_NAME, JWT_TTL, JWT_TTL_SECONDS } from "./jwt.constants";
 import { jwtRevocationService } from "./jwt-revocation";
+import { nowMs } from "../time/now";
 
 export const createJWTConfig = () =>
   jwt({
@@ -32,7 +33,7 @@ export const buildJWTPayload = async (
   email: string,
   accountId: string
 ): Promise<Record<string, string | number>> => {
-  const nowSeconds = Math.floor(Date.now() / 1000);
+  const nowSeconds = Math.floor(nowMs() / 1000);
   const cutoffSeconds = await jwtRevocationService.getUserRevokeCutoff(id);
   const iat = Math.max(nowSeconds, cutoffSeconds);
 

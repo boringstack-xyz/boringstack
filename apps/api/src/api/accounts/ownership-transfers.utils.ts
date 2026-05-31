@@ -8,6 +8,7 @@ import {
 import type { IOwnershipTransfer } from "./ownership-transfers.types";
 
 import type { accountOwnershipTransfers } from "../../clients/postgres/schema";
+import { nowMs } from "../../lib/time/now";
 
 interface IDispatchOwnershipTransferEmailInput {
   readonly toEmail: string;
@@ -38,7 +39,7 @@ export const dispatchOwnershipTransferEmail = async (
 };
 
 export const computeOwnershipTransferExpiresAt = (): string =>
-  new Date(Date.now() + OWNERSHIP_TRANSFER_TTL_MS).toISOString();
+  new Date(nowMs() + OWNERSHIP_TRANSFER_TTL_MS).toISOString();
 
 export const isLiveOwnershipTransfer = (
   row: typeof accountOwnershipTransfers.$inferSelect

@@ -1,3 +1,5 @@
+import { nowMs } from "../../lib/time/now";
+
 const DEFAULT_TTL_DAYS = 14;
 const MS_PER_DAY = 86_400_000;
 
@@ -7,7 +9,7 @@ const MS_PER_DAY = 86_400_000;
  * setting is wired.
  */
 export const computeInvitationExpiresAt = (): string =>
-  new Date(Date.now() + DEFAULT_TTL_DAYS * MS_PER_DAY).toISOString();
+  new Date(nowMs() + DEFAULT_TTL_DAYS * MS_PER_DAY).toISOString();
 
 export const normalizeInvitationEmail = (email: string): string =>
   email.toLowerCase().trim();

@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { logger } from "../config/logger";
 import { redactSensitiveInfo } from "./request-logger.utils";
+import { nowMs } from "../lib/time/now";
 
 /*
  * `as: "scoped"` propagates the derive + onAfterHandle hooks to the
@@ -10,7 +11,7 @@ import { redactSensitiveInfo } from "./request-logger.utils";
  */
 export const requestLogger = new Elysia({ name: "request-logger" })
   .derive({ as: "scoped" }, ({ request }) => {
-    const startTime = Date.now();
+    const startTime = nowMs();
     const requestId = crypto.randomUUID();
 
     const logUrl = redactSensitiveInfo(request.url);
