@@ -15,7 +15,9 @@ import {
   checkDependencyPairs,
   checkForbiddenText,
   checkNoCrossRepoImports,
+  checkNoDirectImportMetaEnv,
   checkNoRawRoleLiterals,
+  checkNoSilentErrorSwallow,
   checkPackageJson,
   checkScriptRawFetch,
   checkUiEnvCascadeDrift,
@@ -298,6 +300,162 @@ describe("lint-meta guardrails", () => {
       writeFileSync(envFile, "# comment\n\nVITE_FOO=bar\nnot-a-key=1\n");
 
       expect(parseDotenvKeys(envFile)).toEqual(new Set(["VITE_FOO"]));
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkNoDirectImportMetaEnv", () => {
+  test("flags `import.meta.env.X` access outside env.loader.ts", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-env-"));
+
+    try {
+      mkdirSync(join(root, "src", "features", "auth"), { recursive: true });
+      const file = join(root, "src", "features", "auth", "Auth.hooks.ts");
+
+      writeFileSync(
+        file,
+        "export const baseUrl = import.meta.env.VITE_API_URL;\n"
+      );
+
+      const violations = checkNoDirectImportMetaEnv(root, [file]);
+
+      expect(
+        violations.some((row) => row.rule === "env-no-direct-import-meta-env")
+      ).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("allows env.loader.ts to read import.meta.env", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-env-"));
+
+    try {
+      mkdirSync(join(root, "src", "lib", "env"), { recursive: true });
+      const file = join(root, "src", "lib", "env", "env.loader.ts");
+
+      writeFileSync(
+        file,
+        "export const loadEnv = () => envSchema.parse(import.meta.env);\n"
+      );
+
+      expect(checkNoDirectImportMetaEnv(root, [file])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("ignores files outside src/ (tests, scripts)", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-env-"));
+
+    try {
+      mkdirSync(join(root, "tests"), { recursive: true });
+      const file = join(root, "tests", "setup.ts");
+
+      writeFileSync(file, "const mode = import.meta.env.MODE;\n");
+
+      expect(checkNoDirectImportMetaEnv(root, [file])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkNoSilentErrorSwallow", () => {
+  test("flags catch { return null } in *.queries.ts", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-queries-"));
+
+    try {
+      mkdirSync(join(root, "src", "features", "auth"), { recursive: true });
+      const file = join(root, "src", "features", "auth", "Auth.queries.ts");
+
+      writeFileSync(
+        file,
+        [
+          "export function useMe() {",
+          "  return useQuery({",
+          "    queryFn: async () => {",
+          "      try {",
+          "        return await apiClient.GET('/me');",
+          "      } catch (error) {",
+          "        return null;",
+          "      }",
+          "    }",
+          "  });",
+          "}",
+          ""
+        ].join("\n")
+      );
+
+      const violations = checkNoSilentErrorSwallow(root, [file]);
+
+      expect(
+        violations.some((row) => row.rule === "queries-no-silent-error-swallow")
+      ).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("respects // allow-silent: opt-out comment immediately above the catch", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-queries-"));
+
+    try {
+      mkdirSync(join(root, "src", "features", "search"), { recursive: true });
+      const file = join(root, "src", "features", "search", "Search.queries.ts");
+
+      writeFileSync(
+        file,
+        [
+          "export function useSearch() {",
+          "  return useQuery({",
+          "    queryFn: async () => {",
+          "      try {",
+          "        return await apiClient.GET('/search');",
+          "      // allow-silent: missing index is not a UX error",
+          "      } catch (error) {",
+          "        return null;",
+          "      }",
+          "    }",
+          "  });",
+          "}",
+          ""
+        ].join("\n")
+      );
+
+      expect(checkNoSilentErrorSwallow(root, [file])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("ignores files outside src/features/", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-queries-"));
+
+    try {
+      mkdirSync(join(root, "src", "lib", "api"), { recursive: true });
+      const file = join(root, "src", "lib", "api", "Api.queries.ts");
+
+      writeFileSync(file, "try { return f(); } catch (e) { return null; }\n");
+
+      expect(checkNoSilentErrorSwallow(root, [file])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("ignores non-queries.ts files inside src/features/", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-queries-"));
+
+    try {
+      mkdirSync(join(root, "src", "features", "auth"), { recursive: true });
+      const file = join(root, "src", "features", "auth", "Auth.utils.ts");
+
+      writeFileSync(file, "try { return f(); } catch (e) { return null; }\n");
+
+      expect(checkNoSilentErrorSwallow(root, [file])).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
