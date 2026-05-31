@@ -25,7 +25,7 @@ export function OpenSourceSection() {
           target="_blank"
         >
           <GitHubIcon className="h-[1.05rem] w-[1.05rem]" />
-          View on GitHub
+          Star on GitHub
         </a>
       </div>
     </section>
