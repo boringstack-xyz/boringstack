@@ -90,7 +90,9 @@ describe("tokenRefresh middleware", () => {
   it("silently retries the original request after a successful refresh", async () => {
     fetchMock
       .mockResolvedValueOnce(jsonResponse(401, { message: "expired" })) // original
-      .mockResolvedValueOnce(jsonResponse(200, { refreshed: true })) // refresh
+      .mockResolvedValueOnce(
+        jsonResponse(200, { accessToken: "fresh-jwt", expiresAt: 9_999 })
+      ) // refresh (must carry a non-null accessToken to count as success)
       .mockResolvedValueOnce(jsonResponse(200, { id: "u1" })); // retry
     const client = await importClient();
 
@@ -109,6 +111,33 @@ describe("tokenRefresh middleware", () => {
     expect(calls[1]).toContain("/api/v1/auth/refresh");
     expect(loggerInfo).toHaveBeenCalledWith(
       expect.objectContaining({ event: "auth.refresh_attempt", success: true })
+    );
+  });
+
+  it("does not retry when refresh responds 200 with { accessToken: null } (anonymous probe)", async () => {
+    /*
+     * `/auth/refresh` returns 200 + `{ accessToken: null }` for callers
+     * without a refresh cookie. The middleware must read the body and
+     * gate retry on a non-null token; relying on `response.ok` alone
+     * would loop indefinitely after logout.
+     */
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(401, { message: "expired" })) // original
+      .mockResolvedValueOnce(jsonResponse(200, { accessToken: null })); // anon refresh
+    const client = await importClient();
+
+    await expect(
+      (
+        client as unknown as {
+          GET: (path: string) => Promise<unknown>;
+        }
+      ).GET("/api/v1/users/me")
+    ).rejects.toMatchObject({ name: "ApiError", status: 401 });
+
+    // Original + refresh; no retry because refresh reported anonymous.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(loggerInfo).toHaveBeenCalledWith(
+      expect.objectContaining({ event: "auth.refresh_attempt", success: false })
     );
   });
 
@@ -171,7 +200,9 @@ describe("tokenRefresh middleware", () => {
       .mockResolvedValueOnce(jsonResponse(401, { message: "expired" }))
       .mockResolvedValueOnce(jsonResponse(401, { message: "expired" }))
       // One refresh call:
-      .mockResolvedValueOnce(jsonResponse(200, { refreshed: true }))
+      .mockResolvedValueOnce(
+        jsonResponse(200, { accessToken: "fresh-jwt", expiresAt: 9_999 })
+      )
       // Two retries:
       .mockResolvedValueOnce(jsonResponse(200, { id: "a" }))
       .mockResolvedValueOnce(jsonResponse(200, { id: "b" }));

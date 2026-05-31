@@ -41,7 +41,7 @@ describe("validateEmailMessage", () => {
     }
 
     expect(caught.statusCode).toBe(400);
-    expect(caught.field).toBe("to");
+    expect(typeof caught.fieldErrors?.to).toBe("string");
   });
 
   test("throws an internal error on invalid sender email", () => {
@@ -80,7 +80,7 @@ describe("validateEmailMessage", () => {
     }
 
     expect(caught.statusCode).toBe(400);
-    expect(caught.field).toBe("subject");
+    expect(typeof caught.fieldErrors?.subject).toBe("string");
   });
 
   test("throws a validation error on empty html", () => {
@@ -100,7 +100,7 @@ describe("validateEmailMessage", () => {
     }
 
     expect(caught.statusCode).toBe(400);
-    expect(caught.field).toBe("html");
+    expect(typeof caught.fieldErrors?.html).toBe("string");
   });
 
   test("throws a validation error on whitespace-only subject", () => {

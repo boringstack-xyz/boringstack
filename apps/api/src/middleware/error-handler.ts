@@ -10,13 +10,15 @@ import {
 
 import type { IErrorHandlerArgs } from "./error-handler.types";
 
-const extractErrorField = (error: unknown): string | undefined => {
+const extractFieldErrors = (
+  error: unknown
+): Record<string, string> | undefined => {
   if (
     error instanceof Error &&
     "field" in error &&
     typeof error.field === "string"
   ) {
-    return error.field;
+    return { [error.field]: getErrorMessage(error) };
   }
 
   return undefined;
@@ -41,16 +43,41 @@ const isClientApiError = (error: unknown): boolean =>
   error.statusCode >= 400 &&
   error.statusCode < 500;
 
+/*
+ * Resolve the final HTTP status BEFORE the log line so observability
+ * surfaces what the client actually saw. Elysia's `set.status` is the
+ * pre-handler default; an `ApiError` overrides it to its own
+ * `statusCode`, and Elysia-thrown codes map below.
+ */
+const resolveFinalStatus = (code: string, error: unknown): number => {
+  if (error instanceof ApiError) {
+    return error.statusCode;
+  }
+
+  switch (code) {
+    case ElysiaErrorCodes.NOT_FOUND:
+      return 404;
+    case ElysiaErrorCodes.VALIDATION:
+    case ElysiaErrorCodes.PARSE:
+      return 400;
+    case ElysiaErrorCodes.INVALID_COOKIE_SIGNATURE:
+      return 401;
+    default:
+      return 500;
+  }
+};
+
 export const errorHandler = ({
   code,
   error,
   set,
 }: IErrorHandlerArgs): IApiErrorResponse => {
   const isClientError = isClientErrorCode(code) || isClientApiError(error);
+  const finalStatus = resolveFinalStatus(code, error);
 
   const basePayload = {
     errorCode: code,
-    statusCode: set.status,
+    statusCode: finalStatus,
     message: getErrorMessage(error),
     stack:
       env.isDevelopment && error instanceof Error ? error.stack : undefined,
@@ -69,24 +96,24 @@ export const errorHandler = ({
   }
 
   if (error instanceof ApiError) {
-    set.status = error.statusCode;
+    set.status = finalStatus;
 
     return error.toResponse();
   }
+
+  set.status = finalStatus;
 
   let apiError: ApiError;
 
   switch (code) {
     case ElysiaErrorCodes.NOT_FOUND:
-      set.status = 404;
       apiError = ApiErrors.notFound();
       break;
     case ElysiaErrorCodes.VALIDATION:
     case ElysiaErrorCodes.PARSE:
-      set.status = 400;
       apiError = ApiErrors.validation(
         getErrorMessage(error),
-        extractErrorField(error)
+        extractFieldErrors(error)
       );
       break;
     case ElysiaErrorCodes.INVALID_COOKIE_SIGNATURE:
@@ -96,13 +123,11 @@ export const errorHandler = ({
        * — i.e. when an attacker sends a tampered or guessed auth cookie.
        * It's untrusted user input, not an internal error.
        */
-      set.status = 401;
       apiError = ApiErrors.unauthorized();
       break;
     case ElysiaErrorCodes.INTERNAL_SERVER_ERROR:
     case ElysiaErrorCodes.UNKNOWN:
     default:
-      set.status = 500;
       apiError = ApiErrors.internal();
       break;
   }

@@ -43,6 +43,12 @@
       "description": "Vite env keys must align across schema.ts, .env.example, and vite-env.d.ts."
     },
     {
+      "id": "env-no-direct-import-meta-env",
+      "category": "env",
+      "ciCritical": false,
+      "description": "Single entry point for env: every source file outside env.loader.ts must import the typed `env` object instead of reading `import.meta.env` directly."
+    },
+    {
       "id": "generated-artifact-contract",
       "category": "artifacts",
       "ciCritical": false,
@@ -121,6 +127,12 @@
       "description": "Scripts must not call global fetch except github-actions-permissions.ts (lint:meta --verify SHA check)."
     },
     {
+      "id": "queries-no-silent-error-swallow",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "*.queries.ts files must not silently swallow query errors as `null`. Let the typed error propagate so consumers can distinguish auth from outage; opt-out per-catch with `// allow-silent: <reason>` when an explicit null is genuinely the right contract."
+    },
+    {
       "id": "logic-files-require-test-sibling",
       "category": "testing",
       "ciCritical": false,
@@ -175,6 +187,12 @@
       "category": "env",
       "ciCritical": false,
       "description": "TypeBox env schema keys must align with .env.example documentation."
+    },
+    {
+      "id": "env-no-direct-process-env",
+      "category": "env",
+      "ciCritical": false,
+      "description": "Single entry point for env: every source file outside validate.ts must import the typed `env` object instead of reading `process.env` directly."
     },
     {
       "id": "generated-artifact-contract",

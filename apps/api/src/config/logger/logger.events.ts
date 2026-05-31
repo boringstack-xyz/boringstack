@@ -47,6 +47,7 @@ export const LOG_EVENTS = [
   "authz_denied",
   "authz_invalid_role",
   "billing.user_plan.updated",
+  "boot.invariants_failed",
   "billing.webhook.duplicate_event",
   "billing.webhook.missing_metadata",
   "billing.webhook.stale_event",

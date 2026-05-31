@@ -1,10 +1,13 @@
 import type { FC, ReactElement } from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 
 import { useTranslation } from "react-i18next";
 
 import { useMe } from "@/features/auth/Auth.queries";
+import { resolveAuthStatus } from "@/features/auth/Auth.queries.utils";
+
+import { OfflineFallback } from "./OfflineFallback";
 
 const AUTH_CHECK_TIMEOUT_MS = 5_000;
 
@@ -15,25 +18,22 @@ interface IProtectedRouteProps {
 export const ProtectedRoute: FC<IProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
   const { t } = useTranslation();
-  const { data, isPending, isFetching } = useMe();
+  const me = useMe();
+  const { data, error, isPending, isFetching, refetch } = me;
   const [timedOut, setTimedOut] = useState(false);
 
   /*
    * Wait when either:
-   *   1. `isPending` — first fetch ever; no cached data exists. The
-   *      classic "auth check is loading" case.
-   *   2. `!data && isFetching` — we have cached `null` (from a previous
-   *      unauthenticated /me, or from logout writing setQueryData null)
-   *      and a refetch is in flight. This is the post-login window:
-   *      `useLogin.onSuccess` invalidated `useMe`, login resolved,
-   *      `navigate('/dashboard')` fired, and ProtectedRoute mounted
-   *      before the invalidation-triggered refetch returned. Without
-   *      this guard, the cached `null` made ProtectedRoute redirect
-   *      back to `/login` mid-refetch — the password-reset Playwright
-   *      spec hit this deterministically on CI because the post-reset
-   *      cache + setUser path widened the refetch window enough.
+   *   1. `isPending` — first fetch ever; no cached data exists.
+   *   2. `!data && !error && isFetching` — cached `null`/undefined with
+   *      a refetch in flight. Covers the post-login window: a
+   *      `useMe` invalidation can race the `navigate('/dashboard')`
+   *      and ProtectedRoute mounts while the refetch is still
+   *      resolving; without this guard a cached `null` would
+   *      redirect to /login mid-refetch.
    */
-  const isResolving = (isPending || (data === null && isFetching)) && !timedOut;
+  const isResolving =
+    (isPending || (data == null && error == null && isFetching)) && !timedOut;
 
   useEffect(() => {
     if (!isResolving) {
@@ -49,6 +49,10 @@ export const ProtectedRoute: FC<IProtectedRouteProps> = ({ children }) => {
     };
   }, [isResolving]);
 
+  const handleRetry = useCallback(() => {
+    void refetch();
+  }, [refetch]);
+
   if (isResolving) {
     return (
       <div
@@ -62,7 +66,18 @@ export const ProtectedRoute: FC<IProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  if (!data) {
+  const status = resolveAuthStatus({ data, error });
+
+  if (status === null) {
+    // Timed out before resolving — treat the same as "not authed".
+    return <Navigate to='/login' replace state={{ from: location }} />;
+  }
+
+  if (status.kind === "offline") {
+    return <OfflineFallback onRetry={handleRetry} isRetrying={isFetching} />;
+  }
+
+  if (status.kind === "anonymous" || status.kind === "unauthorized") {
     return <Navigate to='/login' replace state={{ from: location }} />;
   }
 

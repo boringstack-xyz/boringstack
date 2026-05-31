@@ -5,26 +5,84 @@ import { envSchema, type Env } from "./schema";
 
 type EnvSource = Record<string, string | undefined>;
 
-export const toInt = (raw: string | undefined, fallback: number): number => {
+export const toInt = (
+  raw: string | undefined,
+  fallback: number,
+  name?: string
+): number => {
   if (raw === undefined || raw === "") {
     return fallback;
   }
 
   const parsed = parseInt(raw, 10);
 
-  return Number.isNaN(parsed) ? fallback : parsed;
+  if (Number.isNaN(parsed)) {
+    const label = name ?? "<int>";
+
+    throw new Error(
+      `${label}: invalid integer "${raw}". Set a numeric value or unset the variable to use the default (${String(fallback)}).`
+    );
+  }
+
+  return parsed;
 };
 
-export const toBool = (raw: string | undefined): boolean => raw === "true";
+/*
+ * Strict boolean parser. Accepts a small set of canonical truthy/falsy
+ * tokens (case-insensitive) and throws on anything else, so a misspelled
+ * value like `DATABASE_SSL_REJECT_UNAUTHORIZED=Tru` aborts boot with a
+ * named error instead of silently downgrading TLS verification. Unset
+ * (undefined) resolves to false because every boolean has an explicit
+ * default at the schema level.
+ */
+const BOOL_TRUE_TOKENS = new Set(["true", "1", "yes", "on"]);
+const BOOL_FALSE_TOKENS = new Set(["false", "0", "no", "off", ""]);
 
-export const toFloat = (raw: string | undefined, fallback: number): number => {
+export const toBool = (raw: string | undefined, name?: string): boolean => {
+  if (raw === undefined) {
+    return false;
+  }
+
+  const normalized = raw.trim().toLowerCase();
+
+  if (BOOL_TRUE_TOKENS.has(normalized)) {
+    return true;
+  }
+
+  if (BOOL_FALSE_TOKENS.has(normalized)) {
+    return false;
+  }
+
+  const label = name ?? "<bool>";
+  const accepted = [...BOOL_TRUE_TOKENS, ...BOOL_FALSE_TOKENS]
+    .filter((token) => token !== "")
+    .join(", ");
+
+  throw new Error(
+    `${label}: invalid boolean "${raw}". Accepted (case-insensitive): ${accepted}.`
+  );
+};
+
+export const toFloat = (
+  raw: string | undefined,
+  fallback: number,
+  name?: string
+): number => {
   if (raw === undefined || raw === "") {
     return fallback;
   }
 
   const parsed = Number.parseFloat(raw);
 
-  return Number.isNaN(parsed) ? fallback : parsed;
+  if (Number.isNaN(parsed)) {
+    const label = name ?? "<float>";
+
+    throw new Error(
+      `${label}: invalid number "${raw}". Set a numeric value or unset the variable to use the default (${String(fallback)}).`
+    );
+  }
+
+  return parsed;
 };
 
 export const nonEmpty = (raw: string | undefined, fallback: string): string => {
@@ -58,7 +116,7 @@ export const toCsv = (raw: string | undefined): string[] => {
 
 const readCore = (source: EnvSource) => ({
   NODE_ENV: source.NODE_ENV ?? "development",
-  PORT: toInt(source.PORT, 7330),
+  PORT: toInt(source.PORT, 7330, "PORT"),
   LOG_LEVEL: source.LOG_LEVEL ?? "info",
   APP_NAME: source.APP_NAME ?? "API Template",
 });
@@ -68,11 +126,18 @@ const readDatabase = (source: EnvSource) => ({
     source.DATABASE_URL,
     source.NODE_ENV === "test" ? "postgresql://test:test@127.0.0.1:1/test" : ""
   ),
-  DATABASE_POOL_SIZE: toInt(source.DATABASE_POOL_SIZE, 10),
+  DATABASE_POOL_SIZE: toInt(
+    source.DATABASE_POOL_SIZE,
+    10,
+    "DATABASE_POOL_SIZE"
+  ),
   DATABASE_SSL_REJECT_UNAUTHORIZED:
     source.DATABASE_SSL_REJECT_UNAUTHORIZED === undefined
       ? true
-      : toBool(source.DATABASE_SSL_REJECT_UNAUTHORIZED),
+      : toBool(
+          source.DATABASE_SSL_REJECT_UNAUTHORIZED,
+          "DATABASE_SSL_REJECT_UNAUTHORIZED"
+        ),
   DATABASE_SSL_CA: source.DATABASE_SSL_CA ?? "",
 });
 
@@ -96,7 +161,10 @@ const readAuth = (source: EnvSource) => ({
   ),
   SUPERUSER_EMAIL: source.SUPERUSER_EMAIL ?? "",
   SUPERUSER_PASSWORD: source.SUPERUSER_PASSWORD ?? "",
-  E2E_TEST_ENDPOINTS_ENABLED: toBool(source.E2E_TEST_ENDPOINTS_ENABLED),
+  E2E_TEST_ENDPOINTS_ENABLED: toBool(
+    source.E2E_TEST_ENDPOINTS_ENABLED,
+    "E2E_TEST_ENDPOINTS_ENABLED"
+  ),
 });
 
 const readUrls = (source: EnvSource) => ({
@@ -107,21 +175,37 @@ const readUrls = (source: EnvSource) => ({
   ALLOWED_ORIGINS: toCsv(source.ALLOWED_ORIGINS),
   PUBLIC_API_URL:
     source.PUBLIC_API_URL ??
-    `http://localhost:${String(toInt(source.PORT, 7330))}`,
+    `http://localhost:${String(toInt(source.PORT, 7330, "PORT"))}`,
   NOTIFICATION_SETTINGS_URL: source.NOTIFICATION_SETTINGS_URL ?? "",
 });
 
 const readRateLimit = (source: EnvSource) => ({
-  RATE_LIMIT_MAX: toInt(source.RATE_LIMIT_MAX, 100),
-  RATE_LIMIT_WINDOW_MS: toInt(source.RATE_LIMIT_WINDOW_MS, 60_000),
-  AUTH_RATE_LIMIT_MAX: toInt(source.AUTH_RATE_LIMIT_MAX, 10),
-  AUTH_RATE_LIMIT_WINDOW_MS: toInt(source.AUTH_RATE_LIMIT_WINDOW_MS, 60_000),
-  TRUST_PROXY: toBool(source.TRUST_PROXY),
+  RATE_LIMIT_MAX: toInt(source.RATE_LIMIT_MAX, 100, "RATE_LIMIT_MAX"),
+  RATE_LIMIT_WINDOW_MS: toInt(
+    source.RATE_LIMIT_WINDOW_MS,
+    60_000,
+    "RATE_LIMIT_WINDOW_MS"
+  ),
+  AUTH_RATE_LIMIT_MAX: toInt(
+    source.AUTH_RATE_LIMIT_MAX,
+    10,
+    "AUTH_RATE_LIMIT_MAX"
+  ),
+  AUTH_RATE_LIMIT_WINDOW_MS: toInt(
+    source.AUTH_RATE_LIMIT_WINDOW_MS,
+    60_000,
+    "AUTH_RATE_LIMIT_WINDOW_MS"
+  ),
+  TRUST_PROXY: toBool(source.TRUST_PROXY, "TRUST_PROXY"),
 });
 
 const readSentry = (source: EnvSource) => ({
   SENTRY_DSN: source.SENTRY_DSN ?? "",
-  SENTRY_TRACES_SAMPLE_RATE: toFloat(source.SENTRY_TRACES_SAMPLE_RATE, 0),
+  SENTRY_TRACES_SAMPLE_RATE: toFloat(
+    source.SENTRY_TRACES_SAMPLE_RATE,
+    0,
+    "SENTRY_TRACES_SAMPLE_RATE"
+  ),
 });
 
 const readOpenTelemetry = (source: EnvSource) => ({
@@ -140,7 +224,7 @@ const readEmail = (source: EnvSource) => ({
   SENDGRID_API_KEY: source.SENDGRID_API_KEY ?? "",
   SENDGRID_WEBHOOK_PUBLIC_KEY: source.SENDGRID_WEBHOOK_PUBLIC_KEY ?? "",
   SMTP_HOST: source.SMTP_HOST ?? "",
-  SMTP_PORT: toInt(source.SMTP_PORT, 25),
+  SMTP_PORT: toInt(source.SMTP_PORT, 25, "SMTP_PORT"),
   SMTP_USER: source.SMTP_USER ?? "",
   SMTP_PASS: source.SMTP_PASS ?? "",
 });
@@ -155,7 +239,7 @@ const readOAuth = (source: EnvSource) => ({
 });
 
 const readAI = (source: EnvSource) => ({
-  AI_ENABLED: toBool(source.AI_ENABLED),
+  AI_ENABLED: toBool(source.AI_ENABLED, "AI_ENABLED"),
   AI_PROVIDER: source.AI_PROVIDER ?? "openai",
   OPENAI_API_KEY: source.OPENAI_API_KEY ?? "",
   OPENAI_BASE_URL: source.OPENAI_BASE_URL ?? "",
@@ -164,11 +248,14 @@ const readAI = (source: EnvSource) => ({
 });
 
 const readMultiTenant = (source: EnvSource) => ({
-  ACCOUNT_DOMAIN_CLAIMING: toBool(source.ACCOUNT_DOMAIN_CLAIMING),
+  ACCOUNT_DOMAIN_CLAIMING: toBool(
+    source.ACCOUNT_DOMAIN_CLAIMING,
+    "ACCOUNT_DOMAIN_CLAIMING"
+  ),
 });
 
 const readBilling = (source: EnvSource) => ({
-  BILLING_ENABLED: toBool(source.BILLING_ENABLED),
+  BILLING_ENABLED: toBool(source.BILLING_ENABLED, "BILLING_ENABLED"),
   STRIPE_SECRET_KEY: source.STRIPE_SECRET_KEY ?? "",
   STRIPE_WEBHOOK_SECRET: source.STRIPE_WEBHOOK_SECRET ?? "",
   STRIPE_PRICE_ID_FREE: source.STRIPE_PRICE_ID_FREE ?? "",
@@ -182,10 +269,15 @@ const readBackground = (source: EnvSource) => ({
    * set to "false" to disable (dev-only deployments without Valkey).
    */
   QUEUES_ENABLED:
-    source.QUEUES_ENABLED === undefined ? true : toBool(source.QUEUES_ENABLED),
-  CACHE_ENABLED: toBool(source.CACHE_ENABLED),
+    source.QUEUES_ENABLED === undefined
+      ? true
+      : toBool(source.QUEUES_ENABLED, "QUEUES_ENABLED"),
+  CACHE_ENABLED: toBool(source.CACHE_ENABLED, "CACHE_ENABLED"),
   CACHE_PROVIDER: source.CACHE_PROVIDER ?? "memory",
-  NOTIFICATIONS_SSE_ENABLED: toBool(source.NOTIFICATIONS_SSE_ENABLED),
+  NOTIFICATIONS_SSE_ENABLED: toBool(
+    source.NOTIFICATIONS_SSE_ENABLED,
+    "NOTIFICATIONS_SSE_ENABLED"
+  ),
 });
 
 const readWebPush = (source: EnvSource) => ({
@@ -196,9 +288,9 @@ const readWebPush = (source: EnvSource) => ({
 
 const readValkey = (source: EnvSource) => ({
   VALKEY_HOST: source.VALKEY_HOST ?? "localhost",
-  VALKEY_PORT: toInt(source.VALKEY_PORT, 6379),
+  VALKEY_PORT: toInt(source.VALKEY_PORT, 6379, "VALKEY_PORT"),
   VALKEY_PASSWORD: source.VALKEY_PASSWORD ?? "",
-  VALKEY_DB: toInt(source.VALKEY_DB, 0),
+  VALKEY_DB: toInt(source.VALKEY_DB, 0, "VALKEY_DB"),
 });
 
 const readRaw = (source: EnvSource): Record<string, unknown> => ({
@@ -229,9 +321,22 @@ const readRaw = (source: EnvSource): Record<string, unknown> => ({
  * ────────────────────────────────────────────────────────────────────
  */
 
-const checkHttpUrl = (value: string, name: string): string[] => {
+const checkHttpUrl = (
+  value: string,
+  name: string,
+  requireHttps: boolean
+): string[] => {
   try {
     const parsed = new URL(value);
+
+    if (requireHttps) {
+      return parsed.protocol === "https:"
+        ? []
+        : [
+            `${name} must use https:// in production (got "${parsed.protocol}//"). Secure cookies, OAuth callbacks, billing return URLs, and signed email links all require TLS.`,
+          ];
+    }
+
     const isHttp = parsed.protocol === "http:" || parsed.protocol === "https:";
 
     return isHttp ? [] : [`${name} must be an http(s) URL`];
@@ -240,13 +345,36 @@ const checkHttpUrl = (value: string, name: string): string[] => {
   }
 };
 
-const checkUrls = (env: Env): string[] => [
-  ...checkHttpUrl(env.FRONTEND_URL, "FRONTEND_URL"),
-  ...checkHttpUrl(env.PUBLIC_API_URL, "PUBLIC_API_URL"),
-  ...(env.NOTIFICATION_SETTINGS_URL === ""
-    ? []
-    : checkHttpUrl(env.NOTIFICATION_SETTINGS_URL, "NOTIFICATION_SETTINGS_URL")),
-];
+const checkUrls = (env: Env): string[] => {
+  const requireHttps = env.NODE_ENV === "production";
+
+  return [
+    ...checkHttpUrl(env.FRONTEND_URL, "FRONTEND_URL", requireHttps),
+    ...checkHttpUrl(env.PUBLIC_API_URL, "PUBLIC_API_URL", requireHttps),
+    ...(env.NOTIFICATION_SETTINGS_URL === ""
+      ? []
+      : checkHttpUrl(
+          env.NOTIFICATION_SETTINGS_URL,
+          "NOTIFICATION_SETTINGS_URL",
+          requireHttps
+        )),
+  ];
+};
+
+/**
+ * MFA_ENCRYPTION_KEY must be present in production so a misconfigured
+ * deploy aborts at boot rather than surfacing as a 500 on the first
+ * MFA enroll/verify request.
+ */
+const checkMfaKeyInProd = (env: Env): string[] => {
+  if (env.NODE_ENV !== "production" || env.MFA_ENCRYPTION_KEY !== "") {
+    return [];
+  }
+
+  return [
+    "MFA_ENCRYPTION_KEY is required in production. Generate one with `openssl rand -base64 32`.",
+  ];
+};
 
 const checkOrigins = (env: Env): string[] => {
   if (env.NODE_ENV !== "production") {
@@ -593,6 +721,7 @@ const checkWebPushVapid = (env: Env): string[] => {
 const checkInvariants = (env: Env): string[] => [
   ...checkUrls(env),
   ...checkOrigins(env),
+  ...checkMfaKeyInProd(env),
   ...checkEmailProvider(env),
   ...checkAIProvider(env),
   ...checkBilling(env),

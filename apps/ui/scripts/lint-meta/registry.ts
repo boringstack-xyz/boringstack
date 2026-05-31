@@ -5,6 +5,8 @@ import { githubActionsPermissionsRule } from "./rules/ci/github-actions-permissi
 import { prePushCiParityRule } from "./rules/ci/pre-push-ci-parity";
 import { eslintConfigNoWarnRule } from "./rules/config/eslint-config-no-warn";
 import { envCascadeDriftRule } from "./rules/env/env-cascade-drift";
+import { noDirectImportMetaEnvRule } from "./rules/env/no-direct-import-meta-env";
+import { noSilentErrorSwallowRule } from "./rules/queries/no-silent-error-swallow";
 import { canonicalHelpersSingleHomeRule } from "./rules/source-text/canonical-helpers-single-home";
 import { forbiddenTextRule } from "./rules/source-text/forbidden-text";
 import { noCrossRepoImportRule } from "./rules/source-text/no-cross-repo-import";
@@ -25,6 +27,7 @@ export const META_RULES: readonly IMetaRule[] = [
   enginePinParityRule,
   // --- env ---
   envCascadeDriftRule,
+  noDirectImportMetaEnvRule,
   // --- artifacts ---
   generatedArtifactContractRule,
   modulepreloadSizeLimitRule,
@@ -34,6 +37,7 @@ export const META_RULES: readonly IMetaRule[] = [
   noCrossRepoImportRule,
   noRawRoleLiteralsRule,
   scriptRawFetchRule,
+  noSilentErrorSwallowRule,
   // --- testing ---
   logicFilesRequireTestSiblingRule,
   // --- config ---

@@ -1,0 +1,55 @@
+---
+title: CSRF stance
+description: BoringStack relies on SameSite=Strict cookies plus a same-origin deployment topology instead of CSRF tokens. Trade-offs, excluded topologies, and how to add tokens if you need them.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+BoringStack ships **without CSRF token middleware**. Session cookies are `SameSite=Strict` in production, and the default deployment topology keeps the API and the SPA on the same registrable domain. With both in place, a CSRF attack can't reach the surface we ship.
+
+This page exists because SameSite=Strict is a deployment constraint. It disallows certain topologies, and operators forking the template need to know that before they ship.
+
+## What's actually deployed
+
+- **Session cookies**: `HttpOnly`, `Secure`, `SameSite=Strict`, signed. Set by the API on `/auth/login` and refreshed by `/auth/refresh`. See `apps/api/src/lib/cookies/cookie-utils.ts`.
+- **CORS**: `credentials: true` is enabled, but only when `ALLOWED_ORIGINS` is non-empty. The compose default leaves it empty. Traefik routes `/api/*` on the same host that serves the SPA, so no cross-origin call ever happens. See `apps/api/src/config/security/security.ts`.
+- **No CSRF token middleware**. There is no `X-CSRF-Token` header, no double-submit cookie, no synchroniser pattern.
+
+## Why this is safe
+
+A CSRF attack works by having the victim's browser send a state-changing request to your API while carrying the victim's auth cookie. `SameSite=Strict` instructs the browser to omit the cookie on **any** cross-site request, including form posts, image loads, link clicks, fetch, and EventSource. The request reaches the API without credentials and is treated as anonymous.
+
+The threat model CSRF tokens defend against (the attacker can't read the cookie, but can trick the browser into sending it cross-site) is closed here. The browser refuses to send the cookie cross-site in the first place. A token would only defend against a request that's already unauthenticated.
+
+Rails 7+ ships this for default cookie sessions. MDN and OWASP both recommend SameSite=Strict when your target browsers support it, which every major browser has for 4+ years.
+
+## What this topology supports
+
+- **Same-origin deployment**: SPA at `app.example.com`, API at `app.example.com/api`. This is the compose default, and what `infra/compose/compose/production-labels.yml` ships.
+- **Apex + subdomain on the same registrable domain**: SPA at `app.example.com`, API at `api.example.com`. Still same-site under the registrable-domain rule, still safe with `SameSite=Strict`. Cookie `Domain=.example.com`.
+
+## What this topology excludes
+
+- **True cross-site auth**: SPA at `app.foo.com` calling an API at `api.bar.com`. The browser won't send the session cookie. The user can never sign in.
+- **Embedded scenarios**: Loading the SPA in an iframe on a third-party host that needs to make authenticated API calls. Same problem: cookies are not sent cross-site.
+- **OAuth pop-up redirects from a third-party domain**: Works for OAuth itself (state cookies opt into SameSite=Lax in `apps/api/src/lib/auth/oauth.service.ts` for the duration of the round-trip), but is not the general API auth flow.
+
+If your deployment needs any of the above, add CSRF tokens (see the next section).
+
+## Adding CSRF tokens later
+
+The shape we'd add (when it's needed, not before):
+
+1. **Token mint**: a new `/api/v1/auth/csrf` endpoint that returns a freshly-signed token and sets a non-`HttpOnly` `XSRF-TOKEN` cookie. Use the existing JWT signing key.
+2. **Middleware**: a new `apps/api/src/middleware/csrf.ts` that runs after `requestLogger` and before any route. For non-`GET`/`HEAD` requests, verify the `X-CSRF-Token` header matches the cookie's signed value.
+3. **UI integration**: `apps/ui/src/lib/api/openapi.ts` reads the cookie via `document.cookie` (which is allowed for non-`HttpOnly` cookies) and adds the header to every mutation.
+4. **CORS adjustment**: relax cookie `SameSite` to `Lax` (or `None` with `Secure` for true cross-site).
+
+This is a one-day change, and not in scope for v1.0 because no operator has asked for it yet. When you're the first, file a PR. The shape above is the design.
+
+<Aside type="note" title="Trade-off summary">
+  SameSite=Strict gives you a smaller attack surface, no token plumbing, no
+  token-expiry edge cases, and no per-request overhead, at the cost of
+  restricting the deployment topology to one registrable domain. CSRF tokens
+  give you topology freedom at the cost of complexity.
+</Aside>

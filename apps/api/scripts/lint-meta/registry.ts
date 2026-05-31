@@ -4,6 +4,7 @@ import { githubActionsPermissionsRule } from "./rules/ci/github-actions-permissi
 import { prePushCiParityRule } from "./rules/ci/pre-push-ci-parity";
 import { eslintConfigNoWarnRule } from "./rules/config/eslint-config-no-warn";
 import { envCascadeDriftRule } from "./rules/env/env-cascade-drift";
+import { noDirectProcessEnvRule } from "./rules/env/no-direct-process-env";
 import { canonicalHelpersSingleHomeRule } from "./rules/source-text/canonical-helpers-single-home";
 import { forbiddenTextRule } from "./rules/source-text/forbidden-text";
 import { noRawRoleLiteralsRule } from "./rules/source-text/no-raw-role-literals";
@@ -21,6 +22,7 @@ export const META_RULES: readonly IMetaRule[] = [
   prePushCiParityRule,
   enginePinParityRule,
   envCascadeDriftRule,
+  noDirectProcessEnvRule,
   generatedArtifactContractRule,
   forbiddenTextRule,
   canonicalHelpersSingleHomeRule,

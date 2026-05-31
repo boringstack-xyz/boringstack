@@ -5,6 +5,7 @@
  */
 import "./instrument";
 
+import { assertBootInvariants, BootInvariantError } from "./boot/invariants";
 import { createApp } from "./config/app";
 import { env } from "./config/env";
 import {
@@ -17,6 +18,21 @@ import { setupNotifications, setupQueues } from "./config/setup";
 
 // Initialize Sentry after OTel so error events pick up the OTel trace context.
 initializeSentry();
+
+/*
+ * Boot invariants gate everything else. A misconfigured deploy aborts
+ * here with a structured error instead of surfacing as a 500 to the
+ * first user who hits the affected code path.
+ */
+try {
+  assertBootInvariants(env);
+} catch (error) {
+  if (error instanceof BootInvariantError) {
+    abortBootstrap(error.message, "boot.invariants_failed", error);
+  }
+
+  throw error;
+}
 
 const app = createApp().listen(env.PORT);
 

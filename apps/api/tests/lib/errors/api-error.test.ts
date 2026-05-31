@@ -10,17 +10,21 @@ describe("ApiError", () => {
     expect(res.error.code).toBe(ErrorCodes.UNAUTHORIZED);
     expect(res.error.message).toBe("Nope");
     expect(typeof res.error.timestamp).toBe("string");
-    expect(res.error.field).toBeUndefined();
+    expect(res.error.fieldErrors).toBeUndefined();
     expect(res.error.details).toBeUndefined();
   });
 
-  test("toResponse() includes field and details when set", () => {
-    const err = new ApiError(ErrorCodes.VALIDATION_ERROR, "Bad", 400, "email", {
-      received: "x",
-    });
+  test("toResponse() includes fieldErrors and details when set", () => {
+    const err = new ApiError(
+      ErrorCodes.VALIDATION_ERROR,
+      "Bad",
+      400,
+      { email: "Bad email" },
+      { received: "x" }
+    );
     const res = err.toResponse();
 
-    expect(res.error.field).toBe("email");
+    expect(res.error.fieldErrors).toEqual({ email: "Bad email" });
     expect(res.error.details).toEqual({ received: "x" });
   });
 
@@ -40,12 +44,24 @@ describe("ApiError", () => {
 });
 
 describe("ApiErrors factory", () => {
-  test("validation() → 400 + VALIDATION_ERROR", () => {
+  test("validation() lifts a single field string into a one-key fieldErrors map", () => {
     const err = ApiErrors.validation("Bad email", "email");
 
     expect(err.statusCode).toBe(400);
     expect(err.code).toBe(ErrorCodes.VALIDATION_ERROR);
-    expect(err.field).toBe("email");
+    expect(err.fieldErrors).toEqual({ email: "Bad email" });
+  });
+
+  test("validation() accepts an explicit fieldErrors map for multi-field cases", () => {
+    const err = ApiErrors.validation("Validation failed", {
+      email: "Invalid email",
+      password: "Too short",
+    });
+
+    expect(err.fieldErrors).toEqual({
+      email: "Invalid email",
+      password: "Too short",
+    });
   });
 
   test("notFound() → 404", () => {
@@ -77,10 +93,10 @@ describe("ApiErrors factory", () => {
     expect(ApiErrors.externalService().statusCode).toBe(502);
   });
 
-  test("missingField() includes the field name in the message", () => {
+  test("missingField() includes the field name in the message and fieldErrors", () => {
     const err = ApiErrors.missingField("email");
 
     expect(err.message).toContain("email");
-    expect(err.field).toBe("email");
+    expect(err.fieldErrors).toEqual({ email: err.message });
   });
 });

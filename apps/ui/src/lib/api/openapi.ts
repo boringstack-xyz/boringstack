@@ -31,6 +31,34 @@ const BASE_URL = env.VITE_API_URL.replace(/\/$/, "");
 
 let inFlightRefresh: Promise<boolean> | null = null;
 
+/*
+ * `/auth/refresh` returns 200 with `{ accessToken: null }` for anonymous
+ * callers (no refresh cookie present) and 200 + `{ accessToken: <jwt> }`
+ * on successful refresh. A non-null accessToken is the discriminator
+ * between the two; `response.ok` alone treats both as success and the
+ * SSE reconnect loop retries indefinitely after logout.
+ */
+async function readAccessToken(response: Response): Promise<string | null> {
+  try {
+    const body = (await response.clone().json()) as {
+      accessToken?: string | null;
+    } | null;
+
+    if (
+      body !== null &&
+      typeof body === "object" &&
+      typeof body.accessToken === "string" &&
+      body.accessToken.length > 0
+    ) {
+      return body.accessToken;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function performRefresh(): Promise<boolean> {
   inFlightRefresh ??= (async (): Promise<boolean> => {
     try {
@@ -38,11 +66,19 @@ export async function performRefresh(): Promise<boolean> {
         method: "POST",
         credentials: "include"
       });
-      const ok = response.ok;
 
-      logger.info({ event: "auth.refresh_attempt", success: ok });
+      if (!response.ok) {
+        logger.info({ event: "auth.refresh_attempt", success: false });
 
-      return ok;
+        return false;
+      }
+
+      const accessToken = await readAccessToken(response);
+      const success = accessToken !== null;
+
+      logger.info({ event: "auth.refresh_attempt", success });
+
+      return success;
     } catch (cause) {
       logger.warn({
         event: "auth.refresh_failed",

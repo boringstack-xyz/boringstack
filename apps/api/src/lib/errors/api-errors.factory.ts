@@ -7,25 +7,56 @@ import { ErrorCodes, ErrorMessages } from "./errors.constants";
  * Services should always throw via `ApiErrors.*` so the route-level
  * error handler can map cleanly to a typed response with the right
  * HTTP status. Don't `throw new Error(...)` from a service.
+ *
+ * Single-field validation errors take a `field` string for ergonomics;
+ * the factory transparently lifts it into a one-key `fieldErrors` map
+ * so the response envelope is shape-consistent regardless of how many
+ * fields the error references. Pass an explicit map to `validation()`
+ * for multi-field cases.
  */
+const singletonMap = (
+  field: string,
+  message: string
+): Record<string, string> => ({ [field]: message });
+
 export const ApiErrors = {
   validation: (
     message: string,
-    field?: string,
+    fieldOrErrors?: string | Record<string, string>,
     details?: Record<string, unknown>
-  ): ApiError =>
-    new ApiError(ErrorCodes.VALIDATION_ERROR, message, 400, field, details),
+  ): ApiError => {
+    const fieldErrors =
+      typeof fieldOrErrors === "string"
+        ? singletonMap(fieldOrErrors, message)
+        : fieldOrErrors;
+
+    return new ApiError(
+      ErrorCodes.VALIDATION_ERROR,
+      message,
+      400,
+      fieldErrors,
+      details
+    );
+  },
 
   invalidInput: (message: string, field?: string): ApiError =>
-    new ApiError(ErrorCodes.INVALID_INPUT, message, 400, field),
-
-  missingField: (field: string): ApiError =>
     new ApiError(
-      ErrorCodes.MISSING_REQUIRED_FIELD,
-      `Field '${field}' is required`,
+      ErrorCodes.INVALID_INPUT,
+      message,
       400,
-      field
+      field === undefined ? undefined : singletonMap(field, message)
     ),
+
+  missingField: (field: string): ApiError => {
+    const message = `Field '${field}' is required`;
+
+    return new ApiError(
+      ErrorCodes.MISSING_REQUIRED_FIELD,
+      message,
+      400,
+      singletonMap(field, message)
+    );
+  },
 
   unauthorized: (
     message: string = ErrorMessages[ErrorCodes.UNAUTHORIZED]
@@ -69,6 +100,11 @@ export const ApiErrors = {
     message: string = ErrorMessages[ErrorCodes.RATE_LIMIT_EXCEEDED]
   ): ApiError => new ApiError(ErrorCodes.RATE_LIMIT_EXCEEDED, message, 429),
 
+  /*
+   * Plan-limit errors don't carry per-field validation — the `feature`
+   * surfaces in `details` so the UI's pricing/upgrade prompt can read
+   * it without trying to interpret it as a form field.
+   */
   limitExceeded: (
     feature: string,
     details: { current: number; limit: number }
@@ -77,8 +113,8 @@ export const ApiErrors = {
       ErrorCodes.LIMIT_EXCEEDED,
       `Plan limit reached for ${feature}`,
       402,
-      feature,
-      details
+      undefined,
+      { ...details, feature }
     ),
 
   internal: (
