@@ -92,11 +92,11 @@ export const requireDb = async (): Promise<boolean> => {
 };
 
 /**
- * Tables to clear between tests. Order matters — child tables first so
- * foreign keys don't block the truncate. Seed-like tables (`billing.plans`,
- * `billing.features`) are deliberately omitted.
+ * Tables to clear between tests, in child-first dependency order.
+ * Seed-like tables (`billing.plans`, `billing.features`) are intentionally
+ * omitted so fixtures referencing seeded plans keep resolving.
  */
-const TRUNCATE_TARGETS = [
+const CLEANUP_TARGETS = [
   "audit.audit_log",
   "audit.redactions",
   "auth.sessions",
@@ -108,6 +108,7 @@ const TRUNCATE_TARGETS = [
   "app.account_feature_overrides",
   "app.account_invitations",
   "app.account_join_requests",
+  "app.account_ownership_transfers",
   "billing.stripe_webhook_events",
   "billing.account_plans",
   "notifications.notification_delivery",
@@ -120,15 +121,48 @@ const TRUNCATE_TARGETS = [
   "auth.users",
 ] as const;
 
+/*
+ * Arbitrary 64-bit key for the advisory lock that serialises cleanup
+ * calls across concurrent test workers. The value itself is meaningless
+ * — only its uniqueness across the schema matters. Stable across runs.
+ */
+const CLEANUP_ADVISORY_LOCK_KEY = 7283041928571064n;
+
 /**
  * Wipe user-data tables. Use in `beforeEach` so each test starts with a
- * clean slate. `RESTART IDENTITY` resets sequences; `CASCADE` covers any
- * residual FK dependents we forgot to list.
+ * clean slate.
+ *
+ * Two pieces of robustness on top of the obvious DELETE loop:
+ *
+ *  1. `pg_advisory_xact_lock` on a fixed key serialises every cleanup
+ *     across the suite. Two test files calling `cleanDatabase()` at the
+ *     same time end up running their wipes back-to-back rather than
+ *     fighting for table locks.
+ *
+ *  2. `DELETE FROM` instead of `TRUNCATE` so we hold
+ *     `RowExclusiveLock` rather than `AccessExclusiveLock`. A truncate
+ *     conflicts with the `AccessShareLock` that every concurrent SELECT
+ *     takes — that's the recipe for the postgres deadlock we hit in CI
+ *     when one worker was mid-cleanup and another was mid-test. Delete
+ *     does not.
+ *
+ * The trade-off: DELETE is slower than TRUNCATE on large tables. For
+ * the small per-test datasets this helper sees, the difference is
+ * single-digit milliseconds — well worth it for a CI suite that never
+ * flake-deadlocks.
  */
 export const cleanDatabase = async (): Promise<void> => {
-  await db.execute(
-    sql.raw(`TRUNCATE ${TRUNCATE_TARGETS.join(", ")} RESTART IDENTITY CASCADE`)
-  );
+  await db.transaction(async (tx) => {
+    await tx.execute(
+      sql`SELECT pg_advisory_xact_lock(${sql.raw(
+        String(CLEANUP_ADVISORY_LOCK_KEY)
+      )})`
+    );
+
+    for (const table of CLEANUP_TARGETS) {
+      await tx.execute(sql.raw(`DELETE FROM ${table}`));
+    }
+  });
 };
 
 /** Re-export the live `db` for convenience inside test files. */

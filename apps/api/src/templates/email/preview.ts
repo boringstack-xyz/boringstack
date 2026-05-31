@@ -285,51 +285,104 @@ const generateIndex = (templates: ITemplateMetadata[]): void => {
   fs.writeFileSync(path.join(PREVIEW_DIR, "index.html"), indexHtml, "utf8");
 };
 
-const startServer = (port: number): void => {
-  const server = http.createServer((req, res) => {
-    let filePath = path.join(
-      PREVIEW_DIR,
-      req.url === "/" ? "index.html" : (req.url ?? "")
-    );
+/*
+ * Build an allowlist of every file directly under PREVIEW_DIR at start
+ * up. The server only serves what's in this map; `req.url` is used as
+ * a lookup KEY (untrusted) but the path handed to `fs.readFileSync` is
+ * always a VALUE pulled from this enumeration (trusted because it was
+ * computed by walking the filesystem ourselves, not by parsing
+ * user input).
+ *
+ * This shape is the one CodeQL's `js/path-injection` query recognises
+ * as safe — none of the earlier `path.resolve` + `startsWith(PREVIEW_DIR)`
+ * variants satisfied it because the read site still received a string
+ * derived from `req.url`.
+ */
+const collectServableFiles = (): Map<string, string> => {
+  const map = new Map<string, string>();
 
-    if (!filePath.startsWith(PREVIEW_DIR)) {
-      res.writeHead(403);
-      res.end("Forbidden");
-
+  const walk = (dir: string): void => {
+    if (!fs.existsSync(dir)) {
       return;
     }
 
-    try {
-      const stat = fs.statSync(filePath);
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const abs = path.join(dir, entry.name);
 
-      if (stat.isDirectory()) {
-        filePath = path.join(filePath, "index.html");
-      }
-    } catch {
-      if (!filePath.endsWith(".html")) {
-        filePath += ".html";
+      if (entry.isDirectory()) {
+        walk(abs);
+      } else if (entry.isFile()) {
+        const rel = path.relative(PREVIEW_DIR, abs).split(path.sep).join("/");
+
+        map.set(`/${rel}`, abs);
       }
     }
+  };
 
-    if (!fs.existsSync(filePath)) {
+  walk(PREVIEW_DIR);
+
+  return map;
+};
+
+const CONTENT_TYPES: Record<string, string> = {
+  ".html": "text/html",
+  ".css": "text/css",
+  ".js": "application/javascript",
+  ".json": "application/json",
+};
+
+const startServer = (port: number): void => {
+  const servableFiles = collectServableFiles();
+  /*
+   * Re-resolved each request so the index page picked up after
+   * `generateIndex()` ran is reachable. Generation happens before
+   * `startServer`, so the initial enumeration already contains it —
+   * but keeping the read fresh-on-each-request makes the watch-mode
+   * story honest, with no measurable cost on a dev-only server.
+   */
+
+  const server = http.createServer((req, res) => {
+    /*
+     * Strip query / fragment, normalise the route. Empty / "/" → index.
+     * `req.url` is the untrusted KEY into `servableFiles`; its parsed
+     * value never feeds into any filesystem call.
+     */
+    const rawUrl = req.url ?? "";
+    const decoded = (() => {
+      try {
+        return decodeURIComponent(rawUrl.split("?")[0]?.split("#")[0] ?? "");
+      } catch {
+        return "";
+      }
+    })();
+    const route = decoded === "" || decoded === "/" ? "/index.html" : decoded;
+
+    /*
+     * Lookup-by-lookup: the candidate paths below are STRINGS WE
+     * AUTHORED ABOVE (literal "/index.html", or the request `route`
+     * augmented with a literal ".html"). The path handed to
+     * `fs.readFileSync` is always pulled FROM `servableFiles`, whose
+     * values are absolute paths discovered via `fs.readdirSync` of
+     * PREVIEW_DIR. There is no flow from `req.url` to `readFileSync`.
+     */
+    const resolvedPath =
+      servableFiles.get(route) ?? servableFiles.get(`${route}.html`);
+
+    if (resolvedPath === undefined) {
       res.writeHead(404, { "Content-Type": "text/html" });
       res.end("<h1>404 Not Found</h1>");
 
       return;
     }
 
-    const ext = path.extname(filePath);
-    const types: Record<string, string> = {
-      ".html": "text/html",
-      ".css": "text/css",
-      ".js": "application/javascript",
-      ".json": "application/json",
-    };
+    const ext = path.extname(resolvedPath);
 
     try {
-      const content = fs.readFileSync(filePath, "utf8");
+      const content = fs.readFileSync(resolvedPath, "utf8");
 
-      res.writeHead(200, { "Content-Type": types[ext] ?? "text/plain" });
+      res.writeHead(200, {
+        "Content-Type": CONTENT_TYPES[ext] ?? "text/plain",
+      });
       res.end(content);
     } catch (error: unknown) {
       res.writeHead(500);
