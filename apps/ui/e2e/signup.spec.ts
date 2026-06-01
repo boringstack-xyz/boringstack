@@ -48,7 +48,7 @@ test.describe("Sign-up flow", () => {
     });
     await signup.submit();
 
-    await expect(signup.checkEmailHeading()).toBeVisible({ timeout: 10_000 });
+    await expect(signup.checkEmailHeading()).toBeVisible();
     await expect(page.getByText(uniqueEmail)).toBeVisible();
   });
 

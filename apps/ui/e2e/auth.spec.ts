@@ -20,7 +20,7 @@ test.describe("Auth flow", () => {
   test("shows error toast for bad credentials", async ({ page, login }) => {
     await login.goto();
     await login.loginAs("wrong@example.com", "wrongpassword");
-    await expect(page.getByText(/incorrect/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/incorrect/i)).toBeVisible();
   });
 
   test("logs in successfully and lands on dashboard", async ({
