@@ -5,7 +5,6 @@ import pluginEnvAccess from "@boring-stack-pkg/eslint-plugin-env-access";
 import pluginI18nKeys from "@boring-stack-pkg/eslint-plugin-i18n-keys";
 import pluginModuleBoundaries from "@boring-stack-pkg/eslint-plugin-module-boundaries";
 import pluginRCA from "@boring-stack-pkg/eslint-plugin-react-component-architecture";
-import pluginResourceArch from "@boring-stack-pkg/eslint-plugin-resource-architecture";
 import pluginStructuredLogging from "@boring-stack-pkg/eslint-plugin-structured-logging";
 import pluginTanstackQueryCache from "@boring-stack-pkg/eslint-plugin-tanstack-query-cache";
 import pluginTestConventions from "@boring-stack-pkg/eslint-plugin-test-conventions";
@@ -177,7 +176,6 @@ export default tseslint.config(
       "env-access": pluginEnvAccess,
       "eslint-comments": pluginEslintComments,
       "module-boundaries": pluginModuleBoundaries,
-      "resource-architecture": pluginResourceArch,
       "structured-logging": pluginStructuredLogging,
       "test-conventions": pluginTestConventions,
       "react-component-architecture": pluginRCA,

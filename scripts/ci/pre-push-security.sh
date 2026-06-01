@@ -58,6 +58,17 @@ if ! command -v gitleaks >/dev/null 2>&1; then
   fail "gitleaks not installed. Install with: brew install gitleaks  (or see https://github.com/gitleaks/gitleaks#installing)"
 fi
 
+# Parity warning: CI pins a specific gitleaks version (its ruleset). A local
+# version that drifts can miss a leak CI would catch (or vice versa), so the
+# scan only matches CI when versions match. Read the pin straight from the
+# workflow so this never goes stale against a CI bump.
+GITLEAKS_WORKFLOW=".github/workflows/apps-api-security-secrets.yml"
+EXPECTED_GITLEAKS_VERSION="$(grep -m1 'GITLEAKS_VERSION:' "$GITLEAKS_WORKFLOW" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)"
+LOCAL_GITLEAKS_VERSION="$(gitleaks version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+if [[ -n "$EXPECTED_GITLEAKS_VERSION" && "$LOCAL_GITLEAKS_VERSION" != "$EXPECTED_GITLEAKS_VERSION" ]]; then
+  c_red "  ⚠ local gitleaks ${LOCAL_GITLEAKS_VERSION:-unknown} != CI-pinned ${EXPECTED_GITLEAKS_VERSION} — ruleset may differ from CI. Install the pinned version to guarantee parity: https://github.com/gitleaks/gitleaks/releases/tag/v${EXPECTED_GITLEAKS_VERSION}"
+fi
+
 gitleaks detect \
   --source . \
   --config .gitleaks.toml \

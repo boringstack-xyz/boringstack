@@ -92,7 +92,6 @@
     "@boring-stack-pkg/eslint-plugin-i18n-keys": "0.1.1",
     "@boring-stack-pkg/eslint-plugin-module-boundaries": "0.1.1",
     "@boring-stack-pkg/eslint-plugin-react-component-architecture": "0.3.0",
-    "@boring-stack-pkg/eslint-plugin-resource-architecture": "0.2.0",
     "@boring-stack-pkg/eslint-plugin-structured-logging": "0.1.1",
     "@boring-stack-pkg/eslint-plugin-tanstack-query-cache": "0.2.0",
     "@boring-stack-pkg/eslint-plugin-test-conventions": "0.1.1",
