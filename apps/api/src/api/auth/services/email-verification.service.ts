@@ -75,6 +75,18 @@ export class EmailVerificationService {
         throw ApiErrors.notFound("User");
       }
 
+      /*
+       * Resend can leave a fresh token on a user that's already been
+       * verified through a different link. Reject explicitly instead of
+       * silently re-running the provisioning path — the user-facing
+       * message ("Email already verified") is more informative than
+       * "Invalid or expired" for the legitimate "I clicked the older
+       * email" case.
+       */
+      if (claimedUser.emailVerifiedAt !== null) {
+        throw ApiErrors.invalidInput("Email already verified");
+      }
+
       await tx
         .update(users)
         .set({ emailVerifiedAt: verifiedAt, updatedAt: verifiedAt })
