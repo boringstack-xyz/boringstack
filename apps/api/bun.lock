@@ -42,7 +42,7 @@
       "devDependencies": {
         "@boring-stack-pkg/eslint-plugin-audit-log": "0.1.1",
         "@boring-stack-pkg/eslint-plugin-bullmq": "0.1.3",
-        "@boring-stack-pkg/eslint-plugin-cache-keys": "0.1.1",
+        "@boring-stack-pkg/eslint-plugin-cache-keys": "0.1.2",
         "@boring-stack-pkg/eslint-plugin-code-flow": "0.2.0",
         "@boring-stack-pkg/eslint-plugin-comment-hygiene": "0.2.0",
         "@boring-stack-pkg/eslint-plugin-db-transactions": "0.1.1",
@@ -99,7 +99,7 @@
 
     "@boring-stack-pkg/eslint-plugin-bullmq": ["@boring-stack-pkg/eslint-plugin-bullmq@0.1.3", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0", "micromatch": "4.0.5" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-XnRrIt00cORNKdkn51HzbhgIamk+GA/MsRXlNAlenARhJUiFM+Qg1Taik6S/sL/jo578UXI3A1+Jg/SjMHfDMg=="],
 
-    "@boring-stack-pkg/eslint-plugin-cache-keys": ["@boring-stack-pkg/eslint-plugin-cache-keys@0.1.1", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-na4raplW0RIhKCQ/u5hbTduIQTSSuWQYpv+z2k8SPxP0oZ1xMoCvXu4dy8ZPPyDfrHyRZ/nIfySt2jht9yMVDw=="],
+    "@boring-stack-pkg/eslint-plugin-cache-keys": ["@boring-stack-pkg/eslint-plugin-cache-keys@0.1.2", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-WBlEOhGetPLMwQPg/77KkkmHY76l5cecly76gV9853EIcuwzhyN0yNsYkqLew5Sat/K5qi1Qgz9ypYueufio9w=="],
 
     "@boring-stack-pkg/eslint-plugin-code-flow": ["@boring-stack-pkg/eslint-plugin-code-flow@0.2.0", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-Z0FFUJdZuBANoDiP9cwPO+qZhinqyzRS+csonh8kuYMdw0CihMygyiANPUInabIM6iY3xpHckHco+OxIABYIDA=="],
 
