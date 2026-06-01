@@ -49,7 +49,7 @@ Alertmanager has no native env-var substitution in its config, so the stack ship
 
 Create a Slack app and Incoming Webhook using the [Slack guide](https://api.slack.com/messaging/webhooks). Copy the URL, then in `compose/.env`:
 
-```env
+```ini
 ALERTMANAGER_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T.../B.../...
 ALERTMANAGER_SLACK_CHANNEL=#alerts
 ```
@@ -69,7 +69,7 @@ Discord accepts Slack-format payloads at a `/slack` suffix on its webhook URL, s
 
 For custom bridges (n8n, your own alerter, PagerDuty events-v2 translators), use the generic receiver. It POSTs Alertmanager's native JSON, which differs from Slack's format:
 
-```env
+```ini
 ALERTMANAGER_WEBHOOK_URL=https://your-bridge.example.com/alerts
 ```
 

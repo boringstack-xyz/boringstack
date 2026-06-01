@@ -137,7 +137,7 @@ Existing dashboards that filter on `status_code >= 400` will see a measurable dr
 
 The forensic signal you actually want — "credentials were presented but rejected" — is now isolated and observable cleanly:
 
-```promql
+```text
 rate(http_requests_total{status="401", route=~"/api/v1/(users/me|auth/refresh|auth/mfa/status)"}[5m])
 ```
 
