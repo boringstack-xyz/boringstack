@@ -608,5 +608,16 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss()],
-  }
+    build: {
+      /*
+       * Mermaid ships large vendor chunks (mermaid.core, wardley, cytoscape,
+       * katex — each ~250–600 kB). astro-mermaid already code-splits them into
+       * their own dynamic chunks that load only on pages with diagrams, so they
+       * never touch the initial bundle. Raise the warning ceiling above the
+       * largest so the build stops flagging a non-issue we can't shrink without
+       * dropping diagram support.
+       */
+      chunkSizeWarningLimit: 700,
+    },
+  },
 });
