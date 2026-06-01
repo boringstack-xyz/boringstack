@@ -33,7 +33,13 @@ interface TemplateCatalog {
 }
 
 export default function ScriptsCatalog({ template }: ScriptsCatalogProps) {
-  const catalog = scriptsCatalog[template] as TemplateCatalog;
+  const catalog = scriptsCatalog[template] as TemplateCatalog | undefined;
+
+  if (catalog === undefined) {
+    throw new Error(
+      `ScriptsCatalog: no entry for template "${template}" in scripts-catalog.json — regenerate with \`bun run generate:scripts-docs\`.`,
+    );
+  }
 
   return (
     <div className="not-content space-y-8">
