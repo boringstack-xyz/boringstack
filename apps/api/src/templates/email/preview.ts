@@ -424,6 +424,11 @@ const main = (): void => {
   generateIndex(previews);
   console.log(`✓ Generated ${String(previews.length)} preview page(s)`);
 
+  /*
+   * PREVIEW_PORT: dev-only override for this template-preview server's port
+   * (defaults to 3002). Read directly rather than via the validated env schema
+   * because it never runs in the deployed app — only `bun run preview:templates`.
+   */
   const portEnv = process.env.PREVIEW_PORT;
   const port =
     portEnv !== undefined && portEnv !== "" ? parseInt(portEnv, 10) : 3002;
