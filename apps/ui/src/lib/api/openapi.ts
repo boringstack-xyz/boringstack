@@ -195,6 +195,7 @@ const throwOnError: Middleware = {
       message: body.message,
       code: body.code,
       fieldErrors: body.fieldErrors,
+      details: body.details,
       requestId
     });
   }

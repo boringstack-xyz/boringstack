@@ -53,8 +53,13 @@ describe("errorHandler", () => {
     expect(body.error.code).toBe("NOT_FOUND");
   });
 
-  test("Elysia VALIDATION code becomes a 400 with the field lifted into fieldErrors", () => {
+  test("Elysia VALIDATION code becomes a 400 with the field lifted into fieldErrors — value sanitized", () => {
     const set: ISet = {};
+    /*
+     * Framework error messages can embed the submitted body; we lift the
+     * field name (schema-known, safe) but replace the message with a
+     * generic "Invalid value" so no raw input reaches the client.
+     */
     const raw = new Error("password too weak");
 
     Object.assign(raw, { field: "password" });
@@ -64,7 +69,7 @@ describe("errorHandler", () => {
     expect(set.status).toBe(400);
     expect(body.error.code).toBe("VALIDATION_ERROR");
     expect(body.error.fieldErrors).toEqual({
-      password: "password too weak",
+      password: "Invalid value",
     });
   });
 
@@ -146,6 +151,66 @@ describe("errorHandler", () => {
 
     expect(set.status).toBe(400);
     expect(body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  test("VALIDATION never echoes submitted body values into the response", () => {
+    /*
+     * Elysia surfaces TypeBox validation failures with the full input
+     * embedded in the error message — including any submitted password
+     * or token field. The handler replaces the framework message with
+     * a generic one so no raw input reaches the client.
+     */
+    const set: ISet = {};
+    const leakedSecret = "SUPER_SECRET_PASSWORD_VALUE";
+    const elysiaShape = new Error(
+      `Expected required property: password\nExpected: string\nReceived: { "email": "u@example.com", "password": "${leakedSecret}" }`
+    );
+
+    const body = errorHandler({
+      code: "VALIDATION",
+      error: elysiaShape,
+      set,
+    });
+
+    expect(set.status).toBe(400);
+    expect(body.error.code).toBe("VALIDATION_ERROR");
+    expect(JSON.stringify(body)).not.toContain(leakedSecret);
+    expect(JSON.stringify(body)).not.toContain("password");
+  });
+
+  test("VALIDATION never echoes submitted body values into the log line", () => {
+    const set: ISet = {};
+    const leakedSecret = "SUPER_SECRET_PASSWORD_VALUE";
+    const elysiaShape = new Error(
+      `Expected required property: password\nReceived: { "password": "${leakedSecret}" }`
+    );
+
+    const warnSpy = spyOn(logger, "warn");
+
+    try {
+      errorHandler({ code: "VALIDATION", error: elysiaShape, set });
+
+      const calls = warnSpy.mock.calls;
+      const serialized = JSON.stringify(calls);
+
+      expect(serialized).not.toContain(leakedSecret);
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  test("PARSE never echoes submitted body bytes into the response", () => {
+    const set: ISet = {};
+    const leakedFragment = "stripeKey=sk_live_LEAKED";
+    const elysiaShape = new Error(
+      `Unexpected token at position 12: ${leakedFragment}`
+    );
+
+    const body = errorHandler({ code: "PARSE", error: elysiaShape, set });
+
+    expect(set.status).toBe(400);
+    expect(JSON.stringify(body)).not.toContain(leakedFragment);
+    expect(JSON.stringify(body)).not.toContain("sk_live");
   });
 
   test("ApiError(401) is logged at warn — not error — so anonymous-probe noise doesn't masquerade as server bugs", () => {

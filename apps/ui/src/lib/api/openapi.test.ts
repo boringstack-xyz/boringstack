@@ -319,6 +319,46 @@ describe("throwOnError middleware", () => {
     });
   });
 
+  it("preserves `details` from the API envelope (e.g. plan-limit upgrade context)", async () => {
+    /*
+     * `limitExceeded` errors carry `{ feature, current, limit }` in
+     * `details` so the upgrade prompt can render without another
+     * request. The middleware used to drop the field; this asserts the
+     * payload survives the wire.
+     */
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          success: false,
+          error: {
+            code: "LIMIT_EXCEEDED",
+            message: "Plan limit reached for max_seats",
+            details: { feature: "max_seats", current: 10, limit: 10 },
+            timestamp: "2026-06-01T00:00:00.000Z"
+          }
+        }),
+        {
+          status: 402,
+          headers: { "content-type": "application/json" }
+        }
+      )
+    );
+    const client = await importClient();
+
+    await expect(
+      (
+        client as unknown as {
+          POST: (path: string, opts?: unknown) => Promise<unknown>;
+        }
+      ).POST("/api/v1/accounts/{id}/invitations", { body: {} })
+    ).rejects.toMatchObject({
+      name: "ApiError",
+      status: 402,
+      code: "LIMIT_EXCEEDED",
+      details: { feature: "max_seats", current: 10, limit: 10 }
+    });
+  });
+
   it("unwraps the api envelope when error fields are nested under `error`", async () => {
     /*
      * The api ships a `{ success: false, error: { code, message,

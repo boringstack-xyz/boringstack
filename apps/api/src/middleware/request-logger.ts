@@ -39,4 +39,21 @@ export const requestLogger = new Elysia({ name: "request-logger" })
     if (typeof requestId === "string") {
       set.headers["x-request-id"] = requestId;
     }
+  })
+  /*
+   * `onAfterHandle` fires only on a successful handler return; thrown
+   * errors skip it and hit `onError`. Without the same header set
+   * there, every 4xx/5xx loses `x-request-id` — exactly the responses
+   * support pivots on. Mirror the assignment so the header lands
+   * regardless of which lifecycle path the response took.
+   *
+   * Fallback id: NOT_FOUND on an unmatched route fires onError before
+   * any scoped `derive` runs, so `requestId` can be undefined. Mint a
+   * fresh id in that case — the log and header still correlate, just
+   * without the request-start log entry that the normal path emits.
+   */
+  .onError({ as: "scoped" }, ({ set, requestId }) => {
+    const id = typeof requestId === "string" ? requestId : crypto.randomUUID();
+
+    set.headers["x-request-id"] = id;
   });

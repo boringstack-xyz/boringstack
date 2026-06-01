@@ -119,6 +119,11 @@ describe("dashboard routes — HTTP-level user isolation", () => {
    * Bring this test back once it can be reproduced locally against a
    * real Postgres + the bunfig preload, with a deterministic fixture
    * strategy that doesn't race with auth audit-log writes.
+   *
+   * TODO(@boringstack-xyz/maintainers): dashboard user-isolation HTTP
+   * test — restore once the audit-log race is eliminated. Coverage for
+   * the same invariant currently lives at the service layer in
+   * dashboard.service.test.ts.
    */
   test.skip("each authenticated user sees only their own data", async () => {
     if (!(await requireDb())) {
