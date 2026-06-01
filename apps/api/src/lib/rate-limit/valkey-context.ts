@@ -59,8 +59,28 @@ export class ValkeyRateLimitContext implements RateLimitContext {
   }
 
   init(options: Omit<RateLimitOptions, "context">): void {
-    this.durationMs =
-      typeof options.duration === "number" ? options.duration : 0;
+    const { duration } = options;
+
+    if (typeof duration === "number" && duration > 0) {
+      this.durationMs = duration;
+
+      return;
+    }
+
+    /*
+     * A non-positive/missing duration makes every request take the
+     * permissive fallback path below — i.e. rate limiting is silently off.
+     * That is a misconfiguration, not an infra blip, so surface it loudly
+     * instead of failing open without a trace.
+     */
+    this.durationMs = 0;
+    logger.warn(
+      "Rate-limit duration is not a positive number; Valkey rate limiting is disabled",
+      {
+        event: "rate_limit_misconfigured",
+        duration: typeof duration === "number" ? duration : null,
+      }
+    );
   }
 
   async increment(
