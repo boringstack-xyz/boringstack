@@ -140,6 +140,13 @@ describe("useLogin", () => {
       },
       response: {}
     });
+    /*
+     * useLogin's onSuccess pre-fetches /me through
+     * `syncMeAfterSessionEstablished`. Stub the follow-up call so the
+     * helper resolves immediately.
+     */
+    apiMock.GET.mockResolvedValueOnce({ data: ME_PAYLOAD });
+
     const { result } = renderHook(
       () => useLogin() as UseMutationResult<unknown, unknown, ILoginInput>,
       { wrapper: wrapper() }

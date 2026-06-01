@@ -30,7 +30,22 @@ function makeWrapper() {
   return { Wrapper, client };
 }
 
+/*
+ * The login mutation's `onSuccess` now calls
+ * `syncMeAfterSessionEstablished`, which fires GET /me with up to 5
+ * retries before resolving. Tests that exercise the happy path stub
+ * that follow-up call to return an authed envelope so the helper
+ * returns on the first attempt. Stubbing `mockResolvedValue` (not
+ * `Once`) covers the retry loop without test-by-test setup.
+ */
+const stubMeAuthed = () => {
+  apiMock.GET.mockResolvedValue({
+    data: { user: { id: "u1", email: "x@example.com" } }
+  });
+};
+
 beforeEach(() => {
+  apiMock.GET.mockReset();
   apiMock.POST.mockReset();
 });
 
@@ -41,6 +56,7 @@ describe("useLogin", () => {
     apiMock.POST.mockResolvedValueOnce({
       data: { success: true, data: { user } }
     });
+    stubMeAuthed();
 
     const { Wrapper } = makeWrapper();
     const { result } = renderHook(() => useLogin(), { wrapper: Wrapper });
@@ -72,6 +88,7 @@ describe("useLogin", () => {
     apiMock.POST.mockResolvedValueOnce({
       data: { success: true, data: { user } }
     });
+    stubMeAuthed();
 
     const { Wrapper, client } = makeWrapper();
     const invalidateSpy = vi.spyOn(client, "invalidateQueries");

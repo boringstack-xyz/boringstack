@@ -7,7 +7,7 @@ import { ApiError } from "@/lib/api/ApiError";
 import { apiClient } from "@/lib/api/client";
 import { logger } from "@/lib/logger/logger";
 
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
+import { syncMeAfterSessionEstablished } from "@/features/auth/Auth.session.sync";
 
 import {
   FAILURE_REDIRECT_PATH,
@@ -52,7 +52,15 @@ export function useVerifyEmailPage(): IVerifyEmailPageView {
     void (async (): Promise<void> => {
       try {
         await apiClient.POST("/api/v1/auth/verify-email", { body: { token } });
-        await qc.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me });
+
+        /*
+         * verify-email sets the session cookies in the same response;
+         * the SPA then redirects to /dashboard. Pre-fetch /me with
+         * short retries so the post-redirect ProtectedRoute reads
+         * authed data instead of catching the cookie-commit window
+         * mid-flight. See Auth.session.sync.ts.
+         */
+        await syncMeAfterSessionEstablished(qc);
 
         if (isCancelled()) {
           return;

@@ -8,7 +8,7 @@ import { CAPABILITIES_QUERY_KEY } from "@/lib/api/queries/capabilities.constants
 import { resolveOAuthErrorMessage } from "@/lib/auth/oauth.errors";
 import { logger } from "@/lib/logger/logger";
 
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
+import { syncMeAfterSessionEstablished } from "@/features/auth/Auth.session.sync";
 
 import {
   FAILURE_REDIRECT_PATH,
@@ -54,7 +54,14 @@ export function useOAuthCallbackPage(): IOAuthCallbackPageView {
     const controller = new AbortController();
 
     void (async (): Promise<void> => {
-      await qc.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me });
+      /*
+       * The OAuth callback redirect lands with the session cookie
+       * already set. Pre-fetch /me with short retries so the post-
+       * navigation ProtectedRoute is a cache hit, not a refetch —
+       * the same cookie-commit lag that hits the password login also
+       * hits the post-redirect callback. See Auth.session.sync.ts.
+       */
+      await syncMeAfterSessionEstablished(qc);
       await qc.invalidateQueries({ queryKey: CAPABILITIES_QUERY_KEY });
 
       if (controller.signal.aborted) {
