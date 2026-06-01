@@ -37,44 +37,55 @@ export class EmailVerificationService {
    */
   async verify(token: string): Promise<IAuthenticatedResult> {
     const tokenHash = hashOpaqueToken(token);
-    const record = await db.query.emailVerificationTokens.findFirst({
-      where: and(
-        eq(emailVerificationTokens.tokenHash, tokenHash),
-        gt(emailVerificationTokens.expiresAt, now())
-      ),
-    });
-
-    if (!record) {
-      throw ApiErrors.invalidInput("Invalid or expired verification token");
-    }
-
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, record.userId),
-    });
-
-    if (!user) {
-      throw ApiErrors.notFound("User");
-    }
-
-    if (user.emailVerifiedAt !== null) {
-      throw ApiErrors.invalidInput("Email already verified");
-    }
-
     const verifiedAt = now();
 
-    const provisioned = await db.transaction(async (tx) => {
+    const { user, provisioned } = await db.transaction(async (tx) => {
+      /*
+       * Atomic token claim. Postgres serializes concurrent DELETEs on
+       * the same row: the first call returns the deleted row, every
+       * later call sees an empty RETURNING and falls through to the
+       * "invalid or expired" branch. Without this, two parallel verify
+       * calls both pass a pre-tx existence check, both call
+       * `provisionAfterVerification`, and the user ends up with two
+       * personal accounts because that path also does select-then-
+       * insert under no unique constraint.
+       */
+      const [claimed] = await tx
+        .delete(emailVerificationTokens)
+        .where(
+          and(
+            eq(emailVerificationTokens.tokenHash, tokenHash),
+            gt(emailVerificationTokens.expiresAt, now())
+          )
+        )
+        .returning();
+
+      if (!claimed) {
+        throw ApiErrors.invalidInput("Invalid or expired verification token");
+      }
+
+      const [claimedUser] = await tx
+        .select()
+        .from(users)
+        .where(eq(users.id, claimed.userId))
+        .limit(1)
+        .for("update");
+
+      if (!claimedUser) {
+        throw ApiErrors.notFound("User");
+      }
+
       await tx
         .update(users)
         .set({ emailVerifiedAt: verifiedAt, updatedAt: verifiedAt })
-        .where(eq(users.id, user.id));
-      await tx
-        .delete(emailVerificationTokens)
-        .where(eq(emailVerificationTokens.tokenHash, tokenHash));
+        .where(eq(users.id, claimedUser.id));
 
-      return accountsService.provisionAfterVerification(
-        { userId: user.id },
+      const account = await accountsService.provisionAfterVerification(
+        { userId: claimedUser.id },
         tx
       );
+
+      return { user: claimedUser, provisioned: account };
     });
 
     /*

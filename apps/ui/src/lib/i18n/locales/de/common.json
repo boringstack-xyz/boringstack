@@ -488,7 +488,47 @@
         "roleTitle": "Diese Rolle kann keine Teammitglieder einladen",
         "roleBody": "Die aktive Mitgliedschaft ist viewer oder member, und die ACL gewährt `invite TeamMember` nur für owner und admin. Passe die Rollenregeln in `apps/ui/src/lib/acl/ability.ts` (und im Server-Spiegel `apps/api/src/lib/acl/ability.ts`) an, wenn weitere Rollen einladen dürfen sollen.",
         "roleDocsCta": "ACL & Feature-Auflösung"
+      },
+      "accept": {
+        "pageTitle": "Einladung annehmen",
+        "pending": "Einladung wird angenommen…",
+        "success": "Geschafft. Du wirst zum Dashboard weitergeleitet.",
+        "missingToken": "Diesem Link fehlt ein Token. Öffne die letzte Einladungs-E-Mail und klicke dort auf die Schaltfläche.",
+        "errorInvalid": "Diese Einladung ist nicht mehr gültig. Bitte um eine neue.",
+        "errorGeneric": "Die Einladung konnte nicht angenommen werden. Versuche es erneut oder bitte um einen neuen Link.",
+        "backToLogin": "Zurück zur Anmeldung"
       }
+    },
+    "ownershipTransfer": {
+      "pageTitle": "Eigentumsübertragung annehmen",
+      "intro": "Der aktuelle Inhaber dieses Kontos möchte es an dich übergeben. Mit der Annahme wirst du zum Inhaber; der bisherige Inhaber wird zum Admin.",
+      "missingToken": "Diesem Link fehlt ein Token. Öffne die letzte Übertragungs-E-Mail und klicke dort auf die Schaltfläche.",
+      "accept": "Eigentum übernehmen",
+      "decline": "Ablehnen",
+      "accepting": "Wird verarbeitet…",
+      "declining": "Wird verarbeitet…",
+      "successAccepted": "Du bist jetzt der Inhaber dieses Kontos.",
+      "successDeclined": "Du hast die Übertragung abgelehnt. Der aktuelle Inhaber wurde benachrichtigt.",
+      "errorInvalid": "Dieser Übertragungslink ist nicht mehr gültig.",
+      "errorGeneric": "Die Übertragung konnte nicht verarbeitet werden. Versuche es erneut.",
+      "goToAccount": "Zum Konto"
+    },
+    "joinRequests": {
+      "pageTitle": "Beitrittsanfragen",
+      "pageSubtitle": "Offene Anfragen von Nutzern mit passender E-Mail-Domain.",
+      "navLabel": "Beitrittsanfragen",
+      "empty": "Keine offenen Beitrittsanfragen.",
+      "loading": "Beitrittsanfragen werden geladen…",
+      "error": "Beitrittsanfragen konnten nicht geladen werden. Versuche es erneut.",
+      "columns": {
+        "email": "E-Mail",
+        "requested": "Angefragt",
+        "actions": "Aktionen"
+      },
+      "approve": "Annehmen",
+      "deny": "Ablehnen",
+      "approving": "Wird angenommen…",
+      "denying": "Wird abgelehnt…"
     }
   },
   "consent": {

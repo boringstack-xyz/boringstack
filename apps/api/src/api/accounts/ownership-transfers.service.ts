@@ -261,47 +261,65 @@ export class OwnershipTransfersService {
   ): Promise<IOwnershipTransfer> {
     const tokenHash = hashOpaqueToken(token);
 
-    const [transfer] = await db
-      .select()
-      .from(accountOwnershipTransfers)
-      .where(
-        and(
-          eq(accountOwnershipTransfers.tokenHash, tokenHash),
-          isNull(accountOwnershipTransfers.acceptedAt),
-          isNull(accountOwnershipTransfers.declinedAt),
-          isNull(accountOwnershipTransfers.cancelledAt)
+    return db.transaction(async (tx) => {
+      /*
+       * Mirrors `accept()`'s `FOR UPDATE`. Without the row lock, an
+       * accept running in parallel commits its UPDATE between this
+       * SELECT and a naive UPDATE-by-id, and both `acceptedAt` and
+       * `declinedAt` end up set. The row lock + a WHERE that repeats
+       * the `acceptedAt IS NULL` predicates on the UPDATE forces the
+       * loser to fall through to a clean 404.
+       */
+      const [transfer] = await tx
+        .select()
+        .from(accountOwnershipTransfers)
+        .where(
+          and(
+            eq(accountOwnershipTransfers.tokenHash, tokenHash),
+            isNull(accountOwnershipTransfers.acceptedAt),
+            isNull(accountOwnershipTransfers.declinedAt),
+            isNull(accountOwnershipTransfers.cancelledAt)
+          )
         )
-      )
-      .limit(1);
+        .limit(1)
+        .for("update");
 
-    if (!transfer) {
-      throw ApiErrors.notFound("Ownership transfer");
-    }
+      if (!transfer) {
+        throw ApiErrors.notFound("Ownership transfer");
+      }
 
-    if (transfer.toUserId !== decliningUserId) {
-      throw ApiErrors.forbidden(
-        "Only the named recipient can decline this transfer"
-      );
-    }
+      if (transfer.toUserId !== decliningUserId) {
+        throw ApiErrors.forbidden(
+          "Only the named recipient can decline this transfer"
+        );
+      }
 
-    const [declined] = await db
-      .update(accountOwnershipTransfers)
-      .set({ declinedAt: now(), updatedAt: now() })
-      .where(eq(accountOwnershipTransfers.id, transfer.id))
-      .returning();
+      const [declined] = await tx
+        .update(accountOwnershipTransfers)
+        .set({ declinedAt: now(), updatedAt: now() })
+        .where(
+          and(
+            eq(accountOwnershipTransfers.id, transfer.id),
+            isNull(accountOwnershipTransfers.acceptedAt),
+            isNull(accountOwnershipTransfers.declinedAt),
+            isNull(accountOwnershipTransfers.cancelledAt)
+          )
+        )
+        .returning();
 
-    if (!declined) {
-      throw ApiErrors.database("Failed to mark transfer declined");
-    }
+      if (!declined) {
+        throw ApiErrors.notFound("Ownership transfer");
+      }
 
-    void auditLogService.record({
-      userId: decliningUserId,
-      action: AUDIT_ACTIONS.ACCOUNT_OWNERSHIP_TRANSFER_DECLINED,
-      resource: `account:${transfer.accountId}`,
-      metadata: { transferId: transfer.id },
+      void auditLogService.record({
+        userId: decliningUserId,
+        action: AUDIT_ACTIONS.ACCOUNT_OWNERSHIP_TRANSFER_DECLINED,
+        resource: `account:${transfer.accountId}`,
+        metadata: { transferId: transfer.id },
+      });
+
+      return toOwnershipTransfer(declined);
     });
-
-    return toOwnershipTransfer(declined);
   }
 
   async cancel(
