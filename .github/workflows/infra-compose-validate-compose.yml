@@ -196,11 +196,11 @@ jobs:
 
       - name: Set up Docker Buildx
         if: steps.filter.outputs.code == 'true'
-        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       - name: Build apps/api prod image
         if: steps.filter.outputs.code == 'true'
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: apps/api
           file: apps/api/Dockerfile.prod
@@ -212,7 +212,7 @@ jobs:
 
       - name: Build apps/ui prod image
         if: steps.filter.outputs.code == 'true'
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: apps/ui
           file: apps/ui/Dockerfile.prod
