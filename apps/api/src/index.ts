@@ -34,16 +34,21 @@ try {
   throw error;
 }
 
-const app = createApp().listen(env.PORT);
-
-initializeErrorHandlers(app);
-
 /*
  * Notifications boot is unconditional — channels + events power the inline
  * dispatch path even when QUEUES_ENABLED is false.
  */
 setupNotifications();
 
+/*
+ * Queues MUST finish initializing before the HTTP listener accepts
+ * connections. Otherwise a request landing during the gap sees
+ * QUEUES_ENABLED=true but a null QueueManager, falls through to inline
+ * email send, and the operator gets unexplained latency spikes during
+ * deploys. Boot order: env invariants → notifications + queues →
+ * listen. setupQueues is allowed to throw — failure aborts the boot
+ * via `abortBootstrap`, the listener never opens.
+ */
 if (env.QUEUES_ENABLED) {
   try {
     await setupQueues();
@@ -55,5 +60,9 @@ if (env.QUEUES_ENABLED) {
     );
   }
 }
+
+const app = createApp().listen(env.PORT);
+
+initializeErrorHandlers(app);
 
 logStartup(app.server?.hostname ?? "localhost", app.server?.port ?? env.PORT);

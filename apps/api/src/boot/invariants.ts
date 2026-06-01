@@ -57,13 +57,39 @@ function checkMfaKeyDecodable(env: Env): string[] {
 }
 
 /**
+ * Reject env combinations that are individually valid but operationally
+ * dangerous when paired with `NODE_ENV=production`. Today: the e2e
+ * test-only auth helpers (force-verify a user, mint a raw reset token
+ * bypassing email) must never be reachable in prod. The env schema
+ * accepts the boolean on its own — without this gate, an operator who
+ * copy-pasted from a dev `.env` ships a prod with /__test endpoints
+ * live. The list grows as new test/debug flags appear (any env var
+ * named `*_TEST_*` or `*_DEBUG_*` should land here too).
+ */
+function checkProdSafeFlags(env: Env): string[] {
+  if (env.NODE_ENV !== "production") {
+    return [];
+  }
+
+  const violations: string[] = [];
+
+  if (env.E2E_TEST_ENDPOINTS_ENABLED) {
+    violations.push(
+      "E2E_TEST_ENDPOINTS_ENABLED is true in production. The /__test auth helpers (force-verify, raw reset token) must never be reachable in prod — unset the variable or set it to false."
+    );
+  }
+
+  return violations;
+}
+
+/**
  * Aggregate every boot invariant. Returns the list of violations
  * instead of throwing so callers can decide how to log/abort (the
  * primary caller is `assertBootInvariants` below, but tests prefer
  * to inspect the list).
  */
 export function collectBootInvariantViolations(env: Env): string[] {
-  return [...checkMfaKeyDecodable(env)];
+  return [...checkMfaKeyDecodable(env), ...checkProdSafeFlags(env)];
 }
 
 /**

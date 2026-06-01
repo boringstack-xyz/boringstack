@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 import { AUTH_COOKIE_NAME } from "../../lib/cookies";
 import { bodyLimit } from "../../middleware/body-limit";
+import { errorHandler } from "../../middleware/error-handler";
 import { metricsObserver } from "../../middleware/metrics-observer";
 import { requestLogger } from "../../middleware/request-logger";
 import { env } from "../env";
@@ -26,6 +27,19 @@ export const createApp = () => {
    * a Traefik instance — running it standalone leaves it without those headers.
    * See infra/compose/compose/docker-compose.production-labels.yml.
    */
+  /*
+   * App-level catch-all error handler. Route-level `.onError` covers
+   * thrown errors INSIDE a matched route, but Elysia's NOT_FOUND for
+   * an unmatched path (or method mismatch) never reaches a route — so
+   * without this handler the client got a plain-text Elysia default
+   * response instead of the canonical JSON envelope. With it, every
+   * unknown route also returns `{ success: false, error: { code,
+   * message, timestamp } }`, identical to handler errors.
+   */
+  app.onError(({ code, error, set }) =>
+    errorHandler({ code: String(code), error, set })
+  );
+
   const cors = buildCors();
 
   let configured = app.use(bodyLimit).use(requestLogger).use(metricsObserver);
