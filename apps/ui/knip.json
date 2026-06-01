@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/**/index.ts",
+    "src/components/ui/**/*.tsx",
+    "scripts/**/*.ts",
+    "e2e/**/*.spec.ts",
+    "tests/**/*.test.ts",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.stories.tsx"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}!",
+    "scripts/**/*.ts",
+    "e2e/**/*.ts",
+    "tests/**/*.ts",
+    "!tests/lint-meta/fixtures/**"
+  ],
+  "ignoreDependencies": ["tailwindcss"],
+  "include": ["files", "dependencies", "unlisted"]
+}

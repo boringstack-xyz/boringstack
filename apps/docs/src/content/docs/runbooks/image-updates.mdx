@@ -1,0 +1,122 @@
+---
+title: Image updates
+description: WUD detects container image updates. App images auto-deploy; base images notify-only.
+---
+
+WUD (What's Up Docker) watches your running containers and applies a hybrid policy in production. When you push to the api or ui, new GHCR tags are auto-pulled and deployed. Base services like Postgres, Valkey, and Traefik only generate notifications so you can review release notes before updating.
+
+## How WUD reads container labels
+
+WUD checks the labels in your compose files to decide which images to auto-update and which to notify-only. In `docker-compose.yml`, labels like this control the behavior:
+
+```yaml
+services:
+  api:
+    image: ghcr.io/your-org/your-fork-api:latest
+    labels:
+      wud.trigger: docker
+```
+
+The `wud.trigger: docker` label tells WUD to watch this image and auto-recreate the container when a new tag is published. Without this label, WUD reports updates but doesn't recreate.
+
+## Setup
+
+Add optional notification channels to `compose/.env`:
+
+```bash
+# Discord
+WUD_DISCORD_WEBHOOK=https://discord.com/api/webhooks/...
+
+# Slack
+WUD_SLACK_BOT_TOKEN=xoxb-...
+WUD_SLACK_CHANNEL=docker-updates
+```
+
+For private GHCR images:
+
+```bash
+WUD_GHCR_USERNAME=your-gh-username
+WUD_GHCR_TOKEN=ghp_xxx
+```
+
+Override the check schedule if needed:
+
+```bash
+WUD_SCHEDULE="0 */6 * * *"   # every 6 hours instead of the default
+```
+
+Boot production:
+
+```bash
+STACK=prod ./scripts/compose-up.sh
+```
+
+WUD will start. Access the dashboard at `http://<vps-ip>:3033/` or `http://localhost:3033/` if you're on the VPS.
+
+## Hybrid policy explained
+
+**App images (api, ui):**
+
+- Labeled with `wud.trigger: docker` in the compose file.
+- WUD auto-pulls new `:latest` tags and recreates containers.
+- No downtime (rolling restart during the pull).
+
+**Base images (postgres, valkey, traefik):**
+
+- No trigger label, or labeled differently.
+- WUD reports available updates on the dashboard and via notifications.
+- You read release notes, take backups (especially for Postgres), then update manually.
+
+**Manual base-image updates:**
+
+When you decide to upgrade Postgres or Traefik:
+
+1. Take a backup (see [Backups](/runbooks/backups/)).
+2. Edit the pinned tag in `infra/compose/compose/docker-compose.yml`:
+
+```yaml
+postgres:
+  image: postgres:17.1   # was postgres:17.0
+```
+
+3. Recreate the service:
+
+```bash
+docker compose pull postgres
+docker compose up -d postgres
+```
+
+4. Check the logs:
+
+```bash
+docker compose logs postgres | tail -20
+```
+
+## Notifications
+
+Dashboard at `:3033` always works. Slack and Discord integration is optional; enable only the channels you want. WUD delivers notifications for:
+
+- New app image tags (auto-deploying).
+- New base image tags (notify-only, for you to review).
+- Failed check runs (network issues, etc.).
+
+## Disable WUD
+
+If you don't want automatic app deployments:
+
+```bash
+WITH_WUD=0 STACK=prod ./scripts/compose-up.sh
+```
+
+Then manually trigger updates with:
+
+```bash
+docker compose pull api ui
+docker compose up -d api ui
+```
+
+## Related
+
+- [Deployment](/topics/deployment/)  - the production workflow WUD fits into.
+- [Backups](/runbooks/backups/)  - how to snapshot before upgrading Postgres.
+- [Profiles & overlays](/infra/profiles-and-overlays/)  - how `WITH_WUD=1` works.

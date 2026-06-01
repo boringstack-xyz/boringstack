@@ -1,0 +1,273 @@
+# Default alert rules shipped with BoringStack observability.
+#
+# Wire-up: prometheus.yml loads this file via `rule_files: [./rules.yml]`.
+# Alerts fan out through alertmanager.yml — add a slack_configs /
+# webhook_configs entry to the `default` receiver to turn alerts into
+# messages.
+#
+# Thresholds are conservative defaults for a single-host BoringStack
+# deployment. Tune per workload — a busy app may legitimately push
+# 4xx/5xx counts higher than a quiet one.
+
+groups:
+  - name: boringstack-api
+    interval: 30s
+    rules:
+      - alert: ApiServerErrorsHigh
+        # Traefik labels every service router so we can rate by service.
+        # api router pattern is `api@docker`; the regex covers prefix
+        # changes in case of multi-instance scaling.
+        expr: |
+          sum by (service)
+            (rate(traefik_service_requests_total{service=~"api.*",code=~"5.."}[5m]))
+          /
+          clamp_min(
+            sum by (service)
+              (rate(traefik_service_requests_total{service=~"api.*"}[5m])),
+            0.001
+          )
+          > 0.01
+        for: 5m
+        labels:
+          severity: page
+          component: api
+        annotations:
+          summary: "API 5xx rate above 1% for 5 minutes"
+          description: |
+            5xx responses on {{ $labels.service }} exceed 1% of traffic over the last 5 minutes.
+            Inspect: docker compose logs api --tail=200; check Grafana → API dashboard.
+
+      - alert: ApiServerErrorsCritical
+        expr: |
+          sum by (service)
+            (rate(traefik_service_requests_total{service=~"api.*",code=~"5.."}[5m]))
+          /
+          clamp_min(
+            sum by (service)
+              (rate(traefik_service_requests_total{service=~"api.*"}[5m])),
+            0.001
+          )
+          > 0.05
+        for: 2m
+        labels:
+          severity: page
+          component: api
+        annotations:
+          summary: "API 5xx rate above 5% for 2 minutes — critical"
+          description: |
+            Critical degradation on {{ $labels.service }} — more than 1 in 20 requests is failing.
+
+      - alert: ApiLatencyP95High
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le, service)
+              (rate(traefik_service_request_duration_seconds_bucket{service=~"api.*"}[5m]))
+          ) > 1
+        for: 10m
+        labels:
+          severity: warn
+          component: api
+        annotations:
+          summary: "API p95 latency above 1s for 10 minutes"
+          description: |
+            p95 latency on {{ $labels.service }} is {{ $value | humanizeDuration }} — slow path or saturated upstream.
+
+      - alert: ApiUnreachable
+        # Traefik stops reporting metrics for a downed service; absent()
+        # fires if the metric series disappears entirely.
+        expr: |
+          absent_over_time(traefik_service_requests_total{service=~"api.*"}[5m]) == 1
+        for: 3m
+        labels:
+          severity: page
+          component: api
+        annotations:
+          summary: "API has not served a request in 5 minutes"
+          description: |
+            Traefik is not reporting any successful or failed requests
+            for the api service. Verify the container is healthy and
+            Traefik can reach it.
+
+      - alert: NodeEventLoopLagging
+        # Event loop lag p99 above 200ms means the loop is taking too
+        # long to dispatch callbacks — every request gets at least that
+        # much added latency on top of its own work. Common causes:
+        # sync FS calls, JSON.parse of large bodies, regex catastrophes,
+        # CPU-bound work outside a worker thread.
+        expr: |
+          nodejs_eventloop_lag_p99_seconds{app="boringstack-api"} > 0.2
+        for: 5m
+        labels:
+          severity: warn
+          component: api
+        annotations:
+          summary: "Node event-loop lag p99 above 200ms for 5 minutes"
+          description: |
+            p99 callback dispatch lag is {{ $value | humanizeDuration }}.
+            The loop can't keep up — investigate via Grafana → API
+            dashboard (Event-loop lag panel) and the Tempo traces for
+            slow spans. Profile candidates: sync APIs, large JSON
+            payloads, CPU-bound paths that should move to a worker.
+
+      - alert: NodeEventLoopBlocked
+        # p99 over 1 second means the service is effectively unresponsive
+        # to new work for noticeable stretches. Page immediately — at
+        # this point requests are queueing and users are seeing it.
+        expr: |
+          nodejs_eventloop_lag_p99_seconds{app="boringstack-api"} > 1
+        for: 2m
+        labels:
+          severity: page
+          component: api
+        annotations:
+          summary: "Node event-loop lag p99 above 1s — service effectively blocked"
+          description: |
+            The Node runtime can't keep up with the work queued on the
+            event loop. Requests are stacking. Most likely a single
+            blocking operation hot path — `process.stack` / profiler /
+            `bun --inspect` to find it.
+
+      - alert: NodeEventLoopSaturated
+        # ELU (event loop utilization) sustained above 90% means there's
+        # no headroom — the next burst of traffic tips you into queueing.
+        # Lag may still look fine if the loop is just keeping up.
+        expr: |
+          avg_over_time(nodejs_eventloop_utilization{app="boringstack-api"}[5m]) > 0.9
+        for: 10m
+        labels:
+          severity: warn
+          component: api
+        annotations:
+          summary: "Node event-loop utilization above 90% for 10 minutes"
+          description: |
+            ELU is {{ $value | humanizePercentage }} over the last 5
+            minutes. The loop is keeping up *for now* but has no
+            headroom. Either scale out, or find what's keeping the loop
+            busy via the Tempo trace waterfalls and refactor toward
+            async / worker threads.
+
+  - name: boringstack-database
+    interval: 30s
+    rules:
+      - alert: PostgresDown
+        expr: pg_up == 0
+        for: 2m
+        labels:
+          severity: page
+          component: database
+        annotations:
+          summary: "Postgres is unreachable from the exporter"
+          description: |
+            postgres-exporter cannot connect to Postgres. Stack is degraded.
+
+      - alert: PostgresConnectionsHigh
+        # max_connections defaults to 100; alert at 80% to allow time to
+        # reduce pool size or scale up before refusing connections.
+        expr: |
+          sum(pg_stat_activity_count) by (datname)
+          /
+          sum(pg_settings_max_connections) by ()
+          > 0.8
+        for: 5m
+        labels:
+          severity: warn
+          component: database
+        annotations:
+          summary: "Postgres connection count above 80% of max"
+          description: |
+            {{ $value | humanizePercentage }} of max connections in use on
+            {{ $labels.datname }}. Lower `DATABASE_POOL_SIZE` or scale up.
+
+      - alert: PostgresReplicationLagHigh
+        # No-op when there are no replicas (series absent → expr false).
+        expr: pg_replication_lag_seconds > 60
+        for: 5m
+        labels:
+          severity: warn
+          component: database
+        annotations:
+          summary: "Postgres replication lag above 60s"
+          description: |
+            Replication is behind by {{ $value | humanizeDuration }}. Replicas may serve stale reads.
+
+  - name: boringstack-host
+    interval: 30s
+    rules:
+      - alert: DiskSpaceLow
+        # Filesystem types ext4/xfs/btrfs only — skips tmpfs/overlay.
+        expr: |
+          (node_filesystem_avail_bytes{fstype=~"ext4|xfs|btrfs"}
+           / node_filesystem_size_bytes{fstype=~"ext4|xfs|btrfs"})
+          < 0.10
+        for: 5m
+        labels:
+          severity: warn
+          component: host
+        annotations:
+          summary: "Filesystem {{ $labels.mountpoint }} below 10% free"
+          description: |
+            Free space on {{ $labels.mountpoint }} is {{ $value | humanizePercentage }}.
+            Common culprits: docker volumes, large logs (`docker system df`).
+
+      - alert: DiskSpaceCritical
+        expr: |
+          (node_filesystem_avail_bytes{fstype=~"ext4|xfs|btrfs"}
+           / node_filesystem_size_bytes{fstype=~"ext4|xfs|btrfs"})
+          < 0.05
+        for: 2m
+        labels:
+          severity: page
+          component: host
+        annotations:
+          summary: "Filesystem {{ $labels.mountpoint }} below 5% free — critical"
+
+      - alert: MemoryPressureHigh
+        # node_exporter's MemAvailable counts cache as available, so this
+        # only fires when the kernel is genuinely under pressure.
+        expr: |
+          (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) < 0.10
+        for: 10m
+        labels:
+          severity: warn
+          component: host
+        annotations:
+          summary: "Less than 10% memory available for 10 minutes"
+
+      - alert: HostCpuSaturated
+        # 5-min load average divided by core count. > 1 sustained means
+        # the runqueue is saturated and latency goes up.
+        expr: |
+          (node_load5 / count without (cpu, mode) (node_cpu_seconds_total{mode="idle"})) > 1.5
+        for: 15m
+        labels:
+          severity: warn
+          component: host
+        annotations:
+          summary: "Host load5 / cpu-count above 1.5 for 15 minutes"
+
+      - alert: NodeExporterDown
+        expr: up{job="node"} == 0
+        for: 3m
+        labels:
+          severity: warn
+          component: host
+        annotations:
+          summary: "node-exporter is not responding"
+          description: |
+            Host metrics will be stale until the exporter is restarted.
+
+  - name: boringstack-edge
+    interval: 30s
+    rules:
+      - alert: TraefikDown
+        expr: up{job="traefik"} == 0
+        for: 2m
+        labels:
+          severity: page
+          component: edge
+        annotations:
+          summary: "Traefik metrics endpoint is unreachable"
+          description: |
+            Traefik is the only path into the stack. If this is real (not
+            just metrics flapping), the site is down.

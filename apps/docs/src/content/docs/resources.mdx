@@ -1,0 +1,21 @@
+---
+title: Resources
+description: Command-line tools that pair well with the BoringStack workflow.
+---
+
+A short list of CLI tools that pull their weight when you're working with the stack day to day. Reading and communities live on the [Before you build](/before-you-build/) page, since they belong with the mindset rather than the toolbox.
+
+## Command-line tools
+
+- **[lazydocker](https://github.com/jesseduffield/lazydocker)**. TUI dashboard for Docker. Faster than `docker ps`, `docker logs`, and `docker stats` in three separate tabs. Reach for it whenever something in the compose stack is misbehaving.
+- **[lazygit](https://github.com/jesseduffield/lazygit)**. Same author, same shape, for git. Staging hunks, browsing history, and resolving conflicts without typing `git`.
+- **[1Password CLI (`op`)](https://developer.1password.com/docs/cli/)**. What the deployment docs assume. Keeps secrets in 1Password and injects them at deploy time, so no plaintext credential lives on your disk or in the repo for long.
+- **[gh CLI](https://cli.github.com/)**. Used throughout the docs for PRs, runs, releases, and reading CI status without leaving the terminal.
+- **[ripgrep (`rg`)](https://github.com/BurntSushi/ripgrep)** and **[fd](https://github.com/sharkdp/fd)**. Faster grep and find. First thing to install on a fresh machine.
+- **[jq](https://jqlang.org/)**. JSON wrangling on the command line. Useful for poking the API in dev.
+- **[pgcli](https://www.pgcli.com/)**. Autocompleting Postgres REPL. Replaces `psql` for nearly everything you'd do interactively.
+
+## Related BoringStack pages
+
+- [Before you build](/before-you-build/), the mindset, reading, and communities that pair with the engineering.
+- [Spec loop](/skills/spec-loop/), the spec-driven workflow for working with agents.

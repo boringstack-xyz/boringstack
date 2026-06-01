@@ -1,0 +1,1 @@
+export const NOTIFICATION_BELL_BADGE_CAP = 99;

@@ -1,0 +1,106 @@
+---
+title: Monorepo layout
+description: How the BoringStack monorepo is organized, apps, infra, docs, and cross-app contracts.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+BoringStack ships as a single monorepo. API, UI, docs site, and Compose infrastructure live in one tree with path-filtered CI and root-level `bun run regen` / `bun run check` for cross-app contracts. Click **Use this template** on the boringstack-xyz/boringstack GitHub repo to create your fork; all pieces come in one clone.
+
+## Top-level directories
+
+```
+boringstack/
+  apps/api/               Bun + Elysia HTTP API; Drizzle schema + migrations
+  apps/ui/               Vite + React SPA; OpenAPI client generated from /swagger/json
+  apps/docs/             Astro Starlight site (boringstack.xyz)
+  infra/compose/         Docker Compose runtime; services, env vars, profiles, overlays
+  infra/bootstrap/       Optional OpenTofu for VPS provisioning on Hetzner + Cloudflare
+```
+
+Each app keeps its own `package.json`, lockfile, and lint config. CI workflows (`.github/workflows/`) have path filters like `apps/api/**` and `infra/compose/**` so each app's changes trigger only its own pipeline.
+
+### Why one repo?
+
+**Smaller context:** Open `apps/ui` for UI work without loading the entire API schema graph.
+
+**Independent releases:** API and UI each publish their own GHCR image. Compose pins versions via env vars.
+
+**Explicit join points:** OpenAPI schema, ACL types, lint-meta RULES, and docs catalogs are regenerated from the repo root with `bun run regen`, so drift is caught by CI.
+
+## Compose build contexts
+
+The `infra/compose/compose/docker-compose.yml` defines `api-dev`, `api`, `ui-dev`, and `ui` services with build contexts pointing back to `../../../apps/api` and `../../../apps/ui`. In prod, the default `image:` reference pulls pre-built images from GHCR published by release workflows; in dev, `build:` reads the local source and sets up a bind mount for hot reload.
+
+Env files:
+- `compose/.env.example`: base stack and observability vars.
+- `compose/api.dev.env.example`: API-specific dev overrides.
+- `compose/api.prod.env.example`: API-specific prod secrets (JWT, MFA key, etc.).
+
+Orchestration:
+- `compose/dev.sh` reads `STACK=` and `WITH_*=` to assemble the `docker-compose` invocation with the right overlays and profiles.
+
+## What lives where
+
+### apps/api
+
+HTTP routes, auth, OAuth, password hashing, email send and provider
+abstraction, BullMQ jobs and queue workers, audit log writes, Drizzle
+schema and migrations.
+
+### apps/ui
+
+Pages, components, queries, stores, routes. OpenAPI client generated
+from `/swagger/json`. i18n (en, de), shadcn/ui components, Storybook,
+Playwright e2e.
+
+### infra/compose
+
+docker-compose YAMLs and profile overlays. Prometheus, Grafana, Loki,
+Promtail configs. Traefik labels, ACME, security middlewares. Backup
+scripts and runbooks.
+
+### apps/docs
+
+boringstack.xyz Starlight site. Generated lint-meta and scripts
+tooling catalogs.
+
+### infra/bootstrap (optional)
+
+Hetzner provisioning, Cloudflare DNS, cloud-init.
+
+## Cross-app contracts
+
+From the **repo root**:
+
+```bash
+bun run regen   # ACL types → OpenAPI schema → RULES.md → docs JSON
+bun run check   # drift checks (api on :7330 required for OpenAPI check)
+```
+
+| Contract | Producer | Consumer | Generated artifact |
+|----------|----------|----------|-------------------|
+| ACL types | `apps/api` | `apps/ui` | `apps/ui/src/lib/acl/acl.types.generated.ts` |
+| OpenAPI | `apps/api` `/swagger/json` | `apps/ui` | `apps/ui/src/lib/api/schema.d.ts` |
+| lint-meta | each app `scripts/lint-meta/` | committed `RULES.md` | per app |
+| Docs catalogs | api + ui scripts/README | `apps/docs` | `src/data/*.json` |
+
+CI runs the same checks from one checkout on GitHub `main`.
+
+## The contract between API and UI
+
+The API exposes its OpenAPI document at `/swagger/json`. The UI ships `bun run generate:api` that reads that document and rewrites `src/lib/api/schema.d.ts`. When the API changes routes, the UI either fails typecheck or you run `bun run regen` at the repo root.
+
+See [OpenAPI client](/ui/openapi-client/) for the full flow.
+
+## The contract between infra and the apps
+
+`infra/compose/compose/docker-compose.yml` defines `api-dev` / `api` / `ui-dev` / `ui` services whose build context is `apps/api` and `apps/ui`. Env vars are documented in `compose/api.dev.env.example` and `compose/api.prod.env.example`.
+
+In prod the default `image:` reference pulls a pre-built image from GHCR, published by the release workflows. See [Deployment](/topics/deployment/).
+
+## Related
+
+- [Separation of concerns](/architecture/separation-of-concerns/)
+- [Why BoringStack](/architecture/why-boringstack/)
+- [Commands cheatsheet](/reference/commands/)

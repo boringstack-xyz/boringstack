@@ -1,0 +1,40 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# build
+/dist
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# env
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# vendor lockfiles we don't ship (we use bun.lock)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# logs / archives / traces
+**/*.log
+**/*.trace
+**/*.zip
+**/*.tar.gz
+**/*.tgz
+**/*.bun

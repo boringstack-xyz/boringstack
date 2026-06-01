@@ -1,0 +1,21 @@
+{
+  "name": "UI Template Dev Container",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    "ghcr.io/oven-sh/features/bun:1": {
+      "version": "1.3.13"
+    }
+  },
+  "forwardPorts": [7331, 6006],
+  "postCreateCommand": "bun install --frozen-lockfile && bunx playwright install --with-deps chromium",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  }
+}

@@ -1,0 +1,140 @@
+---
+title: "Recipe: Add a service to Compose"
+description: Add a container as an opt-in overlay with resource limits and Traefik routing. Estimated 20 minutes.
+verifiedOn: "2026-05"
+---
+
+Add a container to the Compose stack as an optional overlay. The core stack stays lean; opt-in services (search, caching, dashboards) get their own flag and resource budget. Worked example: adding Meilisearch.
+
+Estimated time: 20 minutes.
+
+## Overview
+
+Create three files:
+1. `docker-compose.meilisearch.yml`  - the service
+2. `docker-compose.meilisearch-dev-labels.yml`  - Traefik routing for dev
+3. `docker-compose.meilisearch-prod-labels.yml`  - HTTPS + BasicAuth for prod
+
+Wire the flag into `dev.sh`, document in `.env.example`, boot with `WITH_MEILISEARCH=1`.
+
+## 1. Create the service file
+
+`infra/compose/compose/docker-compose.meilisearch.yml`:
+
+```yaml
+services:
+  meilisearch:
+    image: getmeili/meilisearch:v1.10
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY is required}
+      MEILI_NO_ANALYTICS: "true"
+    volumes:
+      - meilisearch_data:/meili_data
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "${MEILI_LIMITS_CPUS:-0.5}"
+          memory: "${MEILI_LIMITS_MEMORY:-512M}"
+        reservations:
+          cpus: "${MEILI_LIMITS_CPUS_RESERVATION:-0.1}"
+          memory: "${MEILI_LIMITS_MEMORY_RESERVATION:-128M}"
+
+volumes:
+  meilisearch_data:
+```
+
+Always declare `deploy.resources.limits` and `reservations`. A runaway overlay without limits starves the base stack. Copy the pattern from existing overlays and adjust for your service.
+
+## 2. Add dev routing
+
+`infra/compose/compose/docker-compose.meilisearch-dev-labels.yml`:
+
+```yaml
+services:
+  meilisearch:
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.meilisearch.rule: Host(`meilisearch.localhost`)
+      traefik.http.services.meilisearch.loadbalancer.server.port: "7700"
+```
+
+This exposes the service at `http://meilisearch.localhost` during development.
+
+## 3. Add prod routing
+
+`infra/compose/compose/docker-compose.meilisearch-prod-labels.yml`:
+
+```yaml
+services:
+  meilisearch:
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.meilisearch.rule: Host(`search.example.com`)
+      traefik.http.routers.meilisearch.entrypoints: websecure
+      traefik.http.routers.meilisearch.tls: "true"
+      traefik.http.middlewares.meilisearch-auth.basicauth.users: admin:$$2y$$...
+      traefik.http.routers.meilisearch.middlewares: meilisearch-auth
+      traefik.http.services.meilisearch.loadbalancer.server.port: "7700"
+```
+
+This puts HTTPS + BasicAuth in front of the service in production. Follow the GlitchTip prod overlay as a reference for the exact pattern.
+
+## 4. Wire the flag
+
+In `infra/compose/compose/dev.sh`, find the case block and add:
+
+```bash
+if [ "${WITH_MEILISEARCH:-0}" = "1" ]; then
+  COMPOSE_FILES+=( "-f" "compose/docker-compose.meilisearch.yml" )
+  COMPOSE_FILES+=( "-f" "compose/docker-compose.meilisearch-dev-labels.yml" )
+fi
+```
+
+## 5. Document in .env.example
+
+```bash
+# Meilisearch (WITH_MEILISEARCH=1)
+MEILI_MASTER_KEY=<set-from-your-secret-manager>
+MEILI_LIMITS_CPUS=0.5
+MEILI_LIMITS_MEMORY=512M
+```
+
+## 6. Boot it
+
+```bash
+WITH_MEILISEARCH=1 ./scripts/compose-up.sh
+```
+
+Verify:
+
+```bash
+# Container is running
+docker compose ps | grep meilisearch
+
+# Volume exists
+docker volume ls | grep meilisearch
+
+# Dev URL responds
+curl http://meilisearch.localhost/health
+```
+
+You can stack multiple flags:
+
+```bash
+WITH_MEILISEARCH=1 WITH_OBSERVABILITY=1 ./scripts/compose-up.sh
+```
+
+## Key points
+
+- **Resource limits are mandatory**: Every overlay must declare `deploy.resources.limits` and `reservations`. Without them, a stuck service starves the whole stack on a small VPS.
+- **Overlay model keeps base clean**: The base `docker-compose.yml` never grows. Each optional service lives in its own file.
+- **Idempotent**: `./scripts/compose-down.sh` then re-up preserves volumes, so data persists across restarts.
+
+## Related
+
+- [Profiles & overlays](/infra/profiles-and-overlays/)  - how the overlay system works.
+- [Resource limits](/infra/resource-limits/)  - the per-service budget convention.
+- [Secrets](/infra/secrets/)  - how env values reach containers safely.

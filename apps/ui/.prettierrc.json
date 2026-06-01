@@ -1,0 +1,31 @@
+{
+  "printWidth": 80,
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": true,
+  "singleQuote": false,
+  "jsxSingleQuote": true,
+  "trailingComma": "none",
+  "bracketSpacing": true,
+  "arrowParens": "always",
+  "endOfLine": "lf",
+  "plugins": [
+    "@trivago/prettier-plugin-sort-imports",
+    "prettier-plugin-tailwindcss"
+  ],
+  "importOrder": [
+    "^(react|react-dom|react-router-dom)$",
+    "^@?\\w",
+    "^@/lib/(.*)$",
+    "^@/store/(.*)$",
+    "^@/hooks/(.*)$",
+    "^@/components/(.*)$",
+    "^@/features/(.*)$",
+    "^@/assets/(.*)$",
+    "^@/(.*)$",
+    "^\\."
+  ],
+  "importOrderSeparation": true,
+  "importOrderSortSpecifiers": true,
+  "tailwindFunctions": ["classNames", "cn", "clsx", "twMerge"]
+}

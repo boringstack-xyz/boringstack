@@ -1,0 +1,108 @@
+---
+import getReadingTime from "reading-time";
+
+const { entry } = Astro.locals.starlightRoute;
+const body = typeof entry?.body === "string" ? entry.body : "";
+const minutesRead = body ? getReadingTime(body).text : null;
+const verifiedOn = entry?.data?.verifiedOn as string | undefined;
+---
+
+<h1 id="_top" class="sl-flex" data-page-title>{entry.data.title}</h1>
+<div class="bs-meta-row">
+  {
+    minutesRead && (
+      <p class="bs-reading-time" aria-label={`Estimated reading time: ${minutesRead}`}>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="8" cy="8" r="6.5" />
+          <path d="M8 4.5V8l2.25 2.25" />
+        </svg>
+        <span>{minutesRead}</span>
+      </p>
+    )
+  }
+  {
+    verifiedOn && (
+      <p class="bs-verified" aria-label={`Content verified in ${verifiedOn}`}>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M3 8.5 7 12l6-7" />
+        </svg>
+        <span>Verified {verifiedOn}</span>
+      </p>
+    )
+  }
+</div>
+
+<style>
+  h1 {
+    margin: 0;
+    color: var(--sl-color-white);
+    font-size: var(--sl-text-h1);
+    line-height: var(--sl-line-height-headings);
+    font-weight: 600;
+  }
+
+  .bs-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.55rem;
+  }
+
+  .bs-reading-time,
+  .bs-verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0.15rem 0.55rem 0.15rem 0.4rem;
+    border-radius: 999px;
+    background: rgba(74, 222, 128, 0.08);
+    border: 1px solid rgba(74, 222, 128, 0.22);
+    color: var(--sl-color-text-accent);
+    font-size: 0.78rem;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    width: fit-content;
+  }
+
+  .bs-verified {
+    background: rgba(103, 232, 249, 0.07);
+    border-color: rgba(103, 232, 249, 0.22);
+    color: color-mix(in srgb, var(--bs-doc-cyan, #67e8f9) 78%, white);
+  }
+
+  .bs-reading-time svg,
+  .bs-verified svg {
+    width: 0.85rem;
+    height: 0.85rem;
+    opacity: 0.85;
+  }
+
+  :root[data-theme="light"] .bs-reading-time {
+    background: rgba(21, 128, 61, 0.06);
+    border-color: rgba(21, 128, 61, 0.2);
+  }
+
+  :root[data-theme="light"] .bs-verified {
+    background: rgba(14, 116, 144, 0.06);
+    border-color: rgba(14, 116, 144, 0.22);
+    color: #155e75;
+  }
+</style>

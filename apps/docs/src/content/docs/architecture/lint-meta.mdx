@@ -1,0 +1,45 @@
+---
+title: lint:meta rules
+description: Static repo enforcement rules that run alongside ESLint, package.json pins, CI parity, env cascade drift, source-text bans, and test coverage contracts.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import LintMetaCatalog from "../../../components/docs-kit/LintMetaCatalog";
+
+ESLint enforces architecture inside TypeScript modules. `lint:meta` catches repo-level drift ESLint cannot see: unpinned GitHub Actions, env cascade gaps, forbidden inline disables, cross-repo imports, and missing test siblings. It runs inside `bun run validate`.
+
+## Merge gate stack
+
+```
+typecheck → ESLint → lint:meta → knip → tests
+```
+
+<Aside type="tip" title="Machine-readable source">
+  Each template registers rules in <code>scripts/lint-meta/registry.ts</code>.
+  This page is generated from that registry, add a rule, run the generator, and
+  CI keeps the docs aligned.
+</Aside>
+
+## apps/ui rules
+
+<LintMetaCatalog template="ui" />
+
+## apps/api rules
+
+<LintMetaCatalog template="api" />
+
+Implementation lives under `scripts/lint-meta/` in each template.
+
+## Adding a rule
+
+1. Implement `IMetaRule` under `scripts/lint-meta/rules/<category>/`
+2. Register it in `scripts/lint-meta/registry.ts`
+3. Run `bun run generate:lint-meta-docs` (ui) or `bun run generate:lint-meta-docs` (api)
+4. Run the boringstack docs generators and commit the updated JSON catalogs
+5. Add a test under `tests/lint-meta/`
+
+## Related
+
+- [Lint as the contract](/architecture/lint-as-contract/), ESLint plugin inventory
+- [Scripts & tooling](/reference/scripts-tooling/), which script runs `lint:meta`
+- [Commands cheatsheet](/reference/commands/), day-to-day workflow commands

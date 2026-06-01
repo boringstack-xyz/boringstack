@@ -1,0 +1,97 @@
+---
+title: "Infra template: overview"
+description: docker-compose for single-host deployments. Postgres + Valkey + Traefik, with optional overlays for observability, error tracking, queue dashboards, and image-update detection.
+---
+
+`infra/compose` composes `apps/api` and `apps/ui` into one running stack. It targets your laptop and a first VPS before you need cluster machinery, while keeping observability, email, and queue tooling close to the app.
+
+## Service inventory
+
+The base stack (always on):
+- **postgres** - Always-on app database
+- **valkey** - Redis-protocol cache plus BullMQ queue backend
+- **traefik** - Prod reverse proxy, ACME, and one-domain path routing
+- **api-migrate** - One-shot schema push plus optional superuser seed
+- **api-dev / api** - Bun + Elysia in dev, GHCR image in production
+- **ui-dev / ui** - Vite dev server locally, nginx static image in production
+
+Optional overlays:
+- **observability** - Prometheus, Grafana, Loki, Promtail, and exporters
+- **error tracking** - GlitchTip
+- **mail and queue tools** - Mailpit, Bull Board, WUD image-update detector
+
+## Profile model
+
+The profile system uses environment flags to compose overlays over the base stack:
+
+```bash
+./dev.sh up -d                         # default: api + ui + postgres + valkey + observability + glitchtip
+STACK=prod ./dev.sh up -d              # prod: GHCR images, Traefik, HTTPS via ACME (same defaults)
+WITH_OBSERVABILITY=0 ./dev.sh up -d    # skip observability
+WITH_GLITCHTIP=0 ./dev.sh up -d        # skip glitchtip
+WITH_BULLMQ=1 ./dev.sh up -d           # add bull board (opt-in)
+WITH_WUD=1 ./dev.sh up -d              # add WUD image-update detector (opt-in)
+WITH_MAILPIT=1 ./dev.sh up -d          # add Mailpit local SMTP (opt-in)
+```
+
+The default stack includes Prometheus, Grafana, Loki, and GlitchTip. Niche tooling (Bull Board, WUD, Mailpit) is opt-in. See [Profiles & overlays](/infra/profiles-and-overlays/).
+
+## File layout
+
+Under `infra/compose/`:
+
+**compose/** - Compose files and per-profile service overlays
+- `docker-compose.yml` - Base: postgres, valkey, api-migrate, api/ui, Traefik in prod
+- `docker-compose.development-labels.yml` - Dev overlay: host-published data ports
+- `docker-compose.production-labels.yml` - Prod overlay: HTTPS, ACME, path routing, security headers
+- `docker-compose.observability.yml` - Prometheus, Grafana, Loki, Promtail, exporters
+- `docker-compose.glitchtip.yml` - GlitchTip dev + prod
+- `docker-compose.glitchtip-prod-labels.yml` - Prod-only HTTPS + BasicAuth labels
+- `docker-compose.bullmq.yml` - Bull Board in development
+- `docker-compose.wud.yml` - WUD image-update detector
+- `docker-compose.mailpit.yml` - Local SMTP catcher in development
+- `dev.sh` - Orchestrator
+- `.env.example` - All knobs in one file
+- `prometheus/` - Scrape config
+- `grafana/` - Datasource provisioning
+- `alertmanager/` - Alert routes
+- `promtail/` - Log scrape config
+- `glitchtip/` - init-db.sql
+
+**scripts/** - Operational wrappers
+- `compose-up.sh` - bring the stack up
+- `compose-down.sh` - stop without deleting data
+- `compose-down-clean.sh` - clean local services intentionally
+- `backup-wrapper.example.sh` - Postgres to rclone, with retention
+- `ufw.example.sh` - UFW + Cloudflare IP allowlist
+- `glitchtip-bootstrap.sh` - Prod GlitchTip migrate + superuser
+
+**docs/** - Runbooks and cheatsheets
+
+## Networks
+
+Two bridge networks. Services are split on purpose:
+
+**backend (data plane).** postgres, valkey, api[-dev], api-migrate, exporters, glitchtip, and mailpit.
+
+**frontend (ingress).** traefik in prod, ui[-dev], and glitchtip-web. Traefik joins both when it needs to route.
+
+In prod, Traefik joins both networks so it can route HTTPS from `frontend` to services on `backend`. The data plane (Postgres, Valkey) is never exposed to `frontend`.
+
+## Resource budgets
+
+Every service has `deploy.resources.limits` and `reservations` driven by env vars with sane defaults sized for a 4-vCPU / 8 GB host. Adjust in `compose/.env`; see [Resource limits](/infra/resource-limits/) for sizing guidance.
+
+## What's not in this template
+
+- Kubernetes manifests. This template is Compose-first; mixing Compose and cluster YAML in the starter would blur the deployment path BoringStack keeps intentionally clear.
+- Application code. The apps/api and apps/ui own that.
+- Cloud-provider provisioning. The [OpenTofu bootstrap](/topics/provisioning-with-tofu/) in `infra/bootstrap` handles that.
+
+## Related
+
+- [Profiles & overlays](/infra/profiles-and-overlays/); how the `WITH_*=1` flags compose over the base.
+- [Resource limits](/infra/resource-limits/); the per-service budgets sized for a 4 vCPU / 8 GB host.
+- [Secrets](/infra/secrets/); how env values reach containers without leaking into images.
+- [Deployment](/topics/deployment/); the production runtime path end-to-end.
+- [Provisioning with OpenTofu](/topics/provisioning-with-tofu/); going from zero to a live VPS.

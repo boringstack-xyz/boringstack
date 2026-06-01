@@ -1,0 +1,71 @@
+---
+description: Core rules for the UI template (Vite + React SPA). Apply to every change in this repo.
+globs: ["src/**/*", "tests/**/*", "e2e/**/*"]
+alwaysApply: true
+---
+
+# UI template — agent rules
+
+## Start here
+
+1. Read **AGENT_CONTRACT.md** for the merge bar, file-suffix table, and ESLint plugin map.
+2. Read **AGENTS.md** for component anatomy, classNames discipline, state-in-hooks rule, queries, stores, RHF + Zod, i18n.
+3. **SECURITY.md** for CSP / token storage / OAuth PKCE.
+
+`bun run validate` is the merge gate. If repo rules conflict with the codebase, follow the codebase and flag the drift.
+
+## Before claiming work is done
+
+After any code change in this repo, run **`bun run validate`** (or at minimum **`bun run check`** while iterating, then full validate before finishing). Do not say the work is done, fixed, or passing unless the relevant command has succeeded in this session and you cite the result. If validate fails, fix it before responding.
+
+## CI runs this repo in isolation
+
+GitHub Actions checks out **ui-template only** — not api-template or other siblings. Relative imports that escape this repo (e.g. `../../../api-template/...`) can typecheck in a local monorepo but fail in CI with `TS2307`. `lint:meta` enforces `no-cross-repo-import`. For cross-template contracts (OAuth providers, ACL types, OpenAPI), duplicate the canonical value here and keep it in sync with a colocated test or codegen — never import sibling repos.
+
+## Hard rules (lint-enforced)
+
+- No `any`. Use `unknown` and narrow.
+- No `!` non-null assertion.
+- No blind `as` casts; boundary assertions must be narrow and justified.
+- No `useState`/`useReducer`/`useEffect` in `*.tsx` — move them to `*.hooks.ts`.
+- No inline arrow/function expressions in JSX attributes. Handlers are function references.
+- No data computation (`.map().filter()`, ternaries, arithmetic) inside JSX expressions — extract to the hook.
+- `className=` may not contain ternaries or template literals. Use `classNames(...)` or `cn(...)`.
+- No `dark:` Tailwind classes.
+- No `console.*` — use `logger.{debug,info,warn,error}({ event, ... })`.
+- No raw runtime env reads in `src/**` outside `src/lib/env/`.
+- No raw `fetch` outside `src/lib/api/openapi.ts`.
+- No imports of `@tanstack/react-query` / `zustand` / `react-router-dom` inside `*.tsx` files. Compose in `*.hooks.ts`.
+- Hardcoded user-facing strings go through `react-i18next`'s `t()`.
+- Interfaces are named `I<Name>`. forwardRef components must set `.displayName`.
+
+## Component anatomy
+
+Every `<ComponentName>/` folder must contain:
+
+```
+ComponentName/
+├── ComponentName.tsx        # Pure JSX, no state
+├── ComponentName.hooks.ts   # All state, effects, handlers
+├── ComponentName.types.ts   # IComponentNameProps + view interfaces
+├── ComponentName.constants.ts
+├── ComponentName.stories.tsx  # `export const Default`
+├── ComponentName.test.tsx
+└── index.ts                 # `export { default as ComponentName } from "./ComponentName";`
+```
+
+Exception: `src/components/ui/**` is shadcn/ui territory (flat, single-file). It is lint-exempt.
+
+## Feature-folder layout
+
+```
+src/features/<feature>/
+├── <Feature>.queries.ts        # TanStack Query hooks
+├── <Feature>.store.ts          # Zustand (optional)
+├── <Feature>.schemas.ts        # Zod
+├── <Feature>.types.ts          # z.infer types
+├── <Feature>.constants.ts      # Query keys, endpoints
+├── <Feature>.utils.ts          # Pure helpers
+└── components/
+    └── <ComponentName>/        # Full 8-file anatomy
+```

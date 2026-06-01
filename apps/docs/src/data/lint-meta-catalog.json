@@ -1,0 +1,270 @@
+{
+  "ui": [
+    {
+      "id": "package-json-exact-deps",
+      "category": "supply-chain",
+      "ciCritical": false,
+      "description": "dependencies and devDependencies must use exact versions; peerDependencies must use caret (^)."
+    },
+    {
+      "id": "no-overlapping-libs",
+      "category": "supply-chain",
+      "ciCritical": false,
+      "description": "package.json must not list forbidden overlapping library pairs."
+    },
+    {
+      "id": "github-actions-permissions",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "GitHub Actions workflows require permissions block and SHA-pinned uses: refs."
+    },
+    {
+      "id": "github-actions-permissions:verify",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Pinned action SHAs resolve on github.com (lint:meta:verify only)."
+    },
+    {
+      "id": "pre-push-ci-parity",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "CI workflow must include every command listed in scripts/ci/pre-push.manifest.json."
+    },
+    {
+      "id": "engine-pin-parity",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Node and Bun version pins must stay aligned across .nvmrc, package.json, Docker, and CI."
+    },
+    {
+      "id": "env-cascade-drift",
+      "category": "env",
+      "ciCritical": false,
+      "description": "Vite env keys must align across schema.ts, .env.example, and vite-env.d.ts."
+    },
+    {
+      "id": "env-no-direct-import-meta-env",
+      "category": "env",
+      "ciCritical": false,
+      "description": "Single entry point for env: every source file outside env.loader.ts must import the typed `env` object instead of reading `import.meta.env` directly."
+    },
+    {
+      "id": "generated-artifact-contract",
+      "category": "artifacts",
+      "ciCritical": false,
+      "description": "Generated ACL types and OpenAPI schema files must exist with required banner text."
+    },
+    {
+      "id": "modulepreload-size-limit-coverage",
+      "category": "artifacts",
+      "ciCritical": false,
+      "description": ".size-limit.json must include globs for all modulepreload entry chunks."
+    },
+    {
+      "id": "canonical-helpers-single-home",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Helpers in the canonical registry must only be declared in their single source-of-truth file."
+    },
+    {
+      "id": "forbidden-text",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Source files must not contain inline lint/TS suppressions, raw HTML, direct env access, raw fetch, or banned Tailwind dark-mode variant classes."
+    },
+    {
+      "id": "no-inline-lint-disable",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Inline ESLint disables are not allowed."
+    },
+    {
+      "id": "no-ts-ignore",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "TypeScript suppression comments are not allowed."
+    },
+    {
+      "id": "no-dangerous-html",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Raw HTML rendering requires a dedicated sanitizer and security review."
+    },
+    {
+      "id": "env-access",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Read Vite env through src/lib/env only."
+    },
+    {
+      "id": "no-raw-fetch",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Use the typed apiClient; raw fetch is restricted to src/lib/api/openapi."
+    },
+    {
+      "id": "no-dark-variant",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "The `dark:` Tailwind variant is banned."
+    },
+    {
+      "id": "no-cross-repo-import",
+      "category": "source-text",
+      "ciCritical": true,
+      "description": "Relative imports must stay inside apps/ui; no backend or infra source paths."
+    },
+    {
+      "id": "no-raw-role-literal",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Use ROLE.* from acl.types instead of raw owner/admin/member/viewer string literals."
+    },
+    {
+      "id": "no-raw-fetch-scripts",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Scripts must not call global fetch except github-actions-permissions.ts (lint:meta --verify SHA check)."
+    },
+    {
+      "id": "queries-no-silent-error-swallow",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "*.queries.ts files must not silently swallow query errors as `null`. Let the typed error propagate so consumers can distinguish auth from outage; opt-out per-catch with `// allow-silent: <reason>` when an explicit null is genuinely the right contract."
+    },
+    {
+      "id": "logic-files-require-test-sibling",
+      "category": "testing",
+      "ciCritical": false,
+      "description": "Logic modules must ship with a colocated *.test.ts or *.test.tsx sibling."
+    },
+    {
+      "id": "skipped-tests-need-tracking",
+      "category": "testing",
+      "ciCritical": false,
+      "description": "Skipped tests (.skip/.only/xit/xdescribe) must carry an issue URL or TODO(@owner) so the debt has a tracked owner."
+    },
+    {
+      "id": "eslint-config-no-warn",
+      "category": "config",
+      "ciCritical": false,
+      "description": "ESLint severities must be \"error\" or \"off\", not \"warn\"."
+    }
+  ],
+  "api": [
+    {
+      "id": "package-json-exact-deps",
+      "category": "supply-chain",
+      "ciCritical": false,
+      "description": "dependencies and devDependencies must use exact versions (no ranges)."
+    },
+    {
+      "id": "no-overlapping-libs",
+      "category": "supply-chain",
+      "ciCritical": false,
+      "description": "package.json must not list forbidden overlapping library pairs."
+    },
+    {
+      "id": "github-actions-permissions",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "GitHub Actions workflows require permissions block and SHA-pinned uses: refs."
+    },
+    {
+      "id": "github-actions-permissions:verify",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Pinned action SHAs resolve on github.com (lint:meta:verify only)."
+    },
+    {
+      "id": "pre-push-ci-parity",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "CI workflow must include every command listed in scripts/ci/pre-push.manifest.json."
+    },
+    {
+      "id": "engine-pin-parity",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Bun version pin must stay aligned across package.json, Docker, and CI."
+    },
+    {
+      "id": "env-cascade-drift",
+      "category": "env",
+      "ciCritical": false,
+      "description": "TypeBox env schema keys must align with .env.example documentation."
+    },
+    {
+      "id": "env-no-direct-process-env",
+      "category": "env",
+      "ciCritical": false,
+      "description": "Single entry point for env: every source file outside validate.ts must import the typed `env` object instead of reading `process.env` directly."
+    },
+    {
+      "id": "generated-artifact-contract",
+      "category": "artifacts",
+      "ciCritical": false,
+      "description": "Sibling apps/ui generated ACL and OpenAPI files must carry required banner text."
+    },
+    {
+      "id": "forbidden-text",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Source files must not contain inline lint/TS suppression comments."
+    },
+    {
+      "id": "no-inline-lint-disable",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Inline ESLint disables are not allowed."
+    },
+    {
+      "id": "no-ts-ignore",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "TypeScript suppression comments are not allowed."
+    },
+    {
+      "id": "canonical-helpers-single-home",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Helpers in the canonical registry must only be declared in their single source-of-truth file."
+    },
+    {
+      "id": "no-raw-role-literal",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Use ROLE.* from acl.constants.ts instead of raw owner/admin/member/viewer string literals."
+    },
+    {
+      "id": "routes-require-test-sibling",
+      "category": "testing",
+      "ciCritical": false,
+      "description": "Route modules must ship with a matching HTTP-level test under tests/api/."
+    },
+    {
+      "id": "logic-files-require-test-sibling",
+      "category": "testing",
+      "ciCritical": false,
+      "description": "Logic modules must ship with a matching tests/**/*.test.ts sibling."
+    },
+    {
+      "id": "skipped-tests-need-tracking",
+      "category": "testing",
+      "ciCritical": false,
+      "description": "Skipped tests (.skip/.only/xit/xdescribe) must carry an issue URL or TODO(@owner) so the debt has a tracked owner."
+    },
+    {
+      "id": "touch-tests-too",
+      "category": "testing",
+      "ciCritical": false,
+      "description": "Modified logic/route files must include a matching test change (opt-in via LINT_META_TOUCHED_BASE)."
+    },
+    {
+      "id": "eslint-config-no-warn",
+      "category": "config",
+      "ciCritical": false,
+      "description": "ESLint severities must be \"error\" or \"off\", not \"warn\"."
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+---
+title: Page not found
+description: That page moved or never existed. Here's where to go instead.
+template: splash
+editUrl: false
+hero:
+  tagline: That page moved or never existed. Try one of these instead, or hit ⌘K to search the whole site.
+  actions:
+    - text: Quickstart
+      link: /quickstart/
+      icon: right-arrow
+      variant: primary
+    - text: Why BoringStack
+      link: /architecture/why-boringstack/
+      icon: right-arrow
+      variant: minimal
+    - text: Stack at a glance
+      link: /architecture/stack/
+      icon: right-arrow
+      variant: minimal
+    - text: View on GitHub
+      link: https://github.com/boringstack-xyz
+      icon: external
+      variant: minimal
+---
+
+import DocCallout from "../../components/DocCallout";
+
+<DocCallout eyebrow="Search" title="Use Pagefind search" variant="tip">
+  Press <kbd>⌘K</kbd> (or <kbd>Ctrl+K</kbd>) anywhere on the site to search
+  every page. The index covers headings, body text, and code samples. Typing
+  what you remember beats browsing.
+</DocCallout>
+
+## Popular starting points
+
+- **[Quickstart](/quickstart/)**: use the template, boot Compose, sign in.
+- **[Why BoringStack](/architecture/why-boringstack/)**: the thesis, the fit check, and what's in the box.
+- **[Stack at a glance](/architecture/stack/)**: runtime, libraries, and tools, one place.
+- **[Commands cheatsheet](/reference/commands/)**: every command you'll run on a normal day.
+- **[Lint as the contract](/architecture/lint-as-contract/)**: the rules that hold the architecture in place.
+- **[Deployment](/topics/deployment/)**: production runtime path from local boot to a live VPS.

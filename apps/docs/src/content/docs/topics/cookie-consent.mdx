@@ -1,0 +1,82 @@
+---
+title: Cookie consent
+description: How the in-house cookie banner works, what categories it tracks, how to gate analytics scripts on user consent, and why BoringStack ships its own instead of a third-party widget.
+---
+
+BoringStack ships a custom-built cookie consent banner in the UI
+template, not a third-party widget. It's ~3 KB of code, sends nothing
+externally, and is fully lint-gated.
+
+## Why in-house
+
+Third-party banners (cookiebot, iubenda, OneTrust, …) are surprisingly
+heavyweight: 300–700 KB of blocking JS, external network calls before
+consent is granted (itself a regulatory grey area), per-domain
+accounts to set up, and zero ability for your stack's lint rules to
+catch a mis-wired analytics call.
+
+A 100-line zustand store + a banner component does the same job at
+~2 KB without sending anything to a third party, and the lint
+plugin can refuse to merge a `posthog.capture(...)` outside a
+`useIsConsentCategoryEnabled('analytics')` gate.
+
+## What it tracks
+
+Three categories, persisted in `localStorage` under
+`bs.cookie-consent.v1`:
+
+| Category | Default | What it covers |
+| --- | --- | --- |
+| `essential` | always on (locked) | Auth, CSRF, session, language preference. The app can't sign you in without these. |
+| `analytics` | off | First-party product analytics (page views, feature usage). Never sent to a third party without explicit consent. |
+| `marketing` | off | Cross-site identifiers used by ad / campaign tooling. Most forks won't need this category, strip the row in `CookieConsentBanner.tsx` if so. |
+
+The store also persists `configuredAt`, the ISO timestamp of the
+choice, useful for compliance audits ("when did this user consent?").
+The key is versioned (`.v1`) so a future model change re-prompts
+existing users instead of silently inheriting a stale answer.
+
+## How to gate code on consent
+
+```tsx
+import { useIsConsentCategoryEnabled } from "@/features/consent";
+
+function AnalyticsHook() {
+  const analyticsEnabled = useIsConsentCategoryEnabled("analytics");
+
+  useEffect(() => {
+    if (!analyticsEnabled) {
+      return;
+    }
+    // load your analytics here
+  }, [analyticsEnabled]);
+
+  return null;
+}
+```
+
+`useIsConsentCategoryEnabled` returns `false` until the user has
+explicitly configured consent, opt-in, not opt-out, so callers can
+safely gate analytics / marketing scripts on it without leaking before
+the banner is dismissed.
+
+## How to change a user's choice
+
+Surface a "Cookie preferences" entry in your settings menu that calls
+`useCookieConsentStore.getState().reset()`, the next page render
+shows the banner again with the previous categories pre-selected.
+
+## Files
+
+- `apps/ui/src/features/consent/CookieConsent.store.ts`, zustand
+  store with `persist` middleware
+- `apps/ui/src/features/consent/CookieConsent.types.ts`, category
+  definitions
+- `apps/ui/src/features/consent/CookieConsentBanner/`, banner + modal
+  components, hooks, and tests
+- `apps/ui/src/app/App.tsx`, banner mounted at the root
+
+## Related
+
+- [Privacy policy](/topics/privacy/)
+- [Terms of service](/topics/terms/)

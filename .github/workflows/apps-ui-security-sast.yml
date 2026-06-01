@@ -1,0 +1,95 @@
+name: security-sast
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/ui/**"
+      - ".github/workflows/apps-ui-security-sast.yml"
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "29 6 * * 1"
+
+concurrency:
+  group: apps-ui-security-sast-security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: read
+
+jobs:
+  semgrep:
+    name: semgrep SAST
+    defaults:
+      run:
+        working-directory: apps/ui
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: semgrep/semgrep:1.142.0
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      # The semgrep container runs as root, while the runner-prepared
+      # workspace is owned by the runner user (uid != 0). Subsequent git
+      # invocations (post-checkout cleanup, semgrep's --baseline-commit
+      # diffing) bail out with `fatal: detected dubious ownership in
+      # repository` unless we trust the workspace path explicitly.
+      # Override working-directory because the job default (`apps/ui`)
+      # is a child of the workspace.
+      - name: Trust the runner-prepared workspace
+        working-directory: ${{ github.workspace }}
+        run: git config --global --add safe.directory '*'
+
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'apps/ui/**'
+              - '.github/workflows/apps-ui-security-sast.yml'
+
+      - name: Compute baseline
+        if: steps.filter.outputs.code == 'true'
+        id: baseline
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "ref=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ref=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run semgrep
+        if: steps.filter.outputs.code == 'true'
+        shell: bash
+        run: |
+          BASELINE="${{ steps.baseline.outputs.ref }}"
+          ARGS=(
+            scan
+            --config=p/owasp-top-ten
+            --config=p/javascript
+            --config=p/typescript
+            --config=p/react
+            --config=.semgrep/ui.yml
+            --sarif --output=semgrep-results.sarif
+            --error
+          )
+          if [ -n "$BASELINE" ]; then
+            ARGS+=(--baseline-commit="$BASELINE")
+          fi
+          semgrep "${ARGS[@]}"
+
+      - name: Upload semgrep SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@7c1e4cf0b20d7c1872b26569c00ba908797a59bf # v4
+        with:
+          sarif_file: semgrep-results.sarif
+          category: semgrep
+        continue-on-error: true

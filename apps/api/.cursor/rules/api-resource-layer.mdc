@@ -1,0 +1,35 @@
+---
+description: Elysia resource folders — file roles, wiring, layer boundaries
+globs:
+  - "**/src/api/**/*.ts"
+  - "**/src/config/routes.ts"
+  - "**/src/config/app.ts"
+  - "**/src/config/swagger.ts"
+alwaysApply: false
+---
+
+# Resource modules (`src/api/<camelName>/`)
+
+## File roles (strict separation)
+
+- **`<name>.schemas.ts`** — TypeBox via `t.*` from Elysia only. API validation only; **never** import `src/clients/postgres/schema` or define DB row types here.
+- **`<name>.types.ts`** — Drizzle-derived types only: `InferSelectModel` / `InferInsertModel` from `src/clients/postgres/schema`. No Elysia/TypeBox.
+- **`<name>.service.ts`** — Business logic and Drizzle access. **No** `t.*`, **no** Elysia imports. Throw `ApiErrors.*` from `src/errors`, not `new Error(...)`.
+- **`<name>.routes.ts`** — Elysia routes only: delegate to the service; declare `body` / `params` / `query` / `response` schemas. Use `String(code)` in `onError` (no `as` casts).
+
+## Wiring new routes
+
+After adding or changing a route module, update:
+
+1. [src/config/routes.ts](mdc:src/config/routes.ts) — add the route object to `routes`.
+2. [src/config/app.ts](mdc:src/config/app.ts) — mount with `.group("/api/v1/...", (group) => group.use(routes.<name>))`.
+3. [src/config/swagger.ts](mdc:src/config/swagger.ts) — add an OpenAPI `tags` entry for the feature.
+
+## Database
+
+- Tables live in [src/clients/postgres/schema/*.schema.ts](mdc:src/clients/postgres/schema/). Use Drizzle builders only; no string-concatenated SQL.
+- Multi-step writes use `db.transaction`. Inserts that return rows must handle empty `returning()` results and throw `ApiErrors.internal` when appropriate.
+
+## ESLint
+
+Import boundaries for `src/api/**` suffixes are enforced in [eslint.config.js](mdc:eslint.config.js) (`no-restricted-imports`). Summary table: [AGENT_CONTRACT.md](mdc:AGENT_CONTRACT.md). If lint fails after an import change, move the import to the correct suffix.

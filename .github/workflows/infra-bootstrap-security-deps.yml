@@ -1,0 +1,58 @@
+name: security-deps
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/bootstrap/**"
+      - ".github/workflows/infra-bootstrap-security-deps.yml"
+  pull_request:
+    paths:
+      - "infra/bootstrap/**"
+      - ".github/workflows/infra-bootstrap-security-deps.yml"
+  schedule:
+    - cron: "23 6 * * 1"
+
+concurrency:
+  group: infra-bootstrap-security-deps-security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    name: dep vuln scan (osv + audit)
+    defaults:
+      run:
+        working-directory: infra/bootstrap
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Trivy `config` mode scans the .tf files directly for misconfigurations
+      # + known-CVE providers. Works for OpenTofu (which moved its registry
+      # domain off registry.terraform.io, breaking osv-scanner's extractor).
+      - name: Trivy IaC misconfig + CVE scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: infra/bootstrap
+          format: sarif
+          output: trivy-results.sarif
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          # Skip the lock file specifically — OpenTofu's format isn't
+          # parsed; the .tf files are what we care about.
+          skip-files: ".terraform.lock.hcl"
+
+      - name: Upload trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@7c1e4cf0b20d7c1872b26569c00ba908797a59bf # v4
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy
+        continue-on-error: true

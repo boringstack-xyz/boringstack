@@ -1,0 +1,24 @@
+node_modules
+dist
+storybook-static
+playwright-report
+test-results
+coverage
+.lighthouseci
+
+.pnpm-store/
+
+# Visual regression baselines are platform-specific (font rendering, AA).
+# Each developer regenerates locally with `bun run e2e:visual:update`.
+# CI does not run visual regression — see CONTRIBUTING.md.
+e2e/**/*-snapshots/
+.env
+.env.local
+.env.*.local
+.eslintcache
+.DS_Store
+*.log
+.idea
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json

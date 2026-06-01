@@ -1,0 +1,110 @@
+---
+# Promtail config — scrapes docker container logs from the host's docker
+# log dir and ships them to Loki. Labels each stream with the compose
+# project + service so LogQL queries like `{compose_service="api-dev"}`
+# work out of the box.
+#
+# For containers that emit Pino JSON (api-dev, api), an extra pipeline
+# parses the JSON, promotes Pino's numeric `level` to a readable label
+# (`level_name=info|warn|error|...`), and surfaces `requestId` / `trace_id`
+# / `span_id` as structured metadata so `{level_name="error"}` and
+# `| json | trace_id="..."` queries both work without re-parsing strings.
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # Non-Pino containers (postgres, valkey, traefik, grafana, etc.) — just
+  # label by compose service and ship the raw line.
+  - job_name: docker-plain
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["com.docker.compose.project=boringstack-infra"]
+    relabel_configs:
+      # Skip Pino-speaking containers (handled by the next job with JSON parsing).
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        regex: "^(api-dev|api|api-migrate|api-migrate-dev)$"
+        action: drop
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        target_label: "compose_service"
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_project"]
+        target_label: "compose_project"
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: "container"
+
+  # Pino-speaking containers (api + api-migrate variants). Parse JSON,
+  # promote level + key correlation IDs.
+  - job_name: docker-api-pino
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["com.docker.compose.project=boringstack-infra"]
+    relabel_configs:
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        regex: "^(api-dev|api|api-migrate|api-migrate-dev)$"
+        action: keep
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        target_label: "compose_service"
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_project"]
+        target_label: "compose_project"
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: "container"
+    pipeline_stages:
+      # Pino JSON shape (apps/api uses a level formatter that emits the
+      # level as an uppercase string, not Pino's default numeric form):
+      # {"level":"INFO","time":1700000000000,"pid":1,"requestId":"...",
+      #  "trace_id":"...","span_id":"...","msg":"...","name":"api"}
+      #
+      # Plain-text container output (e.g. Drizzle SQL query logs that
+      # bypass Pino) just falls through this pipeline — the JSON stage
+      # sees no JSON, extracts nothing, and the output stage leaves the
+      # original line in place.
+      - json:
+          expressions:
+            level: level
+            time: time
+            requestId: requestId
+            trace_id: trace_id
+            span_id: span_id
+            userId: userId
+            msg: msg
+      # Lowercase Pino's level ("INFO" → "info"). Promote as the `level`
+      # label so Grafana's logs panel auto-colours each line by severity.
+      # Note: Promtail's template stage exposes Go's strings.ToLower as
+      # `ToLower` (capital T) — `toLower` from Sprig is NOT registered
+      # here. Using the lowercase form crashes the container with
+      # `function "toLower" not defined` at config load.
+      - template:
+          source: level
+          template: '{{ ToLower .level }}'
+      - labels:
+          level:
+      # High-cardinality correlation IDs go into structured metadata
+      # (Loki 3+), not labels — promoting them to labels would explode
+      # the stream count.
+      - structured_metadata:
+          requestId:
+          trace_id:
+          span_id:
+          userId:
+      # Use Pino's `time` (epoch ms) as the log entry timestamp.
+      - timestamp:
+          source: time
+          format: UnixMs
+      # Render the human-readable line as just `msg` (raw JSON still
+      # query-able via `| json` if you need other fields).
+      - output:
+          source: msg

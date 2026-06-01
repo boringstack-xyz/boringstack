@@ -1,0 +1,54 @@
+---
+title: Architecture rules
+description: "The UI-specific lint rules that hold the component anatomy in place: hook placement, className discipline, file-naming, prop ordering."
+---
+
+The apps/ui enforces its architecture through ESLint. The UI-specific plugin is [`@boring-stack-pkg/eslint-plugin-react-component-architecture`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-react-component-architecture), which composes with the shared plugins (resource-architecture, module-boundaries, structured-logging, env-access, test-conventions, code-flow) that both apps use.
+
+Architecture is not vibes; it's compile-time enforcement across 7 rule categories.
+
+## What it enforces
+
+**Component anatomy.** No hooks in `.tsx`; logic belongs in `.hooks.ts`.
+
+**Single semantic module.** Constants, utils, and types each get their own file (`.constants.ts`, `.utils.ts`, `.types.ts`).
+
+**className discipline.** Use `cn(...)`; pull long class strings out for readable conditionals.
+
+**File naming.** PascalCase components; kebab-case otherwise; suffix matches role (`.hooks.ts`, `.queries.ts`, `.store.ts`).
+
+**Prop ordering.** Required props, optional props, then handlers.
+
+**View object boundary.** Components read the hook's view object; no direct TanStack Query, Zustand, or `import.meta.env`.
+
+**Queries layer.** `useQuery` only in `*.queries.ts`; component hooks call those query hooks.
+
+Each rule has a fix-it suggestion where mechanical; the rest fail the lint gate and need a real edit.
+
+## Why the rules work
+
+Pure `.tsx` files are snapshot-friendly: one render assertion, no hook setup.
+
+Hooks return a typed view object, so you test with `renderHook` and no DOM. Module boundaries keep logic out of `.tsx`, so deadline edits don't collapse into one file.
+
+Consistent file suffixes (`.hooks.ts`, `.queries.ts`, `.store.ts`) create the same layout in every feature folder, making the codebase navigable at scale.
+
+## Suppressing a rule
+
+`// eslint-disable-next-line <rule>` works, but every suppression is reviewed. Common valid cases:
+
+- Third-party render-prop APIs that force a hook-like pattern in `.tsx`.
+- Sub-components that have no state but are too small to split into their own folder. Inline them; the lint rule has a size threshold.
+
+If you find yourself suppressing the same rule across many files, that's a signal to update the rule, not to keep suppressing.
+
+## Source
+
+Plugin source + per-rule docs: [`@boring-stack-pkg/eslint-plugin-react-component-architecture`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-react-component-architecture). apps/ui ESLint config: [`eslint.config.mjs`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/ui/eslint.config.mjs).
+
+## Related
+
+- [Lint as the contract](/architecture/lint-as-contract/): the full family across apps/api and apps/ui.
+- [lint:meta rules](/architecture/lint-meta/): static constraints under `scripts/lint-meta/`.
+- [Scripts & tooling](/reference/scripts-tooling/): command → script map for apps/ui.
+- [UI template overview](/ui/overview/): the component anatomy these rules enforce.

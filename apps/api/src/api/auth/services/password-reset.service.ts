@@ -1,0 +1,227 @@
+import { now, nowMs } from "../../../lib/time/now";
+import { and, eq, gt } from "drizzle-orm";
+import { db } from "../../../clients/postgres";
+import {
+  passwordResetTokens,
+  userAuthProviders,
+  users,
+} from "../../../clients/postgres/schema";
+import { env } from "../../../config/env";
+import { logger } from "../../../config/logger";
+import { AUDIT_ACTIONS, auditLogService } from "../../../lib/audit-log";
+import { normalizeEmail, sendTemplate } from "../../../lib/email";
+import { ApiErrors, getErrorMessage } from "../../../lib/errors";
+import { notifications } from "../../../lib/notifications";
+import { passwordService } from "../../../lib/password";
+import { generateOpaqueToken, hashOpaqueToken } from "../../../lib/tokens";
+import { passwordResetCompletedEvent } from "../../notifications/events";
+import {
+  EMAIL_PROVIDER_KEY,
+  EMAIL_SUBJECTS,
+  ENUMERATION_SAFE_MESSAGES,
+  RESET_TTL_MS,
+  TEMPLATE_PATHS,
+} from "../auth.constants";
+import type { IMessageResult } from "../auth.types";
+import { sessionService } from "./session.service";
+
+export class PasswordResetService {
+  async request(email: string): Promise<IMessageResult> {
+    const normalized = normalizeEmail(email);
+    const rows = await db
+      .select({ user: users, authProvider: userAuthProviders })
+      .from(users)
+      .innerJoin(userAuthProviders, eq(users.id, userAuthProviders.userId))
+      .where(
+        and(
+          eq(users.email, normalized),
+          eq(userAuthProviders.provider, EMAIL_PROVIDER_KEY)
+        )
+      )
+      .limit(1);
+    const row = rows[0];
+
+    if (row === undefined || row.authProvider.passwordHash === "") {
+      return { message: ENUMERATION_SAFE_MESSAGES.REQUEST_PASSWORD_RESET };
+    }
+
+    const user = row.user;
+    const token = generateOpaqueToken();
+    const expiresAt = new Date(nowMs() + RESET_TTL_MS).toISOString();
+
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(passwordResetTokens)
+        .where(eq(passwordResetTokens.userId, user.id));
+
+      await tx.insert(passwordResetTokens).values({
+        userId: user.id,
+        tokenHash: hashOpaqueToken(token),
+        expiresAt,
+      });
+    });
+
+    void sendTemplate({
+      to: user.email,
+      subject: EMAIL_SUBJECTS.RESET_PASSWORD,
+      templatePath: TEMPLATE_PATHS.RESET_PASSWORD,
+      variables: {
+        preHeader: "Click the button to reset your password",
+        name: user.firstName,
+        token,
+        resetUrl: `${env.FRONTEND_URL}/reset-password`,
+        dashboardUrl: `${env.FRONTEND_URL}/dashboard`,
+      },
+    }).catch((error: unknown) => {
+      logger.error("Password reset email dispatch failed", {
+        event: "auth.password_reset_requested.email_failed",
+        userId: user.id,
+        error: getErrorMessage(error),
+      });
+    });
+
+    void auditLogService.record({
+      userId: user.id,
+      action: AUDIT_ACTIONS.AUTH_PASSWORD_RESET_REQUESTED,
+    });
+
+    return { message: ENUMERATION_SAFE_MESSAGES.REQUEST_PASSWORD_RESET };
+  }
+
+  /**
+   * Test-only helper. Mirrors what `request()` does to the DB (issues
+   * an opaque reset token, hashes it, persists it with the same TTL),
+   * but returns the raw value so an e2e test can drive the reset
+   * flow without an email round-trip. Production callers go through
+   * `request()` which never exposes the raw token.
+   */
+  async issueRawTokenForTests(
+    email: string
+  ): Promise<{ token: string; expiresAt: string } | null> {
+    const normalized = normalizeEmail(email);
+    const rows = await db
+      .select({ user: users, authProvider: userAuthProviders })
+      .from(users)
+      .innerJoin(userAuthProviders, eq(users.id, userAuthProviders.userId))
+      .where(
+        and(
+          eq(users.email, normalized),
+          eq(userAuthProviders.provider, EMAIL_PROVIDER_KEY)
+        )
+      )
+      .limit(1);
+    const row = rows[0];
+
+    if (row === undefined || row.authProvider.passwordHash === "") {
+      return null;
+    }
+
+    const token = generateOpaqueToken();
+    const expiresAt = new Date(nowMs() + RESET_TTL_MS).toISOString();
+
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(passwordResetTokens)
+        .where(eq(passwordResetTokens.userId, row.user.id));
+
+      await tx.insert(passwordResetTokens).values({
+        userId: row.user.id,
+        tokenHash: hashOpaqueToken(token),
+        expiresAt,
+      });
+    });
+
+    return { token, expiresAt };
+  }
+
+  async complete(token: string, newPassword: string): Promise<IMessageResult> {
+    const tokenHash = hashOpaqueToken(token);
+    const passwordHash = await passwordService.hash(newPassword);
+
+    const record = await db.transaction(async (tx) => {
+      /*
+       * Atomic token claim — see email-verification.service.ts for the
+       * full rationale. The pre-hash bcrypt cost runs outside the tx so
+       * a duplicate submission still pays it, but only one call gets
+       * past the DELETE...RETURNING. The loser sees an empty result
+       * and surfaces "Invalid or expired" — the user already-completed
+       * state stays consistent because nothing past the claim runs
+       * twice.
+       */
+      const [claimed] = await tx
+        .delete(passwordResetTokens)
+        .where(
+          and(
+            eq(passwordResetTokens.tokenHash, tokenHash),
+            gt(passwordResetTokens.expiresAt, now())
+          )
+        )
+        .returning();
+
+      if (!claimed) {
+        throw ApiErrors.invalidInput("Invalid or expired reset token");
+      }
+
+      const updatedProviders = await tx
+        .update(userAuthProviders)
+        .set({ passwordHash })
+        .where(
+          and(
+            eq(userAuthProviders.userId, claimed.userId),
+            eq(userAuthProviders.provider, EMAIL_PROVIDER_KEY)
+          )
+        )
+        .returning({ id: userAuthProviders.id });
+
+      if (updatedProviders.length === 0) {
+        throw ApiErrors.invalidInput("Password login is not enabled");
+      }
+
+      return claimed;
+    });
+
+    /*
+     * Bulk session revoke now also bumps the per-user JWT cutoff, so
+     * pre-reset access tokens die with the refresh sessions.
+     */
+    await sessionService.revokeAllForUser(record.userId);
+
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, record.userId),
+    });
+
+    if (user) {
+      void sendTemplate({
+        to: user.email,
+        subject: EMAIL_SUBJECTS.PASSWORD_CHANGED,
+        templatePath: TEMPLATE_PATHS.PASSWORD_CHANGED,
+        variables: {
+          preHeader: "Password change confirmation",
+          email: user.email,
+        },
+      }).catch((error: unknown) => {
+        logger.error("Failed to send password-changed notification", {
+          event: "auth.password_reset.notification_email_failed",
+          userId: user.id,
+          error: getErrorMessage(error),
+        });
+      });
+    }
+
+    void auditLogService.record({
+      userId: record.userId,
+      action: AUDIT_ACTIONS.AUTH_PASSWORD_RESET_COMPLETED,
+    });
+
+    void notifications.send(passwordResetCompletedEvent, {
+      recipientUserId: record.userId,
+      payload: {
+        securityUrl: `${env.FRONTEND_URL}/account/settings`,
+      },
+    });
+
+    return { message: "Password updated successfully" };
+  }
+}
+
+export const passwordResetService = new PasswordResetService();

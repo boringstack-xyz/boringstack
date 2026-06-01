@@ -1,0 +1,56 @@
+# Multi-stage build for production. Plain `docker build` works — no BuildKit
+# required. If you have BuildKit available, you can wrap the bun install
+# RUN in `--mount=type=cache,target=/root/.bun/install/cache` for faster
+# rebuilds; we keep the portable version here.
+FROM oven/bun:1.3.14-alpine@sha256:5acc90a93e91ff07bf72aa90a7c9f0fa189765aec90b47bdbf2152d2196383c0 AS builder
+
+WORKDIR /app
+
+# HUSKY=0 makes the `prepare` script a no-op. devDeps aren't installed in
+# --production mode, so `husky` would not be on PATH otherwise.
+ENV HUSKY=0
+
+COPY package.json bun.lock* ./
+
+RUN bun install --frozen-lockfile --production
+
+COPY . .
+
+# Builds the email-template JSONs into src/templates/email/dist/, then bundles
+# the API into /app/dist. Both are needed at runtime.
+RUN bun run build
+
+# Production stage
+FROM oven/bun:1.3.14-alpine@sha256:5acc90a93e91ff07bf72aa90a7c9f0fa189765aec90b47bdbf2152d2196383c0 AS production
+
+RUN apk add --no-cache dumb-init
+
+# Non-root user (k8s-friendly fixed UID/GID). `oven/bun:1.3.14-alpine@sha256:5acc90a93e91ff07bf72aa90a7c9f0fa189765aec90b47bdbf2152d2196383c0` ships
+# with a `bun` user/UID 1000 already; we add our own at 1001 to avoid
+# collisions and so prod images run as a deliberate, named user.
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S app -u 1001 -G nodejs
+
+WORKDIR /app
+
+COPY --from=builder --chown=app:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=app:nodejs /app/dist ./dist
+COPY --from=builder --chown=app:nodejs /app/package.json ./
+# Precompiled email templates loaded at runtime by EmailTemplateService.
+COPY --from=builder --chown=app:nodejs /app/src/templates/email/dist ./src/templates/email/dist
+
+RUN mkdir -p /app/logs && chown -R app:nodejs /app
+
+USER app
+
+EXPOSE 7330
+
+ENV NODE_ENV=production
+ENV BUN_ENV=production
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:7330/health || exit 1
+
+ENTRYPOINT ["dumb-init", "--"]
+
+CMD ["bun", "run", "dist/index.js"]

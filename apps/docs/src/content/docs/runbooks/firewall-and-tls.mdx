@@ -1,0 +1,106 @@
+---
+title: Firewall & TLS
+description: UFW rules + Cloudflare IP allowlist + Traefik ACME for a single-VPS deployment.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+Secure your single VPS with UFW firewall rules that allow only Cloudflare IPs on ports 80/443, plus SSH access. Traefik on the VPS requests TLS certificates from Let's Encrypt via ACME HTTP-01 and redirects plain HTTP to HTTPS.
+
+If you provisioned via [OpenTofu](/topics/provisioning-with-tofu/), the Hetzner cloud firewall already enforces the Cloudflare-only allowlist at the provider level. This UFW setup is for manually-provisioned hosts, or as defense-in-depth on top of the cloud firewall.
+
+## What you'll have
+
+- Inbound port 22 (SSH): open from anywhere (adjust `SSH_PORT` if you've moved it).
+- Inbound ports 80, 443: only from Cloudflare IP ranges (IPv4 + IPv6).
+- All other inbound: dropped.
+- Outbound: unrestricted.
+- Traefik: HTTPS via Let's Encrypt, auto-renewing, HTTP redirects to HTTPS.
+
+## Prerequisites
+
+- Your domain's DNS is on Cloudflare in proxied mode (orange cloud).
+- The server has a static IPv4 address.
+- An ACME contact email (real address; Let's Encrypt rejects `example.com`).
+
+<Aside type="caution">
+The script `infra/compose/scripts/ufw.example.sh` resets your UFW configuration. Read it before running against a production server. It requires `CONFIRM=yes` to prevent accidents.
+</Aside>
+
+## 1. Configure the domain and ACME email
+
+```bash
+echo 'PUBLIC_UI_HOST=example.com' >> compose/.env
+echo 'ACME_EMAIL=ops@example.com' >> compose/.env
+```
+
+The domain must resolve to this server via a Cloudflare proxied A/AAAA record on the apex. BoringStack routes `/api/*` and `/*` to the same Traefik instance on one cert.
+
+## 2. Boot the production stack
+
+```bash
+STACK=prod ./scripts/compose-up.sh
+```
+
+Traefik will request ACME certificates on first boot. Watch the logs:
+
+```bash
+docker compose logs traefik | grep -i acme
+```
+
+Wait for `obtain certificate` to complete before applying UFW rules.
+
+## 3. Apply the firewall script
+
+```bash
+CONFIRM=yes ./scripts/ufw.example.sh
+```
+
+The script fetches current Cloudflare IP ranges and applies UFW rules:
+
+```
+UFW reset and rules applied
+Port 22: ALLOW from anywhere
+Ports 80,443: ALLOW from Cloudflare ranges only
+```
+
+## 4. Verify
+
+Three checks:
+
+```bash
+# Local (self-signed OK)
+curl -sI -H 'Host: example.com' https://localhost/health -k
+
+# Via Cloudflare (the normal path)
+curl -sI https://example.com/health
+
+# Direct to server IP (should timeout  - UFW is working)
+curl -sI --resolve example.com:443:<your-vps-ip> https://example.com/health --max-time 5
+```
+
+Expected results: first two return 200, third times out. The timeout proves the firewall is blocking direct access.
+
+## Updating Cloudflare IP ranges
+
+Cloudflare publishes new IP ranges [here](https://www.cloudflare.com/ips-v4) and [here](https://www.cloudflare.com/ips-v6) semi-annually. Re-run the script when they change:
+
+```bash
+CONFIRM=yes ./scripts/ufw.example.sh
+```
+
+Idempotent. Safe to run anytime.
+
+## What this doesn't protect against
+
+- **DDoS aimed at your domain**: Use Cloudflare's WAF and rate-limiting rules.
+- **App-layer attacks**: Traefik rate-limit middleware (already configured for the API) and per-account rate limits in the API.
+- **SSH compromise**: Use a non-standard SSH port, disable password auth, use a hardware key.
+
+See [Security](/topics/security/) for a full checklist.
+
+## Related
+
+- [Deployment](/topics/deployment/)  - the production sequence this sits in.
+- [Provisioning with OpenTofu](/topics/provisioning-with-tofu/)  - cloud firewall as an alternative.
+- [Backups](/runbooks/backups/) and [Image updates](/runbooks/image-updates/)  - the other production essentials.

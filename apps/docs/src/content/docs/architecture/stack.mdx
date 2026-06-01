@@ -1,0 +1,87 @@
+---
+title: Stack at a glance
+description: Every dependency, every choice, grouped by template.
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+Runtime and dev dependencies, what each does, and why each piece exists. BoringStack is built from standard parts and wired with contracts so humans and AI agents can change one layer without guessing about the others.
+
+## Summary
+
+- **[apps/api](/api/overview/).** Bun HTTP API + workers: Elysia, Drizzle, Postgres, Valkey, BullMQ, Pino. Owns security, persistence, background work, and OpenAPI.
+- **[apps/ui](/ui/overview/).** Vite React SPA: React 19, TanStack Query, Zustand, shadcn/ui, Playwright, and a generated client instead of hand-written API calls.
+- **[infra-compose](/infra/overview/).** Single-host Compose runtime: Postgres, Valkey, Traefik, and optional observability/error-tracking overlays for local and VPS environments.
+- **[infra-tofu](/topics/provisioning-with-tofu/).** First real deploy path: OpenTofu, Hetzner, Cloudflare, and cloud-init provision a VPS and drop the Compose stack in place.
+
+## Full inventory
+
+### apps/api
+
+- **Runtime: Bun.** Bun-native APIs, fastest install and cold boot.
+- **HTTP framework: Elysia.** TypeBox-typed routes, OpenAPI auto-emit.
+- **ORM: Drizzle.** TS-first, SQL-shaped, real migrations.
+- **Database: Postgres.** Durable, well-tooled.
+- **Cache + queue store: Valkey.** OSS Redis-protocol fork (BSD-3); drop-in for Redis clients.
+- **Queues: BullMQ.** Canonical Valkey job queue.
+- **Auth.** argon2id passwords (via `Bun.password`) + short-lived JWT access cookies + DB-backed refresh sessions + Arctic (OAuth).
+- **Email.** Cloudflare Email (default), Resend, SendGrid, SMTP, noop. SMTP works with Mailpit in dev.
+- **Error tracking.** @sentry/bun → hosted Sentry or self-hosted GlitchTip.
+- **AI.** OpenAI SDK, Anthropic SDK, or noop. `OPENAI_BASE_URL` for compatible endpoints.
+- **Logger.** Pino + pino-pretty. JSON in prod.
+- **Templates.** Handlebars precompiled to JSON at build; zero runtime parse.
+- **Dead-code detection.** Knip gates `bun run validate`.
+
+### apps/ui
+
+- **Build tool: Vite.** Fast HMR, native ESM, dev proxy for same-origin `/api/*`.
+- **Framework: React 19.** Current React with compiler support.
+- **Server state: TanStack Query.** Documented cache invariants.
+- **Client state: Zustand.** Small, no provider chain.
+- **Forms.** React Hook Form + Zod.
+- **Routing.** React Router.
+- **Components.** shadcn/ui + Radix; you own the base components.
+- **Styling.** Tailwind + `@theme` tokens.
+- **HTTP.** openapi-fetch + generated schema from live API.
+- **Error tracking.** @sentry/react.
+- **i18n.** react-i18next; en + de.
+- **Tests.** Vitest, Testing Library, Playwright.
+- **Visual regression.** Playwright snapshots per platform.
+- **Storybook.** Component catalog with controls.
+- **Dead-code detection.** Knip gates `bun run check`.
+
+### infra-docker-compose
+
+- **Reverse proxy (prod): Traefik.** Docker labels, ACME, same-origin path routing.
+- **Certs.** Let's Encrypt via ACME HTTP-01.
+- **Metrics.** Prometheus + standard exporters.
+- **Logs.** Loki + Promtail; per-container labels.
+- **Dashboards.** Grafana; drop JSON into `compose/grafana/dashboards/`.
+- **Alerts.** Alertmanager.
+- **Error tracking (self-hosted).** GlitchTip on base Postgres + Valkey.
+- **Image updates.** WUD hybrid in prod: app images auto-deploy, base images notify-only.
+- **Local email.** Mailpit; `WITH_MAILPIT=1`.
+- **Queue dashboard.** bull-board; dev only.
+- **Backups.** rclone; off-site, retention-managed.
+- **Optional firewall.** UFW example script on Hetzner cloud firewall.
+
+### infra-bootstrap-tofu
+
+- **IaC: OpenTofu.** Terraform-compatible fork (MPL).
+- **VPS: Hetzner Cloud.** EU-friendly API and pricing.
+- **DNS + edge.** Cloudflare apex + www; proxied; same-origin routing.
+- **Firewall.** Hetzner cloud firewall; Cloudflare IP ranges at plan time.
+- **First boot.** cloud-init + `bootstrap.sh`; clone infra, `compose pull && up -d`.
+- **Backups (optional).** rclone via cron at apply time.
+
+## Architecture-enforcement plugins
+
+Each app workspace ships custom ESLint plugins (all open-sourced) that codify the patterns and stop drift at the lint gate.
+
+[Full inventory with GitHub links →](/architecture/lint-as-contract/)
+
+## Related
+
+- [Why BoringStack](/architecture/why-boringstack/); the decision guide behind these choices.
+- [Repository layout](/architecture/monorepo-layout/); how the workspaces fit together.
+- [Deployment](/topics/deployment/); how the runtime choices ship.

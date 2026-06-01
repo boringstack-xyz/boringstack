@@ -1,0 +1,34 @@
+---
+title: Email in development
+description: Iterate on transactional email templates and flows locally without sending real mail. Capture every outbound message in Mailpit's web UI.
+---
+
+Iterate on transactional email templates and signup flows locally without sending real mail. BoringStack includes Mailpit: SMTP on port 1025, web UI on port 8025.
+
+Test verify-email, password-reset, welcome, and notification flows without sending through Cloudflare Email Service, Resend, or SendGrid.
+
+## How it works
+
+Mailpit is on by default in dev. `./dev.sh up -d` boots the catcher alongside the rest of the stack, and the api-dev container is pre-wired with `EMAIL_PROVIDER=smtp`, `SMTP_HOST=mailpit`, and `SMTP_PORT=1025`. Trigger any flow that emits transactional mail (sign up, hit forgot-password) and open `http://localhost:8025` to inspect the captured message: full HTML, plain-text alt, headers, raw source.
+
+To opt out of Mailpit in dev (for instance, to pin a real SMTP target you're debugging), boot with `WITH_MAILPIT=0 ./dev.sh up -d` and override `SMTP_HOST` via `infra/compose/compose/api.dev.env`.
+
+## Use this for
+
+- Designing a new email template. Edit the Handlebars source under `apps/api/src/templates/email/`, trigger a flow, refresh Mailpit.
+- Debugging delivery locally. Mailpit captures the full SMTP envelope, so you can verify From / Reply-To / List-Unsubscribe before going near a real provider.
+- E2E tests that exercise email. Point the api at Mailpit and assert against the API surface (`http://localhost:8025/api/v1/messages`). No mail leaves the host.
+
+## Don't use this for
+
+- Validating deliverability or spam scores. Mailpit doesn't send; you need a real provider in staging.
+- Load-testing the email pipeline. Mailpit defaults cap at 5,000 retained messages.
+
+## Production fallback
+
+The same `EMAIL_PROVIDER=smtp` provider works against any RFC-5321 server (Postfix sidecar, SES via SMTP, Postmark). Set `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` in `api.prod.env`.
+
+## Related
+
+- [Email templates](/api/email/). Handlebars partials, precompiled templates.
+- [Profiles & overlays](/infra/profiles-and-overlays/). Every `WITH_*` flag.

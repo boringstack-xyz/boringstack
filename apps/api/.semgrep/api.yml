@@ -1,0 +1,80 @@
+# BoringStack api-template — custom Semgrep rules.
+#
+# Catches stack-specific footguns the registry rules miss. Run as part of
+# .github/workflows/security-sast.yml (Phase 4 of the security pipeline).
+
+rules:
+  - id: stripe-webhook-must-use-async-construct
+    message: |
+      Stripe webhook verification must use `constructEventAsync` (Bun's
+      SubtleCrypto is async). `constructEvent` is the sync API and crashes
+      at runtime on Bun.
+    severity: ERROR
+    languages: [typescript]
+    pattern-either:
+      - pattern: stripe.webhooks.constructEvent(...)
+      - pattern: Stripe.webhooks.constructEvent(...)
+    paths:
+      exclude:
+        - "**/tests/**"
+        - "**/node_modules/**"
+
+  - id: no-child-process-outside-scripts
+    message: |
+      `child_process` in api source code is a sharp edge — command injection,
+      arbitrary code execution. If you genuinely need it, prove the input is
+      validated and put a comment explaining why; otherwise use a typed library.
+    severity: ERROR
+    languages: [typescript, javascript]
+    pattern-either:
+      - pattern: require('child_process')
+      - pattern: import * as $X from 'child_process'
+      - pattern: import { $Y } from 'child_process'
+      - pattern: import $Z from 'node:child_process'
+    paths:
+      exclude:
+        - "**/scripts/**"
+        - "**/tests/**"
+        - "**/node_modules/**"
+
+  - id: no-eval
+    message: |
+      `eval` and `Function` constructor execute arbitrary code. No legitimate
+      use case in api source.
+    severity: ERROR
+    languages: [typescript, javascript]
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: new Function(...)
+    paths:
+      exclude:
+        - "**/node_modules/**"
+
+  - id: no-inline-sql-string-concat
+    message: |
+      Raw SQL string concatenation is SQL injection waiting to happen. Use
+      Drizzle's templated query API (`sql`...`) or its query builder, which
+      parameterises automatically.
+    severity: ERROR
+    languages: [typescript]
+    pattern-either:
+      - pattern: db.execute("..." + $X + "...")
+      - pattern: db.execute(`...${$X}...`)
+    paths:
+      exclude:
+        - "**/tests/**"
+        - "**/node_modules/**"
+
+  - id: no-raw-jwt-sign-without-iss
+    message: |
+      JWT sign calls must include both `iss` (issuer) and `aud` (audience) in
+      the payload, or attackers can replay tokens across environments.
+    severity: WARNING
+    languages: [typescript]
+    pattern-either:
+      - pattern: jwt.sign({...}, $SECRET)
+      - pattern: jose.SignJWT({...})
+    paths:
+      include:
+        - "**/src/api/auth/**"
+        - "**/src/lib/auth/**"

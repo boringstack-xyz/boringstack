@@ -1,0 +1,74 @@
+---
+title: What's new
+description: "Recent changes to BoringStack: docs, templates, and tooling. Reverse-chronological; the top entry is the most recent."
+---
+
+A log of substantial changes to the docs, templates, and tooling. For per-commit detail, see the git history of each [workspace app](https://github.com/boringstack-xyz). For the latest released images, see the [Image updates runbook](/runbooks/image-updates/).
+
+## 2026-05
+
+### Cost & decisions
+
+- **[Cost calculator](/architecture/why-boringstack/#cost-calc-title) on Why BoringStack.** Four-stage tier picker with three solution categories (BoringStack VPS, Managed-PaaS bundle, Hosted SaaS platform). Numbers cite public rate cards; methodology lives on its own [reference page](/reference/cost-methodology/).
+- **[Decision log](/architecture/decisions/) shipped.** Twelve ADR-style entries covering every "boring" pick (Postgres, Valkey, Bun + Elysia, Drizzle, Compose, Traefik, Cloudflare Tunnel, OpenTofu, Astro for docs, Bun everywhere, architecture-as-lint, OpenAPI boundary, React, Mailpit, GlitchTip, WUD notify-only).
+
+### Recipes
+
+- **[Recipes section](/recipes/add-stripe/) added** to the sidebar with four how-tos: Add Stripe Checkout, Add S3-compatible uploads, Add a background job, Add a service to Compose. Each follows the same Goal / Prereqs / Steps / Verify / What changes in code shape.
+- **"What you'll have in 10 minutes"** deliverables callout at the top of [Quickstart](/quickstart/) so readers see the outcome before the steps.
+
+### Discoverability
+
+- **[`llms.txt`](/llms.txt) + [`llms-full.txt`](/llms-full.txt) + [`llms-small.txt`](/llms-small.txt)** now publish so AI assistants (Claude, ChatGPT, Perplexity, Cursor) can discover and consume the docs cleanly. Generated via `starlight-llms-txt` at build time.
+- **Broken-link CI workflow** added at `.github/workflows/docs-linkcheck.yml`. Runs `lychee` against the built site on every PR; fails on broken internal links, warns on flaky external 4xx/5xx.
+
+### Docs polish
+
+- **Glossary links on first use.** Three high-traffic terms (`overlay`, `feature folder`, `view object`) now link to the [Glossary](/reference/glossary/) on first prose use across the docs. Anchors stable per term.
+- **Reading time on every page.** Each docs page now displays an estimated read time pill below the title, computed from the page body at build.
+- **Related navigation on every page.** Twelve pages that previously dead-ended (overview pages, runbooks, topics, reference) now end with a `## Related` block linking 3–5 adjacent pages.
+- **Changelog & 404.** This page, plus a custom 404 with suggested starting points and a search hint.
+
+### Branding
+
+- **Emerald accent migration.** Site accent moved from amber `#fbbf24` to emerald `#4ade80` across Starlight tokens, custom CSS, Mermaid theme variables, the landing hero gradient, badges, and asides. Tip badges and asides reassigned to cyan so they stay distinct from the brand green; caution keeps amber for semantic warnings.
+- **Amber accent migration.** Site accent moved from violet `#8b5cf6` to amber `#fbbf24` across Starlight tokens, custom CSS, Mermaid theme variables, the landing hero gradient, badges, and asides. Light-mode contrast tuned to amber-600 / amber-950 ink.
+- **Server-rack icon.** Header logo and favicon replaced with a sharp, minimalistic server/rack SVG.
+- **Mermaid restyle.** Diagrams adopted the amber + cyan + pink brand palette with gradient borders and per-element accents.
+
+### Positioning
+
+- **Homepage rewrite.** Splash hero, CTAs, fit-check table, and comparison row against managed-PaaS bundles. The 3-layer architecture diagram moved closer to the entry point.
+- **Quickstart slimmed.** The first-deploy production checklist moved to [Deployment](/topics/deployment/) so Quickstart stays a five-minute path.
+- **Lint as the contract restructured** from a plugin catalog into a narrative: problem, solution, feature grid, then the plugin inventory underneath.
+
+## 2026-04
+
+### Architecture & content
+
+- **ACL & multi-tenant docs.** Server-authoritative permissions and the accountId scoping primitive each got their own page.
+- **Memory context docs.** New page covering the memory layer in the API template.
+- **Security pipeline docs.** osv-scanner, gitleaks, and CodeQL wiring explained alongside the supply-chain protections (seven-day minimum release age across all repos).
+- **Agent docs as an index.** `AGENTS.md` is now a navigation table over `docs/agents/`; the docs site mirrors the same shape.
+
+### Infra
+
+- **`@boring-stack-pkg` namespace.** All custom ESLint plugins moved to the `@boring-stack-pkg/*` npm scope; docs and lint configs updated in lockstep.
+
+## Deferred
+
+Listed for honesty so the gap is visible, not buried in commit history.
+
+- **Per-page OG images.** Attempted with `astro-og-canvas` (Satori-based); blocked by a Cloudflare-adapter incompatibility (`__dirname is not defined` inside the worker bundle when `canvaskit-wasm` loads). Picking this back up means either a static OG generator that works in Cloudflare Workers or moving the doc site off the Cloudflare adapter for the OG generation step.
+- **Asciinema cast on Quickstart.** Needs an actual ~90-second recording of `./scripts/compose-up.sh` going from a clean clone to a working dashboard. Record once with `asciinema rec`, upload to asciinema.org, embed via `<asciinema-player>`. Until that exists, the "What you'll have in 10 minutes" callout substitutes for the visual proof.
+
+## How to follow updates
+
+- Star the [boringstack-xyz](https://github.com/boringstack-xyz) GitHub org to surface releases in your feed.
+- Check the [Image updates runbook](/runbooks/image-updates/) for how the WUD overlay can notify you when new container images are published.
+
+## Related
+
+- [Quickstart](/quickstart/); fork-and-boot path.
+- [Why BoringStack](/architecture/why-boringstack/); the thesis behind the changes.
+- [Image updates](/runbooks/image-updates/); how to know when to pull a new image.

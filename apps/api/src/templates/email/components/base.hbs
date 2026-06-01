@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="color-scheme" content="dark light">
+    <meta name="supported-color-schemes" content="dark light">
+    <title>{{subject}}</title>
+    <!--[if mso]>
+    <style type="text/css">
+        * {font-family: Arial, sans-serif !important;}
+        table {border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt;}
+    </style>
+    <![endif]-->
+    <style type="text/css">
+        @media (prefers-color-scheme: dark) {
+            .email-container { background-color: #2D2D2D !important; }
+        }
+        @media only screen and (max-width: 640px) {
+            .email-container { width: 100% !important; max-width: 100% !important; }
+            .email-padding { padding: 20px !important; }
+            .content-padding { padding: 24px 20px !important; }
+        }
+    </style>
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
+    <!-- Preheader text (hidden preview text) -->
+    <div style="display: none; max-height: 0; overflow: hidden; font-size: 1px; line-height: 1px; color: transparent; mso-hide: all;">
+        {{#if preHeader}}{{preHeader}}{{else}}{{subject}}{{/if}}
+    </div>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
+        style="background-color: #1a1a1a;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;" class="email-padding">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="640"
+                    style="max-width: 640px; background-color: #2D2D2D; border-radius: 8px; overflow: hidden; border: 1px solid #3A3A3A;" class="email-container">
+                    {{> header}}
+
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding: 40px 40px 32px; background-color: #2D2D2D; color: #E8E8E8;" class="content-padding">
+                            {{{content}}}
+                        </td>
+                    </tr>
+
+                    {{> footer}}
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

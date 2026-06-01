@@ -1,0 +1,19 @@
+# Dev overlay — merged by dev.sh when STACK=dev.
+#
+# Routing model: no Traefik in default dev. Browser hits Vite directly on
+# http://localhost:7331; Vite's dev-server proxy forwards /api/* to api-dev
+# over the docker network. Same-origin from the browser's perspective, so
+# no CORS preflights happen in dev.
+#
+# This file only publishes data-service host ports so developers can `psql`,
+# `valkey-cli`, or curl the API directly. Production does NOT publish these
+# (data services stay on the docker network only).
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  valkey:
+    ports:
+      - "6379:6379"

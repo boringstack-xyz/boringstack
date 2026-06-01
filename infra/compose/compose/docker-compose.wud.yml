@@ -1,0 +1,55 @@
+# WUD (What's Up Docker) — watches running containers for newer image tags.
+# Merged by dev.sh when WITH_WUD=1 (default for STACK=prod).
+#
+# Behaviour matrix (all flags in compose/.env):
+#
+#   WUD_TRIGGER_DOCKER_APP_AUTO=false  (default)  Notify-only — polls GHCR,
+#                                                  posts to Discord/Slack on
+#                                                  new tags; you decide when
+#                                                  to redeploy.
+#
+#   WUD_TRIGGER_DOCKER_APP_AUTO=true              Auto pull + recreate api/ui
+#                                                  the moment GHCR moves a tag.
+#                                                  Convenient for solo
+#                                                  operators; risky once real
+#                                                  users depend on the stack.
+#
+# Defaulting to notify-only is intentional: an unwatched auto-redeploy on
+# every main push has no canary, no health check, and no rollback. Wire
+# Discord or Slack and review the diff before flipping AUTO=true.
+#
+# Requires docker socket read-write for the auto-deploy trigger.
+
+services:
+  whatsupdocker:
+    image: getwud/wud:latest@sha256:2df7cafa0fc84cdd66ad976163abc5390fa5995e0b5788a90e6a5303706bc21a
+    profiles: [wud]
+    restart: unless-stopped
+    environment:
+      WUD_LOG_LEVEL: ${WUD_LOG_LEVEL:-info}
+      WUD_WATCHER_LOCAL_CRON: ${WUD_SCHEDULE:-0 */6 * * *}
+      WUD_TRIGGER_DISCORD_1_URL: ${WUD_DISCORD_WEBHOOK:-}
+      WUD_TRIGGER_SLACK_ALERTS_TOKEN: ${WUD_SLACK_BOT_TOKEN:-}
+      WUD_TRIGGER_SLACK_ALERTS_CHANNEL: ${WUD_SLACK_CHANNEL:-}
+      WUD_REGISTRY_GHCR_USERNAME: ${WUD_GHCR_USERNAME:-}
+      WUD_REGISTRY_GHCR_TOKEN: ${WUD_GHCR_TOKEN:-}
+      # Default false: poll + notify only. Flip to true once notifications
+      # are wired and the stack has a tested rollback path.
+      WUD_TRIGGER_DOCKER_APP_AUTO: ${WUD_TRIGGER_DOCKER_APP_AUTO:-false}
+      WUD_TRIGGER_DOCKER_APP_PRUNE: ${WUD_TRIGGER_DOCKER_APP_PRUNE:-true}
+      WUD_TRIGGER_DOCKER_APP_MODE: batch
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - wud_data:/store
+    ports:
+      - "3033:3000"
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "${WUD_LIMITS_CPUS:-0.25}"
+          memory: "${WUD_LIMITS_MEMORY:-256M}"
+
+volumes:
+  wud_data:

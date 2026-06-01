@@ -1,0 +1,80 @@
+name: release
+
+# Builds and publishes the production image to GitHub Container Registry on:
+#   - every push to main (tags: latest + sha-<7>)
+#   - every push of a semver tag v*.*.* (adds the :<semver> tag, e.g. :0.3.0)
+#
+# Downstream consumers (BoringStack's WUD service in the prod compose stack)
+# watch ghcr.io/<owner>/<repo>-api:latest and auto-redeploy when a new sha
+# is pushed.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/apps-api-release.yml"
+
+concurrency:
+  group: apps-api-release-${{ github.ref }}
+
+permissions:
+  contents: read
+  packages: write
+  # Reserved for future cosign keyless signing; harmless when unused.
+  id-token: write
+
+jobs:
+  build-and-push:
+    defaults:
+      run:
+        working-directory: apps/api
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # Full history for the `org.opencontainers.image.revision` label.
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image metadata
+        id: meta
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
+        with:
+          # Monorepo image names are suffix-based so API and UI publish distinct
+          # packages from the same repository.
+          images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}-api
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short
+            type=semver,pattern={{version}}
+          # WUD opts containers in via this label, so the prod compose stack
+          # auto-discovers them without hardcoding image names anywhere.
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.title=BoringStack API
+            org.opencontainers.image.description=Bun + Elysia + Drizzle API
+            wud.watch=true
+
+      - name: Build and push
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: apps/api
+          file: apps/api/Dockerfile.prod
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

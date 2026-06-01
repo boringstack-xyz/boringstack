@@ -1,0 +1,16 @@
+# Dev-only port mapping for GlitchTip web UI.
+#
+# The base GlitchTip overlay only attaches Traefik labels, but Traefik
+# runs in the prod profile only. In dev that means `glitchtip.localhost`
+# routes to nothing. This overlay publishes the GlitchTip web container
+# on host port 8055 so the operator can open `http://localhost:8055`
+# directly from a fresh boot.
+#
+# Merged in by dev.sh when STACK=dev && WITH_GLITCHTIP=1. Prod never
+# publishes this port; the prod overlay keeps everything behind Traefik
+# with Basic Auth.
+
+services:
+  glitchtip-web:
+    ports:
+      - "8055:8000"

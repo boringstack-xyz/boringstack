@@ -1,0 +1,27 @@
+---
+title: Scripts & tooling
+description: Development scripts organized by app and purpose.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import ScriptsCatalog from "../../../components/docs-kit/ScriptsCatalog";
+
+Use `bun run <command>` rather than calling scripts directly. The tables below are auto-generated from each app's `scripts/README.md` and `package.json`, updated when you add a command and run the boringstack docs generator.
+
+<Aside type="note">
+For day-to-day CLI commands, see [Commands cheatsheet](/reference/commands/). For merge-gate rules, see [Lint as the contract](/architecture/lint-as-contract/).
+</Aside>
+
+## apps/ui
+
+<ScriptsCatalog template="ui" />
+
+## apps/api
+
+<ScriptsCatalog template="api" />
+
+## Related
+
+- [Commands cheatsheet](/reference/commands/), infra flags and day-to-day workflow
+- [lint:meta rules](/architecture/lint-meta/), structural checks under `scripts/lint-meta/`
+- [Lint as the contract](/architecture/lint-as-contract/), ESLint merge gate

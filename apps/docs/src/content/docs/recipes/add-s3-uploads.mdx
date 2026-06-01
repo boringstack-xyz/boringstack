@@ -1,0 +1,150 @@
+---
+title: "Recipe: Add S3-compatible uploads"
+description: Direct-to-bucket browser uploads via presigned URLs. Estimated 60 minutes.
+verifiedOn: "2026-05"
+---
+
+Let users upload files directly to an S3-compatible bucket (Cloudflare R2, AWS S3, Backblaze B2, or MinIO). The browser talks to the bucket; the API only signs URLs and records metadata.
+
+Estimated time: 60 minutes.
+
+## Overview
+
+1. Add S3 credentials to env.
+2. Install AWS SDK in the API.
+3. Scaffold an uploads feature.
+4. Implement sign and finalize endpoints.
+5. Add a media table.
+6. Wire the UI.
+
+## 1. Add S3 credentials
+
+```bash
+echo 'S3_ENDPOINT=https://<accountid>.r2.cloudflarestorage.com' >> compose/.env
+echo 'S3_REGION=auto' >> compose/.env
+echo 'S3_BUCKET=your-bucket-name' >> compose/.env
+echo 'S3_ACCESS_KEY_ID=...' >> compose/.env
+echo 'S3_SECRET_ACCESS_KEY=...' >> compose/.env
+echo 'S3_PUBLIC_BASE_URL=https://files.example.com' >> compose/.env
+```
+
+For Cloudflare R2, the endpoint is `https://<account-id>.r2.cloudflarestorage.com` and region is `auto`. For AWS S3, use your region like `us-east-1`.
+
+## 2. Install the AWS SDK
+
+```bash
+cd apps/api && bun add @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
+```
+
+## 3. Scaffold the uploads feature
+
+```bash
+cd apps/api && bun run new:resource uploads
+```
+
+This writes `uploads.routes.ts`, `uploads.service.ts`, `uploads.types.ts` and registers them in `config/routes.ts`.
+
+## 4. Implement the sign endpoint
+
+In `uploads.service.ts`, sign a PUT URL:
+
+```ts
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+export async function signUploadUrl(
+  accountId: string,
+  mimeType: string,
+): Promise<{ uploadUrl: string; objectKey: string; publicUrl: string }> {
+  const objectKey = `${accountId}/${crypto.randomUUID()}`;
+  
+  const command = new PutObjectCommand({
+    Bucket: env.S3_BUCKET,
+    Key: objectKey,
+    ContentType: mimeType,
+  });
+  
+  const uploadUrl = await getSignedUrl(s3Client, command, {
+    expiresIn: 300, // 5 minutes
+  });
+  
+  const publicUrl = `${env.S3_PUBLIC_BASE_URL}/${objectKey}`;
+  return { uploadUrl, objectKey, publicUrl };
+}
+```
+
+Add the routes to `uploads.routes.ts`:
+
+```ts
+POST /api/v1/uploads/sign
+  → calls signUploadUrl()
+  → returns { uploadUrl, objectKey, publicUrl }
+
+POST /api/v1/uploads/finalize
+  → inserts the media row
+  → returns the media record
+```
+
+## 5. Add a media table
+
+In `src/clients/postgres/schema/app.schema.ts`:
+
+```ts
+export const media = pgTable("media", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  account_id: uuid("account_id")
+    .notNull()
+    .references(() => accounts.id),
+  object_key: text("object_key").notNull(),
+  mime_type: text("mime_type").notNull(),
+  size_bytes: integer("size_bytes").notNull(),
+  created_at: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+```
+
+Generate the migration:
+
+```bash
+bun run db:generate
+```
+
+## 6. Wire the UI
+
+In the UI component:
+
+```ts
+// Step 1: get a signed URL
+const { uploadUrl, objectKey, publicUrl } = await apiClient.POST(
+  "/api/v1/uploads/sign",
+  { body: { mime: file.type, size: file.size } }
+);
+
+// Step 2: upload the file directly to the bucket
+await fetch(uploadUrl, { method: "PUT", body: file });
+
+// Step 3: finalize in the database
+await apiClient.POST("/api/v1/uploads/finalize", {
+  body: { objectKey, mimeType: file.type, sizeBytes: file.size }
+});
+```
+
+## Verify
+
+- Browser network tab: the PUT request goes to the S3 endpoint, not your API.
+- Bucket dashboard: new object appears at the key you chose.
+- Database: `SELECT * FROM media ORDER BY created_at DESC LIMIT 5;`
+- Audit log: `SELECT * FROM audit.audit_log WHERE event = 'media.upload_finalized' LIMIT 5;`
+
+## Key points
+
+- **CORS**: The bucket must allow PUT from your origin. Test with: `curl -X OPTIONS -H "Origin: https://example.com" https://your-bucket/...`
+- **Public URLs**: If you set `S3_PUBLIC_BASE_URL` to a public bucket, anyone with the URL can download. For sensitive files, use signed-URL GETs instead.
+- **Presigned URL TTL**: 5 minutes is standard. Adjust if users need more time to upload large files.
+
+## Related
+
+- [Env validator](/api/env-validator/)  - declare S3 vars in the schema.
+- [API overview](/api/overview/)  - route/service/types pattern.
+- [Multi-tenant model](/api/multi-tenant/)  - scoping uploads by accountId.

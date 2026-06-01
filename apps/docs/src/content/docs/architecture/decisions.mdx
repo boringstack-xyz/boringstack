@@ -1,0 +1,226 @@
+---
+title: Decision log
+description: 'Every "boring" choice in BoringStack written up the same way: what, why, what we gave up, when we''d reconsider. Short. Cross-linked.'
+---
+
+Every choice in BoringStack, written up the same way: **Choice / Why / What we gave up / When we'd reconsider**. Short. Cross-linked. If a pick stops carrying its weight, the entry stops being honest.
+
+## Architecture as lint
+
+**Choice.** Custom ESLint plugins encode the route/service/types split, env access, queue shape, audit log discipline, and component anatomy. `validate` is the merge gate.
+
+**Why.** Prose conventions get forgotten under deadlines or when an agent writes the diff. Machine-checked rules don't. The cost of writing a custom plugin is a few hours; the cost of an architecture violation merging is a multi-month untangle.
+
+**What we gave up.** Some flexibility for "just this once" exceptions; they fail CI. The plugins themselves are an additional surface to maintain (small one).
+
+**When we'd reconsider.** When the rules feel like ceremony rather than bearing load. That's a signal the architecture changed shape and the lint needs updating, not removing.
+
+**If reversed.** No automated enforcement; architecture docs rot; merges carry style violations that become refactoring debt.
+
+---
+
+## OpenAPI between API and UI
+
+**Choice.** The API auto-emits an OpenAPI document at `/swagger/json`. The UI runs `bun run generate:api` to regenerate a typed client from it. `openapi-fetch` makes wrong paths or wrong body shapes a typecheck error.
+
+**Why.** Server-client drift is one of the highest-cost bugs in any SaaS. This makes drift a compile error, not a runtime 500.
+
+**What we gave up.** A unified framework's compile-time guarantees (tRPC, Next.js server actions). We picked an explicit boundary instead.
+
+**When we'd reconsider.** If you're building a Next.js app where server and client live in the same repo, tRPC or server actions are equally good. BoringStack splits them deliberately.
+
+**If reversed.** Client and server types diverge silently; tests pass but requests fail at runtime.
+
+---
+
+## Docker Compose (not Kubernetes)
+
+**Choice.** Docker Compose for local dev and single-host production.
+
+**Why.** Cluster machinery is dead weight for products under 50k MAU. Compose v2 honours `deploy.resources.limits`, supports profiles and overlays, and one capable VPS handles a full SaaS spine. When you graduate, the same compose YAML can be re-targeted at a Swarm node or used as a reference shape for k8s manifests.
+
+**What we gave up.** Auto-scaling, multi-host failover, the k8s ecosystem of operators. You don't need them yet.
+
+**When we'd reconsider.** When a single host's cost no longer beats horizontal scaling on managed services, typically at Scale-tier in the cost calculator.
+
+**If reversed.** Cluster overhead; higher monthly spend; k8s ops work before you have 50k users.
+
+---
+
+## Postgres
+
+**Choice.** Postgres (vanilla, no extensions required) as the system of record.
+
+**Why.** Decades of operational tooling, every SaaS auditor recognises it, every hire has touched it. JSONB, partial indexes, and row-level security cover most real product needs.
+
+**What we gave up.** Auto-scaling managed Postgres (Aurora, Neon, PlanetScale). The single-VPS default takes manual restores and a manual hot-standby story until you're ready to graduate. You also give up per-branch ephemeral databases that some managed providers offer.
+
+**When we'd reconsider.** When data integrity SLA, multi-AZ requirements, or branching DX matter more than ownership and cost.
+
+**If reversed.** Managed provider costs; vendor lock-in; branch isolation for dev flow.
+
+---
+
+## Valkey (not Redis)
+
+**Choice.** Valkey for cache and queue store.
+
+**Why.** Identical wire protocol to Redis, drop-in compatible with `ioredis` and BullMQ, but BSD-licensed and maintained by the Linux Foundation with AWS, Google, and Oracle as primary sponsors. The Redis license change (RSAL/SSPL) in 2024 made the original incompatible with OSS-core defaults.
+
+**What we gave up.** Some Redis Enterprise features (Redis Modules, RediSearch), not in the BSD fork.
+
+**When we'd reconsider.** When a feature lives only in proprietary Redis and we can't find an OSS path.
+
+**If reversed.** Proprietary licensing; vendor control over core infra; higher operational uncertainty.
+
+---
+
+## Drizzle
+
+**Choice.** Drizzle ORM for the API's data layer.
+
+**Why.** TypeScript-first. Queries look like SQL: no shadow database, no proprietary DSL. Migrations are plain SQL files you can read and edit. Generated types reach across the OpenAPI boundary into the UI.
+
+**What we gave up.** Prisma's broader ecosystem (Studio, Atlas integration). No "magic" derived relations.
+
+**When we'd reconsider.** If we needed multi-database (Mongo, SQL Server) within one ORM. Drizzle is Postgres-shaped first.
+
+**If reversed.** Schema drift between ORM config and migrations; generated types don't reach the UI.
+
+## Bun + Elysia
+
+**Choice.** Bun runtime and Elysia HTTP framework for the API.
+
+**Why.** Fast cold boot (sub-second), fast installs, native TypeScript execution. Elysia compiles routes to typed handlers and auto-emits OpenAPI. That one feature underpins the generated UI client.
+
+**What we gave up.** Node's mature ecosystem of native modules (some C++ addons still don't compile under Bun). For our use cases (HTTP, Postgres, Valkey, email), we've never hit the gap.
+
+**When we'd reconsider.** If a critical dep ships Node-only native modules and Bun-compat lands on the "soon" list permanently.
+
+**If reversed.** Larger cold-start times; slower monorepo installs; mandatory tsc compilation.
+
+---
+
+## Bun everywhere (not npm or pnpm)
+
+**Choice.** Bun for all three app workspaces (API, UI, docs) and root orchestration. No npm, pnpm, or yarn as required tools.
+
+**Why.** One installer/runtime story across the monorepo; Bun's lockfile and CLI cover SPA, docs, and API workloads. Supply-chain pins live in each app's `bun.lock` and `osv-scanner.toml`.
+
+**What we gave up.** npm/yarn/pnpm-specific tooling (separate lockfile ecosystems, package-manager-only supply-chain knobs).
+
+**When we'd reconsider.** If a critical dependency breaks under Bun's resolver and cannot be replaced or patched.
+
+**If reversed.** Multiple lockfiles; fragmented supply-chain governance; contributor context-switching.
+
+---
+
+## Astro for docs
+
+**Choice.** Astro (with Starlight) for this docs site.
+
+**Why.** Static-first with island components, MDX with full React when needed, Pagefind for fast client-side search, no JavaScript shipped where none is needed. Starlight handles the chrome (sidebar, header, theme toggle, mobile nav).
+
+**What we gave up.** A more general framework like Next.js or Nuxt. We don't need dynamic backends in the docs surface.
+
+**When we'd reconsider.** When docs need user-specific data (auth, customer-specific examples).
+
+**If reversed.** Heavy JavaScript bundles for static content; build times; server infra for read-only pages.
+
+## Traefik (not Nginx or Caddy)
+
+**Choice.** Traefik v3 as the reverse proxy in production.
+
+**Why.** First-class Docker label-driven config means container restarts auto-update routes: no config file edits, no reload commands. ACME (Let's Encrypt) HTTP-01 built in. Same-origin path routing (/ for SPA, /api/* for API) on one cert is a two-label change.
+
+**What we gave up.** Nginx's broader OSS deployment history. Caddy's tighter config syntax.
+
+**When we'd reconsider.** When config-file routing is more important than dynamic container discovery (e.g., a static multi-tenant fleet).
+
+**If reversed.** Manual route config; rebuild/reload cycles; slower iteration on multi-site routing.
+
+---
+
+## Cloudflare (proxy + optional Tunnel)
+
+**Choice.** Cloudflare's free proxy in front of the VPS; optional Cloudflare Tunnel for hosts you want fully cloaked.
+
+**Why.** Free DDoS absorption, free CDN, free DNS. The IP allow-list runbook + UFW closes 80/443 to anyone not coming through Cloudflare. Tunnel goes further: the VPS doesn't need a public IP.
+
+**What we gave up.** Vendor neutrality at the edge. If Cloudflare ever becomes hostile or pricing changes meaningfully, the runbooks would need a rewrite around AWS CloudFront or Bunny.
+
+**When we'd reconsider.** If Cloudflare's free tier disappears, or a customer's compliance posture forbids the data path.
+
+**If reversed.** Higher edge costs; DDoS mitigation on your infra; higher bandwidth bills.
+
+---
+
+## OpenTofu (not Terraform)
+
+**Choice.** OpenTofu for VPS bootstrap in `infra/bootstrap`.
+
+**Why.** API-compatible with Terraform 1.5; community-governed under the Linux Foundation after Hashicorp's BSL relicense. Same .tf files, same providers, no lock-in to a vendor that changed terms.
+
+**What we gave up.** The newest Terraform-only providers and HCP-specific features.
+
+**When we'd reconsider.** If a critical provider goes Terraform-only with no OpenTofu equivalent.
+
+**If reversed.** Terraform licensing risk; vendor dependence; tooling tied to proprietary control.
+
+## React (not Vue, Svelte, Solid)
+
+**Choice.** React 19 + Vite for the UI.
+
+**Why.** Largest pool of available hires and AI training data. Mature ecosystem for the parts SaaS apps actually need: forms (React Hook Form), data fetching (TanStack Query), accessibility building blocks (Radix via shadcn/ui).
+
+**What we gave up.** Svelte's smaller bundles, Solid's reactivity model, Vue's template clarity. None of these matter at this scale of product.
+
+**When we'd reconsider.** Never proactively; we'd only switch if React itself stopped being maintained.
+
+**If reversed.** Smaller JS bundles; potentially faster perceived performance; smaller hiring pool.
+
+## Mailpit in dev, pluggable in prod
+
+**Choice.** Mailpit overlay for local development; pluggable provider abstraction (Cloudflare Email default, Resend, SendGrid, SMTP, noop) for production.
+
+**Why.** Dev should never hit a real SMTP gateway. Production should never be locked into one vendor. The abstraction is one env var.
+
+**What we gave up.** Provider-specific features like Resend's React Email template integration; we use precompiled Handlebars instead.
+
+**When we'd reconsider.** If a single provider's lock-in features (template editors, suppression lists, advanced analytics) matter more than portability.
+
+**If reversed.** Dev emails hit your production provider; vendor lock-in; provider outage blocks local iteration.
+
+---
+
+## GlitchTip (self-hosted Sentry)
+
+**Choice.** Sentry SDK on both sides, Sentry-compatible DSN. Hosted Sentry or self-hosted GlitchTip. Choose by DSN.
+
+**Why.** Free observability if you self-host (one extra container, reuses base Postgres and Valkey). Wire-protocol parity with Sentry means the SDK doesn't change.
+
+**What we gave up.** Sentry's full enterprise feature set (cron monitoring, advanced replay analytics). GlitchTip covers errors, breadcrumbs, and replays-on-error.
+
+**When we'd reconsider.** When you need a feature only Sentry has and the hosted bill is acceptable.
+
+**If reversed.** Sentry vendor costs; hosted SaaS vendor dependence; limited feature set on free tier.
+
+---
+
+## WUD hybrid image updates
+
+**Choice.** What's Up Docker runs hybrid in prod: app images (api, ui) auto-pull and auto-recreate; base images (Postgres, Valkey, Traefik) are notify-only.
+
+**Why.** App images are rebuilt from your own CI and deployed frequently. Base images can carry migration risk and deserve operator review.
+
+**What we gave up.** Full unattended updates for base services.
+
+**When we'd reconsider.** When rollout orchestration is handled by a managed platform or multi-host scheduler with staged deploy controls.
+
+**If reversed.** Manual base image updates; operator toil; silent base-image divergence.
+
+## Related
+
+- [Why BoringStack](/architecture/why-boringstack/). the broader thesis these decisions support.
+- [Stack at a glance](/architecture/stack/). the dependency inventory.
+- [Lint as the contract](/architecture/lint-as-contract/). the architecture-as-lint pick, written out.

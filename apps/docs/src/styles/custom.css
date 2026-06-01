@@ -1,0 +1,1167 @@
+/* Site skin */
+:root {
+  --sl-content-width: 50rem;
+}
+
+/* Wrapper added by rehype-accessible-tables. The wrapper owns the scrolling
+   so axe-core's scrollable-region-focusable rule is satisfied; the inner
+   table stays a semantic <table>. Visual chrome lives on the wrapper too
+   so border-radius clips the overflow cleanly. */
+.sl-markdown-content .bs-table-scroll {
+  overflow-x: auto;
+  margin-block: 1.75rem 2.35rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background:
+    linear-gradient(var(--bs-doc-panel-strong), var(--bs-doc-panel-strong)) padding-box,
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--sl-color-accent) 58%, transparent),
+      color-mix(in srgb, var(--bs-doc-cyan) 24%, transparent) 52%,
+      color-mix(in srgb, var(--bs-doc-pink) 34%, transparent)
+    ) border-box;
+  box-shadow:
+    0 20px 60px color-mix(in srgb, var(--bs-doc-glow) 58%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  scrollbar-color: color-mix(in srgb, var(--sl-color-accent) 52%, transparent) transparent;
+  scrollbar-width: thin;
+}
+
+.sl-markdown-content .bs-table-scroll:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 3px;
+}
+
+.sl-markdown-content .bs-table-scroll::-webkit-scrollbar {
+  height: 0.7rem;
+}
+
+.sl-markdown-content .bs-table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sl-markdown-content .bs-table-scroll::-webkit-scrollbar-thumb {
+  border: 0.22rem solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sl-color-accent) 58%, transparent);
+  background-clip: content-box;
+}
+
+/* Diagram caption: accessible text alternative under mermaid blocks. */
+.sl-markdown-content .bs-diagram-caption {
+  margin: -0.75rem auto 1.5rem;
+  max-width: 56ch;
+  text-align: center;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--sl-color-text) 64%, var(--sl-color-gray-3));
+  font-style: italic;
+}
+
+[data-theme="light"] .sl-markdown-content .bs-diagram-caption {
+  color: color-mix(in srgb, var(--sl-color-text) 78%, #0b0d11);
+}
+
+:root[data-theme="dark"] {
+  --sl-color-bg: #111315;
+  --sl-color-bg-nav: transparent;
+  --bs-nav-bg-scrolled: rgba(17, 19, 21, 0.88);
+  --sl-color-bg-sidebar: transparent;
+  --sl-color-hairline-shade: rgba(213, 226, 219, 0.11);
+  --sl-color-accent: #4ade80;
+  --sl-color-text-accent: #86efac;
+  --sl-color-accent-low: rgba(74, 222, 128, 0.18);
+  --sl-color-accent-high: #dcfce7;
+  --sl-color-accent-ink: #052e16;
+  /* Starlight badge variant="tip" reads from --sl-color-purple-*; rebrand to cyan */
+  --sl-color-purple-low: rgba(103, 232, 249, 0.22);
+  --sl-color-purple: #67e8f9;
+  --sl-color-purple-high: #cffafe;
+  --bs-doc-panel: rgba(18, 18, 25, 0.78);
+  --bs-doc-panel-strong: rgba(13, 15, 18, 0.94);
+  --bs-doc-line: rgba(205, 218, 255, 0.14);
+  --bs-doc-line-strong: rgba(134, 239, 172, 0.38);
+  --bs-doc-glow: rgba(74, 222, 128, 0.22);
+  --bs-doc-cyan: #67e8f9;
+  --bs-doc-mint: #86efac;
+  --bs-doc-amber: #facc15;
+  --bs-doc-pink: #f0abfc;
+  --bs-doc-red: #fb7185;
+  --bs-doc-code-bg: #0b0d11;
+  --bs-doc-code-bg-soft: #11131b;
+  --bs-doc-code-text: #e8ecf5;
+  --bs-doc-code-muted: #7f8798;
+  --bs-doc-inline-bg: rgba(74, 222, 128, 0.15);
+  --bs-doc-aside-bg: rgba(14, 15, 21, 0.74);
+}
+
+:root[data-theme="light"] {
+  --sl-color-bg: #f7f8f4;
+  --sl-color-bg-nav: transparent;
+  --bs-nav-bg-scrolled: rgba(247, 248, 244, 0.9);
+  --sl-color-bg-sidebar: transparent;
+  --sl-color-hairline-shade: rgba(37, 55, 47, 0.14);
+  --sl-color-accent: #15803d;
+  --sl-color-text-accent: #15803d;
+  --sl-color-accent-low: rgba(21, 128, 61, 0.13);
+  --sl-color-accent-high: #14532d;
+  --sl-color-accent-ink: #f0fdf4;
+  /* Starlight badge variant="tip" reads from --sl-color-purple-*; rebrand to cyan */
+  --sl-color-purple-low: rgba(8, 145, 178, 0.16);
+  --sl-color-purple: #0891b2;
+  --sl-color-purple-high: #155e75;
+  --bs-doc-panel: rgba(255, 255, 255, 0.78);
+  --bs-doc-panel-strong: rgba(248, 247, 255, 0.94);
+  --bs-doc-line: rgba(39, 68, 55, 0.14);
+  --bs-doc-line-strong: rgba(21, 128, 61, 0.3);
+  --bs-doc-glow: rgba(21, 128, 61, 0.13);
+  --bs-doc-cyan: #0891b2;
+  --bs-doc-mint: #15803d;
+  --bs-doc-amber: #b45309;
+  --bs-doc-pink: #a21caf;
+  --bs-doc-red: #be123c;
+  --bs-doc-code-bg: #f8f7ff;
+  --bs-doc-code-bg-soft: #ffffff;
+  --bs-doc-code-text: #1f1b2e;
+  --bs-doc-code-muted: #6e6779;
+  --bs-doc-inline-bg: rgba(21, 128, 61, 0.11);
+  --bs-doc-aside-bg: rgba(255, 255, 255, 0.74);
+}
+
+body {
+  background:
+    linear-gradient(180deg, rgba(74, 222, 128, 0.055), transparent 28rem),
+    linear-gradient(90deg, rgba(134, 239, 172, 0.028), transparent 34rem),
+    var(--sl-color-bg);
+}
+
+body > .page > header.header {
+  border-bottom-color: transparent;
+  background: var(--sl-color-bg-nav);
+  backdrop-filter: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    backdrop-filter 160ms ease;
+}
+
+html:not([data-has-hero]) body > .page > header.header {
+  border-bottom-color: var(--sl-color-hairline-shade);
+  background: var(--bs-nav-bg-scrolled);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+html.bs-nav-scrolled body > .page > header.header {
+  border-bottom-color: var(--sl-color-hairline-shade);
+  background: var(--bs-nav-bg-scrolled);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+site-search button[data-open-modal] {
+  border-color: rgba(213, 226, 219, 0.14);
+  border-radius: 8px;
+  background: rgba(8, 10, 11, 0.18);
+}
+
+[data-theme="light"] site-search button[data-open-modal] {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+html.bs-nav-scrolled site-search button[data-open-modal] {
+  background: rgba(8, 10, 11, 0.6);
+}
+
+html[data-theme="light"].bs-nav-scrolled site-search button[data-open-modal] {
+  background: rgba(255, 255, 255, 0.68);
+}
+
+@media (min-width: 72rem) {
+  html[data-has-sidebar]:not([data-has-hero]) {
+    --sl-content-margin-inline: 0 auto;
+  }
+}
+
+.sidebar-pane {
+  background-color: rgba(17, 19, 21, 0.92) !important;
+}
+
+@media (min-width: 50rem) {
+  .sidebar-pane {
+    background-color: transparent !important;
+  }
+}
+
+[data-theme="light"] .sidebar-pane {
+  background-color: rgba(247, 248, 244, 0.94) !important;
+}
+
+@media (min-width: 50rem) {
+  [data-theme="light"] .sidebar-pane {
+    background-color: transparent !important;
+  }
+}
+
+.sidebar-pane a[aria-current="page"] {
+  color: var(--sl-color-white) !important;
+  background-color: rgba(74, 222, 128, 0.16) !important;
+}
+
+.sidebar-pane a[aria-current="page"]:hover,
+.sidebar-pane a[aria-current="page"]:focus {
+  color: var(--sl-color-white) !important;
+  background-color: rgba(74, 222, 128, 0.24) !important;
+}
+
+[data-theme="light"] .sidebar-pane a[aria-current="page"] {
+  color: #052e16 !important;
+  background-color: rgba(21, 128, 61, 0.13) !important;
+}
+
+[data-theme="light"] .sidebar-pane a[aria-current="page"]:hover,
+[data-theme="light"] .sidebar-pane a[aria-current="page"]:focus {
+  color: #052e16 !important;
+  background-color: rgba(21, 128, 61, 0.18) !important;
+}
+
+/* Docs code and callouts */
+.sl-markdown-content code:not(:where(.not-content *, pre *, .expressive-code *)) {
+  padding: 0.12rem 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--sl-color-accent) 30%, transparent);
+  border-radius: 0.36rem;
+  color: var(--sl-color-accent-high);
+  background:
+    linear-gradient(135deg, var(--bs-doc-inline-bg), rgba(103, 232, 249, 0.06)),
+    color-mix(in srgb, var(--bs-doc-panel-strong) 84%, transparent);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.025),
+    0 0 18px color-mix(in srgb, var(--sl-color-accent) 10%, transparent);
+  font-size: 0.88em;
+  font-weight: 600;
+}
+
+.sl-markdown-content a code:not(:where(.not-content *, pre *, .expressive-code *)) {
+  border-color: color-mix(in srgb, var(--bs-doc-cyan) 42%, transparent);
+  color: var(--bs-doc-cyan);
+  text-decoration-color: color-mix(in srgb, var(--bs-doc-cyan) 60%, transparent);
+}
+
+/* Docs tables: visual chrome is now on .bs-table-scroll (the wrapper added
+   by rehype-accessible-tables); the table stays semantic. The display +
+   overflow resets override Starlight's defaults which otherwise make the
+   table itself the scroll container (axe scrollable-region-focusable). */
+.sl-markdown-content table:not(:where(.not-content *, .starlight-aside *)) {
+  display: table;
+  overflow: visible;
+  width: 100%;
+  border-spacing: 0;
+  margin: 0;
+}
+
+.sl-markdown-content table:not(:where(.not-content *, .starlight-aside *)) thead {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--sl-color-accent) 18%, transparent), transparent 64%),
+    color-mix(in srgb, var(--bs-doc-code-bg-soft) 88%, transparent);
+}
+
+.sl-markdown-content :is(th, td):not(:where(.not-content *, .starlight-aside *)) {
+  min-width: 11.5rem;
+  padding: 1rem 1.15rem;
+  border: 0;
+  border-inline-start: 1px solid color-mix(in srgb, var(--bs-doc-line) 78%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--bs-doc-line) 88%, transparent);
+  line-height: 1.58;
+  vertical-align: top;
+}
+
+.sl-markdown-content :is(th, td):first-child:not(:where(.not-content *, .starlight-aside *)) {
+  min-width: 13.5rem;
+  border-inline-start: 0;
+  color: var(--bs-doc-code-text);
+  font-weight: 700;
+}
+
+.sl-markdown-content :is(th, td):last-child:not(:where(.not-content *, .starlight-aside *)) {
+  padding-inline-end: 1.15rem;
+}
+
+.sl-markdown-content th:not(:where(.not-content *, .starlight-aside *)) {
+  color: var(--bs-doc-code-text);
+  font-size: 0.95rem;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.sl-markdown-content td:not(:where(.not-content *, .starlight-aside *)) {
+  color: color-mix(in srgb, var(--sl-color-text) 82%, var(--bs-doc-code-muted));
+  font-size: 0.96rem;
+}
+
+.sl-markdown-content tbody tr:last-child td:not(:where(.not-content *, .starlight-aside *)) {
+  border-bottom: 0;
+}
+
+.sl-markdown-content tbody tr:hover td:not(:where(.not-content *, .starlight-aside *)) {
+  background-color: rgba(255, 255, 255, 0.025);
+}
+
+.sl-markdown-content table:has(th:nth-child(4)):not(:where(.not-content *, .starlight-aside *)) {
+  --bs-table-wide-width: 100%;
+}
+
+.sl-markdown-content table:has(th:nth-child(4)):not(:where(.not-content *, .starlight-aside *))
+  :is(th, td) {
+  min-width: 14rem;
+  padding-block: 1.12rem;
+}
+
+.sl-markdown-content table:has(th:nth-child(4)):not(:where(.not-content *, .starlight-aside *))
+  :is(th, td):first-child {
+  min-width: 15rem;
+}
+
+.sl-markdown-content table:has(th:nth-child(4)):not(:where(.not-content *, .starlight-aside *))
+  :is(th, td):nth-child(2) {
+  border-inline-color: color-mix(in srgb, var(--sl-color-accent) 28%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--sl-color-accent) 9%, transparent), transparent 12rem),
+    color-mix(in srgb, var(--sl-color-accent) 6%, transparent);
+}
+
+.sl-markdown-content table:has(th:nth-child(4)):not(:where(.not-content *, .starlight-aside *))
+  th:nth-child(2) {
+  color: var(--sl-color-accent-high);
+}
+
+.sl-markdown-content table:has(th:nth-child(4)):not(:where(.not-content *, .starlight-aside *))
+  tbody
+  tr:hover
+  td:nth-child(2) {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--sl-color-accent) 14%, transparent), transparent 12rem),
+    color-mix(in srgb, var(--sl-color-accent) 9%, transparent);
+}
+
+@media (min-width: 72rem) {
+  html[data-has-sidebar][data-has-toc]
+    .sl-markdown-content
+    table:has(th:nth-child(4)):not(:where(.not-content *, .starlight-aside *)) {
+    width: min(
+      76rem,
+      max(100%, calc(100vw - var(--sl-sidebar-width) - var(--sl-sidebar-width) - 5rem))
+    );
+    margin-inline: 0;
+  }
+
+  html[data-has-sidebar]:not([data-has-toc])
+    .sl-markdown-content
+    table:has(th:nth-child(4)):not(:where(.not-content *, .starlight-aside *)) {
+    width: min(76rem, max(100%, calc(100vw - var(--sl-sidebar-width) - 5rem)));
+    margin-inline: 0;
+  }
+
+  html:not([data-has-sidebar])
+    .sl-markdown-content
+    table:has(th:nth-child(4)):not(:where(.not-content *, .starlight-aside *)) {
+    width: min(76rem, calc(100vw - 4rem));
+    margin-inline: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 48rem) {
+  .sl-markdown-content table:not(:where(.not-content *, .starlight-aside *)) {
+    margin-block: 1.45rem 2rem;
+    border-radius: 8px;
+  }
+
+  .sl-markdown-content :is(th, td):not(:where(.not-content *, .starlight-aside *)),
+  .sl-markdown-content table:has(th:nth-child(4)):not(:where(.not-content *, .starlight-aside *))
+    :is(th, td) {
+    min-width: 12.5rem;
+    padding: 0.9rem 1rem;
+  }
+
+  .sl-markdown-content :is(th, td):first-child:not(:where(.not-content *, .starlight-aside *)),
+  .sl-markdown-content table:has(th:nth-child(4)):not(:where(.not-content *, .starlight-aside *))
+    :is(th, td):first-child {
+    min-width: 12.5rem;
+  }
+}
+
+.expressive-code {
+  margin-block: 1.35rem;
+  --ec-brdRad: 8px;
+  --ec-brdWd: 0px;
+  --ec-codeFontSize: 0.9rem;
+  --ec-codeLineHt: 1.68;
+  --ec-codePadBlk: 1rem;
+  --ec-codePadInl: 1.15rem;
+  --ec-codeBg: var(--bs-doc-code-bg);
+  --ec-codeFg: var(--bs-doc-code-text);
+  --ec-codeSelBg: rgba(74, 222, 128, 0.32);
+  --ec-gtrFg: var(--bs-doc-code-muted);
+  --ec-gtrBrdCol: color-mix(in srgb, var(--sl-color-accent) 22%, transparent);
+  --ec-gtrHlFg: var(--sl-color-accent-high);
+  --ec-focusBrd: var(--sl-color-accent);
+  --ec-sbThumbCol: color-mix(in srgb, var(--sl-color-accent) 28%, transparent);
+  --ec-sbThumbHoverCol: color-mix(in srgb, var(--sl-color-accent) 48%, transparent);
+  --ec-tm-markBg: rgba(74, 222, 128, 0.18);
+  --ec-tm-markBrdCol: var(--sl-color-accent);
+  --ec-tm-insBg: rgba(134, 239, 172, 0.16);
+  --ec-tm-insBrdCol: rgba(134, 239, 172, 0.7);
+  --ec-tm-insDiffIndCol: var(--bs-doc-mint);
+  --ec-tm-delBg: rgba(251, 113, 133, 0.16);
+  --ec-tm-delBrdCol: rgba(251, 113, 133, 0.72);
+  --ec-tm-delDiffIndCol: var(--bs-doc-red);
+  --ec-frm-edBg: transparent;
+  --ec-frm-trmBg: transparent;
+  --ec-frm-edActTabBg: transparent;
+  --ec-frm-edActTabFg: var(--sl-color-accent-high);
+  --ec-frm-edTabBarBg: transparent;
+  --ec-frm-trmTtbBg: transparent;
+  --ec-frm-trmTtbFg: var(--bs-doc-code-muted);
+  --ec-frm-trmTtbDotsFg: var(--sl-color-accent-high);
+  --ec-frm-trmTtbDotsOpa: 1;
+  --ec-frm-tooltipSuccessBg: var(--sl-color-accent);
+  --ec-frm-tooltipSuccessFg: var(--sl-color-accent-ink);
+}
+
+.expressive-code .frame {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background:
+    linear-gradient(var(--bs-doc-code-bg), var(--bs-doc-code-bg)) padding-box,
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--sl-color-accent) 74%, transparent),
+      color-mix(in srgb, var(--bs-doc-cyan) 38%, transparent) 48%,
+      color-mix(in srgb, var(--bs-doc-pink) 46%, transparent)
+    ) border-box;
+  box-shadow:
+    0 22px 70px color-mix(in srgb, var(--bs-doc-glow) 78%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.expressive-code .frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--sl-color-accent) 18%, transparent), transparent 18rem),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: auto, 28px 28px, 28px 28px;
+  opacity: 0.72;
+}
+
+.expressive-code .frame > * {
+  position: relative;
+  z-index: 1;
+}
+
+.expressive-code .frame pre {
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 45%),
+    linear-gradient(90deg, rgba(74, 222, 128, 0.055), transparent 24rem),
+    var(--bs-doc-code-bg);
+}
+
+.expressive-code .frame .header {
+  min-height: 2.55rem;
+  border: 0 !important;
+  border-bottom: 1px solid var(--bs-doc-line) !important;
+  background:
+    linear-gradient(90deg, rgba(74, 222, 128, 0.12), transparent 34%),
+    color-mix(in srgb, var(--bs-doc-code-bg-soft) 84%, transparent) !important;
+}
+
+.expressive-code .frame.is-terminal .header {
+  justify-content: flex-start;
+  padding-inline: 3.55rem 1rem;
+  color: var(--bs-doc-code-muted);
+}
+
+.expressive-code .frame.is-terminal .header::before {
+  left: 1rem;
+  background-color: var(--sl-color-accent-high);
+}
+
+.expressive-code .frame.is-terminal .header::after {
+  border-bottom-color: transparent;
+}
+
+.expressive-code .frame.has-title:not(.is-terminal) .header {
+  padding-inline-start: 0.65rem;
+}
+
+.expressive-code .frame.has-title:not(.is-terminal) .title {
+  margin: 0;
+  padding: 0.72rem 0.9rem 0.68rem;
+  border: 0;
+  border-radius: 0;
+  color: var(--sl-color-accent-high);
+  background: transparent;
+  font-weight: 800;
+}
+
+.expressive-code .frame.has-title:not(.is-terminal) .title::after {
+  inset: auto 0 0;
+  height: 2px;
+  border: 0;
+  background: linear-gradient(90deg, var(--sl-color-accent), transparent);
+}
+
+.expressive-code .ec-line {
+  transition: background-color 130ms ease;
+}
+
+.expressive-code .ec-line:hover {
+  background: color-mix(in srgb, var(--sl-color-accent) 8%, transparent);
+}
+
+.expressive-code .ec-line .code {
+  padding-inline-start: calc(var(--ecIndent, 0ch) + var(--ec-codePadInl));
+  border-inline-start: 0;
+}
+
+.expressive-code .frame .copy {
+  position: absolute !important;
+  top: 0.75rem !important;
+  right: 0.75rem !important;
+  bottom: auto !important;
+  left: auto !important;
+  z-index: 3;
+  margin: 0;
+}
+
+.expressive-code .copy button {
+  width: 2.2rem;
+  height: 2.2rem;
+  margin: 0;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bs-doc-code-bg-soft) 82%, transparent);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.26);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.expressive-code .copy button::before {
+  border-color: color-mix(in srgb, var(--sl-color-accent) 48%, transparent);
+  opacity: 1;
+}
+
+.expressive-code .copy button::after {
+  background-color: var(--sl-color-accent-high);
+}
+
+.expressive-code .copy button:hover div,
+.expressive-code .copy button:focus-visible div {
+  opacity: 0.22;
+}
+
+.expressive-code .ec-line span[style*="#82AAFF"],
+.expressive-code .ec-line span[style*="#3B61B0"] {
+  --0: #a78bfa !important;
+  --1: #6d28d9 !important;
+}
+
+.expressive-code .ec-line span[style*="#C792EA"],
+.expressive-code .ec-line span[style*="#8844AE"] {
+  --0: #c084fc !important;
+  --1: #7c3aed !important;
+}
+
+.expressive-code .ec-line span[style*="#7FDBCA"],
+.expressive-code .ec-line span[style*="#096E72"] {
+  --0: #67e8f9 !important;
+  --1: #0891b2 !important;
+}
+
+.expressive-code .ec-line span[style*="#ECC48D"],
+.expressive-code .ec-line span[style*="#984E4D"] {
+  --0: #fde68a !important;
+  --1: #a16207 !important;
+}
+
+.expressive-code .ec-line span[style*="#C5E478"] {
+  --0: #86efac !important;
+  --1: #15803d !important;
+}
+
+.expressive-code .ec-line span[style*="#FF6A83"],
+.expressive-code .ec-line span[style*="#A24848"] {
+  --0: #fb7185 !important;
+  --1: #be123c !important;
+}
+
+.expressive-code .ec-line span[style*="#F78C6C"],
+.expressive-code .ec-line span[style*="#AA0982"] {
+  --0: #4ade80 !important;
+  --1: #15803d !important;
+}
+
+.expressive-code .ec-line span[style*="#919F9F"],
+.expressive-code .ec-line span[style*="#5F636F"],
+.expressive-code .ec-line span[style*="#5D6376"] {
+  --0: #8b95a7 !important;
+  --1: #64748b !important;
+}
+
+.sl-markdown-content .starlight-aside {
+  --bs-aside-accent: var(--sl-color-accent);
+  --bs-aside-accent-2: var(--bs-doc-cyan);
+  --bs-aside-title: var(--sl-color-accent-high);
+  position: relative;
+  overflow: hidden;
+  margin-block: 1.45rem;
+  padding: 1rem 1.1rem 1.05rem;
+  border: 1px solid transparent;
+  border-inline-start: 0;
+  border-radius: 8px;
+  color: var(--sl-color-text);
+  background:
+    linear-gradient(var(--bs-doc-aside-bg), var(--bs-doc-aside-bg)) padding-box,
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--bs-aside-accent) 78%, transparent),
+      color-mix(in srgb, var(--bs-aside-accent-2) 52%, transparent),
+      color-mix(in srgb, var(--bs-aside-accent) 18%, transparent)
+    ) border-box;
+  box-shadow:
+    0 18px 46px color-mix(in srgb, var(--bs-aside-accent) 12%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.sl-markdown-content .starlight-aside::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--bs-aside-accent) 22%, transparent), transparent 14rem),
+    linear-gradient(90deg, color-mix(in srgb, var(--bs-aside-accent) 10%, transparent), transparent 36%);
+  opacity: 0.9;
+}
+
+.sl-markdown-content .starlight-aside::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--bs-aside-accent), var(--bs-aside-accent-2));
+  box-shadow: 0 0 26px var(--bs-aside-accent);
+}
+
+.sl-markdown-content .starlight-aside > * {
+  position: relative;
+  z-index: 1;
+}
+
+.sl-markdown-content .starlight-aside--note {
+  --bs-aside-accent: #4ade80;
+  --bs-aside-accent-2: #67e8f9;
+  --bs-aside-title: #86efac;
+}
+
+.sl-markdown-content .starlight-aside--tip {
+  --bs-aside-accent: #67e8f9;
+  --bs-aside-accent-2: #22d3ee;
+  --bs-aside-title: #cffafe;
+}
+
+.sl-markdown-content .starlight-aside--caution {
+  --bs-aside-accent: #f97316;
+  --bs-aside-accent-2: #f0abfc;
+  --bs-aside-title: #fdba74;
+}
+
+.sl-markdown-content .starlight-aside--danger {
+  --bs-aside-accent: #fb7185;
+  --bs-aside-accent-2: #67e8f9;
+  --bs-aside-title: #fecdd3;
+}
+
+[data-theme="light"] .sl-markdown-content .starlight-aside--note {
+  --bs-aside-title: #15803d;
+}
+
+[data-theme="light"] .sl-markdown-content .starlight-aside--tip {
+  --bs-aside-title: #0891b2;
+}
+
+[data-theme="light"] .sl-markdown-content .starlight-aside--caution {
+  --bs-aside-title: #92400e;
+}
+
+[data-theme="light"] .sl-markdown-content .starlight-aside--danger {
+  --bs-aside-title: #be123c;
+}
+
+.sl-markdown-content .starlight-aside__title {
+  color: var(--bs-aside-title);
+  font-size: 0.96rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.sl-markdown-content .starlight-aside__icon {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--bs-aside-accent) 54%, transparent));
+}
+
+.sl-markdown-content .starlight-aside__content {
+  color: var(--sl-color-text);
+}
+
+.sl-markdown-content .starlight-aside__content a {
+  color: var(--bs-aside-title);
+  text-decoration-color: color-mix(in srgb, var(--bs-aside-accent) 56%, transparent);
+}
+
+.sl-markdown-content .starlight-aside code:not(:where(.not-content *)) {
+  border-color: color-mix(in srgb, var(--bs-aside-accent) 35%, transparent);
+  color: var(--bs-aside-title);
+  background: color-mix(in srgb, var(--bs-aside-accent) 13%, transparent);
+}
+
+/* Mermaid diagrams: branded chrome + neon nodes; click-to-zoom in native dialog */
+
+/* Strip the integration's default tint so we own the container chrome. */
+.sl-markdown-content pre.mermaid,
+.sl-markdown-content pre.mermaid[data-processed],
+html[data-theme="dark"] .sl-markdown-content pre.mermaid[data-processed],
+html[data-theme="light"] .sl-markdown-content pre.mermaid[data-processed] {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Mermaid container: gradient border + glow chrome matching tables / code frames */
+.mermaid {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-block: 1.6rem;
+  padding: 1.6rem 1.4rem;
+  cursor: zoom-in;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background:
+    radial-gradient(
+      circle at 14% 0%,
+      color-mix(in srgb, var(--sl-color-accent) 14%, transparent),
+      transparent 22rem
+    ) padding-box,
+    radial-gradient(
+      circle at 100% 100%,
+      color-mix(in srgb, var(--bs-doc-cyan) 11%, transparent),
+      transparent 18rem
+    ) padding-box,
+    linear-gradient(var(--bs-doc-panel-strong), var(--bs-doc-panel-strong)) padding-box,
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--sl-color-accent) 70%, transparent),
+      color-mix(in srgb, var(--bs-doc-cyan) 38%, transparent) 50%,
+      color-mix(in srgb, var(--bs-doc-pink) 46%, transparent)
+    ) border-box;
+  box-shadow:
+    0 22px 60px color-mix(in srgb, var(--bs-doc-glow) 70%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.mermaid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 28px 28px, 28px 28px;
+  opacity: 0.45;
+}
+
+.mermaid > svg {
+  position: relative;
+  z-index: 1;
+}
+
+.mermaid:hover {
+  box-shadow:
+    0 26px 72px color-mix(in srgb, var(--bs-doc-glow) 90%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="light"] .mermaid::before {
+  opacity: 0.25;
+}
+
+/* Belt-and-suspenders: drop any canvas/cluster fills the theme leaves behind */
+pre.mermaid svg rect.background,
+.mermaid-zoom-dialog svg rect.background {
+  fill: transparent !important;
+}
+
+.mermaid svg {
+  min-width: min(100%, 720px);
+  max-width: 100%;
+  height: auto !important;
+  /* Neon halo on the whole diagram */
+  filter:
+    drop-shadow(0 0 14px color-mix(in srgb, var(--sl-color-accent) 22%, transparent))
+    drop-shadow(0 6px 18px color-mix(in srgb, var(--bs-doc-cyan) 12%, transparent));
+}
+
+[data-theme="light"] .mermaid svg {
+  filter:
+    drop-shadow(0 0 12px color-mix(in srgb, var(--sl-color-accent) 12%, transparent))
+    drop-shadow(0 4px 14px rgba(21, 128, 61, 0.08));
+}
+
+/* Flowchart nodes: rounded corners + crisp accent stroke */
+.mermaid svg .node rect,
+.mermaid svg .node polygon,
+.mermaid svg .node circle,
+.mermaid svg .node ellipse,
+.mermaid svg .node path,
+.mermaid-zoom-dialog svg .node rect,
+.mermaid-zoom-dialog svg .node polygon,
+.mermaid-zoom-dialog svg .node circle,
+.mermaid-zoom-dialog svg .node ellipse,
+.mermaid-zoom-dialog svg .node path {
+  rx: 10px;
+  ry: 10px;
+  stroke-width: 1.4px;
+  transition: filter 200ms ease, stroke-width 200ms ease;
+}
+
+.mermaid svg .node:hover rect,
+.mermaid svg .node:hover polygon,
+.mermaid svg .node:hover circle,
+.mermaid svg .node:hover ellipse,
+.mermaid svg .node:hover path {
+  stroke-width: 2px;
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--sl-color-accent) 50%, transparent));
+}
+
+/* Subgraph clusters: transparent panel with accent border */
+pre.mermaid svg .cluster rect,
+.mermaid-zoom-dialog svg .cluster rect {
+  fill: color-mix(in srgb, var(--sl-color-accent) 5%, transparent) !important;
+  stroke-dasharray: 4 3;
+  stroke-width: 1.2px;
+  rx: 14px;
+  ry: 14px;
+}
+
+.mermaid svg .cluster-label .nodeLabel,
+.mermaid svg .cluster-label foreignObject div {
+  color: var(--sl-color-accent-high) !important;
+}
+
+/* Edges: thicker, glowing strokes */
+.mermaid svg .edgePath path.path,
+.mermaid svg .edgePaths path,
+.mermaid-zoom-dialog svg .edgePath path.path,
+.mermaid-zoom-dialog svg .edgePaths path {
+  stroke-width: 1.6px;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--sl-color-accent) 38%, transparent));
+}
+
+.mermaid svg .flowchart-link,
+.mermaid-zoom-dialog svg .flowchart-link {
+  stroke-width: 1.6px;
+}
+
+.mermaid svg marker path,
+.mermaid-zoom-dialog svg marker path {
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--sl-color-accent) 50%, transparent));
+}
+
+/* Edge labels.
+   - Empty edges are pruned by JS (see pruneEmptyEdgeLabels in astro.config.mjs);
+     mermaid's per-edge `.labelBkg` div otherwise shows as a dark pill mid-edge.
+   - For real labels, mermaid's `.labelBkg` provides the backing rect that covers
+     the edge line behind the text. We restyle it as a soft pill chip.
+   - `foreignObject` clips to its measured bounds. That clips both our chip's
+     padding and any glyph rendering slightly wider than measured (e.g. trailing
+     "p" in "smtp"). Let it overflow. */
+.mermaid svg .edgeLabel foreignObject,
+.mermaid-zoom-dialog svg .edgeLabel foreignObject {
+  overflow: visible !important;
+}
+
+.mermaid svg .edgeLabel rect,
+.mermaid-zoom-dialog svg .edgeLabel rect {
+  fill: transparent !important;
+}
+
+.mermaid svg .edgeLabel,
+.mermaid-zoom-dialog svg .edgeLabel {
+  color: var(--sl-color-accent-high) !important;
+  font-size: 0.78rem !important;
+}
+
+/* The labelBkg div is mermaid's content-sized backing rect. Turn it into a
+   soft pill with our accent glow. Hidden parent for empty edges via JS. */
+.mermaid svg .edgeLabel .labelBkg,
+.mermaid svg .edgeLabel foreignObject .labelBkg,
+.mermaid-zoom-dialog svg .edgeLabel .labelBkg,
+.mermaid-zoom-dialog svg .edgeLabel foreignObject .labelBkg {
+  border-radius: 999px;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--sl-color-accent) 28%, transparent),
+    0 4px 12px color-mix(in srgb, var(--bs-doc-glow) 40%, transparent);
+}
+
+/* Node labels: color override only. Do NOT bump font-weight/letter-spacing;
+   mermaid sizes the surrounding rect from rendered text width, and heavier
+   weight makes characters wider than the rect, clipping the last letter. */
+.mermaid svg .nodeLabel,
+.mermaid svg .node foreignObject div,
+.mermaid svg .node foreignObject span,
+.mermaid-zoom-dialog svg .nodeLabel,
+.mermaid-zoom-dialog svg .node foreignObject div,
+.mermaid-zoom-dialog svg .node foreignObject span {
+  color: var(--bs-doc-code-text) !important;
+}
+
+/* Sequence diagrams */
+.mermaid svg .actor,
+.mermaid-zoom-dialog svg .actor {
+  stroke-width: 1.4px;
+}
+
+.mermaid svg .actor:not(text),
+.mermaid-zoom-dialog svg .actor:not(text) {
+  rx: 10px;
+  ry: 10px;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--sl-color-accent) 28%, transparent));
+}
+
+.mermaid svg text.actor,
+.mermaid svg .actor tspan,
+.mermaid-zoom-dialog svg text.actor,
+.mermaid-zoom-dialog svg .actor tspan {
+  fill: var(--bs-doc-code-text) !important;
+}
+
+.mermaid svg line.actor-line,
+.mermaid-zoom-dialog svg line.actor-line {
+  stroke: color-mix(in srgb, var(--sl-color-accent) 45%, transparent) !important;
+  stroke-dasharray: 3 4;
+}
+
+.mermaid svg .messageLine0,
+.mermaid svg .messageLine1,
+.mermaid-zoom-dialog svg .messageLine0,
+.mermaid-zoom-dialog svg .messageLine1 {
+  stroke-width: 1.6px;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--sl-color-accent) 40%, transparent));
+}
+
+.mermaid svg .messageText,
+.mermaid-zoom-dialog svg .messageText {
+  fill: var(--sl-color-accent-high) !important;
+}
+
+.mermaid svg .note,
+.mermaid-zoom-dialog svg .note {
+  rx: 8px;
+  ry: 8px;
+  filter: drop-shadow(0 4px 12px color-mix(in srgb, var(--sl-color-accent) 22%, transparent));
+}
+
+.mermaid svg .noteText,
+.mermaid svg .note text,
+.mermaid svg .note tspan,
+.mermaid-zoom-dialog svg .noteText,
+.mermaid-zoom-dialog svg .note text,
+.mermaid-zoom-dialog svg .note tspan {
+  fill: var(--sl-color-accent-high) !important;
+}
+
+/* Light-mode overrides: flip text dark, dial glow back */
+[data-theme="light"] .mermaid svg .nodeLabel,
+[data-theme="light"] .mermaid svg .node foreignObject div,
+[data-theme="light"] .mermaid svg text.actor,
+[data-theme="light"] .mermaid svg .actor tspan,
+[data-theme="light"] .mermaid-zoom-dialog svg .nodeLabel,
+[data-theme="light"] .mermaid-zoom-dialog svg .node foreignObject div,
+[data-theme="light"] .mermaid-zoom-dialog svg text.actor,
+[data-theme="light"] .mermaid-zoom-dialog svg .actor tspan {
+  color: #1f1b2e !important;
+  fill: #1f1b2e !important;
+}
+
+[data-theme="light"] .mermaid svg .edgeLabel,
+[data-theme="light"] .mermaid-zoom-dialog svg .edgeLabel {
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #15803d !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--sl-color-accent) 32%, transparent),
+    0 4px 10px rgba(21, 128, 61, 0.08);
+}
+
+[data-theme="light"] .mermaid svg .messageText,
+[data-theme="light"] .mermaid-zoom-dialog svg .messageText {
+  fill: #15803d !important;
+}
+
+[data-theme="light"] .mermaid svg .cluster-label .nodeLabel,
+[data-theme="light"] .mermaid svg .cluster-label foreignObject div {
+  color: #14532d !important;
+}
+
+/* Reduced motion: drop hover transforms */
+@media (prefers-reduced-motion: reduce) {
+  .mermaid,
+  .mermaid svg .node rect,
+  .mermaid svg .node polygon,
+  .mermaid svg .node circle,
+  .mermaid svg .node ellipse,
+  .mermaid svg .node path {
+    transition: none;
+  }
+}
+
+/* Zoom dialog */
+.mermaid-zoom-dialog {
+  width: 95vw;
+  max-width: 95vw;
+  height: 90vh;
+  max-height: 90vh;
+  padding: 2rem;
+  border: 1px solid var(--sl-color-gray-5, #ccc);
+  border-radius: 8px;
+  background: var(--sl-color-bg, #fff);
+  cursor: zoom-out;
+
+  /* Explicit viewport centering (overrides default to avoid corner-stuck rendering) */
+  position: fixed;
+  inset: 0;
+  margin: auto;
+
+  /* Center the SVG inside the dialog regardless of its aspect ratio */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mermaid-zoom-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+}
+
+.mermaid-zoom-dialog svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+}
+
+.mermaid-zoom-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--sl-color-text, #000);
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+}
+
+.mermaid-zoom-close:hover {
+  opacity: 0.7;
+}
+
+/* BoringStack landing page shell */
+.sl-container:has(.bs-landing) {
+  max-width: none;
+}
+
+.sl-container:has(.bs-landing) > .hero {
+  display: none;
+}
+
+.sl-markdown-content:has(.bs-landing) {
+  max-width: none;
+  margin-top: 0;
+  overflow: hidden;
+}
+
+.sl-markdown-content:has(.bs-landing) > astro-island {
+  display: block;
+  margin-top: 0;
+}
+
+.bs-landing {
+  --bs-bg: #0f1214;
+  --bs-bg-soft: #101714;
+  --bs-panel: #0f1715;
+  --bs-panel-strong: #131c18;
+  --bs-line: rgba(217, 232, 224, 0.13);
+  --bs-line-strong: rgba(217, 232, 224, 0.26);
+  --bs-text: #f6f8f4;
+  --bs-muted: #aab5af;
+  --bs-muted-strong: #c7d0ca;
+  --bs-accent: #4ade80;
+  --bs-accent-strong: #86efac;
+  --bs-accent-low: rgba(74, 222, 128, 0.14);
+  --bs-accent-ink: #052e16;
+  --bs-success: #9be36d;
+  --bs-code: #dce5de;
+  --bs-shadow: rgba(0, 0, 0, 0.3);
+  width: min(1360px, calc(100vw - 2rem));
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .bs-landing {
+    width: 100%;
+    max-width: calc(100vw - 1rem);
+  }
+}
+
+.bs-landing *,
+.bs-landing *::before,
+.bs-landing *::after {
+  box-sizing: border-box;
+}
+
+[data-theme="light"] .bs-landing {
+  --bs-bg: #f8faf5;
+  --bs-bg-soft: #eef5ee;
+  --bs-panel: #ffffff;
+  --bs-panel-strong: #f1f6ef;
+  --bs-line: rgba(39, 68, 55, 0.15);
+  --bs-line-strong: rgba(39, 68, 55, 0.28);
+  --bs-text: #17211d;
+  --bs-muted: #53635c;
+  --bs-muted-strong: #2f4238;
+  --bs-accent: #15803d;
+  --bs-accent-strong: #14532d;
+  --bs-accent-low: rgba(21, 128, 61, 0.13);
+  --bs-accent-ink: #fbfaff;
+  --bs-success: #437f45;
+  --bs-code: #17211d;
+  --bs-shadow: rgba(23, 33, 29, 0.1);
+}

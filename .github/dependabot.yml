@@ -1,0 +1,209 @@
+version: 2
+updates:
+  - package-ecosystem: bun
+    directory: /apps/api
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 8
+    labels: ["dependencies"]
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    cooldown:
+      default-days: 7
+    groups:
+      elysia:
+        patterns: ["elysia", "@elysiajs/*"]
+      drizzle:
+        patterns: ["drizzle-orm", "drizzle-kit"]
+      typebox:
+        patterns: ["@sinclair/typebox"]
+      bullmq:
+        patterns: ["bullmq", "ioredis"]
+      stripe:
+        patterns: ["stripe"]
+      email:
+        patterns:
+          - "resend"
+          - "@sendgrid/mail"
+          - "nodemailer"
+          - "@types/nodemailer"
+          - "handlebars"
+      lint:
+        patterns: ["eslint", "eslint-*", "@eslint/*", "typescript-eslint", "prettier"]
+      observability:
+        patterns: ["@sentry/*", "pino", "pino-pretty"]
+      ai:
+        patterns: ["@anthropic-ai/sdk", "openai"]
+    ignore:
+      - dependency-name: "elysia"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "drizzle-orm"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "drizzle-kit"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "bullmq"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "ioredis"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "stripe"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: bun
+    directory: /apps/ui
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 8
+    labels: ["dependencies"]
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    cooldown:
+      default-days: 7
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+          - "react-router-dom"
+      tanstack:
+        patterns: ["@tanstack/*"]
+      testing:
+        patterns: ["vitest", "@vitest/*", "@testing-library/*", "jsdom", "@playwright/test"]
+      storybook:
+        patterns: ["storybook", "@storybook/*"]
+      tailwind-shadcn:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+          - "prettier-plugin-tailwindcss"
+          - "class-variance-authority"
+          - "tailwind-merge"
+          - "clsx"
+          - "radix-ui"
+          - "@radix-ui/*"
+          - "lucide-react"
+          - "sonner"
+          - "next-themes"
+      lint:
+        patterns: ["eslint", "eslint-*", "@eslint/*", "typescript-eslint", "prettier", "@trivago/*"]
+      observability:
+        patterns: ["@sentry/*", "size-limit", "@size-limit/*", "@lhci/*"]
+    ignore:
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "zod"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: bun
+    directory: /apps/docs
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 4
+    labels: ["dependencies"]
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    cooldown:
+      default-days: 7
+    ignore:
+      # @astrojs/cloudflare 13.x requires Astro 6 (uses astro/app/manifest
+      # which is not exported by Astro 5). Stay on 12.x until we bump Astro.
+      - dependency-name: "@astrojs/cloudflare"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 4
+    labels: ["dependencies", "ci"]
+    commit-message:
+      prefix: "chore(ci)"
+
+  - package-ecosystem: docker
+    directory: /apps/api
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 4
+    labels: ["dependencies", "docker"]
+    commit-message:
+      prefix: "chore(docker)"
+    ignore:
+      - dependency-name: "oven/bun"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker
+    directory: /apps/ui
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 4
+    labels: ["dependencies", "docker"]
+    commit-message:
+      prefix: "chore(docker)"
+    ignore:
+      - dependency-name: "oven/bun"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker
+    directory: /infra/compose/compose
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 4
+    labels: ["dependencies", "docker"]
+    commit-message:
+      prefix: "chore(docker)"
+    ignore:
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "valkey/valkey"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "traefik"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: terraform
+    directory: /infra/bootstrap
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 4
+    labels: ["dependencies", "terraform"]
+    commit-message:
+      prefix: "chore(tofu)"

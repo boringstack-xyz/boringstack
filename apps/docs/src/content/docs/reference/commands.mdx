@@ -1,0 +1,83 @@
+---
+title: Commands cheatsheet
+description: Day-to-day CLI commands for BoringStack development and operations.
+---
+
+CLI commands for development, testing, and infrastructure control. Full script catalogues live in each app's `package.json` and the infra folder's `compose/` directory.
+
+## Where scripts live
+
+- **Repository root:** `package.json` (monorepo tasks: `bun run regen`, `bun run check`)
+- **apps/api:** `package.json` (API dev, build, test, database)
+- **apps/ui:** `package.json` (UI dev, build, test, components)
+- **infra/compose/scripts/:** shell helpers (compose-up.sh, compose-down.sh, backup-wrapper.sh)
+
+For every command below, see the source `package.json` for the full list and options.
+
+## First-week commands
+
+### Setup (first time)
+
+```bash
+./setup.sh        # seed compose/.env, optional --up to boot the stack
+```
+
+### Dev stack control
+
+```bash
+./scripts/compose-up.sh       # start (from infra/compose/compose/)
+./scripts/compose-down.sh     # stop, keep data
+./scripts/compose-down-clean.sh   # stop and wipe
+```
+
+### Regeneration and checks (repo root)
+
+```bash
+bun run regen     # ACL types, OpenAPI schema, lint-meta, docs JSON
+bun run check     # drift checks (API must be running on :7330)
+bun run validate  # full merge gate (check + tests)
+```
+
+### API app (from apps/api)
+
+```bash
+bun run dev       # watch mode
+bun run validate  # typecheck + lint + tests
+bun run db:migrate    # apply migrations
+bun run db:seed   # seed superuser (if vars set)
+```
+
+### UI app (from apps/ui)
+
+```bash
+bun run dev       # dev server on :7331
+bun run validate  # typecheck + lint + tests
+bun run generate:api  # sync OpenAPI schema
+```
+
+## Environment modulation (infra commands from infra/compose/compose/)
+
+```bash
+STACK=prod ./scripts/compose-up.sh              # prod profile
+WITH_OBSERVABILITY=0 ./scripts/compose-up.sh    # skip observability
+WITH_GLITCHTIP=0 ./scripts/compose-up.sh        # skip error tracking
+WITH_MAILPIT=1 ./scripts/compose-up.sh          # add local email catcher
+WITH_BULLMQ=1 ./scripts/compose-up.sh           # add queue dashboard (dev only)
+```
+
+Minimal: `WITH_OBSERVABILITY=0 WITH_GLITCHTIP=0 ./scripts/compose-up.sh` boots Postgres + Valkey + apps only.
+
+## Status and debugging
+
+```bash
+./scripts/compose-up.sh ps          # service status
+docker compose logs -f api-dev      # stream logs
+docker stats                        # live resource usage
+```
+
+## Related
+
+- [Scripts & tooling](/reference/scripts-tooling/); full command catalogues from each app
+- [Environment variables](/reference/env-vars/); every knob you can set
+- [Profiles & overlays](/infra/profiles-and-overlays/); what the WITH_* flags control
+- [Deployment](/topics/deployment/); production command sequences

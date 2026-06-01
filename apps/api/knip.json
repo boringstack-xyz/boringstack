@@ -1,0 +1,17 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "scripts/**/*.ts",
+    "src/**/index.ts",
+    "tests/**/*.test.ts",
+    "src/lib/ai/providers/**/index.ts"
+  ],
+  "project": [
+    "src/**/*.ts!",
+    "tests/**/*.ts",
+    "!tests/lint-meta/fixtures/**",
+    "scripts/**/*.ts"
+  ],
+  "include": ["files", "dependencies", "unlisted"],
+  "ignore": ["tests/setup-test-env.ts"]
+}

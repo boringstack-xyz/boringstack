@@ -1,0 +1,143 @@
+---
+title: OAuth provider setup
+description: Create Google, GitHub, and LinkedIn OAuth apps and wire them to your BoringStack instance.
+---
+
+Set up OAuth with Google, GitHub, and/or LinkedIn so users can sign in with their existing accounts. This runbook walks through each provider console.
+
+## Base URLs
+
+Before creating OAuth apps, decide your domain and set these env vars:
+
+```bash
+FRONTEND_URL=https://example.com
+PUBLIC_API_URL=https://example.com/api
+```
+
+All three providers will ask for redirect URIs. The pattern is:
+
+```
+https://example.com/api/v1/auth/oauth/{provider}/callback
+```
+
+Where `{provider}` is `google`, `github`, or `linkedin`.
+
+## Local development setup
+
+During development, Traefik runs on `localhost:7331`. Register these **additional** redirect URIs in each provider console:
+
+```
+http://localhost:7331/api/v1/auth/oauth/google/callback
+http://localhost:7331/api/v1/auth/oauth/github/callback
+http://localhost:7331/api/v1/auth/oauth/linkedin/callback
+```
+
+Credentials go in `infra/compose/compose/.env` with the same variable names as production.
+
+OAuth buttons render on the login page only when the API has credentials for a provider. The UI reads `GET /api/v1/capabilities/` to determine which buttons to show. No UI-side OAuth client IDs are needed.
+
+After changing env, restart the API:
+
+```bash
+./dev.sh restart api
+```
+
+## Google
+
+1. [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **Credentials**.
+
+2. **Create OAuth client ID** → **Web application**.
+
+3. **Authorized redirect URIs**: add:
+
+```
+https://example.com/api/v1/auth/oauth/google/callback
+```
+
+4. Note the **Client ID** and **Client secret**.
+
+5. Add to `compose/.env`:
+
+```bash
+echo 'GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com' >> compose/.env
+echo 'GOOGLE_OAUTH_CLIENT_SECRET=your-secret' >> compose/.env
+```
+
+6. Restart the API.
+
+Google requests scopes `openid`, `email`, and `profile` automatically. BoringStack handles the flow.
+
+## GitHub
+
+1. GitHub → **Settings** → **Developer settings** → **OAuth Apps** → **New OAuth App**.
+
+2. **Homepage URL**: `https://example.com`
+
+3. **Authorization callback URL**:
+
+```
+https://example.com/api/v1/auth/oauth/github/callback
+```
+
+4. Generate a **Client secret**.
+
+5. Add to `compose/.env`:
+
+```bash
+echo 'GITHUB_OAUTH_CLIENT_ID=your-github-client-id' >> compose/.env
+echo 'GITHUB_OAUTH_CLIENT_SECRET=your-secret' >> compose/.env
+```
+
+6. Restart the API.
+
+BoringStack requests `read:user` and `user:email` scopes.
+
+## LinkedIn
+
+1. [LinkedIn Developer Portal](https://www.linkedin.com/developers/) → **Create app**.
+
+2. Under **Auth** → **OAuth 2.0 settings** → **Authorized redirect URLs**:
+
+```
+https://example.com/api/v1/auth/oauth/linkedin/callback
+```
+
+3. Request the **Sign In with LinkedIn using OpenID Connect** product (required for the `openid` scope).
+
+4. Add credentials to `compose/.env`:
+
+```bash
+echo 'LINKEDIN_OAUTH_CLIENT_ID=your-linkedin-client-id' >> compose/.env
+echo 'LINKEDIN_OAUTH_CLIENT_SECRET=your-secret' >> compose/.env
+```
+
+5. Restart the API.
+
+BoringStack requests `openid`, `profile`, and `email` scopes.
+
+## Verify
+
+1. Ensure Valkey is running (OAuth state storage).
+2. Hit `GET /api/v1/capabilities/` and check that `oauth.providers` lists your configured providers.
+3. Open the login page. OAuth buttons appear only for providers with valid credentials.
+4. Try logging in. Successful flow: redirects to OAuth provider → redirects back → redirects to `/dashboard`.
+
+## For OpenTofu provisioning
+
+If you're using [Provisioning with OpenTofu](/topics/provisioning-with-tofu/), add the same credentials to `terraform.tfvars`:
+
+```hcl
+google_oauth_client_id     = "op://Production/Google-OAuth/client_id"
+google_oauth_client_secret = "op://Production/Google-OAuth/client_secret"
+github_oauth_client_id     = "op://Production/GitHub-OAuth/client_id"
+github_oauth_client_secret = "op://Production/GitHub-OAuth/client_secret"
+linkedin_oauth_client_id     = "op://Production/LinkedIn-OAuth/client_id"
+linkedin_oauth_client_secret = "op://Production/LinkedIn-OAuth/client_secret"
+```
+
+See [`terraform.tfvars.example`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/bootstrap/terraform.tfvars.example) for the complete example.
+
+## Related
+
+- [Authentication](/api/auth/)  - the OAuth abstraction.
+- [Env backup and secrets](/runbooks/env-backup-and-secrets/)  - where credentials live on the VPS.

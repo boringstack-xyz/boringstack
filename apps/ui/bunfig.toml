@@ -1,0 +1,35 @@
+[install]
+minimumReleaseAge = 604800
+minimumReleaseAgeExcludes = [
+  "yaml",
+  "@tailwindcss/oxide",
+  "@tailwindcss/oxide*",
+  "@boring-stack-pkg/eslint-plugin-code-flow",
+  "@boring-stack-pkg/eslint-plugin-comment-hygiene",
+  "@boring-stack-pkg/eslint-plugin-env-access",
+  "@boring-stack-pkg/eslint-plugin-i18n-keys",
+  "@boring-stack-pkg/eslint-plugin-module-boundaries",
+  "@boring-stack-pkg/eslint-plugin-react-component-architecture",
+  "@boring-stack-pkg/eslint-plugin-resource-architecture",
+  "@boring-stack-pkg/eslint-plugin-structured-logging",
+  "@boring-stack-pkg/eslint-plugin-tanstack-query-cache",
+  "@boring-stack-pkg/eslint-plugin-test-conventions",
+  # ESLint 10 support landed in typescript-eslint 8.60.0 (2026-05-25); the
+  # earlier 8.59.4 imports `LegacyESLint` which ESLint 10 removed. Exempt
+  # the family from the 7-day quarantine for this one upgrade window.
+  "typescript-eslint",
+  "@typescript-eslint/eslint-plugin",
+  "@typescript-eslint/parser",
+  "@typescript-eslint/scope-manager",
+  "@typescript-eslint/type-utils",
+  "@typescript-eslint/types",
+  "@typescript-eslint/typescript-estree",
+  "@typescript-eslint/utils",
+  "@typescript-eslint/visitor-keys",
+  "@typescript-eslint/project-service",
+  "@typescript-eslint/tsconfig-utils",
+  # tmp 0.2.6 patches GHSA-ph9p-34f9-6g65 (path-traversal via unsanitized
+  # prefix/postfix). Pulled in transitively by @lhci/cli; 0.15.1 is the
+  # latest @lhci/cli so we override `tmp` directly to clear `bun audit`.
+  "tmp",
+]

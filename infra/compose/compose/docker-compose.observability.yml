@@ -1,0 +1,184 @@
+# Full observability stack — on by default for dev + prod via dev.sh.
+#   - Prometheus + Alertmanager  → metrics + alerting
+#   - Grafana                    → dashboards (host port 3010)
+#   - Loki + Promtail            → log aggregation
+#   - Tempo                      → distributed trace storage (OTLP)
+#   - postgres-exporter          → Postgres metrics
+#   - node-exporter              → host metrics
+#
+# Opt out per-run with `WITH_OBSERVABILITY=0 ./dev.sh up`. The whole point
+# of running this in dev is so you've already used the dashboards before
+# prod day-one — disabling it means learning the panels during your first
+# real incident.
+
+services:
+  prometheus:
+    profiles: ["observability"]
+    image: prom/prometheus:v2.54.1@sha256:f6639335d34a77d9d9db382b92eeb7fc00934be8eae81dbc03b31cfe90411a94
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules.yml:/etc/prometheus/rules.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - backend
+      - frontend
+    depends_on:
+      - alertmanager
+    deploy:
+      resources:
+        limits:
+          cpus: "${PROMETHEUS_LIMITS_CPUS:-0.5}"
+          memory: "${PROMETHEUS_LIMITS_MEMORY:-512M}"
+
+  alertmanager:
+    profiles: ["observability"]
+    image: prom/alertmanager:v0.27.0@sha256:e13b6ed5cb929eeaee733479dce55e10eb3bc2e9c4586c705a4e8da41e5eacf5
+    restart: unless-stopped
+    # entrypoint.sh renders alertmanager.yml from env vars on each boot,
+    # then execs the real Alertmanager binary. See the script for why
+    # (no native env-var support in Alertmanager config).
+    entrypoint: ["/bin/sh", "/etc/alertmanager/entrypoint.sh"]
+    environment:
+      ALERTMANAGER_SLACK_WEBHOOK_URL: ${ALERTMANAGER_SLACK_WEBHOOK_URL:-}
+      ALERTMANAGER_SLACK_CHANNEL: ${ALERTMANAGER_SLACK_CHANNEL:-#alerts}
+      ALERTMANAGER_WEBHOOK_URL: ${ALERTMANAGER_WEBHOOK_URL:-}
+    volumes:
+      - ./alertmanager/entrypoint.sh:/etc/alertmanager/entrypoint.sh:ro
+    ports:
+      - "9093:9093"
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "${ALERTMANAGER_LIMITS_CPUS:-0.25}"
+          memory: "${ALERTMANAGER_LIMITS_MEMORY:-128M}"
+
+  grafana:
+    profiles: ["observability"]
+    image: grafana/grafana:11.3.0@sha256:a0f881232a6fb71a0554a47d0fe2203b6888fe77f4cefb7ea62bed7eb54e13c3
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3010:3000"
+    networks:
+      - backend
+      - frontend
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    deploy:
+      resources:
+        limits:
+          cpus: "${GRAFANA_LIMITS_CPUS:-0.5}"
+          memory: "${GRAFANA_LIMITS_MEMORY:-512M}"
+
+  loki:
+    profiles: ["observability"]
+    image: grafana/loki:3.2.1@sha256:09a53b4a4ff81ffcd8f13886df19d33fac7a8d3aaf952e3c7e66cbade5b2fc31
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    volumes:
+      - loki_data:/loki
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "${LOKI_LIMITS_CPUS:-0.5}"
+          memory: "${LOKI_LIMITS_MEMORY:-512M}"
+
+  promtail:
+    profiles: ["observability"]
+    image: grafana/promtail:3.2.1@sha256:bf617e9d67e80247a59f717f9c1ad388d7d32dc0a1d29abd5799516d15e0a9b5
+    restart: unless-stopped
+    command: ["-config.file=/etc/promtail/config.yml"]
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      - loki
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "${PROMTAIL_LIMITS_CPUS:-0.25}"
+          memory: "${PROMTAIL_LIMITS_MEMORY:-128M}"
+
+  tempo:
+    profiles: ["observability"]
+    image: grafana/tempo:2.6.1@sha256:ef4384fce6e8ad22b95b243d8fc165628cda655376fd50e7850536ad89d71d50
+    restart: unless-stopped
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - tempo_data:/var/tempo
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "${TEMPO_LIMITS_CPUS:-0.5}"
+          memory: "${TEMPO_LIMITS_MEMORY:-512M}"
+
+  postgres-exporter:
+    profiles: ["observability"]
+    image: prometheuscommunity/postgres-exporter:v0.15.0@sha256:386b12d19eab2a37d7cd8ca8b4c7491cc7a830d9581f49af6c98a393da9605e6
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app_dev_password}@postgres:5432/${POSTGRES_DB:-app}?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "${POSTGRES_EXPORTER_LIMITS_CPUS:-0.1}"
+          memory: "${POSTGRES_EXPORTER_LIMITS_MEMORY:-64M}"
+
+  node-exporter:
+    profiles: ["observability"]
+    image: prom/node-exporter:v1.8.2@sha256:4032c6d5bfd752342c3e631c2f1de93ba6b86c41db6b167b9a35372c139e7706
+    restart: unless-stopped
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.rootfs=/rootfs"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: "${NODE_EXPORTER_LIMITS_CPUS:-0.1}"
+          memory: "${NODE_EXPORTER_LIMITS_MEMORY:-64M}"
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  tempo_data:

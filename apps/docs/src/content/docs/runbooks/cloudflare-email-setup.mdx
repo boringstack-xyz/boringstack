@@ -1,0 +1,119 @@
+---
+title: Cloudflare Email setup
+description: Enable Workers Paid, enable Email Service on your domain, scope an API token, and send mail.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+Set up Cloudflare Email Service to send transactional mail from your domain. This is a one-time setup; token rotation afterwards is step 4 only. The setup auto-provisions SPF, DKIM, and DMARC because your zone is on Cloudflare.
+
+For the reasoning behind choosing Cloudflare as the default email provider, see [Cloudflare Email Service](/topics/cloudflare-email/).
+
+## Prerequisites
+
+- A Cloudflare account that owns the domain you'll send from.
+- Admin access to that account.
+- A real email address for audit logs on the API token.
+
+## 1. Upgrade to Workers Paid
+
+Cloudflare dashboard → **Workers & Pages** → **Plans** → **Upgrade to Workers Paid**.
+
+Email Service is bundled; no separate charge. Check [current pricing](https://www.cloudflare.com/plans/developer-platform/) for the current cost.
+
+## 2. Enable Email Service on your domain
+
+Dashboard → **Email** → **Email Routing** (or **Email Sending**) → enable for your domain.
+
+Cloudflare auto-provisions SPF, DKIM, and DMARC records. Wait for the dashboard to show all three as **Active** (usually under a minute). This is the step that eliminates manual DNS hand-edits, where most email setups fail.
+
+## 3. Capture the Account ID
+
+Dashboard → your domain → right sidebar → **Account ID** (32 hex characters).
+
+Add it to `compose/.env`:
+
+```bash
+echo 'CLOUDFLARE_ACCOUNT_ID=your_32_hex_account_id' >> compose/.env
+```
+
+## 4. Create a scoped API token
+
+Dashboard → **My Profile** → **API Tokens** → **Create Token** → **Custom Token**.
+
+Permissions: set **Email Sending** to **Edit** only. Account resources: include this specific account. TTL: leave indefinite; you'll rotate quarterly.
+
+Copy the token (you won't see it again) and add it to `compose/.env`:
+
+```bash
+echo 'CLOUDFLARE_EMAIL_API_TOKEN=your_scoped_token' >> compose/.env
+```
+
+## 5. Set the sender and provider
+
+```bash
+echo 'EMAIL_PROVIDER=cloudflare' >> compose/.env
+echo 'EMAIL_FROM=noreply@yourdomain.com' >> compose/.env
+```
+
+The `EMAIL_FROM` address must be on a domain where you've enabled Email Service. Sending from a domain that isn't enabled returns a 403.
+
+## 6. Smoke-test
+
+Restart the API and watch for a send:
+
+```bash
+./dev.sh restart api
+./dev.sh logs -f api | grep email
+```
+
+Expected output:
+
+```
+event="email_sent" provider="cloudflare" to="user@example.com"
+```
+
+If it fails, check the logs for the response body. Common mistakes: unverified domain, or missing `Email Sending` permission on the API token.
+
+## Validate the DNS records
+
+After the dashboard shows records active, verify them from the terminal:
+
+```bash
+dig +short TXT yourdomain.com | grep 'v=spf1'
+dig +short TXT cf-xxxx._domainkey.yourdomain.com
+dig +short TXT _dmarc.yourdomain.com
+```
+
+All three should return a value. If any are empty, re-toggle Email Service in the dashboard.
+
+<Aside type="caution" title="New-account verified-senders lock">
+Brand-new Cloudflare accounts can only send to verified addresses until the account is approved for unrestricted sending (usually automatic within a few days). If you need to ship before approval, either verify recipient addresses in the dashboard, or contact Cloudflare support.
+</Aside>
+
+## Rotating the token
+
+Every quarter, or after any staff change:
+
+1. Create a new token with the same scope in the dashboard.
+2. Update `CLOUDFLARE_EMAIL_API_TOKEN` in `compose/.env`.
+3. Restart the API: `./dev.sh restart api`.
+4. Confirm a send works.
+5. Revoke the old token in the dashboard.
+
+## Switching to Resend or SendGrid
+
+The API is provider-agnostic. Change one env var:
+
+```bash
+echo 'EMAIL_PROVIDER=resend' >> compose/.env
+echo 'RESEND_API_KEY=re_your_resend_api_key' >> compose/.env
+```
+
+The env validator will refuse to boot in production if the matching key is missing. See [Email](/api/email/) for the provider abstraction.
+
+## Related
+
+- [Cloudflare Email Service](/topics/cloudflare-email/)  - the reasoning and comparisons.
+- [Email](/api/email/)  - the pluggable provider interface.
+- [Email in development](/topics/email-in-dev/)  - Mailpit for local testing without hitting real providers.

@@ -1,0 +1,48 @@
+name: Security report
+description: Suspected vulnerability or hardening gap
+labels: ["security", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste exploit code or live credentials here.**
+
+        For active vulnerabilities, email `security@example.com` instead of filing a public issue.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+
+  - type: textarea
+    id: surface
+    attributes:
+      label: Affected surface
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Potential impact
+    validations:
+      required: true
+
+  - type: textarea
+    id: remediation
+    attributes:
+      label: Suggested remediation
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Suspected severity
+      options:
+        - low — defense-in-depth gap, no known exploit
+        - medium — exploitable under uncommon conditions
+        - high — exploitable on the default config
+        - critical — actively being exploited
+    validations:
+      required: true

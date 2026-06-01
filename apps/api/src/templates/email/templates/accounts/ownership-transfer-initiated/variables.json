@@ -1,0 +1,10 @@
+{
+    "subject": "You have been offered ownership of an account",
+    "preHeader": "Review an ownership transfer offer",
+    "appName": "{{appName}}",
+    "accountName": "Acme Inc.",
+    "fromUserEmail": "owner@example.com",
+    "acceptUrl": "https://example.com/account/ownership-transfer/accept?token=abc",
+    "expiresAt": "2026-12-31",
+    "transferId": "xfer_12345"
+}

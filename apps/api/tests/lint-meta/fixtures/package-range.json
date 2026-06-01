@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "elysia": "^1.4.28"
+  },
+  "devDependencies": {
+    "husky": "~9.1.7"
+  }
+}

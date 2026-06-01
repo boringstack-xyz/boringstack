@@ -1,0 +1,181 @@
+---
+title: "Recipe: Add a background job"
+description: Add a new BullMQ queue and worker. Estimated 30 minutes.
+verifiedOn: "2026-05"
+---
+
+Add a background job queue for work like sending webhooks, processing uploads, or running bulk operations. The example below adds a webhook-fanout queue. Copy the pattern to add any kind of job.
+
+Estimated time: 30 minutes.
+
+## Overview
+
+The API already has a `QueueManager` that owns all queues. You add a new queue by creating a folder with six files (types, constants, producer, worker, setup, index), then registering it in setup-queues.ts. The lint rule `@boring-stack-pkg/eslint-plugin-bullmq` enforces the shape.
+
+## 1. Create the folder structure
+
+Copy from the existing email-delivery queue as a template:
+
+```bash
+cd apps/api
+mkdir -p src/queues/webhook-fanout
+cp src/queues/email-delivery/email-delivery.*.ts src/queues/webhook-fanout/
+# Rename files: email-delivery.* → webhook-fanout.*
+```
+
+This gives you six files prefixed with the queue name:
+
+- `webhook-fanout.types.ts`  - job payload type
+- `webhook-fanout.constants.ts`  - queue name and BullMQ options
+- `webhook-fanout.queue.ts`  - producer (enqueue API)
+- `webhook-fanout.worker.ts`  - handler (consumer)
+- `webhook-fanout.setup.ts`  - wire into QueueManager
+- `index.ts`  - re-exports
+
+## 2. Define the job payload type
+
+In `webhook-fanout.types.ts`:
+
+```ts
+export interface IWebhookFanoutJob {
+  accountId: string;
+  event: "account.upgraded" | "account.cancelled";
+  targetUrl: string;
+  payload: Record<string, unknown>;
+}
+```
+
+## 3. Set queue name and options
+
+In `webhook-fanout.constants.ts`:
+
+```ts
+export const WEBHOOK_FANOUT_QUEUE = "webhook-fanout" as const;
+export const WEBHOOK_FANOUT_DEFAULT_OPTS = {
+  attempts: 5,
+  backoff: { type: "exponential", delay: 1_000 },
+  removeOnComplete: 1_000,
+  removeOnFail: 5_000,
+} as const;
+```
+
+`attempts: 5` means retry 5 times. `removeOnComplete: 1_000` means keep 1000 completed jobs in history. Adjust for your use case.
+
+## 4. Write the producer
+
+In `webhook-fanout.queue.ts`:
+
+```ts
+export async function enqueueWebhookFanout(
+  queue: Queue<IWebhookFanoutJob>,
+  job: IWebhookFanoutJob,
+) {
+  return queue.add(job.event, job, WEBHOOK_FANOUT_DEFAULT_OPTS);
+}
+```
+
+The producer wraps `queue.add()`. It's called via `QueueManager`.
+
+## 5. Write the worker
+
+In `webhook-fanout.worker.ts`:
+
+```ts
+export async function webhookFanoutWorker(job: Job<IWebhookFanoutJob>) {
+  const res = await fetch(job.data.targetUrl, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(job.data.payload),
+  });
+  if (!res.ok) throw new Error(`webhook responded ${res.status}`);
+  return { delivered: true };
+}
+```
+
+Throw errors to trigger retries. **Make your worker idempotent**: the same job can execute multiple times if retries or network hiccups occur. Include an idempotency key in your payload or database if needed.
+
+## 6. Wire the queue and worker
+
+In `webhook-fanout.setup.ts`, export the setup function:
+
+```ts
+export async function setupWebhookFanout(
+  queueManager: QueueManager,
+): Promise<void> {
+  const queue = queueManager.getQueue<IWebhookFanoutJob>(
+    WEBHOOK_FANOUT_QUEUE,
+  );
+  // Register the worker
+  const worker = new Worker(
+    WEBHOOK_FANOUT_QUEUE,
+    webhookFanoutWorker,
+    { connection },
+  );
+}
+```
+
+Then register in `src/config/setup-queues.ts` alongside existing queues:
+
+```ts
+await setupWebhookFanout(queueManager);
+```
+
+And add the enqueue method to `QueueManager`:
+
+```ts
+async enqueueWebhookFanout(job: IWebhookFanoutJob) {
+  return enqueueWebhookFanout(this.queues[WEBHOOK_FANOUT_QUEUE], job);
+}
+```
+
+## 7. Call it from your code
+
+From any service or route:
+
+```ts
+await queueManager.enqueueWebhookFanout({
+  accountId: "user-123",
+  event: "account.upgraded",
+  targetUrl: "https://hooks.example.com/upgrades",
+  payload: { plan: "pro" },
+});
+```
+
+In tests, `QUEUES_ENABLED=false` makes QueueManager run the worker inline, so you don't need a real Valkey.
+
+## Verify
+
+Boot Bull Board to watch jobs:
+
+```bash
+WITH_BULLMQ=1 ./scripts/compose-up.sh
+```
+
+Visit `http://bullmq.localhost` (or `http://localhost:7332`) to see the queue, active jobs, and retry counts.
+
+Trigger the producer:
+
+```bash
+# Via a test
+bun test src/api/webhooks/
+
+# Or curl to a route that enqueues
+curl -X POST http://localhost:7330/api/v1/webhooks/test \
+  -H "Authorization: Bearer ..." \
+  -H "Content-Type: application/json" \
+  -d '{"event":"account.upgraded"}'
+```
+
+The job appears in Bull Board's "completed" or "failed" tab. Check the worker logs in the API container if it fails.
+
+## Key points
+
+- **Workers are processes, not lambdas**: The worker stays running and claims jobs from the queue. Don't start and exit. In production, the same API container runs both the web server and the worker.
+- **Idempotency**: If a job retries or the process crashes mid-execution, it runs again. Design idempotently. Use database unique constraints or dedup tables if needed.
+- **Lint enforces the shape**: Files must be in `src/queues/<name>/` with the six required files. The ESLint rule blocks any other pattern.
+
+## Related
+
+- [Queues](/api/queues/)  - full reference for BullMQ and QueueManager.
+- [Background work](/architecture/background-work/)  - architecture patterns for long-running tasks.
+- [Audit log](/api/audit-log/)  - record job lifecycle events.

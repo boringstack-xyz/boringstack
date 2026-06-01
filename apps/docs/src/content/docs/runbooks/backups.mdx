@@ -1,0 +1,167 @@
+---
+title: Backups
+description: Postgres to rclone off-site, with retention. Runs from cron; restore drills are mandatory.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+Set up `pg_dump` plus `rclone` to back up your database daily to an S3-compatible bucket (or any rclone-supported remote) with automatic retention. This runbook walks you through the initial setup and verifies the restore path works.
+
+The script is in `scripts/backup-wrapper.example.sh`  - about 80 lines of bash. It runs `pg_dump --no-owner` against your database container, gzips the output, uploads via rclone, and deletes old backups based on `RETENTION_DAYS`. Exit code non-zero on failure, so cron will mail you if something breaks.
+
+## 1. Configure rclone
+
+Install rclone on the VPS (if not already there) and run the interactive config:
+
+```bash
+rclone config
+```
+
+This creates a named remote (e.g., `backup`) pointing at S3, B2, Wasabi, Storj, or any other backend. Choose a remote name and remember it -you'll set `RCLONE_REMOTE_NAME` to this value.
+
+If you're using Cloudflare R2: region is `auto`, endpoint is `https://<accountid>.r2.cloudflarestorage.com`, and credentials are your R2 access key and secret.
+
+## 2. Copy and enable the backup script
+
+```bash
+cp scripts/backup-wrapper.example.sh scripts/backup-wrapper.sh
+chmod +x scripts/backup-wrapper.sh
+```
+
+## 3. Add env vars to compose/.env
+
+```bash
+POSTGRES_USER=app
+POSTGRES_DB=app
+RCLONE_REMOTE_NAME=backup
+RCLONE_REMOTE_PATH=db
+BACKUP_RETENTION_DAYS=30
+```
+
+See the script header for the complete set. `BACKUP_RETENTION_DAYS=30` means keep the last 30 daily backups (one month of point-in-time recovery).
+
+## 4. Dry-run to verify the plan
+
+```bash
+BACKUP_DRY_RUN=1 ./scripts/backup-wrapper.sh
+```
+
+Expected output:
+
+```
+DRY RUN: would dump database 'app' to backup-2026-05-23.sql.gz
+DRY RUN: would copy to backup:db/backup-2026-05-23.sql.gz
+DRY RUN: would delete 0 remote files (retention=30 days)
+```
+
+## 5. Run once manually
+
+```bash
+./scripts/backup-wrapper.sh
+```
+
+Check your rclone remote to confirm the `.sql.gz` file landed:
+
+```bash
+rclone ls backup:db/
+```
+
+## 6. Schedule it
+
+Add a cron entry on the VPS:
+
+```bash
+# /etc/cron.d/backups; daily at 03:15
+15 3 * * * root /path/to/infra/compose/scripts/backup-wrapper.sh
+```
+
+## Longer retention for compliance
+
+Run two crons with different paths if you need monthly archives plus daily recent backups:
+
+```bash
+# Daily, 30 days
+15 3 * * * ... RCLONE_REMOTE_PATH=daily BACKUP_RETENTION_DAYS=30 ...
+
+# Monthly, kept forever
+15 4 1 * * ... RCLONE_REMOTE_PATH=monthly BACKUP_RETENTION_DAYS=99999 ...
+```
+
+## Restore drill
+
+<Aside type="caution" title="A backup you can't restore is not a backup">
+Run this drill every quarter. If any step fails, the runbook is broken before you need it.
+</Aside>
+
+List what you have:
+
+```bash
+rclone ls backup:db/
+```
+
+Pick a recent backup and download it:
+
+```bash
+rclone copy backup:db/backup-2026-05-22.sql.gz ./
+gunzip backup-2026-05-22.sql.gz
+```
+
+Spawn a throwaway Postgres container:
+
+```bash
+docker run --rm -d --name pg-restore \
+  -e POSTGRES_PASSWORD=test \
+  postgres:17
+```
+
+Wait a moment for it to init, then pipe the SQL in:
+
+```bash
+cat backup-2026-05-22.sql | docker exec -i pg-restore psql -U postgres
+```
+
+Sanity-check row counts in key tables:
+
+```bash
+docker exec -i pg-restore psql -U postgres -c \
+  "SELECT schemaname, tablename, pg_size_pretty(pg_total_relation_size('\"' || schemaname || '\".\"' || tablename || '\"')) \
+   FROM pg_tables WHERE schemaname NOT IN ('pg_catalog', 'information_schema') \
+   ORDER BY pg_total_relation_size(schemaname || '.' || tablename) DESC LIMIT 10;"
+```
+
+Verify specific tables exist:
+
+```bash
+docker exec -i pg-restore psql -U postgres app -c "SELECT COUNT(*) FROM users;"
+docker exec -i pg-restore psql -U postgres app -c "SELECT COUNT(*) FROM audit_log;"
+```
+
+All good? Clean up the test container:
+
+```bash
+docker stop pg-restore
+```
+
+## Encryption
+
+The script uploads gzip'd SQL. Two patterns for encryption:
+
+- **Server-side at the remote**: S3, B2, and most providers support encryption-at-rest. Simplest if you trust the provider.
+- **Client-side via rclone crypt**: `rclone config` a second remote that wraps your bucket with AES encryption. Encrypted before leaving the host; you hold the key.
+
+For sensitive data, use client-side crypt. Store the password in your secrets manager (1Password, Vault, etc.); without it the backups are useless.
+
+## What's not backed up
+
+- **Valkey**: Cache and queues, not authoritative data. If you must recover Valkey state, rebuild it from the database.
+- **Container images**: Pull from GHCR on restore; not part of the backup.
+- **compose/.env**: Back up separately as a secrets repo or password manager entry (see [Env backup and secrets](/runbooks/env-backup-and-secrets/)).
+
+## Why these choices
+
+**rclone**: One tool, any backend (S3, B2, Wasabi, SFTP, etc.). **pg_dump**: Logical dumps survive Postgres version upgrades; filesystem snapshots do not. **Gzip before upload**: Compresses well, saves bandwidth. **Retention enforced at the remote**: Source of truth is the remote, not the VPS filesystem. **Exit code on failure**: Cron captures and mails you errors automatically.
+
+## Related
+
+- [Env backup and secrets](/runbooks/env-backup-and-secrets/)  - back up `compose/.env` and the 1Password vault separately.
+- [Deployment](/topics/deployment/)  - the full production setup this backup fits into.

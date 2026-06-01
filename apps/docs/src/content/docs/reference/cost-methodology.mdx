@@ -1,0 +1,97 @@
+---
+title: Cost methodology
+description: "How the cost figures on the Why BoringStack page were derived: assumptions, rate cards, and the math behind each column."
+verifiedOn: "2026-05"
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+The [cost calculator](/architecture/why-boringstack/) compares three solution categories at four usage stages. Prices reflect public list rate cards as of 2026-05. Numbers are rounded up on purpose so the columns sit on the same scale, not to predict your bill to the cent.
+
+<Aside type="caution" title="Categories, not vendors">
+The "Managed-PaaS bundle" and "Hosted SaaS platform" columns do not represent a single named product. Each is a shape of solution priced by picking representative rate cards from that shape. Your actual vendor may be cheaper or pricier depending on which features you use.
+</Aside>
+
+## The four stages
+
+| Stage          | MAU      | Requests / day | Egress / mo | DB storage |
+| -------------- | -------- | -------------- | ----------- | ---------- |
+| Side project   | ~200     | 5k             | 5 GB        | 1 GB       |
+| Early startup  | ~2k      | 80k            | 50 GB       | 5 GB       |
+| Growth         | ~20k     | 1M             | 500 GB      | 50 GB      |
+| Scale          | ~100k    | 10M            | 5 TB        | 250 GB     |
+
+The MAU number is the dial that matters most; everything else derives from typical SaaS request and storage patterns at that audience size.
+
+## Column 1: BoringStack (VPS + Cloudflare + B2)
+
+The runtime is the BoringStack default: one Hetzner Cloud VPS running the full Compose stack (Postgres, Valkey, API, UI, Traefik), Cloudflare proxying the apex domain (free plan), and Backblaze B2 for daily Postgres backups.
+
+| Stage    | Host          | Monthly cost           |
+| -------- | ------------- | ---------------------- |
+| Side     | CX22 (€4.59)  | ~$5 (€4.59 + B2 ~$0.10) |
+| Early    | CX32 (€7.16)  | ~$8                    |
+| Growth   | CX42 (€16.40) | ~$16                   |
+| Scale    | CX52 (€32.95) | ~$35                   |
+
+**What's included.** Hetzner Cloud's plans include 20 TB of outbound traffic per month at every tier, so egress is effectively free under any of these scenarios. Cloudflare's free plan covers DNS, the proxy, basic WAF, and unlimited CDN bandwidth. B2 charges $0.006/GB-month for storage and gives 3× the storage as free egress, so backup egress almost never bills.
+
+**What's not included.** Application code, your own time, error tracking (hosted Sentry would add ~$26/mo above the free tier; self-hosted GlitchTip is $0 extra container cost). Cloudflare paid tier becomes worth it at the Scale stage if you want bot rules or advanced WAF rules.
+
+**Sources.** [Hetzner Cloud pricing](https://www.hetzner.com/cloud), [Cloudflare plans](https://www.cloudflare.com/plans/), [Backblaze B2 pricing](https://www.backblaze.com/cloud-storage/pricing).
+
+## Column 2: Managed-PaaS bundle
+
+A typical "edge functions + managed Postgres" combination. The numbers come from adding a representative Pro-tier edge platform (~$20/mo base + bandwidth) to a representative managed-Postgres tier (~$25/mo base + DB storage).
+
+| Stage    | Components                                                | Monthly cost |
+| -------- | --------------------------------------------------------- | ------------ |
+| Side     | Base plans, well under free-tier overages                 | ~$45         |
+| Early    | Base plans, small bandwidth overage                       | ~$80         |
+| Growth   | Base plans + bandwidth at 500 GB tier + DB at 50 GB tier  | ~$250        |
+| Scale    | Enterprise-style pricing for 5 TB egress + 250 GB DB      | ~$1,200      |
+
+**Where the money goes.** Bandwidth and function execution time scale linearly with traffic; managed-Postgres tier-jumps happen at storage thresholds. The Scale-tier figure assumes you're on the dedicated/enterprise pricing rung most platforms push you to past ~1M requests/day, not a self-serve plan.
+
+**What's included.** Auto-scaling compute, automatic TLS, CDN, managed backups, web dashboards. Things you'd otherwise wire yourself.
+
+**What's not included.** Auth-as-a-service, email, error tracking, background-job platforms. Each is priced separately if you adopt them.
+
+**Why this column exists.** It represents the "fast to deploy, slow to control" path: trivial onboarding, but the bill scales with usage and you cannot move the runtime off the platform without a rewrite.
+
+## Column 3: Hosted SaaS platform
+
+The all-in-one shape: auth + DB + background work + email + analytics bundled into one platform, priced per seat or per active user.
+
+| Stage    | Pricing model                                       | Monthly cost |
+| -------- | --------------------------------------------------- | ------------ |
+| Side     | Free tier with a few paid add-ons                   | ~$25         |
+| Early    | $0.10–$0.20 / MAU above free tier                   | ~$200        |
+| Growth   | $0.07 / MAU at 20k MAU after volume discount        | ~$1,500      |
+| Scale    | Enterprise contract, $0.06 / MAU + platform license | ~$6,000      |
+
+**Where the money goes.** Per-MAU pricing is brutal at scale: what costs $25/mo for 200 users costs $6,000/mo for 100k. The platform shape is great for fast product-market-fit experiments but stops making sense once you have real traction.
+
+**What's included.** Almost everything an early team would have to wire: auth, DB, queues, email templates, file storage, an admin dashboard.
+
+**What's not included.** Custom code paths the platform doesn't support; you write integrations or live without them. Migrating off is usually a full rebuild.
+
+**Why this column exists.** It represents the "buy the spine, pay forever" path. Lowest day-1 friction, highest steady-state cost, hardest to leave.
+
+## What this comparison does not measure
+
+- **Engineering time.** The PaaS and SaaS columns save days of setup. The BoringStack column trades some of that day-1 time for long-term ownership. Calculator-row cost is *infra only*.
+- **Reliability differences.** Multi-AZ managed Postgres has stronger guarantees by default than one VPS. The Scale-tier BoringStack figure assumes you've added a hot standby or moved to managed Postgres voluntarily. See the [Decision Log](/architecture/decisions/) on Postgres.
+- **Enterprise sales pricing.** Every column shows public list price. Real enterprise deals are negotiated and can shift any column by 30–60%.
+- **Free-tier edge cases.** New-account credits, promotional pricing, and pre-revenue waivers can make the early stages cheaper than shown for all three columns.
+
+## How to update these numbers
+
+Edit `src/components/landing/costData.ts`. That file defines all the figures for the calculator and these tables. Update the `pricingAsOf` constant at the same time so the published-date footer stays current.
+
+## Related
+
+- [Why BoringStack](/architecture/why-boringstack/); the calculator lives there.
+- [Decision Log](/architecture/decisions/); the per-choice reasoning behind every "boring" pick that affects this bill.
+- [Deployment](/topics/deployment/); how to actually run on the BoringStack column.
+- [Provisioning with OpenTofu](/topics/provisioning-with-tofu/); zero-to-VPS at the Hetzner prices above.

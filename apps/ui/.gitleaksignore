@@ -1,0 +1,24 @@
+# Allowlist for gitleaks. Entries are fingerprints
+# (`<commit>:<file>:<rule-id>:<line>`) for historical findings reviewed and
+# confirmed as test fixtures, not real secrets.
+#
+# Format documented at https://github.com/gitleaks/gitleaks#configuration
+
+# Test-fixture verification token in VerifyEmailPage component tests.
+# Token string is a placeholder used to assert that the OAuth verify flow
+# hands the URL `?token=` value to apiClient.POST(). Replaced in the
+# working tree with a lower-entropy fixture (`test-verify-token-fixture`)
+# in the next commit; this entry suppresses the historical hits.
+fc54583ef1e5d7b432f048c3613b48631bc01e2e:src/features/auth/components/VerifyEmailPage/VerifyEmailPage.test.tsx:generic-api-key:60
+fc54583ef1e5d7b432f048c3613b48631bc01e2e:src/features/auth/components/VerifyEmailPage/VerifyEmailPage.test.tsx:generic-api-key:64
+
+# Historical signup-flow test password ("StrongPassw0rd") in the
+# e2e signup spec — synthetic test fixture, not a real credential.
+# The working tree replaces it with a lower-entropy value
+# ("Strong-test-pass-1A") plus an inline `// gitleaks:allow` marker; this
+# entry suppresses the past commit so the history scan stays clean.
+84d14fc6713ca27e6521513d290b2a722d11f29c:e2e/signup.spec.ts:generic-api-key:44
+
+# Historical reset-password hook test token in ResetPasswordPage.hooks.test.tsx.
+# Synthetic fixture only; working tree uses `test-reset-token-fixture`.
+c0ad56f621d45c96dd9e5f57caac7304df8acba2:src/features/auth/components/ResetPasswordPage/ResetPasswordPage.hooks.test.tsx:generic-api-key:44

@@ -1,0 +1,143 @@
+[
+  {
+    "name": "Initial route (cold start: index + react + router + i18n + query)",
+    "path": [
+      "dist/assets/index-*.js",
+      "dist/assets/react-*.js",
+      "dist/assets/router-*.js",
+      "dist/assets/i18n-*.js",
+      "dist/assets/query-*.js"
+    ],
+    "limit": "255 KB",
+    "gzip": true
+  },
+  {
+    "name": "Modulepreload runtime + shared shell",
+    "path": [
+      "dist/assets/rolldown-runtime-*.js",
+      "dist/assets/logger-*.js",
+      "dist/assets/client-*.js",
+      "dist/assets/button-*.js",
+      "dist/assets/classnames-*.js",
+      "dist/assets/index.esm-*.js",
+      "dist/assets/createLucideIcon-*.js",
+      "dist/assets/dist-*.js"
+    ],
+    "limit": "165 KB",
+    "gzip": true
+  },
+  {
+    "name": "CSS (Tailwind compiled)",
+    "path": "dist/assets/*.css",
+    "limit": "12 KB",
+    "gzip": true
+  },
+  {
+    "name": "LoginPage chunk",
+    "path": "dist/assets/LoginPage-*.js",
+    "limit": "20 KB",
+    "gzip": true
+  },
+  {
+    "name": "DashboardPage chunk",
+    "path": "dist/assets/DashboardPage-*.js",
+    "limit": "5 KB",
+    "gzip": true
+  },
+  {
+    "name": "SettingsPage chunk",
+    "path": "dist/assets/SettingsPage-*.js",
+    "limit": "20 KB",
+    "gzip": true
+  },
+  {
+    "name": "BillingPage chunk",
+    "path": "dist/assets/BillingPage-*.js",
+    "limit": "4 KB",
+    "gzip": true
+  },
+  {
+    "name": "NotificationsPage chunk",
+    "path": "dist/assets/NotificationsPage-*.js",
+    "limit": "4 KB",
+    "gzip": true
+  },
+  {
+    "name": "NotificationsPreferencesPage chunk",
+    "path": "dist/assets/NotificationsPreferencesPage-*.js",
+    "limit": "3 KB",
+    "gzip": true
+  },
+  {
+    "name": "InvitationsPage chunk",
+    "path": "dist/assets/InvitationsPage-*.js",
+    "limit": "4 KB",
+    "gzip": true
+  },
+  {
+    "name": "InvitationAcceptPage chunk",
+    "path": "dist/assets/InvitationAcceptPage-*.js",
+    "limit": "3 KB",
+    "gzip": true
+  },
+  {
+    "name": "OwnershipTransferAcceptPage chunk",
+    "path": "dist/assets/OwnershipTransferAcceptPage-*.js",
+    "limit": "3 KB",
+    "gzip": true
+  },
+  {
+    "name": "JoinRequestsPage chunk",
+    "path": "dist/assets/JoinRequestsPage-*.js",
+    "limit": "3 KB",
+    "gzip": true
+  },
+  {
+    "name": "AuditLogPage chunk",
+    "path": "dist/assets/AuditLogPage-*.js",
+    "limit": "3 KB",
+    "gzip": true
+  },
+  {
+    "name": "ProfilePage chunk",
+    "path": "dist/assets/ProfilePage-*.js",
+    "limit": "3 KB",
+    "gzip": true
+  },
+  {
+    "name": "SignUpPage chunk",
+    "path": "dist/assets/SignUpPage-*.js",
+    "limit": "3 KB",
+    "gzip": true
+  },
+  {
+    "name": "ForgotPasswordPage chunk",
+    "path": "dist/assets/ForgotPasswordPage-*.js",
+    "limit": "3 KB",
+    "gzip": true
+  },
+  {
+    "name": "ResetPasswordPage chunk",
+    "path": "dist/assets/ResetPasswordPage-*.js",
+    "limit": "3 KB",
+    "gzip": true
+  },
+  {
+    "name": "VerifyEmailPage chunk",
+    "path": "dist/assets/VerifyEmailPage-*.js",
+    "limit": "3 KB",
+    "gzip": true
+  },
+  {
+    "name": "OAuthCallbackPage chunk",
+    "path": "dist/assets/OAuthCallbackPage-*.js",
+    "limit": "3 KB",
+    "gzip": true
+  },
+  {
+    "name": "NotFoundPage chunk",
+    "path": "dist/assets/NotFoundPage-*.js",
+    "limit": "2 KB",
+    "gzip": true
+  }
+]

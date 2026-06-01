@@ -1,0 +1,143 @@
+---
+title: Audit log
+description: Append-only, fire-and-forget log of security- and compliance-relevant events. Lives in its own Postgres schema.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+The audit log answers "who did what, when?" Auth events, OAuth link/unlink, billing actions, and mutations on flagged resources all land in `audit.audit_log`. The shape is deliberately boring: append-only table, structured `metadata` blob, time-ordered. Writes are fire-and-forget and never block the originating request.
+
+## How a write happens
+
+Audit writes happen after the action succeeds. A call site uses `void auditLogService.record({...})` to signal the caller is deliberately not awaiting. The service INSERTs into `audit.audit_log`; if the write fails, the error is logged and swallowed, never thrown. This pattern ensures audit can never break a customer action.
+
+## Design
+
+The audit schema is isolated from the app's public schema, so retentions, grants, and archival can move independently. Fire-and-forget writes mean a flaky audit table cannot break the API. System events (cron jobs, webhooks without user context) have a nullable `userId` and `ON DELETE SET NULL` so the history survives when a user is scrubbed. The `metadata` column is a jsonb blob, allowing new fields without migrations. Action names come from a centralized `AUDIT_ACTIONS` constant so they stay stable for admin queries.
+
+## The action vocabulary
+
+Convention: `<area>.<verb>`. Examples:
+
+- `auth.login_success`, `auth.session_created`, `auth.session_revoked`, `auth.password_reset_completed`
+- `billing.checkout_session_created`, `billing.portal_session_created`
+- `user.profile_updated`
+
+A `<area>.<verb>` shape means admin queries can group cleanly:
+
+```sql
+SELECT action, count(*) FROM audit.audit_log
+WHERE created_at > now() - interval '24 hours'
+GROUP BY 1 ORDER BY 2 DESC;
+```
+
+New event types add a constant before the first call site. Both code review and the lint plugin treat magic-string actions as a smell.
+
+## Using it
+
+```ts
+void auditLogService.record({
+  userId: actor.id, // null for system events
+  action: AUDIT_ACTIONS.USER_PROFILE_UPDATED,
+  resource: `user:${user.id}`, // optional
+  metadata: { fieldsChanged: ["firstName"] }, // optional, PII-free
+});
+```
+
+For the rare flow that must observe the write (e.g. a security event that has to be persisted before responding), drop `void` and check `success`.
+
+## What `metadata` is for
+
+Structured context the action name doesn't capture. Keep it small and PII-free.
+
+- Good: `{ planId: "pro_monthly", previousPlanId: "free" }`
+- Bad: `{ email: "...", lastFourCardDigits: "..." }`
+
+The lint plugin flags common leak patterns (keys named `password`, `token`, raw `email`).
+
+## userId: authenticated, system, or admin
+
+For an authenticated user action, pass the actor's id. For system actions (cron, webhook with no user context), pass `null`. For admin impersonating a user, pass the acting admin's id and set `metadata.actingAs` to the target. Never quietly attribute an admin's actions to the impersonated user.
+
+## Adding a new event
+
+1. Add a constant to `AUDIT_ACTIONS`.
+2. After the action succeeds, `void auditLogService.record({...})`.
+3. That's it. `/admin/audit-log` and the dashboard activity feed pick it up automatically because they query by action and recency.
+
+## Retention
+
+The template ships no retention policy on purpose. Three reasonable shapes:
+
+- Cold storage: periodic `COPY ... TO` then `DELETE WHERE created_at < ...`.
+- Partitioning: `pg_partman` by month, drop old partitions.
+- None: for most B2B SaaS, an unbounded table is fine for years.
+
+Pick consciously. Don't let the table grow to "huge and slow" and then think about it.
+
+## Operator queries
+
+Practical psql one-liners for "who did what" investigations. All assume you're connected to the app database (`docker compose exec postgres psql -U app -d app`).
+
+```sql
+-- Last 50 events for a specific user, newest first.
+SELECT created_at, action, resource, metadata
+FROM audit.audit_log
+WHERE user_id = '<uuid>'
+ORDER BY created_at DESC
+LIMIT 50;
+```
+
+```sql
+-- Login + session activity in the last 24 hours, grouped by action.
+SELECT action, count(*)
+FROM audit.audit_log
+WHERE action LIKE 'auth.%'
+  AND created_at > now() - interval '24 hours'
+GROUP BY 1
+ORDER BY 2 DESC;
+```
+
+```sql
+-- Every billing event ever recorded for one account.
+SELECT created_at, user_id, action, metadata
+FROM audit.audit_log
+WHERE action LIKE 'billing.%'
+  AND resource LIKE 'account:<account-uuid>%'
+ORDER BY created_at DESC;
+```
+
+```sql
+-- Compliance export: every action this user took (for a GDPR data-subject request).
+SELECT created_at, action, resource, metadata
+FROM audit.audit_log
+WHERE user_id = '<uuid>'
+ORDER BY created_at;
+```
+
+```sql
+-- Rate-limiting candidates: actors with the most events in the last hour.
+SELECT user_id, count(*) AS events
+FROM audit.audit_log
+WHERE created_at > now() - interval '1 hour'
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 20;
+```
+
+## Lint coverage
+
+[`@boring-stack-pkg/eslint-plugin-audit-log`](https://www.npmjs.com/package/@boring-stack-pkg/eslint-plugin-audit-log) flags:
+
+- Mutations on flagged tables that skip the audit write.
+- Magic-string `action` values that bypass `AUDIT_ACTIONS`.
+- Metadata payloads that look like a PII leak.
+
+## Source
+
+[`src/lib/audit-log/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/audit-log): service, types, constants, and audit schema.
+
+## Related
+
+- [Authentication](/api/auth/); every auth event writes here.
+- [Lint as the contract](/architecture/lint-as-contract/); why the lint plugin matters.

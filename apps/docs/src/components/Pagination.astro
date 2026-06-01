@@ -1,0 +1,14 @@
+---
+import PaginationView from "./PaginationView";
+
+const { dir, pagination } = Astro.locals.starlightRoute;
+const { prev, next } = pagination;
+---
+
+<PaginationView
+  dir={dir}
+  next={next}
+  nextLabel={Astro.locals.t("page.nextLink")}
+  prev={prev}
+  previousLabel={Astro.locals.t("page.previousLink")}
+/>

@@ -1,0 +1,55 @@
+---
+title: Supply-chain protection
+description: Every BoringStack repo refuses to install npm package versions younger than seven days. A short delay against rug-pull and account-hijack attacks on fresh publishes.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+Supply-chain attacks follow a predictable timeline: a maintainer's account is compromised, a malicious version is published, the community detects and yanks it within hours to days. The undetected window is short but exploitable. Every BoringStack repo enforces a seven-day minimum release age to block installs inside that window.
+
+The timeline: malicious versions typically get yanked within 24-72 hours of detection. Our gate holds packages younger than 7 days. The window closes before the gate opens. OSV scanner, npm audit, and human review all have time to flag the package before it lands.
+
+## How it works per package manager
+
+- **apps/api (Bun)**: `bunfig.toml`: `[install] minimumReleaseAge = 604800` (seconds).
+- **apps/ui (Bun)**: `bunfig.toml`: `[install] minimumReleaseAge = 604800` (seconds), with per-package excludes for high-churn and first-party packages.
+- **apps/docs (Bun)**: `bunfig.toml`: `[install] minimumReleaseAge = 604800` (seconds).
+- **infra/compose**: No JS deps.
+- **infra/bootstrap**: No JS deps.
+
+## Trade-offs
+
+- **First-time installs may fail when the range resolves to a brand-new release**: pin to a specific older version or wait.
+- **Critical security patches are delayed seven days**: override per-package via Bun/npmrc exclusions when a real CVE drops.
+- **Slightly behind the bleeding edge**: this is the point.
+
+## Overriding for a specific package
+
+Bun supports per-package overrides in `bunfig.toml` via `minimumReleaseAgeExcludes`:
+
+```toml
+minimumReleaseAgeExcludes = [
+  "yaml",
+  "@tailwindcss/oxide*",
+]
+```
+
+Glob patterns are supported, useful for platform-variant packages like `@tailwindcss/oxide-*`.
+
+<Aside type="note" title="Use sparingly">
+Each exclusion weakens the threat model slightly. The default `apps/ui/bunfig.toml` already excludes several high-churn packages whose latest versions fall within the seven-day window. Only add exclusions when a specific CVE or release justifies it. Document the reason in a comment.
+</Aside>
+
+## Why not just trust npm?
+
+npm's audit signal lags detection. By the time `npm audit` reports a malicious version, the attack window has closed. This rule does not replace audits. It is a low-cost, independent layer that extends the detection window for those tools.
+
+## References
+
+- [Bun docs: install lockfile settings](https://bun.com/docs/install/lockfile)
+
+## Related
+
+- [Security pipeline](/topics/security/); CI scans, SAST, and dependency review that pair with the install delay.
+- [Lint as the contract](/architecture/lint-as-contract/); architecture-level constraints the merge gate enforces.
+- [Commands cheatsheet](/reference/commands/); where `bun run validate` and `bun run validate` live.

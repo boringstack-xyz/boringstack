@@ -1,0 +1,37 @@
+<p
+    style="margin: 0 0 24px; color: #E8E8E8; font-size: 16px; line-height: 1.6; text-align: center;"
+>
+    <strong>{{initiator.name}}</strong>
+    {{actionText}}.
+</p>
+
+{{#if initiator.avatarUrl}}
+    <!-- Avatar -->
+    <div style="text-align: center; margin: 0 0 24px;">
+        <img
+            src="{{initiator.avatarUrl}}"
+            alt="{{initiator.name}}"
+            style="width: 64px; height: 64px; border-radius: 50%; display: inline-block; background-color: #404040;"
+        />
+    </div>
+{{/if}}
+
+<!-- CTA Button -->
+<table
+    role="presentation"
+    cellspacing="0"
+    cellpadding="0"
+    border="0"
+    width="100%"
+>
+    <tr>
+        <td align="center" style="padding: 8px 0 0;">
+            <a
+                href="{{target.url}}"
+                style="display: inline-block; background-color: #15803d; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-size: 15px; font-weight: 500; letter-spacing: 0.2px;"
+            >
+                {{ctaText}}
+            </a>
+        </td>
+    </tr>
+</table>

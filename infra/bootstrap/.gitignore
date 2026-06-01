@@ -1,0 +1,22 @@
+# OpenTofu / Terraform state and caches
+.terraform/
+.terraform.tfstate.lock.info
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Variable files contain secrets (Hetzner token, Cloudflare token, etc.).
+# Commit terraform.tfvars.example only; never terraform.tfvars.
+*.tfvars
+*.tfvars.json
+!terraform.tfvars.example
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/

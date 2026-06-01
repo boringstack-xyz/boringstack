@@ -1,0 +1,62 @@
+{
+  "name": "boringstack-docs",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "boringstack.xyz docs site for the BoringStack project. Astro Starlight, deployed via Cloudflare Pages.",
+  "packageManager": "bun@1.3.14",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "generate:lint-meta-docs": "node scripts/generate-lint-meta-docs.mjs",
+    "generate:scripts-docs": "node scripts/generate-scripts-docs.mjs",
+    "generate:og-image": "node scripts/generate-og-image.mjs",
+    "generate:docs-data": "bun run generate:lint-meta-docs && bun run generate:scripts-docs",
+    "check:lint-meta-docs": "node scripts/generate-lint-meta-docs.mjs --check",
+    "check:scripts-docs": "node scripts/generate-scripts-docs.mjs --check",
+    "check:docs-data": "bun run check:lint-meta-docs && bun run check:scripts-docs",
+    "build:site": "bun run generate:og-image && astro build",
+    "build": "bun run generate:og-image && astro build",
+    "build:ci": "bun run check:docs-data && bun run generate:og-image && astro build",
+    "preview": "bun run build:site && wrangler dev",
+    "astro": "astro",
+    "deploy": "bun run build:ci && wrangler deploy",
+    "cf-typegen": "wrangler types",
+    "a11y": "bash scripts/a11y.sh"
+  },
+  "dependencies": {
+    "@astrojs/react": "^5.0.5",
+    "@astrojs/sitemap": "^3.7.2",
+    "@astrojs/starlight": "^0.39.2",
+    "@tailwindcss/vite": "^4.3.0",
+    "astro": "^6.3.5",
+    "astro-mermaid": "^2.0.1",
+    "clsx": "^2.1.1",
+    "mermaid": "11.15.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "reading-time": "^1.5.0",
+    "sharp": "^0.34.0",
+    "tailwindcss": "^4.3.0",
+    "ws": "8.20.1"
+  },
+  "devDependencies": {
+    "@axe-core/cli": "^4.11.3",
+    "http-server": "^14.1.1",
+    "starlight-llms-txt": "0.6.1",
+    "wrangler": "4.93.0"
+  },
+  "//overrides": {
+    "_": "Why these transitive deps are pinned. Build-time/dev tooling only — the deployed site is static Cloudflare Pages. Re-evaluate quarterly (see osv-scanner.toml).",
+    "ws": "Pin patched ws (GHSA-58qx-3vcg-4xpx) pulled via miniflare/wrangler dev tooling.",
+    "devalue": "Pin patched devalue build-time serialization XSS (GHSA-77vg-94rm-hx3p).",
+    "qs": "Pin patched qs (GHSA-q8mj-m7cp-5q26) pulled via the http-server dev preview tool.",
+    "tmp": "Pin patched tmp symlink arbitrary-write advisory; transitive dev-tooling dep."
+  },
+  "overrides": {
+    "ws": "8.20.1",
+    "devalue": "5.8.1",
+    "qs": "6.15.2",
+    "tmp": "0.2.6"
+  }
+}

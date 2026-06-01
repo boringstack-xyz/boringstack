@@ -1,0 +1,72 @@
+# BoringStack ui-template — custom Semgrep rules.
+#
+# Backstop for stack-specific bans already enforced at the ESLint /
+# lint:meta layer. Run as part of .github/workflows/security-sast.yml
+# (Phase 4 of the security pipeline).
+
+rules:
+  - id: no-dangerously-set-inner-html
+    message: |
+      `dangerouslySetInnerHTML` is XSS waiting to happen. The lint:meta rule
+      already bans this; Semgrep is the belt-and-suspenders backstop in case
+      lint is skipped.
+    severity: ERROR
+    languages: [typescript, javascript]
+    pattern: dangerouslySetInnerHTML={...}
+    paths:
+      exclude:
+        - "**/node_modules/**"
+
+  - id: no-raw-fetch-outside-openapi
+    message: |
+      Raw `fetch` is banned outside `src/lib/api/openapi.ts`. Use the typed
+      OpenAPI client (`apiClient.GET / POST / ...`) so request/response shapes
+      stay in sync with the API contract.
+    severity: ERROR
+    languages: [typescript]
+    pattern: fetch(...)
+    paths:
+      include:
+        - "**/src/**"
+      exclude:
+        - "**/src/lib/api/openapi.ts"
+        - "**/*.test.ts"
+        - "**/*.test.tsx"
+        - "**/node_modules/**"
+
+  - id: no-eval
+    message: |
+      `eval` and `Function` constructor execute arbitrary code. No legitimate
+      use case in ui source.
+    severity: ERROR
+    languages: [typescript, javascript]
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: new Function(...)
+    paths:
+      exclude:
+        - "**/node_modules/**"
+
+  - id: no-window-open-without-noopener
+    message: |
+      `window.open(url)` without `noopener,noreferrer` lets the opened page
+      access `window.opener` (reverse tabnabbing). Pass the third arg as
+      `"noopener,noreferrer"`.
+    severity: WARNING
+    languages: [typescript, javascript]
+    pattern: window.open($URL)
+
+  - id: no-localStorage-token-keys
+    message: |
+      Don't write auth tokens to localStorage — they're readable by any XSS.
+      Use HTTP-only cookies (handled by the api `/auth` routes) instead.
+    severity: ERROR
+    languages: [typescript, javascript]
+    pattern-either:
+      - pattern: localStorage.setItem("token", $X)
+      - pattern: localStorage.setItem("accessToken", $X)
+      - pattern: localStorage.setItem("refreshToken", $X)
+      - pattern: localStorage.setItem("jwt", $X)
+    paths:
+      exclude:
+        - "**/node_modules/**"

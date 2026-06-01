@@ -1,0 +1,98 @@
+---
+title: Spec loop
+description: One file, one approval, one gate. Stops agents from sprinting ahead. Opt-in via bun run spec:init.
+---
+
+Solo Spec Loop is BoringStack's discipline for working with agents. One living spec (`.specs/next.md`), one approval gate, one pre-tool-use hook that blocks source writes until you approve. Opt-in with `bun run spec:init`.
+
+## Why
+
+Agent coding has one failure mode: you ask for a small thing, get a 12-file refactor, a forest of ADRs, 800 lines you didn't ask for. Reviewing is slower than writing it yourself.
+
+The spec loop forces a checkpoint. The agent cannot write source files until you've sliced the problem small enough to fit in `.specs/next.md` with `status: approved` in the frontmatter. The gate is enforced by a PreToolUse hook -not a guideline the agent ignores.
+
+It's opt-in. Skip `bun run spec:init` and your fork behaves exactly as before; nothing forces this on you.
+
+## Turn it on
+
+```bash
+bun run spec:init
+```
+
+This creates four files:
+
+- `.specs/next.md`  - the living spec. Frontmatter: `status`, `slice`, `approved_at`. Body: Problem, Slice, Design decisions, Verification contract.
+- `.claude/commands/spec.md`  - defines `/spec` slash commands.
+- `.claude/settings.json`  - Claude Code PreToolUse hook that runs the gate before every Write/Edit/MultiEdit.
+- `.cursor/hooks.json`  - same gate for Cursor.
+
+Re-running `bun run spec:init` is idempotent; each file is skipped if it exists. Pass `--force` to overwrite.
+
+## The five verbs
+
+**Explore**: Agent reads repo context, drafts Problem, Slice, Design decisions, Verification contract in `.specs/next.md`. No source files touched. Asks at most 5 clarifying questions.
+
+**Slice**: Agent applies spec-smell pass (vague, kitchen-sink, lossy, immortal ticket, PRD-as-spec) and shrinks scope until the slice fits in ~90 lines.
+
+**Approve**: You set `status: approved` in frontmatter. Until you do, the gate blocks source writes.
+
+**Build**: Agent implements the approved slice. Tests first (from Verification contract), then code. Stops instead of scope-creeping on ambiguity.
+
+**Ship**: Agent re-runs the acceptance command from Verification verbatim. Pass means the slice is ready to commit. Fail means stop and show output.
+
+Flow: `explore` → `slice` → `approve` (you) → `build` → `ship` → `learn` → (loop for next slice or `/spec reset`).
+
+## What the gate enforces
+
+Files that are always allowed (regardless of `status`):
+
+- `.specs/`, `.claude/`, `.cursor/`, `docs/`, `README*`, `CHANGELOG*`, `CLAUDE.md`, `AGENTS.md`.
+- Test files: anything matching `tests?/`, `__tests__/`, `e2e/`, `*.test.*`, `*.spec.*`.
+
+Source files (`.ts`, `.tsx`, `.js`, `.jsx`, etc.) are blocked unless `.specs/next.md` has `status: approved`.
+
+Safety checks:
+
+- No `.specs/next.md` at all → silent allow (forks that don't use the loop pay nothing).
+- Spec > 140 lines → block (slice is too big; shrink the cut).
+- Approval must be on its own frontmatter line (not in body prose or code fences).
+
+## Composing with /add-full-feature and /build-feature
+
+Both the root `/add-full-feature` skill and per-app `/build-feature` skills check `.specs/next.md` at Checkpoint 1:
+
+- **Approved spec present**: Skill reads Problem/Slice/Design/Verification and skips the interview.
+- **Draft spec present**: Skill stops and tells you to run `/spec slice` and `/spec approve` first.
+- **No spec at all**: Skill falls through to the original interview.
+
+So the workflows compose: once the spec is approved, `/spec build` dispatches to the right skill depending on what the spec describes.
+
+## Acceptance contract idioms
+
+Make one runnable command per contract:
+
+| Slice | Example | Command |
+|-------|---------|---------|
+| Pure unit logic | New util in `src/lib/<x>/` | `cd apps/api && bun test src/lib/<x>` |
+| API endpoint | New `*.routes.ts` + service | `cd apps/api && bun test src/api/<x> --test-name-pattern "creates the resource"` |
+| UI feature | New page + queries | `cd apps/ui && bun test src/features/<x>` |
+| Contract change | API schema affects UI types | `bun run regen && bun run check` |
+| Full vertical slice | Cross-app | `bun run check:full` |
+
+Keep one command in Verification. Put regen / build steps in Build notes or Design decisions.
+
+## When to skip the loop
+
+Skip it when:
+
+- The change is a one-line fix (typo, copy tweak, lint suppress).
+- You're exploring in a throwaway feature branch you'll delete.
+- You're following an external recipe step-by-step.
+
+For everything else  - especially anything touching auth, billing, multi-tenant data, or cross-app contracts  - the loop pays for itself the first time it stops scope creep from landing.
+
+## Related
+
+- [Quickstart](/quickstart/)  - step 4 picks Path A (fast) or Path B (spec loop).
+- [First feature in 10 minutes](/skills/first-feature-tutorial/)  - Path A walkthrough.
+- [Skills overview](/skills/)  - all agent-facing skills BoringStack ships.

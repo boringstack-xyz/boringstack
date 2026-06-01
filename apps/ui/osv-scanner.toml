@@ -1,0 +1,53 @@
+# osv-scanner accepted-risk allowlist.
+#
+# Each entry must include the reasoning + a re-evaluation date. Re-run
+# `osv-scanner --lockfile=bun.lock` periodically to confirm each
+# remains accepted-risk (upstream patches eventually land and the entry
+# can be removed).
+
+[[IgnoredVulns]]
+id = "GHSA-952p-6rrq-rcjv"
+ignoreUntil = "2026-11-18T00:00:00Z"
+reason = """
+micromatch ReDoS. Pulled in via vite/jest tooling. Requires
+attacker-controlled glob patterns reaching micromatch; our UI never
+exposes glob handling to user input. Awaiting upstream patch in the
+transitive tree.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-52f5-9888-hmc6"
+ignoreUntil = "2026-11-18T00:00:00Z"
+reason = """
+tmp symlink-following. Build-time tooling dependency (storybook /
+vitest helpers). No path from user input to tmp usage in shipped UI
+code. Awaiting upstream patch.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-48c2-rrv3-qjmp"
+ignoreUntil = "2026-11-18T00:00:00Z"
+reason = """
+yaml prototype-pollution. Used only at build time via configuration
+loaders (vite plugins). Production bundle ships no yaml parser to the
+client. Awaiting upstream patch.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-q8mj-m7cp-5q26"
+ignoreUntil = "2026-11-22T00:00:00Z"
+reason = """
+qs@6.15.1 pulled in transitively via express + body-parser, themselves
+deps of @lhci/cli (Lighthouse CI). Express never runs in the shipped
+UI bundle — it is a CI-only audit tool. Re-evaluate when @lhci/cli
+bumps its express/body-parser pins.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-w5hq-g745-h8pq"
+ignoreUntil = "2026-11-22T00:00:00Z"
+reason = """
+uuid@8.3.2 pulled in transitively via @lhci/cli (Lighthouse CI). The
+vulnerable code path is never reached from shipped UI code; @lhci/cli
+is build/CI-only tooling. Re-evaluate when @lhci/cli bumps uuid.
+"""

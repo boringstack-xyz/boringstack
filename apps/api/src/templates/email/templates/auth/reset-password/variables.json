@@ -1,0 +1,9 @@
+{
+    "subject": "Reset your password",
+    "preHeader": "Click the button to reset your password",
+    "appName": "{{appName}}",
+    "name": "{{name}}",
+    "token": "{{token}}",
+    "resetUrl": "https://example.com/reset-password",
+    "dashboardUrl": "https://example.com/dashboard"
+}

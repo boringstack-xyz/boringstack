@@ -1,0 +1,78 @@
+---
+title: Bounce handling
+description: Per-provider suppression model. Cloudflare manages its own list; Resend and SendGrid push bounces and complaints over signed webhooks. One local blocklist short-circuits every future send.
+---
+
+Sending mail to addresses that bounce or complain degrades sender reputation and burns provider credits. The API ships a deliberate suppression model: providers push their verdicts in (or the API mirrors send-time errors), one local row blocks every future send, and a verified user always starts fresh.
+
+## Per-provider model
+
+Each provider tracks deliverability differently. The API maps all three onto a single local table so the dispatch path looks the same regardless of which provider is active.
+
+- **Cloudflare**: Manages suppression internally. When the API sends to a suppressed address, Cloudflare returns a recipient-suppressed error, and the API mirrors it into the local blocklist.
+- **Resend**: The application manages suppression via svix-signed webhooks (`email.bounced` / `email.complained`). The API inserts suppression rows from webhook events.
+- **SendGrid**: The application manages suppression via ECDSA-signed event webhooks (`bounce` / `spamreport` / `dropped`). The API inserts suppression rows from webhook events.
+
+Cloudflare is the default for the API template. Its API refuses sends to addresses on its own list, so the local mirror is a performance hint, not a correctness requirement. Resend and SendGrid leave the blocklist entirely to the application; webhooks are how their verdict reaches the API.
+
+## Dispatch path
+
+`sendTemplateNow` consults the blocklist before every send. If the address is suppressed, it returns `{ status: "suppressed", reason }` and skips the provider. The queued worker writes the `notification_delivery` row as `suppressed` with the reason inlined. This happens for both queued and inline channels.
+
+## Strongest-signal-wins
+
+The local `email_suppression` table keys on the recipient address. The first verdict wins: once `alice@example.com` is suppressed by Resend, a later complaint from SendGrid for the same address is a no-op insert. The original row stays. A hard bounce and a spam complaint should never overwrite each other. The API keeps the strongest signal it observed and never downgrades a complaint to a bounce because a later event arrived.
+
+## Lifecycle
+
+Successful email verification clears any prior suppression row, since proving inbox control means the address works now and transactional mail can flow. Complaints are permanent: spam reports through Gmail and Outlook feedback loops persist until the user re-verifies or resubscribes. Soft bounces (transient failures) stay inside the BullMQ retry envelope; only hard bounces and complaints land on the blocklist.
+
+## Webhook setup
+
+Cloudflare needs no wiring; its rejection at send time triggers the local mirror automatically.
+
+For **Resend**: Set `RESEND_WEBHOOK_SECRET=whsec_xxxxx` in env, then point Resend at `POST /api/v1/webhooks/resend` and select `email.bounced` and `email.complained` events.
+
+For **SendGrid**: Set `SENDGRID_WEBHOOK_PUBLIC_KEY` (the PEM public key) in env, then enable the signed event webhook in Settings > Mail Settings > Event Webhook, point it to `POST /api/v1/webhooks/sendgrid`.
+
+Both routes verify the timestamp (5 minutes for Resend, 10 minutes for SendGrid; outside that window returns 401) and parse the raw request body. Reverse proxies must not mutate the payload.
+
+## Cloudflare visibility
+
+Cloudflare exposes bounce data via the GraphQL Analytics API and the
+Email Logs dashboard rather than a webhook. If your operator needs a
+real-time signal, point them at
+`emailSendingAdaptive` in the Cloudflare GraphQL API. The local
+`email_suppression` table covers the practical hot-path concern
+(skipping addresses that already bounced); visibility into the
+historical event stream lives in Cloudflare's own UI.
+
+## Manual operations
+
+For a one-off block (legal request, abuse pattern):
+
+```sql
+INSERT INTO notifications.email_suppression (email, reason, provider)
+VALUES ('user@example.com', 'manual', 'manual')
+ON CONFLICT (email) DO NOTHING;
+```
+
+To re-enable an address after a verified appeal:
+
+```sql
+DELETE FROM notifications.email_suppression WHERE email = 'user@example.com';
+```
+
+The next send to that address proceeds normally. If the underlying issue is unresolved on the provider side, Cloudflare or the webhook will land a fresh row within the next attempt.
+
+## Source
+
+[`src/lib/email/suppression.service.ts`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/lib/email): suppression service. [`src/api/webhooks/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/webhooks): signed webhook receivers for Resend and SendGrid.
+
+## Related
+
+- [Email](/api/email/); the dispatch abstraction.
+- [Cloudflare Email](/topics/cloudflare-email/); why the default provider
+  manages its own list.
+- [Queues](/api/queues/); the `email-delivery` retry envelope that
+  cooperates with the suppression check.

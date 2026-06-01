@@ -1,0 +1,132 @@
+---
+title: "Recipe: Add Stripe Checkout"
+description: Wire Stripe Checkout and Customer Portal to your billing spine. Estimated 45 minutes.
+verifiedOn: "2026-05"
+---
+
+Add Stripe subscriptions and billing to your app. The API already ships a billing spine; this recipe wires it to real Stripe accounts for Checkout, the Customer Portal, and webhook handlers.
+
+Estimated time: 45 minutes.
+
+## Overview
+
+1. Set `BILLING_ENABLED=true` and add Stripe keys to env.
+2. Forward webhooks locally with `stripe listen`.
+3. Extend the UI billing feature to call Checkout and Portal endpoints.
+4. Declare your plans in the ACL feature resolver.
+
+## Prerequisites
+
+- A Stripe account (Test Mode is fine).
+- One product and recurring price already created in the Stripe dashboard.
+- The [Stripe CLI](https://docs.stripe.com/stripe-cli) installed locally.
+
+## 1. Add Stripe env vars
+
+```bash
+BILLING_ENABLED=true
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...      # from step 2 below
+STRIPE_PRICE_ID_FREE=price_...
+STRIPE_PRICE_ID_PRO=price_...
+```
+
+The env validator refuses to boot the API in prod if `BILLING_ENABLED=true` but any Stripe key is missing.
+
+## 2. Forward webhooks locally
+
+Open a separate terminal:
+
+```bash
+stripe listen --forward-to localhost:7330/api/v1/billing/stripe/webhooks
+```
+
+Copy the `whsec_...` signing secret that prints on first connect. Add it to `compose/.env`:
+
+```bash
+echo 'STRIPE_WEBHOOK_SECRET=whsec_...' >> compose/.env
+```
+
+Restart the API:
+
+```bash
+./scripts/compose-up.sh
+```
+
+## 3. Implement Checkout
+
+In `apps/ui/src/features/billing/`, the starter billing flow already exists. Add or adapt the Checkout call. Inside `Billing.mutations.ts`:
+
+```ts
+const startCheckout = (planId: string) =>
+  apiClient.POST("/api/v1/billing/stripe/checkout-session", {
+    body: {
+      planId,
+      successUrl: `${window.location.origin}/billing/success`,
+      cancelUrl: `${window.location.origin}/billing`,
+    },
+  });
+```
+
+The endpoint returns a Stripe Checkout URL; redirect the browser to it.
+
+## 4. Implement the Customer Portal
+
+Add a "Manage subscription" mutation that calls `/api/v1/billing/stripe/portal-session` and redirects to Stripe's hosted portal.
+
+```ts
+const manageSubscription = () =>
+  apiClient.POST("/api/v1/billing/stripe/portal-session", {
+    body: {
+      returnUrl: `${window.location.origin}/billing`,
+    },
+  });
+```
+
+## 5. Configure your plans
+
+In `src/api/acl/`, declare your plans. Example:
+
+```ts
+export const PLAN_CONFIG = {
+  free: {
+    stripePrice: env.STRIPE_PRICE_ID_FREE,
+    features: ["basic-reporting", "one-team"],
+  },
+  pro: {
+    stripePrice: env.STRIPE_PRICE_ID_PRO,
+    features: ["advanced-reporting", "unlimited-teams", "sso"],
+  },
+};
+```
+
+The ACL resolver checks this config and gates features based on the user's subscription.
+
+## Verify
+
+1. Log in and click **Upgrade**.
+2. Stripe Checkout redirects to your success URL.
+3. Use test card `4242 4242 4242 4242`, any future date, any CVC.
+4. The `stripe listen` terminal shows webhook events arriving: `checkout.session.completed`, `customer.subscription.created`, etc.
+5. Check the audit log for subscription events:
+
+```sql
+SELECT actor, event, payload->>'plan' AS plan
+FROM audit.audit_log
+WHERE event LIKE 'billing.%'
+ORDER BY ts DESC LIMIT 5;
+```
+
+6. Hit `/api/me/features` and verify the upgraded plan's features return.
+
+## Key points
+
+- **Idempotency matters**: Stripe retries webhooks. The billing service uses an idempotency table keyed on Stripe's `event.id` to prevent double-processing.
+- **Feature gates**: Plans and features live in the ACL config. Change pricing later by editing env and ACL, not code.
+- **No UI secrets**: The UI doesn't need Stripe client IDs. All OAuth and Stripe calls go through the API.
+
+## Related
+
+- [Billing](/api/billing/)  - the billing spine and webhook handlers.
+- [ACL & feature resolution](/api/acl/)  - plan-based feature gating.
+- [Audit log](/api/audit-log/)  - subscription lifecycle events.

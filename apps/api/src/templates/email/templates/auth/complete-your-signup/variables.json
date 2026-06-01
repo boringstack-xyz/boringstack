@@ -1,0 +1,6 @@
+{
+    "subject": "Complete your profile",
+    "preHeader": "Finish setting up your account",
+    "appName": "{{appName}}",
+    "signupUrl": "https://example.com/complete-profile"
+}

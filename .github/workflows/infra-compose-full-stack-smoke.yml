@@ -1,0 +1,217 @@
+name: full-stack-smoke
+
+# Boots the dev compose stack and exercises the login → /me → register →
+# dashboard round-trip through curl. Catches real integration breakage
+# (compose service wiring, Vite/nginx → API proxy, Postgres + Valkey
+# readiness, auth cookie path) on every PR within a few minutes.
+#
+# Deliberately curl-only — the browser E2E surface lives in a separate
+# advisory workflow (`infra-compose-playwright-e2e.yml`) so a Playwright
+# flake or browser quirk doesn't block PR merges through this required
+# check.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/compose/**"
+      - "apps/api/**"
+      - "apps/ui/**"
+      - ".github/workflows/infra-compose-full-stack-smoke.yml"
+  # Intentionally no `paths:` filter on pull_request: this job is a required
+  # check in branch protection, and a path-filtered workflow that never runs
+  # never reports a status — leaving docs-only PRs perpetually blocked. The
+  # body uses dorny/paths-filter and gates every real step on
+  # `if: steps.filter.outputs.code == 'true'`, so a docs-only PR runs just
+  # the checkout + filter (~30s) and exits success with the required check
+  # name reported green. The full smoke loop only runs when code paths
+  # actually change.
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: infra-compose-full-stack-smoke-full-stack-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: register → login → /me through the full stack
+    runs-on: ubuntu-latest
+    # 8 min upper bound: with Playwright moved out, the curl-only path
+    # completes in ~3–4 min on a warm runner. A short ceiling means a
+    # stuck step fails fast instead of running for 20 min like the old
+    # combined gate.
+    timeout-minutes: 8
+
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'apps/api/**'
+              - 'apps/ui/**'
+              - 'infra/compose/**'
+              - '.github/workflows/infra-compose-full-stack-smoke.yml'
+
+      - name: Seed compose/.env
+        if: steps.filter.outputs.code == 'true'
+        working-directory: infra/compose/compose
+        run: |
+          cp .env.example .env
+          # Inject the demo-user credentials the api-migrate one-shot seeds on
+          # first boot. The smoke steps below log in as this user; without
+          # these vars the seed script silently skips and login returns 401.
+          {
+            echo ""
+            echo "# Smoke-test only — never use these in real deployments."
+            echo "SUPERUSER_EMAIL=demo@example.com"
+            echo "SUPERUSER_PASSWORD=password123"
+          } >> .env
+
+      - name: Make scripts executable
+        if: steps.filter.outputs.code == 'true'
+        run: |
+          chmod +x infra/compose/compose/dev.sh
+          chmod +x infra/compose/scripts/*.sh
+
+      - name: Boot the smoke stack
+        if: steps.filter.outputs.code == 'true'
+        working-directory: infra/compose/compose
+        env:
+          # `smoke` profile builds the production SPA bundle and serves
+          # it via nginx (with `/api/*` proxied to api-dev), eliminating
+          # the Vite dev-server cold-compile that pushed Playwright
+          # tests past their 30 s timeout. See `ui-smoke` in
+          # docker-compose.yml.
+          STACK: smoke
+        run: ./dev.sh up -d --build
+
+      - name: Wait for API health
+        if: steps.filter.outputs.code == 'true'
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://localhost:7330/health > /dev/null 2>&1; then
+              echo "API healthy after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS http://localhost:7330/health
+
+      - name: Wait for UI
+        if: steps.filter.outputs.code == 'true'
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://localhost:7331/ > /dev/null 2>&1; then
+              echo "UI ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+          curl -fsSI http://localhost:7331/ | head -1
+
+      - name: Smoke — demo user can log in (seeded by api-migrate)
+        if: steps.filter.outputs.code == 'true'
+        run: |
+          # The api-migrate one-shot seeds demo@example.com / password123 on
+          # first boot. We verify the login round-trip through the Vite
+          # proxy (so we also confirm the proxy path works end-to-end).
+          #
+          # We deliberately do NOT use `curl -f` here: when the server returns
+          # a 4xx/5xx the response body almost always tells us why, and -f
+          # discards it. Instead we capture the status code via -w and assert
+          # on it explicitly, then dump body + status if anything looks wrong.
+          set -euo pipefail
+
+          run_curl() {
+            local label="$1" url="$2" expected_status="$3"
+            shift 3
+            local out status body
+            out=$(curl -sS -o /tmp/body -w '%{http_code}' "$url" "$@") || {
+              echo "❌ ${label}: curl failed (exit $?). url=${url}" >&2
+              cat /tmp/body >&2 || true
+              return 1
+            }
+            status="$out"
+            body="$(cat /tmp/body)"
+            if [ "$status" != "$expected_status" ]; then
+              echo "❌ ${label}: expected HTTP ${expected_status}, got ${status}" >&2
+              echo "URL:    ${url}" >&2
+              echo "BODY:   ${body}" >&2
+              return 1
+            fi
+            echo "✅ ${label}: HTTP ${status}"
+            echo "$body"
+          }
+
+          LOGIN_BODY=$(run_curl "login" \
+            "http://localhost:7331/api/v1/auth/login" 200 \
+            -c /tmp/cookie.jar \
+            -X POST -H "Content-Type: application/json" \
+            -d '{"email":"demo@example.com","password":"password123"}')
+          echo "$LOGIN_BODY" | grep -q '"success":true' || {
+            echo "❌ login body missing success:true — got: $LOGIN_BODY" >&2
+            exit 1
+          }
+
+          ME_BODY=$(run_curl "me" \
+            "http://localhost:7331/api/v1/users/me" 200 \
+            -b /tmp/cookie.jar)
+          echo "$ME_BODY" | grep -q "demo@example.com" || {
+            echo "❌ /me body missing demo@example.com — got: $ME_BODY" >&2
+            exit 1
+          }
+
+      - name: Smoke — register a brand-new user
+        if: steps.filter.outputs.code == 'true'
+        run: |
+          set -e
+          BODY='{"email":"ci-smoke@example.com","password":"Hunter2Strong!","firstName":"CI","lastName":"Smoke"}'
+          OUT=$(curl -fsS -X POST -H "Content-Type: application/json" -d "$BODY" \
+            http://localhost:7331/api/v1/auth/register)
+          echo "$OUT" | grep -q '"success":true'
+
+      - name: Smoke — dashboard endpoints return real data
+        if: steps.filter.outputs.code == 'true'
+        run: |
+          set -e
+          # Log in to get a cookie:
+          curl -fsS -c /tmp/cookie.jar -X POST -H "Content-Type: application/json" \
+            -d '{"email":"demo@example.com","password":"password123"}' \
+            http://localhost:7331/api/v1/auth/login > /dev/null
+          # Summary should now reflect >=1 user + >=1 widget after seed/register.
+          SUM=$(curl -fsS -b /tmp/cookie.jar http://localhost:7331/api/v1/dashboard/summary)
+          echo "$SUM" | grep -q '"totalEvents"'
+          echo "$SUM" | grep -q '"recentActivity"'
+
+      - name: Compose ps on failure
+        if: failure()
+        working-directory: infra/compose/compose
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.development-labels.yml --profile smoke ps
+
+      - name: Container logs on failure
+        if: failure()
+        run: |
+          # Full logs (not --tail) so request-time errors aren't hidden
+          # behind startup chatter.
+          for c in $(docker ps -aq); do
+            echo "===== $(docker inspect --format '{{.Name}}' "$c") ====="
+            docker logs "$c" 2>&1 || true
+          done
+
+      - name: Tear down
+        if: always()
+        working-directory: infra/compose/compose
+        env:
+          STACK: smoke
+        run: |
+          ./dev.sh down -v || true

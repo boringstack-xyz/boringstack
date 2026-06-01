@@ -1,0 +1,22 @@
+{
+  "name": "solo-spec-loop",
+  "description": "Portable spec loop: one .specs/next.md, explore→slice→approve→build→learn, optional PreToolUse gate. Claude Code adapter; contract + gate work in any tool.",
+  "version": "0.1.0",
+  "author": {
+    "name": "agjs"
+  },
+  "homepage": "https://github.com/agjs/solo-spec-loop",
+  "repository": "https://github.com/agjs/solo-spec-loop",
+  "license": "MIT",
+  "keywords": [
+    "spec-driven",
+    "spec-loop",
+    "solo-founder",
+    "vertical-slice",
+    "claude-code",
+    "cursor",
+    "agents-md",
+    "portable",
+    "agent-agnostic"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "ciWorkflow": ".github/workflows/ci.yml",
+  "requiredCommands": [
+    "bun run check",
+    "bun run test",
+    "bun run test:coverage",
+    "bun build src/index.ts --outdir dist --target bun"
+  ]
+}

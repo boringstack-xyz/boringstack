@@ -1,0 +1,70 @@
+---
+title: Environment variables
+description: Where to set env vars, how precedence works, and which ones matter most.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+## Config file locations
+
+The stack reads three sets of environment files with this precedence order:
+
+1. **apps/api/.env**: consumed by the API process when running outside Docker
+2. **compose/.env**: injected into dev containers via `env_file:` references
+3. **compose/api.prod.env**: API-specific production overrides
+
+In Docker Compose (the default), `compose/.env` is the single file you edit most often. It feeds into both app containers and the infra services (Postgres, Valkey, Traefik, observability).
+
+### Per-app usage
+
+| Location | Consumed by | Format |
+|----------|---|---|
+| apps/api/.env | API Bun process (outside Docker) | All vars |
+| apps/ui/.env.local | Vite at build/dev time | VITE_* only |
+| compose/.env | all services via docker-compose.yml | see docker-compose.yml env_file refs |
+| compose/api.prod.env | API service in prod | API vars + STACK=prod-specific |
+
+## Critical variables (operator attention)
+
+These deserve special handling because they affect security, availability, or startup:
+
+**JWT_SECRET**: Signs access cookies and refresh tokens. Rotation forces every user to sign in again. Generate with `openssl rand -base64 48`.
+
+**MFA_ENCRYPTION_KEY**: AES-256-GCM key for TOTP secrets. Once users enrol, losing this key means every MFA user re-enrols from scratch. Generate with `openssl rand -base64 32` and back up to hardware or paper.
+
+**POSTGRES_PASSWORD / VALKEY_PASSWORD**: Data plane secrets. Rotate in production by updating the var, then restarting services. Database passwords should be 32+ random bytes.
+
+**DATABASE_URL**: Postgres connection string. Must include TLS mode for production (`?ssl=require`). In development defaults to `localhost`; in production, points to a managed provider or socket.
+
+**PUBLIC_UI_HOST**: Apex domain name for production routing via Traefik. Traefik uses this to request Let's Encrypt certificates. Same-origin deployments route `/api/*` and all other paths from one domain.
+
+**EMAIL_PROVIDER + EMAIL_FROM**: Sender identity and service. Cloudflare is the default; Resend and SendGrid are drop-in alternatives. Set both to avoid bounce errors.
+
+## Where the full list lives
+
+For defaults, type hints, and complete enumeration:
+
+- **apps/api**: [`.env.example`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/.env.example)
+- **apps/ui**: [`.env.example`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/ui/.env.example)
+- **infra**: [`compose/.env.example`](https://github.com/boringstack-xyz/boringstack/blob/main/infra/compose/compose/.env.example)
+
+The `.env.example` files define every variable and its default. When you need to understand a variable's default or type, start there.
+
+<Aside>
+Env validation is strict. The API process will refuse to start if a required variable is missing or has an invalid type. Error messages from the validator are precise: they name the exact variable and the reason it failed (missing, wrong type, invariant violated).
+</Aside>
+
+## Optional features (toggle by setting vars)
+
+- **Billing**: set `BILLING_ENABLED=true` + Stripe keys
+- **OAuth**: set `GOOGLE_OAUTH_CLIENT_ID` / `CLIENT_SECRET` or GitHub/LinkedIn equivalents
+- **Observability**: set `WITH_OBSERVABILITY=0` to opt out (on by default)
+- **Error tracking**: set `WITH_GLITCHTIP=0` to opt out (on by default)
+- **Queue dashboard**: set `WITH_BULLMQ=1` (dev only, no auth)
+- **Email catcher**: set `WITH_MAILPIT=1` (dev only)
+
+## Related
+
+- [Commands cheatsheet](/reference/commands/); which scripts to run for setup and day-to-day work
+- [Profiles & overlays](/infra/profiles-and-overlays/); how STACK= and WITH_* flags compose services
+- [Deployment](/topics/deployment/); production secrets into 1Password and how to inject them

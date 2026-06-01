@@ -1,0 +1,443 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "BoringStack API — health-at-a-glance stat row, RED panels per route, Node.js runtime detail. Event loop utilisation and lag are the first place to look for Node performance issues — they tell you whether the runtime can dispatch callbacks, which CPU and memory don't.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "**What:** fraction of time the Node event loop is busy executing JS (vs idle waiting on I/O). 0.0 = idle, 1.0 = fully saturated.\n\n**Why:** the single most important Node.js health signal. The loop is single-threaded — if it has no headroom, the next traffic burst queues requests no matter what CPU/memory show.\n\n**Watch for:** sustained > 0.7 (orange) = thin margin, investigate. > 0.9 (red) = no headroom, next spike degrades. Common culprits: sync FS calls, large JSON.parse, CPU-bound code that should be a worker thread.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.7 },
+              { "color": "red", "value": 0.9 }
+            ]
+          },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "avg(nodejs_eventloop_utilization{app=\"boringstack-api\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Event loop utilization",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "**What:** the 99th-percentile delay between a Node event-loop callback being *ready* to run and *actually* running.\n\n**Why:** complements ELU — ELU tells you *how busy* the loop is, lag tells you *how late* it's running things. A request gets at least this much added latency tax.\n\n**Watch for:** > 50ms (orange) = users feel it. > 200ms (red) = real performance problem. > 1s = service unresponsive (pages via NodeEventLoopBlocked rule).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.05 },
+              { "color": "red", "value": 0.2 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "nodejs_eventloop_lag_p99_seconds{app=\"boringstack-api\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "Event loop lag (p99)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.5 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(http_requests_total{app=\"boringstack-api\",status=~\"5..\"}[5m]))",
+          "refId": "A"
+        }
+      ],
+      "description": "**What:** rate of HTTP 5xx responses per second across all routes (5-min average).\n\n**Why:** the most direct 'is something broken right now?' signal. Any non-zero value means at least one request is failing server-side.\n\n**Watch for:** > 0 (orange) = investigate. > 5/s (red) = real degradation; `ApiServerErrorsHigh` rule should already be paging.",
+      "title": "5xx error rate",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "blue", "value": null }]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(http_requests_total{app=\"boringstack-api\"}[5m]))",
+          "refId": "A"
+        }
+      ],
+      "description": "**What:** total HTTP requests per second across every route (5-min average).\n\n**Why:** baseline that makes the other panels' spikes legible — without a reference for typical traffic, you can't tell whether a per-route spike is unusual.\n\n**Watch for:** a sudden drop to 0 = the API stopped accepting requests (paired with `ApiUnreachable`). Sudden jump = check the per-route panel below for which endpoint and the route-status mix.",
+      "title": "Total request rate",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "req/s",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum by (route) (rate(http_requests_total{app=\"boringstack-api\"}[1m]))",
+          "legendFormat": "{{route}}",
+          "refId": "A"
+        }
+      ],
+      "description": "**What:** 1-minute request rate broken out per route (e.g. `GET /api/v1/users/:id`).\n\n**Why:** shows which endpoints generate traffic and how the mix shifts over time.\n\n**Watch for:** one route dominating = caching / rate-limit review candidate. A route that flatlines unexpectedly = silent client breakage. A stacked-colour shift after a deploy = traffic moved between endpoints.",
+      "title": "Request rate (per route)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "seconds",
+            "drawStyle": "line",
+            "fillOpacity": 5,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "id": 6,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket{app=\"boringstack-api\"}[5m])))",
+          "legendFormat": "p95 {{route}}",
+          "refId": "A"
+        }
+      ],
+      "description": "**What:** 95th-percentile request duration per route (5-min sliding window).\n\n**Why:** the route-view of 'what does a slow request look like to a user?'. p95 catches the long tail without being dominated by outliers like p99 sometimes is.\n\n**Watch for:** one route climbing while others stay flat = isolated regression (likely a recent change to that handler). All routes rising together = upstream pressure (DB hot, event loop saturated). Pivot to the Tempo trace for that route to see where the time went.",
+      "title": "Request latency p95 (per route)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "**What:** p50 (orange) and p99 (red) of event-loop dispatch lag over time.\n\n**Why:** the timeseries view of the stat at the top. p99 climbing while p50 stays flat = bursty blocking (an occasional slow query or sync call). Both rising together = sustained pressure.\n\n**Watch for:** p99 > 200ms triggers `NodeEventLoopLagging`. Spike right after a deploy = bad release; spike correlated with traffic = capacity limit; spike with no obvious trigger = check the Tempo trace waterfall for a slow span.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "seconds",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "p99" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "p50" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 13 },
+      "id": 7,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "nodejs_eventloop_lag_p99_seconds{app=\"boringstack-api\"}",
+          "legendFormat": "p99",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "nodejs_eventloop_lag_p50_seconds{app=\"boringstack-api\"}",
+          "legendFormat": "p50",
+          "refId": "B"
+        }
+      ],
+      "title": "Event loop lag (p50 + p99)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "**What:** ELU (0.0–1.0) over time, purple area.\n\n**Why:** the leading indicator. Lag tells you the loop *is* falling behind; ELU tells you it's *about* to. Watching ELU climb gives you headroom warning before users feel it.\n\n**Watch for:** sustained > 0.9 = `NodeEventLoopSaturated` will page. A slow upward trend over hours/days = you're outgrowing the host; plan to scale before it bites.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "purple" },
+          "custom": {
+            "axisLabel": "% busy",
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 13 },
+      "id": 8,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "nodejs_eventloop_utilization{app=\"boringstack-api\"}",
+          "legendFormat": "ELU",
+          "refId": "A"
+        }
+      ],
+      "title": "Event loop utilization",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 20 },
+      "id": 9,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "process_resident_memory_bytes{app=\"boringstack-api\"}",
+          "legendFormat": "RSS",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "nodejs_heap_size_used_bytes{app=\"boringstack-api\"}",
+          "legendFormat": "heap used",
+          "refId": "B"
+        }
+      ],
+      "description": "**What:** process resident set size (RSS — total OS memory) and V8 heap-used over time.\n\n**Why:** detects leaks. RSS that grows in lockstep with traffic = normal; RSS that climbs while traffic flatlines = leak. The gap between RSS and heap = native allocations (Buffers, addons, Bun's own memory).\n\n**Watch for:** RSS approaching the container's memory limit = OOM kill imminent (`docker compose ps` will show `OOMKilled`). Heap as a sawtooth = healthy GC; heap monotonically up = leak. Wide RSS-heap gap that keeps growing = native-side leak.",
+      "title": "Memory (RSS + heap)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 5,
+            "lineWidth": 2,
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 20 },
+      "id": 10,
+      "options": {
+        "legend": { "calcs": ["last", "max"], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rate(process_cpu_seconds_total{app=\"boringstack-api\"}[1m])",
+          "legendFormat": "cpu",
+          "refId": "A"
+        }
+      ],
+      "description": "**What:** process CPU rate (1-min average), as a fraction (1.0 = one full core saturated).\n\n**Why:** worth glancing at but **not** the primary Node health signal — see the ELU panels for that. CPU can be high while the loop is healthy (legitimate CPU-bound work in a worker thread) or low while the loop is blocked (waiting on slow I/O).\n\n**Watch for:** sustained 1.0 = a CPU-bound path is monopolising the main thread; consider moving it to a `worker_threads` worker. `HostCpuSaturated` may also be approaching.",
+      "title": "Process CPU",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisLabel": "req/s",
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "stacking": { "group": "A", "mode": "normal" },
+            "showPoints": "never",
+            "spanNulls": true
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 20 },
+      "id": 11,
+      "options": {
+        "legend": { "calcs": ["last"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum by (status) (rate(http_requests_total{app=\"boringstack-api\"}[1m]))",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "description": "**What:** stacked request rate grouped by HTTP status code (200, 201, 4xx, 5xx, …).\n\n**Why:** sanity check on the status mix. Most healthy traffic is 2xx; 4xx is the client's fault (bad input, auth); 5xx is yours.\n\n**Watch for:** a sudden 4xx surge after a SPA deploy = client-side regression sending bad payloads. 5xx growth = server-side bug or upstream failure (paired with `ApiServerErrorsHigh`). New 3xx pattern that wasn't there before = intentional redirect or misconfiguration.",
+      "title": "Requests by status",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["boringstack", "api"],
+  "templating": { "list": [] },
+  "time": { "from": "now-30m", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "BoringStack — API",
+  "uid": "boringstack-api",
+  "version": 2,
+  "weekStart": ""
+}

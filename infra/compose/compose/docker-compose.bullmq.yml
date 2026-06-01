@@ -1,0 +1,52 @@
+# BullMQ dashboard overlay — merged when WITH_BULLMQ=1 and STACK=dev.
+# Visualizes Bull / BullMQ jobs in the the API app's Valkey. Reuses the
+# existing `valkey` service from the base stack.
+
+services:
+  bullmq-dashboard:
+    image: deadly0/bull-board:latest@sha256:afd615426192c7d43d6320aea7d8910835170c8b43e9b755b6c416d38946be93
+    # deadly0/bull-board publishes amd64-only. Pin the platform so Apple
+    # Silicon hosts run it under Rosetta with no boot-time warning;
+    # bull-board is a low-traffic dev tool so emulation cost is fine.
+    # Follow-up: mount the bull-board npm library as an admin route on
+    # the api itself to drop this container entirely.
+    platform: linux/amd64
+    profiles: [bullmq]
+    restart: unless-stopped
+    environment:
+      # Listen on 7332 instead of bull-board's default 3000. Port 3000 is
+      # the universal "default Node app" port and collides with most
+      # other dev tooling; staying in the BoringStack 733x range
+      # (api=7330, ui=7331, bullmq=7332) keeps the host's port table
+      # legible.
+      PORT: "7332"
+      # bull-board's container reads REDIS_* (third-party naming). We
+      # populate them from the operator-facing VALKEY_* values.
+      REDIS_HOST: valkey
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${VALKEY_PASSWORD:-}
+      REDIS_USE_TLS: "false"
+      BULL_PREFIX: ${BULL_PREFIX:-bull}
+    depends_on:
+      valkey:
+        condition: service_started
+    networks:
+      - backend
+      - frontend
+    ports:
+      - "7332:7332"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=backend"
+      - "traefik.http.routers.bullmq.rule=Host(`bullmq.localhost`)"
+      - "traefik.http.routers.bullmq.entrypoints=web"
+      - "traefik.http.routers.bullmq.service=bullmq"
+      - "traefik.http.services.bullmq.loadbalancer.server.port=7332"
+    deploy:
+      resources:
+        limits:
+          cpus: "${BULLMQ_LIMITS_CPUS:-0.25}"
+          memory: "${BULLMQ_LIMITS_MEMORY:-256M}"
+        reservations:
+          cpus: "${BULLMQ_RESERVATIONS_CPUS:-0.05}"
+          memory: "${BULLMQ_RESERVATIONS_MEMORY:-64M}"

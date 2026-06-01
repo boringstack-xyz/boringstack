@@ -1,0 +1,1 @@
+export const DEFAULT_OPAQUE_TOKEN_BYTES = 32;
