@@ -153,9 +153,18 @@ async function main() {
 
   await mkdir(OUTPUT_DIR, { recursive: true });
 
-  const png = await sharp(Buffer.from(svg))
-    .png({ compressionLevel: 9 })
-    .toBuffer();
+  let png;
+  try {
+    png = await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toBuffer();
+  } catch (err) {
+    // sharp/libvips failures (missing native binary in a lean CI image, OOM,
+    // malformed SVG) otherwise surface as an opaque stack with no origin.
+    const detail = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `sharp failed to rasterize the OG SVG (${svg.length} bytes) to PNG: ${detail}`,
+      { cause: err }
+    );
+  }
 
   await writeFile(OUTPUT_PATH, png);
 

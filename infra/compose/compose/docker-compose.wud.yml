@@ -18,7 +18,11 @@
 # every main push has no canary, no health check, and no rollback. Wire
 # Discord or Slack and review the diff before flipping AUTO=true.
 #
-# Requires docker socket read-write for the auto-deploy trigger.
+# The socket is mounted read-only by default — sufficient for notify-only
+# watching. Auto-redeploy (WUD_TRIGGER_DOCKER_APP_AUTO=true) needs to recreate
+# containers, so it additionally requires dropping the ":ro" suffix on the
+# socket mount below. Keeping write access opt-in limits the blast radius of a
+# compromised watched image or GHCR credential to read-only socket access.
 
 services:
   whatsupdocker:
@@ -39,7 +43,9 @@ services:
       WUD_TRIGGER_DOCKER_APP_PRUNE: ${WUD_TRIGGER_DOCKER_APP_PRUNE:-true}
       WUD_TRIGGER_DOCKER_APP_MODE: batch
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      # Read-only by default. Drop ":ro" only when enabling
+      # WUD_TRIGGER_DOCKER_APP_AUTO=true (auto pull + recreate).
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - wud_data:/store
     ports:
       - "3033:3000"

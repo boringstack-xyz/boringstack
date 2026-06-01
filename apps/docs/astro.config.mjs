@@ -464,6 +464,7 @@ export default defineConfig({
             },
             { label: "Repository layout", link: "/architecture/monorepo-layout/" },
             { label: "Stack at a glance", link: "/architecture/stack/" },
+            { label: "CSRF stance", link: "/architecture/csrf-stance/" },
             { label: "Decision log", link: "/architecture/decisions/" },
             {
               label: "Agent critical",

@@ -60,6 +60,7 @@ export const LOG_EVENTS = [
   "cache_initialized",
   "cache_parse_error",
   "cache_valkey_error",
+  "rate_limit_misconfigured",
   "db_connection_close",
   "db_connection_closed",
   "db.connected",

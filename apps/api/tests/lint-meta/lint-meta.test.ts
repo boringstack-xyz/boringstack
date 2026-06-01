@@ -30,9 +30,31 @@ import {
   checkGeneratedArtifactContracts,
   checkNoRawRoleLiterals,
   checkPrePushParity,
+  checkSharedToolVersionParity,
 } from "../../scripts/lint-meta/cli";
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
+
+describe("checkSharedToolVersionParity", () => {
+  test("flags a shared tool pinned to different versions across apps", () => {
+    const violations = checkSharedToolVersionParity(
+      join(FIXTURES, "shared-tools-drift")
+    );
+
+    expect(violations.map((row) => row.rule)).toContain(
+      "shared-tool-version-parity"
+    );
+    expect(violations.some((row) => row.message.includes("eslint"))).toBe(true);
+  });
+
+  test("passes when every app pins shared tools to the same version", () => {
+    const violations = checkSharedToolVersionParity(
+      join(FIXTURES, "shared-tools-clean")
+    );
+
+    expect(violations).toEqual([]);
+  });
+});
 
 describe("checkForbiddenText", () => {
   test("flags inline lint suppression directive", () => {

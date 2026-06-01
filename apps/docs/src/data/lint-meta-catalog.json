@@ -165,6 +165,12 @@
       "description": "package.json must not list forbidden overlapping library pairs."
     },
     {
+      "id": "shared-tool-version-parity",
+      "category": "supply-chain",
+      "ciCritical": false,
+      "description": "Shared dev tooling (ESLint, TypeScript, Prettier, knip, …) must be pinned to the same version in every app that declares it."
+    },
+    {
       "id": "github-actions-permissions",
       "category": "ci",
       "ciCritical": false,

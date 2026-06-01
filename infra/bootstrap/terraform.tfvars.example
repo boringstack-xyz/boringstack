@@ -25,6 +25,29 @@ ssh_public_key  = ""  # paste full key including "ssh-ed25519 ..."
 # ssh_allowed_ips = ["0.0.0.0/0", "::/0"]  # uncomment to restrict SSH source
 
 # ----------------------------------------------------------------------------
+# Edge security + performance  (optional; all on by default, all free-tier)
+#
+# Handled at the Cloudflare edge, before traffic reaches Traefik / api / ui:
+#   - bot-block WAF rule: scanner paths (/.env, /.git/, /wp-admin, …), any
+#     hidden dotfile, and empty/known-scanner user agents. Review the path
+#     list against your routes; never include /.well-known/acme-challenge.
+#   - auth rate limit: Managed Challenge on /api/auth/* (Cloudflare's one free
+#     rate-limiting rule). If your plan rejects it, set enable_auth_rate_limit=false.
+#   - edge cache: cache Vite's hashed /assets/* for a year, bypass /api/*.
+#   - DNSSEC: auto at Cloudflare Registrar; else add the dnssec_ds_record DS
+#     output at your registrar once.
+# ----------------------------------------------------------------------------
+
+# enable_bot_blocking          = true
+# bot_block_paths              = ["/.env", "/.git/", "/.aws/", "/actuator/", "/wp-admin/", "/wp-login", "/xmlrpc", "/phpmyadmin/", "/laravel/", "/backend/", "/config.php", "/server-status"]
+# block_suspicious_user_agents = true
+# enable_auth_rate_limit       = true
+# auth_rate_limit_requests     = 20
+# auth_rate_limit_period       = 60   # 10 | 60 | 120 | 300 | 600 | 3600
+# enable_edge_cache            = true
+# enable_dnssec                = true
+
+# ----------------------------------------------------------------------------
 # VPS sizing (Hetzner-native names)
 # ----------------------------------------------------------------------------
 
