@@ -76,35 +76,19 @@ async function fetchResetToken(email: string): Promise<string> {
 
 test.describe("Password reset", () => {
   /*
-   * TODO(password-reset-flake): known intermittent failure on CI.
+   * Root cause was a Chromium cookie-commit lag under Playwright: the
+   * login response sets the auth cookie but the browser sometimes
+   * hasn't committed it by the time ProtectedRoute mounts and fires
+   * GET /me. /me saw no cookie, returned `{user: null}`, the SPA
+   * treated that as anonymous, and bounced back to /login.
    *
-   * Symptom: after the post-reset login, `page.waitForURL(/\/dashboard/)`
-   * times out — the browser stays on `/login` for the 5s assertion
-   * window. Login API returns 200, cookie is set, /me sometimes
-   * returns 200 sometimes returns 401 with "Missing authentication
-   * cookie".
-   *
-   * Partial fixes applied:
-   *   - `ad456b7` lifts JWT iat past the revoke cutoff so a fresh
-   *     token issued in the same wall-clock second as
-   *     revokeAllForUser survives the iat-vs-cutoff check.
-   *   - This PR's ProtectedRoute fix makes the route wait when
-   *     `data === null && isFetching` so the post-login refetch
-   *     completes before redirect-to-/login fires.
-   *
-   * Both improvements together still don't fully close it: the test
-   * fails ~1/3 of the time on CI-mimicking single-worker runs.
-   * Something else is racing — possibly cookie-storage timing in
-   * Chromium under the smoke profile, or a Sentry/OTel context
-   * interaction that holds the request open beyond when it should.
-   *
-   * Marked .fixme so it stops blocking otherwise-clean PRs. Needs a
-   * focused session: add diagnostic logging across login → /me →
-   * ProtectedRoute, push to a throwaway branch, capture the actual
-   * failure trace, then fix properly. The negative-path spec at
-   * line ~127 stays active — it doesn't hit the race.
+   * Closed by `features/auth/Auth.session.sync.ts`: every session-
+   * establishing flow (login, MFA verify, email verify, OAuth
+   * callback) now pre-fetches /me with short retries (5 × 30 ms)
+   * BEFORE the consumer navigates. The cookie window closes inside
+   * the retry budget and the post-navigation useMe is a cache hit.
    */
-  test.fixme("user requests a reset, sets a new password via the link, signs in with it", async ({
+  test("user requests a reset, sets a new password via the link, signs in with it", async ({
     page
   }) => {
     const user: IUser = {

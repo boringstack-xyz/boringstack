@@ -33,7 +33,19 @@ function makeWrapper() {
   return { Wrapper, client };
 }
 
+/*
+ * MFA verify mutations now call `syncMeAfterSessionEstablished` on
+ * success — fires GET /me with retries. Stub the follow-up call so
+ * the helper resolves on the first attempt.
+ */
+const stubMeAuthed = () => {
+  apiMock.GET.mockResolvedValue({
+    data: { user: { id: "u1", email: "u@example.com" } }
+  });
+};
+
 beforeEach(() => {
+  apiMock.GET.mockReset();
   apiMock.POST.mockReset();
 });
 
@@ -42,6 +54,7 @@ describe("useMfaVerifyLogin", () => {
     apiMock.POST.mockResolvedValueOnce({
       data: { success: true, data: { user: { id: "u1" } } }
     });
+    stubMeAuthed();
 
     const { Wrapper } = makeWrapper();
     const { result } = renderHook(() => useMfaVerifyLogin(), {
@@ -66,6 +79,7 @@ describe("useMfaVerifyRecovery", () => {
     apiMock.POST.mockResolvedValueOnce({
       data: { success: true, data: { user: { id: "u1" } } }
     });
+    stubMeAuthed();
 
     const { Wrapper } = makeWrapper();
     const { result } = renderHook(() => useMfaVerifyRecovery(), {

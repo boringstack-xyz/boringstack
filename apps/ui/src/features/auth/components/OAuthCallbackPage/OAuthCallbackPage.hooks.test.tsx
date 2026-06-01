@@ -10,6 +10,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useOAuthCallbackPage } from "./OAuthCallbackPage.hooks";
 
 const navigateMock = vi.hoisted(() => vi.fn());
+const apiMock = vi.hoisted(() => ({
+  GET: vi.fn(),
+  POST: vi.fn(),
+  PATCH: vi.fn(),
+  PUT: vi.fn(),
+  DELETE: vi.fn()
+}));
+
+vi.mock("@/lib/api/client", () => ({ apiClient: apiMock }));
 
 vi.mock("react-router-dom", async () => {
   const actual =
@@ -45,6 +54,14 @@ function makeWrapper(initialUrl: string) {
 
 beforeEach(() => {
   navigateMock.mockReset();
+  apiMock.GET.mockReset();
+  /*
+   * Callback hook now pre-fetches /me through `syncMeAfterSessionEstablished`.
+   * Stub the follow-up call so the helper resolves immediately.
+   */
+  apiMock.GET.mockResolvedValue({
+    data: { user: { id: "u1", email: "u@example.com" } }
+  });
 });
 
 describe("useOAuthCallbackPage", () => {

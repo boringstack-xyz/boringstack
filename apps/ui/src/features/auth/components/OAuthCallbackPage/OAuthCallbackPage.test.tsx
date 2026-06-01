@@ -7,6 +7,27 @@ import { describe, expect, it, vi } from "vitest";
 
 import OAuthCallbackPage from "./OAuthCallbackPage";
 
+const apiMock = vi.hoisted(() => ({
+  GET: vi.fn(),
+  POST: vi.fn(),
+  PATCH: vi.fn(),
+  PUT: vi.fn(),
+  DELETE: vi.fn()
+}));
+
+vi.mock("@/lib/api/client", () => ({ apiClient: apiMock }));
+
+/*
+ * useOAuthCallbackPage's effect calls `syncMeAfterSessionEstablished`
+ * which fires GET /me. Default the GET mock to an authed envelope so
+ * the helper resolves on the first attempt and the promise doesn't
+ * leak as an unhandled rejection when openapi-fetch hits the real
+ * (relative) URL.
+ */
+apiMock.GET.mockResolvedValue({
+  data: { user: { id: "u1", email: "u@example.com" } }
+});
+
 vi.mock("react-i18next", async () => {
   const actual = await vi.importActual<typeof ReactI18Next>("react-i18next");
 

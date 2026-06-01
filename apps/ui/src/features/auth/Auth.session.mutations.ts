@@ -13,6 +13,7 @@ import {
   isLoginUserEnvelope,
   isMfaRequiredEnvelope
 } from "./Auth.session.mutations.utils";
+import { syncMeAfterSessionEstablished } from "./Auth.session.sync";
 import type { ILoginInput, ILoginResponse } from "./Auth.types";
 
 export function useLogin(): UseMutationResult<
@@ -50,18 +51,24 @@ export function useLogin(): UseMutationResult<
     onSuccess: async (result: ILoginResponse) => {
       /*
        * Cookies aren't issued yet on the mfa-required branch; the MFA
-       * verify mutation will invalidate once a session is established.
+       * verify mutation establishes the session.
        */
       if (result.kind === "mfa-required") {
         return;
       }
 
       /*
-       * Force a /me refetch instead of seeding from the login response:
-       * /me carries memberships + features + role, while the login envelope
-       * only carries `{ user }`. Seeding would leave the cache half-filled.
+       * Pre-fetch /me before the consumer navigates. Chromium under
+       * Playwright sometimes lags the Set-Cookie commit behind the
+       * login response; without this guard the post-redirect
+       * ProtectedRoute reads useMe, the cookie isn't yet in the
+       * cookie jar, /me returns {user: null}, and the SPA bounces
+       * back to /login. `syncMeAfterSessionEstablished` retries
+       * briefly to ride out the commit window and populates the me
+       * cache authoritatively so the post-navigation useMe is a
+       * cache hit, not a refetch.
        */
-      await qc.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me });
+      await syncMeAfterSessionEstablished(qc);
       await qc.invalidateQueries({ queryKey: CAPABILITIES_QUERY_KEY });
     }
   });

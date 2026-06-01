@@ -48,6 +48,14 @@ beforeEach(() => {
   apiMock.GET.mockReset();
   apiMock.POST.mockReset();
   navigateMock.mockReset();
+  /*
+   * verify-email hook now pre-fetches /me through
+   * `syncMeAfterSessionEstablished`. Stub the follow-up call so the
+   * helper resolves immediately on the success path.
+   */
+  apiMock.GET.mockResolvedValue({
+    data: { user: { id: "u1", email: "u@example.com" } }
+  });
 });
 
 describe("VerifyEmailPage", () => {

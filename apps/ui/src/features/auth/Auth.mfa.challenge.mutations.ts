@@ -6,8 +6,8 @@ import {
 
 import { apiClient } from "@/lib/api/client";
 
-import { AUTH_QUERY_KEYS } from "./Auth.constants";
 import { unwrapMfaEnvelope } from "./Auth.mfa.utils";
+import { syncMeAfterSessionEstablished } from "./Auth.session.sync";
 import type { IMfaVerifyChallengeInput } from "./Auth.types";
 
 export function useMfaVerifyLogin(): UseMutationResult<
@@ -26,7 +26,14 @@ export function useMfaVerifyLogin(): UseMutationResult<
       return unwrapMfaEnvelope(data);
     },
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me });
+      /*
+       * Same cookie-commit race as the password login path — see
+       * Auth.session.sync.ts. MFA verify establishes the session
+       * cookies; the consumer then navigates to /dashboard. Pre-fetch
+       * /me with short retries so the post-navigation ProtectedRoute
+       * sees authed data instead of a transient {user: null}.
+       */
+      await syncMeAfterSessionEstablished(qc);
     }
   });
 }
@@ -48,7 +55,7 @@ export function useMfaVerifyRecovery(): UseMutationResult<
       return unwrapMfaEnvelope(data);
     },
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me });
+      await syncMeAfterSessionEstablished(qc);
     }
   });
 }
