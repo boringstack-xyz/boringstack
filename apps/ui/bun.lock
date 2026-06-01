@@ -41,7 +41,7 @@
         "@boring-stack-pkg/eslint-plugin-react-component-architecture": "0.3.0",
         "@boring-stack-pkg/eslint-plugin-structured-logging": "0.1.1",
         "@boring-stack-pkg/eslint-plugin-tanstack-query-cache": "0.2.0",
-        "@boring-stack-pkg/eslint-plugin-test-conventions": "0.1.1",
+        "@boring-stack-pkg/eslint-plugin-test-conventions": "0.1.2",
         "@changesets/cli": "2.31.0",
         "@eslint-community/eslint-plugin-eslint-comments": "4.7.1",
         "@eslint/js": "10.0.1",
@@ -165,7 +165,7 @@
 
     "@boring-stack-pkg/eslint-plugin-tanstack-query-cache": ["@boring-stack-pkg/eslint-plugin-tanstack-query-cache@0.2.0", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0", "typescript": ">=5.0.0" } }, "sha512-xBlnJEr5YbV+2LKQaicDJ8WPzwWQL1JZjujCTThdTrvO4IHXLIFetUukjkOGbG9n+6BTmpaq6EmjMmXxrq2rJQ=="],
 
-    "@boring-stack-pkg/eslint-plugin-test-conventions": ["@boring-stack-pkg/eslint-plugin-test-conventions@0.1.1", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0", "micromatch": "4.0.5" }, "peerDependencies": { "@typescript-eslint/parser": "8.0.0", "eslint": "9.39.4", "typescript": "6.0.3" } }, "sha512-Lnt2bI7y0+4FkOZP5rceTba89b9RMijWMg0X2elBr1UdyDTsEdcHM/ysSJAP68WEoRxSh3FPIYGhhX/ejRB0Tw=="],
+    "@boring-stack-pkg/eslint-plugin-test-conventions": ["@boring-stack-pkg/eslint-plugin-test-conventions@0.1.2", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0", "micromatch": "4.0.5" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-EmKoJ07RUA02TnkX7UqMNbQDbMBVB364i8p8Zbd99QNwdyJIKQZdg0f50C+NWlEBB2Lt0izzJODHxL6Og3Z4aA=="],
 
     "@bramus/specificity": ["@bramus/specificity@2.4.2", "", { "dependencies": { "css-tree": "3.2.1" }, "bin": { "specificity": "bin/cli.js" } }, "sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw=="],
 
@@ -2269,8 +2269,6 @@
 
     "@boring-stack-pkg/eslint-plugin-structured-logging/@typescript-eslint/parser": ["@typescript-eslint/parser@8.0.0", "", { "dependencies": { "@typescript-eslint/scope-manager": "8.0.0", "@typescript-eslint/types": "8.0.0", "@typescript-eslint/typescript-estree": "8.0.0", "@typescript-eslint/visitor-keys": "8.0.0", "debug": "4.4.3" }, "optionalDependencies": { "typescript": "6.0.3" }, "peerDependencies": { "eslint": "9.39.4" } }, "sha512-pS1hdZ+vnrpDIxuFXYQpLTILglTjSYJ9MbetZctrUawogUsPdz31DIIRZ9+rab0LhYNTsk88w4fIzVheiTbWOQ=="],
 
-    "@boring-stack-pkg/eslint-plugin-test-conventions/@typescript-eslint/parser": ["@typescript-eslint/parser@8.0.0", "", { "dependencies": { "@typescript-eslint/scope-manager": "8.0.0", "@typescript-eslint/types": "8.0.0", "@typescript-eslint/typescript-estree": "8.0.0", "@typescript-eslint/visitor-keys": "8.0.0", "debug": "4.4.3" }, "optionalDependencies": { "typescript": "6.0.3" }, "peerDependencies": { "eslint": "9.39.4" } }, "sha512-pS1hdZ+vnrpDIxuFXYQpLTILglTjSYJ9MbetZctrUawogUsPdz31DIIRZ9+rab0LhYNTsk88w4fIzVheiTbWOQ=="],
-
     "@changesets/apply-release-plan/prettier": ["prettier@2.8.8", "", { "bin": { "prettier": "bin-prettier.js" } }, "sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q=="],
 
     "@changesets/config/micromatch": ["micromatch@4.0.8", "", { "dependencies": { "braces": "3.0.3", "picomatch": "2.3.2" } }, "sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA=="],
@@ -2591,14 +2589,6 @@
 
     "@boring-stack-pkg/eslint-plugin-structured-logging/@typescript-eslint/parser/@typescript-eslint/visitor-keys": ["@typescript-eslint/visitor-keys@8.0.0", "", { "dependencies": { "@typescript-eslint/types": "8.0.0", "eslint-visitor-keys": "3.4.3" } }, "sha512-oN0K4nkHuOyF3PVMyETbpP5zp6wfyOvm7tWhTMfoqxSSsPmJIh6JNASuZDlODE8eE+0EB9uar+6+vxr9DBTYOA=="],
 
-    "@boring-stack-pkg/eslint-plugin-test-conventions/@typescript-eslint/parser/@typescript-eslint/scope-manager": ["@typescript-eslint/scope-manager@8.0.0", "", { "dependencies": { "@typescript-eslint/types": "8.0.0", "@typescript-eslint/visitor-keys": "8.0.0" } }, "sha512-V0aa9Csx/ZWWv2IPgTfY7T4agYwJyILESu/PVqFtTFz9RIS823mAze+NbnBI8xiwdX3iqeQbcTYlvB04G9wyQw=="],
-
-    "@boring-stack-pkg/eslint-plugin-test-conventions/@typescript-eslint/parser/@typescript-eslint/types": ["@typescript-eslint/types@8.0.0", "", {}, "sha512-wgdSGs9BTMWQ7ooeHtu5quddKKs5Z5dS+fHLbrQI+ID0XWJLODGMHRfhwImiHoeO2S5Wir2yXuadJN6/l4JRxw=="],
-
-    "@boring-stack-pkg/eslint-plugin-test-conventions/@typescript-eslint/parser/@typescript-eslint/typescript-estree": ["@typescript-eslint/typescript-estree@8.0.0", "", { "dependencies": { "@typescript-eslint/types": "8.0.0", "@typescript-eslint/visitor-keys": "8.0.0", "debug": "4.4.3", "globby": "11.1.0", "is-glob": "4.0.3", "minimatch": "9.0.9", "semver": "7.8.0", "ts-api-utils": "1.4.3" }, "optionalDependencies": { "typescript": "6.0.3" } }, "sha512-5b97WpKMX+Y43YKi4zVcCVLtK5F98dFls3Oxui8LbnmRsseKenbbDinmvxrWegKDMmlkIq/XHuyy0UGLtpCDKg=="],
-
-    "@boring-stack-pkg/eslint-plugin-test-conventions/@typescript-eslint/parser/@typescript-eslint/visitor-keys": ["@typescript-eslint/visitor-keys@8.0.0", "", { "dependencies": { "@typescript-eslint/types": "8.0.0", "eslint-visitor-keys": "3.4.3" } }, "sha512-oN0K4nkHuOyF3PVMyETbpP5zp6wfyOvm7tWhTMfoqxSSsPmJIh6JNASuZDlODE8eE+0EB9uar+6+vxr9DBTYOA=="],
-
     "@changesets/config/micromatch/picomatch": ["picomatch@2.3.2", "", {}, "sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA=="],
 
     "@changesets/git/micromatch/picomatch": ["picomatch@2.3.2", "", {}, "sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA=="],
@@ -2908,10 +2898,6 @@
     "@boring-stack-pkg/eslint-plugin-structured-logging/@typescript-eslint/parser/@typescript-eslint/typescript-estree/ts-api-utils": ["ts-api-utils@1.4.3", "", { "peerDependencies": { "typescript": "6.0.3" } }, "sha512-i3eMG77UTMD0hZhgRS562pv83RC6ukSAC2GMNWc+9dieh/+jDM5u5YG+NHX6VNDRHQcHwmsTHctP9LhbC3WxVw=="],
 
     "@boring-stack-pkg/eslint-plugin-structured-logging/@typescript-eslint/parser/@typescript-eslint/visitor-keys/eslint-visitor-keys": ["eslint-visitor-keys@3.4.3", "", {}, "sha512-wpc+LXeiyiisxPlEkUzU6svyS1frIO3Mgxj1fdy7Pm8Ygzguax2N3Fa/D/ag1WqbOprdI+uY6wMUl8/a2G+iag=="],
-
-    "@boring-stack-pkg/eslint-plugin-test-conventions/@typescript-eslint/parser/@typescript-eslint/typescript-estree/ts-api-utils": ["ts-api-utils@1.4.3", "", { "peerDependencies": { "typescript": "6.0.3" } }, "sha512-i3eMG77UTMD0hZhgRS562pv83RC6ukSAC2GMNWc+9dieh/+jDM5u5YG+NHX6VNDRHQcHwmsTHctP9LhbC3WxVw=="],
-
-    "@boring-stack-pkg/eslint-plugin-test-conventions/@typescript-eslint/parser/@typescript-eslint/visitor-keys/eslint-visitor-keys": ["eslint-visitor-keys@3.4.3", "", {}, "sha512-wpc+LXeiyiisxPlEkUzU6svyS1frIO3Mgxj1fdy7Pm8Ygzguax2N3Fa/D/ag1WqbOprdI+uY6wMUl8/a2G+iag=="],
 
     "@eslint/config-array/minimatch/brace-expansion/balanced-match": ["balanced-match@4.0.4", "", {}, "sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA=="],
 
