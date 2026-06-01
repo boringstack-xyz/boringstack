@@ -4,6 +4,7 @@ description: Static repo enforcement rules that run alongside ESLint, package.js
 ---
 
 import { Aside } from "@astrojs/starlight/components";
+import LintMetaCatalog from "../../../components/docs-kit/LintMetaCatalog";
 
 ESLint enforces architecture inside TypeScript modules. `lint:meta` catches repo-level drift ESLint cannot see: unpinned GitHub Actions, env cascade gaps, forbidden inline disables, cross-repo imports, and missing test siblings. It runs inside `bun run validate`.
 
@@ -15,30 +16,19 @@ typecheck → ESLint → lint:meta → knip → tests
 
 <Aside type="tip" title="Machine-readable source">
   Each template registers rules in <code>scripts/lint-meta/registry.ts</code>.
-  This page is generated from that registry, add a rule, run the generator,
-  and CI keeps the docs aligned.
+  This page is generated from that registry, add a rule, run the generator, and
+  CI keeps the docs aligned.
 </Aside>
 
-## UI-only rules
+## apps/ui rules
 
-The apps/ui catalog includes rules that only apply to the SPA repo:
+<LintMetaCatalog template="ui" />
 
-- `no-cross-repo-import`, **CI-critical**; UI imports must not reach into backend or infra source
-- `modulepreload-size-limit-coverage`, bundle size-limit config must cover modulepreload chunks
-- `no-dark-variant`, `no-dangerous-html`, `env-access`, `no-raw-fetch`, source-text bans for Vite/React patterns
+## apps/api rules
 
-## API-only rules
+<LintMetaCatalog template="api" />
 
-The apps/api catalog adds backend test contracts:
-
-- `routes-require-test-sibling`, every `*.routes.ts` needs a matching `tests/api/**/*.routes.test.ts`
-- `touch-tests-too`, opt-in via `LINT_META_TOUCHED_BASE` for diff-aware test enforcement
-
-## Shared rules
-
-Both templates share supply-chain, CI, env, artifact, and config rules (exact deps, pre-push CI parity, engine pin parity, generated artifact banners, forbidden inline disables, raw role literals, logic-file test siblings).
-
-See the ESLint plugin inventory and implementation under `scripts/lint-meta/` in the boringstack repo.
+Implementation lives under `scripts/lint-meta/` in each template.
 
 ## Adding a rule
 
