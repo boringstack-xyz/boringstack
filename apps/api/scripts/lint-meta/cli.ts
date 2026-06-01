@@ -20,6 +20,7 @@ import { META_RULES } from "./registry";
 import { printRuleCatalog, runMetaRules, runMetaRulesAsync } from "./runner";
 import { checkDependencyPairs } from "./rules/supply-chain/no-overlapping-libs";
 import { checkExactDependencyVersions } from "./rules/supply-chain/package-json-exact-deps";
+import { checkSharedToolVersionParity } from "./rules/supply-chain/shared-tool-version-parity";
 import { checkEslintConfigNoWarn } from "./rules/config/eslint-config-no-warn";
 import { checkEnvSchemaDrift } from "./rules/env/env-cascade-drift";
 import { checkNoDirectProcessEnv } from "./rules/env/no-direct-process-env";
@@ -99,6 +100,7 @@ export {
   checkNoRawRoleLiterals,
   checkPrePushParity,
   checkRouteFilesHaveTests,
+  checkSharedToolVersionParity,
   checkTouchedTests,
   checkWorkflowShas,
 };

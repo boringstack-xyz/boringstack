@@ -120,7 +120,7 @@ Everything in `terraform.tfvars.example` ships with comments explaining what it'
 - **outputs.tf**: VPS IP, DNS records, ready-to-paste SSH command, site URL.
 - **terraform.tfvars.example**: all knobs with comments. Copy to `terraform.tfvars` and fill in.
 - **modules/hetzner/**: VPS, SSH key, firewall, cloud-init injection.
-- **modules/cloudflare/**: DNS records, sane zone setting defaults, redirect rules.
+- **modules/cloudflare/**: DNS records, sane zone setting defaults, redirect rules, and edge security/performance — a bot/scanner WAF block rule, an auth rate-limit rule, an asset cache rule, and DNSSEC.
 - **modules/bootstrap/**: cloud-init template that installs Docker plus git, then runs `bootstrap.sh`.
 - **bootstrap.sh**: versioned shell script. Clones the monorepo, renders `compose/.env`, runs `compose pull && compose up -d`.
 
@@ -208,6 +208,7 @@ The runtime repos work fine without this one. It's a convenience layer, not a de
 - **Single vps_type variable using provider-native size names**: `cx32`, `s-2vcpu-4gb`. The same names the provider docs, support, and billing page use.
 - **Sane Cloudflare zone defaults**: SSL strict, HSTS 6 months, TLS min 1.2, browser integrity on. Matches what `production-labels.yml` expects. Each setting is one override away.
 - **DNS: apex and www only**: one A/AAAA pair on the apex serves both the SPA and `/api/*` via same-origin path routing. `www.` is a CNAME to apex with a redirect rule. No `api.` subdomain. Traefik path-routes `/api/*` on the same host.
+- **Edge bot-blocking, on by default**: a single Cloudflare WAF custom rule (`http_request_firewall_custom`) blocks common scanner probes — `/.env`, `/.git/`, `/wp-admin`, `/xmlrpc`, … — at the edge, so they never reach Traefik or the API. Configurable via `bot_block_paths`; disable with `enable_bot_blocking = false`. Works on the Cloudflare Free plan.
 - **State stays local by default**: single-operator default. An S3 backend block is one paste away for teams.
 - **Secrets in terraform.tfvars (gitignored)**: same pragmatic floor as `compose/.env`. Upgrade to a secret manager when team size demands it.
 - **Outputs print, never side-effect**: apply prints the IP, ssh command, and site URL. Never auto-opens anything.

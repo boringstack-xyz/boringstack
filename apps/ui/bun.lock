@@ -39,7 +39,6 @@
         "@boring-stack-pkg/eslint-plugin-i18n-keys": "0.1.1",
         "@boring-stack-pkg/eslint-plugin-module-boundaries": "0.1.1",
         "@boring-stack-pkg/eslint-plugin-react-component-architecture": "0.3.0",
-        "@boring-stack-pkg/eslint-plugin-resource-architecture": "0.2.0",
         "@boring-stack-pkg/eslint-plugin-structured-logging": "0.1.1",
         "@boring-stack-pkg/eslint-plugin-tanstack-query-cache": "0.2.0",
         "@boring-stack-pkg/eslint-plugin-test-conventions": "0.1.1",
@@ -161,8 +160,6 @@
     "@boring-stack-pkg/eslint-plugin-module-boundaries": ["@boring-stack-pkg/eslint-plugin-module-boundaries@0.1.1", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": "8.0.0", "eslint": "9.39.4", "typescript": "6.0.3" } }, "sha512-FUSEI5c9sESwGTjF8MrNKdh4kBTfmwUgEJhMl8tVB0MdXsSzn5O7q9YImsh79igzBaIL5WMt31SCQv43t/K6+g=="],
 
     "@boring-stack-pkg/eslint-plugin-react-component-architecture": ["@boring-stack-pkg/eslint-plugin-react-component-architecture@0.3.0", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0", "yaml": "2.4.1" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0", "typescript": ">=5.0.0" } }, "sha512-DZJnqa97Fyzge7uhMDwpXaz8YWvzobhcR8d3VcaU4VBcUaprJBlW3TkSDP5gWhfVdPrrLTpOzdkdTYaz8Ks/Yw=="],
-
-    "@boring-stack-pkg/eslint-plugin-resource-architecture": ["@boring-stack-pkg/eslint-plugin-resource-architecture@0.2.0", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0", "micromatch": "4.0.5" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0", "typescript": ">=5.0.0" } }, "sha512-v7EmVtIaiJwk06H+SwlbtlzLkUPHoFpCtw+LBEFVddFtGimkB0YGkQqgnCJaEKFuGviAI8WQ0TCgxx2z9seYEg=="],
 
     "@boring-stack-pkg/eslint-plugin-structured-logging": ["@boring-stack-pkg/eslint-plugin-structured-logging@0.1.1", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": "8.0.0", "eslint": "9.39.4", "typescript": "6.0.3" } }, "sha512-9aZ3GEqAozaLDRwJDtvH3fFdml4xg/oH0xKz0d+y5bI208TDuXlelL3aMMpr2Sc23oiRZK/8jgKJ5QgOBcmnqA=="],
 
