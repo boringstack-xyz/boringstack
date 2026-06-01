@@ -46,6 +46,13 @@
     "starlight-llms-txt": "0.6.1",
     "wrangler": "4.93.0"
   },
+  "//overrides": {
+    "_": "Why these transitive deps are pinned. Build-time/dev tooling only — the deployed site is static Cloudflare Pages. Re-evaluate quarterly (see osv-scanner.toml).",
+    "ws": "Pin patched ws (GHSA-58qx-3vcg-4xpx) pulled via miniflare/wrangler dev tooling.",
+    "devalue": "Pin patched devalue build-time serialization XSS (GHSA-77vg-94rm-hx3p).",
+    "qs": "Pin patched qs (GHSA-q8mj-m7cp-5q26) pulled via the http-server dev preview tool.",
+    "tmp": "Pin patched tmp symlink arbitrary-write advisory; transitive dev-tooling dep."
+  },
   "overrides": {
     "ws": "8.20.1",
     "devalue": "5.8.1",

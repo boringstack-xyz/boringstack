@@ -3,6 +3,7 @@ import {
   test as base,
   request
 } from "@playwright/test";
+import { randomUUID } from "node:crypto";
 
 import { DashboardPage } from "../pages/DashboardPage";
 import { LoginPage } from "../pages/LoginPage";
@@ -17,7 +18,7 @@ interface ITestUser {
  *
  *   - `testUser`: a freshly-registered user via the API. Worker-scoped so
  *     every test in a worker shares one account, keeping the suite fast. The
- *     email is randomized per worker so parallel workers + re-runs don't
+ *     email carries a per-worker UUID so parallel workers + re-runs can never
  *     collide on the unique-email index.
  *   - `login` / `dashboard`: page objects on a clean unauthenticated session.
  *   - `authedPage`: a logged-in page that has landed on /dashboard.
@@ -74,7 +75,7 @@ export const test = base.extend<
     async ({}, use, workerInfo) => {
       const baseURL = "http://localhost:7331";
       const user: ITestUser = {
-        email: `e2e-${String(workerInfo.workerIndex)}-${String(Date.now())}-${String(Math.floor(Math.random() * 1_000_000))}@e2e.test`,
+        email: `e2e-${String(workerInfo.workerIndex)}-${randomUUID()}@e2e.test`,
         password: "E2EPassword123!"
       };
 

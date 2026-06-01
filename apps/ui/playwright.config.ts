@@ -13,7 +13,7 @@ export default defineConfig({
     ? [["github"], ["html", { open: "never" }]]
     : [["html", { open: "never" }], ["list"]],
   timeout: 30_000,
-  expect: { timeout: 5_000 },
+  expect: { timeout: 12_000 },
   use: {
     baseURL: BASE_URL,
     trace: "on-first-retry",

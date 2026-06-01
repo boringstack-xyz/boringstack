@@ -19,6 +19,41 @@ genericness (works for any consumer of the template, no app-specific assumptions
 developer experience**. Never pick the lazy option; pick the one a senior engineer
 shipping a flagship template would. Record the choice in the run log.
 
+## Guardrail-first remediation (lint as a contract)
+
+This stack's core value is **lint as a contract**: defects are _prevented by linters and
+parsers_, not caught by review. So before fixing a finding, ask: **is this a _class_ of
+defect a static check could catch — not a one-off logic bug?** If yes, the fix is not the
+code change alone; it is **the guardrail plus the code change**, in this order:
+
+1. **Find or create the rule.** Two layers:
+   - **lint-meta** (in-repo; repo-level drift: version/SHA pins, CI parity, env cascade,
+     source-text bans, test-sibling coverage, config). Add or extend an `IMetaRule` under
+     `apps/<app>/scripts/lint-meta/rules/<category>/` and register it in `registry.ts`.
+     This is the default — it lives in this repo and you can edit it.
+   - **ESLint custom plugins** (`@boring-stack-pkg/eslint-plugin-*`; architecture _inside_
+     TypeScript modules). Source is cross-repo (`boringstack-xyz/eslint-plugins`) and
+     usually not editable from here — if the class fits, express it as a lint-meta
+     source-text rule instead; otherwise flag it for that repo in the run log.
+2. **Surface the bug through the rule (RED).** Run `bun run lint:meta` (or `bun run check`)
+   and confirm the finding's exact instances now fail as violations. If the rule doesn't
+   flag them, the rule is wrong — fix the rule first. A guardrail that misses the known
+   case is worthless.
+3. **Fix the code until the rule passes (GREEN).** The command that surfaced the bug now
+   proves it's gone.
+4. **Lock it in.** Add/extend a test under `apps/<app>/tests/lint-meta/`, run
+   `bun run generate:lint-meta-docs` to refresh `RULES.md`, and commit rule + test + fix
+   together. The rule now blocks this defect for every future consumer of the template.
+
+**An existing rule with a gap still counts.** If a finding is a class a guardrail _claims_
+to cover but slipped through (e.g. actions that should be SHA-pinned with no rule enforcing
+it, or a rule that misses a syntax variant), the real bug is the gap: close the rule, watch
+the instances surface, then fix.
+
+**When NOT to add a rule:** genuinely one-off logic bugs, data-specific issues, or anything
+not expressible as a static check — fix those directly. When unsure, lean toward the rule;
+extending the tooling is the higher-leverage outcome for this stack.
+
 ## Completion discipline
 
 Finish every finding. Do not stop early, do not batch-ask for confirmation, do not
@@ -53,14 +88,17 @@ disjoint in files.
 
 ### 4. Per finding (the loop)
 1. Mark the todo in_progress.
-2. Apply the fix using the finding's `fix` + `execution_steps`. Honor the repo merge
-   bar from `apps/api/AGENT_CONTRACT.md` (no `any`/`as`/`!`, no inline `eslint-disable`,
-   `ApiErrors.*` not `new Error`, structured logging with `event:`, etc.). For
-   judgment calls, apply the **North star**.
-3. Validate: run the finding's `validation` command, AND the fast Docker-free gate in
-   every app you touched — `cd apps/api && bun run check`, `cd apps/ui && bun run check`,
-   `cd apps/docs && bun run check:docs-data` (docs has no `check` script until F005 adds
-   one). Heavy `validate`/tests/e2e run at push time via the pre-push hook.
+2. **Classify, then fix.** Apply **Guardrail-first remediation** (above): if the finding is
+   a class a linter/parser can enforce, add or extend the rule, surface the bug through it,
+   then fix the code. Otherwise apply the fix directly from `fix` + `execution_steps`.
+   Either way honor the repo merge bar from `apps/api/AGENT_CONTRACT.md` (no `any`/`as`/`!`,
+   no inline `eslint-disable`, `ApiErrors.*` not `new Error`, structured logging with
+   `event:`). For judgment calls, apply the **North star**.
+3. Validate: run the finding's `validation` command (plus `bun run lint:meta` for any rule
+   you added/extended), AND the fast Docker-free gate in every app you touched —
+   `cd apps/api && bun run check`, `cd apps/ui && bun run check`,
+   `cd apps/docs && bun run check:docs-data` (docs has no `check` script). Heavy
+   `validate`/tests/e2e run at push time via the pre-push hook.
 4. **Green** → commit just this finding's files with a conventional message, e.g.
    `fix(<scope>): <finding title>` and a trailer `Audit: <finding id>`. Mark todo done.
    **Red** → make up to 2 repair attempts. Still red → `git restore`/`git checkout --`
@@ -89,6 +127,9 @@ disjoint in files.
 | push (full gate) | `git push -u origin <branch>` |
 
 ## Red flags — you are doing it wrong if
+- You patched a class-of-defect finding with a one-off code change when a lint-meta rule
+  could enforce it — extend the guardrail first, then fix (lint as a contract).
+- You wrote a rule that doesn't actually flag the finding's known instances.
 - You asked the user to confirm mid-run instead of deciding via the North star.
 - You committed code that fails `bun run check`.
 - You stopped after the `execution_plan` items and ignored the rest of `findings[]`.

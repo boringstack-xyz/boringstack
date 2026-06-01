@@ -21,19 +21,18 @@ import { useMe } from "@/features/auth/Auth.queries";
  */
 export const SentryUserSync = (): null => {
   const me = useMe();
+  const userId = me.data?.user.id;
+  const userEmail = me.data?.user.email;
 
   useEffect(() => {
-    if (me.data?.user) {
-      Sentry.setUser({
-        id: me.data.user.id,
-        email: me.data.user.email
-      });
+    if (userId !== undefined && userEmail !== undefined) {
+      Sentry.setUser({ id: userId, email: userEmail });
 
       return;
     }
 
     Sentry.setUser(null);
-  }, [me.data?.user]);
+  }, [userId, userEmail]);
 
   return null;
 };

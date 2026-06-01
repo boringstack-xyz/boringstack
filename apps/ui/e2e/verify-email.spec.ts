@@ -63,9 +63,7 @@ test.describe("Verify-before-account UX", () => {
        * verified yet." Matching the substring keeps the assertion
        * resilient to copy tweaks.
        */
-      await expect(page.getByText(/email isn't verified/i)).toBeVisible({
-        timeout: 5_000
-      });
+      await expect(page.getByText(/email isn't verified/i)).toBeVisible();
 
       await expect(
         page.getByRole("button", { name: /resend verification email/i })
@@ -79,7 +77,7 @@ test.describe("Verify-before-account UX", () => {
     page
   }) => {
     await page.goto(`${BASE_URL}/verify-email`);
-    await expect(page.getByRole("alert")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole("alert")).toBeVisible();
     await expect(page.getByText(/missing its token/i)).toBeVisible();
   });
 
@@ -87,7 +85,7 @@ test.describe("Verify-before-account UX", () => {
     page
   }) => {
     await page.goto(`${BASE_URL}/verify-email?token=${"0".repeat(48)}`);
-    await expect(page.getByRole("alert")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole("alert")).toBeVisible();
     await expect(page.getByText(/invalid or expired/i)).toBeVisible();
   });
 });

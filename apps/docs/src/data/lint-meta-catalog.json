@@ -139,6 +139,12 @@
       "description": "Logic modules must ship with a colocated *.test.ts or *.test.tsx sibling."
     },
     {
+      "id": "skipped-tests-need-tracking",
+      "category": "testing",
+      "ciCritical": false,
+      "description": "Skipped tests (.skip/.only/xit/xdescribe) must carry an issue URL or TODO(@owner) so the debt has a tracked owner."
+    },
+    {
       "id": "eslint-config-no-warn",
       "category": "config",
       "ciCritical": false,
@@ -241,6 +247,12 @@
       "category": "testing",
       "ciCritical": false,
       "description": "Logic modules must ship with a matching tests/**/*.test.ts sibling."
+    },
+    {
+      "id": "skipped-tests-need-tracking",
+      "category": "testing",
+      "ciCritical": false,
+      "description": "Skipped tests (.skip/.only/xit/xdescribe) must carry an issue URL or TODO(@owner) so the debt has a tracked owner."
     },
     {
       "id": "touch-tests-too",

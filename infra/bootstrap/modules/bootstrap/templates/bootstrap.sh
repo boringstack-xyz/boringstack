@@ -104,9 +104,11 @@ if [[ "$BACKUPS_ENABLED" == "true" ]]; then
   require_value backup_retention_days "$BACKUP_RETENTION_DAYS"
 
   log "Configuring nightly Postgres backups (rclone remote: $RCLONE_REMOTE_NAME)..."
-  # Install rclone if missing
+  # Install rclone if missing, from the distro's GPG-signed apt repo — never
+  # pipe a remote installer straight into a root shell.
   if ! command -v rclone >/dev/null 2>&1; then
-    curl -fsSL https://rclone.org/install.sh | bash
+    DEBIAN_FRONTEND=noninteractive apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y rclone
   fi
   # Cron entry: 03:15 daily, log into syslog.
   CRON_LINE="15 3 * * * root RCLONE_REMOTE_NAME=$RCLONE_REMOTE_NAME RCLONE_REMOTE_PATH=$RCLONE_REMOTE_PATH BACKUP_RETENTION_DAYS=$BACKUP_RETENTION_DAYS $INFRA_DIR/scripts/backup-wrapper.example.sh 2>&1 | logger -t boringstack-backup"

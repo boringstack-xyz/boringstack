@@ -13,7 +13,14 @@ interface RuleRow {
 }
 
 export default function LintMetaCatalog({ template }: LintMetaCatalogProps) {
-  const rules = (lintMetaCatalog[template] ?? []) as RuleRow[];
+  const rules = lintMetaCatalog[template] as RuleRow[] | undefined;
+
+  if (rules === undefined) {
+    throw new Error(
+      `LintMetaCatalog: no entry for template "${template}" in lint-meta-catalog.json — regenerate with \`bun run generate:lint-meta-docs\`.`,
+    );
+  }
+
   const categories = [...new Set(rules.map((rule) => rule.category))];
 
   return (

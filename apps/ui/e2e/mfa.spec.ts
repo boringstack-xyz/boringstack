@@ -128,11 +128,11 @@ test.describe("MFA login flow", () => {
      */
     const codeInput = page.getByTestId("mfa-login-code");
 
-    await expect(codeInput).toBeVisible({ timeout: 10_000 });
+    await expect(codeInput).toBeVisible();
     await codeInput.fill(generateLiveTotp(mfa.secretBase32));
     await page.getByTestId("mfa-login-submit").click();
 
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 
   test("a recovery code completes the sign-in", async ({ page }) => {
@@ -151,7 +151,7 @@ test.describe("MFA login flow", () => {
 
     const codeInput = page.getByTestId("mfa-login-code");
 
-    await expect(codeInput).toBeVisible({ timeout: 10_000 });
+    await expect(codeInput).toBeVisible();
 
     // Toggle to recovery mode via the link button at the bottom.
     await page
@@ -162,7 +162,7 @@ test.describe("MFA login flow", () => {
     await codeInput.fill(recoveryCode);
     await page.getByTestId("mfa-login-submit").click();
 
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 
   test("an invalid TOTP code keeps the user on the challenge form", async ({
@@ -177,11 +177,11 @@ test.describe("MFA login flow", () => {
 
     const codeInput = page.getByTestId("mfa-login-code");
 
-    await expect(codeInput).toBeVisible({ timeout: 10_000 });
+    await expect(codeInput).toBeVisible();
     await codeInput.fill("000000");
     await page.getByTestId("mfa-login-submit").click();
 
-    await expect(codeInput).toBeVisible({ timeout: 5_000 });
+    await expect(codeInput).toBeVisible();
     await expect(page).not.toHaveURL(/\/dashboard/);
   });
 });
