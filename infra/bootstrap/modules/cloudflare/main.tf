@@ -150,3 +150,36 @@ resource "cloudflare_ruleset" "www_redirect" {
     }
   ]
 }
+
+# ----------------------------------------------------------------------------
+# Edge WAF: block common bot/scanner probe paths (/.env, /.git/, /wp-admin, …)
+# at the http_request_firewall_custom phase, before they reach the origin.
+# A single rule ORs every configured path; matching is case-insensitive and
+# substring-based so a path matches anywhere in the URI.
+# ----------------------------------------------------------------------------
+
+locals {
+  bot_block_expression = join(" or ", [
+    for p in var.bot_block_paths : "(lower(http.request.uri.path) contains \"${p}\")"
+  ])
+}
+
+resource "cloudflare_ruleset" "bot_block" {
+  count = var.enable_bot_blocking ? 1 : 0
+
+  zone_id     = var.zone_id
+  name        = "boringstack-bot-block"
+  description = "Block common bot/scanner probe paths at the edge (managed by OpenTofu)"
+  kind        = "zone"
+  phase       = "http_request_firewall_custom"
+
+  rules = [
+    {
+      ref         = "block_scanner_paths"
+      description = "Block known bot/scanner probe paths"
+      expression  = local.bot_block_expression
+      action      = "block"
+      enabled     = true
+    }
+  ]
+}

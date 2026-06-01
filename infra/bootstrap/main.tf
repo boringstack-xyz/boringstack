@@ -117,4 +117,7 @@ module "cloudflare" {
   domain     = var.domain
   server_ip  = module.hetzner.ipv4
   server_ip6 = module.hetzner.ipv6
+
+  enable_bot_blocking = var.enable_bot_blocking
+  bot_block_paths     = var.bot_block_paths
 }

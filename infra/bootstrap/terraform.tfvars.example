@@ -25,6 +25,18 @@ ssh_public_key  = ""  # paste full key including "ssh-ed25519 ..."
 # ssh_allowed_ips = ["0.0.0.0/0", "::/0"]  # uncomment to restrict SSH source
 
 # ----------------------------------------------------------------------------
+# Edge security  (optional; on by default)
+#
+# Blocks common bot/scanner probe paths (/.env, /.git/, /wp-admin, …) at the
+# Cloudflare edge, before they reach Traefik / api / ui. One custom WAF rule.
+# Review the default list against your own routes; never include
+# /.well-known/acme-challenge (breaks Let's Encrypt).
+# ----------------------------------------------------------------------------
+
+# enable_bot_blocking = true
+# bot_block_paths     = ["/.env", "/.git/", "/.aws/", "/actuator/", "/wp-admin/", "/wp-login", "/xmlrpc", "/phpmyadmin/", "/laravel/", "/backend/", "/config.php", "/server-status"]
+
+# ----------------------------------------------------------------------------
 # VPS sizing (Hetzner-native names)
 # ----------------------------------------------------------------------------
 

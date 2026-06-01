@@ -70,6 +70,31 @@ variable "ssh_allowed_ips" {
 }
 
 # ============================================================================
+# Edge security (Cloudflare WAF)
+# ============================================================================
+
+variable "enable_bot_blocking" {
+  type        = bool
+  description = "Block common bot/scanner probe paths at the Cloudflare edge, before they reach the origin. Uses one custom WAF rule in the http_request_firewall_custom phase."
+  default     = true
+}
+
+variable "bot_block_paths" {
+  type        = list(string)
+  description = "URI substrings blocked at the edge (case-insensitive, substring match). Review against your own routes before changing — e.g. drop \"/backend/\" if your app legitimately serves it. Must not overlap /.well-known/acme-challenge/ (breaks ACME)."
+  default = [
+    "/.env", "/.git/", "/.aws/", "/actuator/", "/wp-admin/", "/wp-login",
+    "/xmlrpc", "/phpmyadmin/", "/laravel/", "/backend/", "/config.php",
+    "/server-status",
+  ]
+
+  validation {
+    condition     = alltrue([for p in var.bot_block_paths : !strcontains(p, "/.well-known/acme-challenge")])
+    error_message = "bot_block_paths must not include /.well-known/acme-challenge — blocking it breaks Let's Encrypt HTTP-01 cert issuance."
+  }
+}
+
+# ============================================================================
 # VPS sizing + placement
 # ============================================================================
 
