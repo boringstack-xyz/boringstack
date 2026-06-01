@@ -273,7 +273,7 @@
     "prePushStages": [
       "1/${TOTAL} Fast checks (typecheck, lint, lint:meta, knip)",
       "2/${TOTAL} Dependency vulnerability scan",
-      "3/${TOTAL} Ensure Postgres + Valkey are running",
+      "3/${TOTAL} Ensure Postgres + Valkey are running and migrated",
       "4/${TOTAL} Test suite (integration)",
       "5/${TOTAL} Test coverage",
       "6/${TOTAL} Production build",

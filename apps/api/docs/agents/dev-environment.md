@@ -25,7 +25,7 @@ error message to switch sides cleanly.
 - **Container:** `./dev.sh up --build` rebuilds the image; the named
   `api_dev_node_modules` volume persists across rebuilds, so refresh
   it once with
-  `docker volume rm ai-starter-infra_api_dev_node_modules` before the
+  `docker volume rm boringstack-infra_api_dev_node_modules` before the
   next `up`.
 
 `node_modules` is baked into the image at build time, so the container

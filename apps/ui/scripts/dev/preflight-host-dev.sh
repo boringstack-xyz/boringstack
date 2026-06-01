@@ -10,7 +10,7 @@ if ! command -v docker >/dev/null 2>&1; then
 fi
 
 if docker ps --format '{{.Names}}' 2>/dev/null \
-  | grep -qE '^ai-starter-infra-ui-dev-[0-9]+$'; then
+  | grep -qE '^boringstack-infra-ui-dev-[0-9]+$'; then
   cat >&2 <<'MSG'
 
 ──────────────────────────────────────────────────────────────────────

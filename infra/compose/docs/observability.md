@@ -46,7 +46,7 @@ Set `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` in `compose/.env` before exp
 
 **Promtail** (`compose/promtail/promtail-config.yml`):
 
-- Discovers all containers in the `ai-starter-infra` Compose project via the docker socket.
+- Discovers all containers in the `boringstack-infra` Compose project via the docker socket.
 - Labels every line with `compose_service` (e.g. `api-dev`, `traefik`), `compose_project`, and `container`.
 - Ships to Loki.
 

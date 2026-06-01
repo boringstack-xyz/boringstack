@@ -59,8 +59,9 @@ osv-scanner --config="$ROOT/osv-scanner.toml" --lockfile="$ROOT/bun.lock"
 ok "osv-scanner clean"
 RAN=$((RAN + 1))
 
-step "3/${TOTAL} Ensure Postgres + Valkey are running"
+step "3/${TOTAL} Ensure Postgres + Valkey are running and migrated"
 probe_tcp() { nc -z "$1" "$2" 2>/dev/null; }
+export DATABASE_URL="${DATABASE_URL:-postgresql://app:app_dev_password@localhost:5432/app}"
 
 if probe_tcp localhost 5432 && probe_tcp localhost 6379; then
   ok "Postgres + Valkey already up"
@@ -83,12 +84,21 @@ else
   probe_tcp localhost 6379 || fail "Valkey did not become reachable on :6379"
   ok "dev stack ready"
 fi
+
+# Always migrate — a reachable :5432 does NOT guarantee a migrated schema. A
+# sibling stack's `down -v` (e.g. the smoke gate) can drop the volume out from
+# under a still-listening Postgres, leaving tests to hit "relation
+# audit.audit_log does not exist". The api-migrate-dev one-shot is idempotent
+# and runs inside the compose network against the real `postgres` service, so
+# it targets the dev DB regardless of what holds the host's :5432.
+c_blue "  applying migrations (idempotent)…"
+(cd "$COMPOSE_DIR" && ./dev.sh up -d api-migrate-dev >/dev/null 2>&1)
+ok "schema migrated"
 RAN=$((RAN + 1))
 
 step "4/${TOTAL} Test suite (integration)"
 export REQUIRE_INTEGRATION_DB=true
 export RUN_VALKEY_NETWORK_TESTS=true
-export DATABASE_URL="${DATABASE_URL:-postgresql://app:app_dev_password@localhost:5432/app}"
 bun run test
 ok "tests passed"
 RAN=$((RAN + 1))

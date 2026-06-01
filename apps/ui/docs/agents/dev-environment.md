@@ -7,7 +7,7 @@ container dev, or chasing stale-module / blank-page boots.
 
 ```bash
 rm -rf apps/ui/node_modules
-cd infra/compose/compose && docker volume rm ai-starter-infra_ui_dev_node_modules 2>/dev/null; ./dev.sh up -d --build ui-dev
+cd infra/compose/compose && docker volume rm boringstack-infra_ui_dev_node_modules 2>/dev/null; ./dev.sh up -d --build ui-dev
 ```
 
 ## Pick one runner
@@ -30,7 +30,7 @@ error message to switch sides cleanly.
 - **Container:** `./dev.sh up --build` rebuilds the image; the named
   `ui_dev_node_modules` volume persists across rebuilds, so refresh
   it once with
-  `docker volume rm ai-starter-infra_ui_dev_node_modules` before the
+  `docker volume rm boringstack-infra_ui_dev_node_modules` before the
   next `up`.
 
 `node_modules` is baked into the image at build time, so the container

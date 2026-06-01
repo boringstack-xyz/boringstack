@@ -24,6 +24,17 @@ STACK="${STACK:-dev}"
 COMPOSE_FILES=(-f "$ROOT/docker-compose.yml")
 PROFILE_ARGS=()
 
+# Isolate the smoke stack under its own compose project. The pre-push smoke
+# gate tears its stack down with `down -v`; without isolation that removes the
+# shared Postgres/Valkey volumes the api test gate then depends on, so tests
+# hit an empty schema ("audit.audit_log does not exist"). A dedicated project
+# means `down -v` can only ever drop smoke's own volumes. dev/prod keep the
+# docker-compose.yml `name:` (boringstack-infra).
+PROJECT_ARGS=()
+if [[ "$STACK" == "smoke" ]]; then
+  PROJECT_ARGS=(-p boringstack-smoke)
+fi
+
 # Observability + GlitchTip default to ON for dev and prod — you can't build
 # muscle memory for a dashboard you've never seen until prod day-one. They
 # stay OFF for `smoke` (full-stack-smoke CI doesn't need them and the extra
@@ -164,7 +175,7 @@ if [[ "$STACK" == "dev" && "${1:-}" == "up" ]]; then
 fi
 
 if [[ "$WIRE_GLITCHTIP" == "1" || "$WIRE_VAPID" == "1" ]]; then
-  docker compose "${COMPOSE_FILES[@]}" "${PROFILE_ARGS[@]}" "$@"
+  docker compose "${COMPOSE_FILES[@]}" "${PROJECT_ARGS[@]}" "${PROFILE_ARGS[@]}" "$@"
   # Background — both scripts are idempotent and silent when wiring is
   # already done. Foregrounding them would hold the dev loop on every
   # `up` for first-boot bootstraps that only matter once.
@@ -175,5 +186,5 @@ if [[ "$WIRE_GLITCHTIP" == "1" || "$WIRE_VAPID" == "1" ]]; then
     ( "$ROOT/../scripts/dev-vapid-init.sh" --quiet & ) >/dev/null 2>&1
   fi
 else
-  exec docker compose "${COMPOSE_FILES[@]}" "${PROFILE_ARGS[@]}" "$@"
+  exec docker compose "${COMPOSE_FILES[@]}" "${PROJECT_ARGS[@]}" "${PROFILE_ARGS[@]}" "$@"
 fi

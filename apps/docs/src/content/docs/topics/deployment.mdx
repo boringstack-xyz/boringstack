@@ -329,8 +329,8 @@ it rejects boot, and Traefik's ACME loop logs every retry.
 
 ```bash
 docker compose -f /opt/boringstack/infra/compose/compose/docker-compose.yml ps
-docker logs ai-starter-infra-api-1     2>&1 | tail -50
-docker logs ai-starter-infra-traefik-1 2>&1 | grep -i acme
+docker logs boringstack-infra-api-1     2>&1 | tail -50
+docker logs boringstack-infra-traefik-1 2>&1 | grep -i acme
 ```
 
 If check 2 fails (the cert says Cloudflare instead of Let's Encrypt),

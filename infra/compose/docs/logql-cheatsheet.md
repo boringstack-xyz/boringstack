@@ -2,9 +2,9 @@
 
 Quick reference for querying Loki from Grafana's Explore tab. The Promtail config ships every container log to Loki with these labels:
 
-- `compose_project` — always `ai-starter-infra`
+- `compose_project` — always `boringstack-infra`
 - `compose_service` — the service name (`api-dev`, `ui-dev`, `postgres`, `traefik`, `glitchtip-web`, `glitchtip-worker`, etc.)
-- `container` — the container name (`ai-starter-infra-api-dev-1`)
+- `container` — the container name (`boringstack-infra-api-dev-1`)
 
 ## Basics
 
@@ -29,12 +29,12 @@ Quick reference for querying Loki from Grafana's Explore tab. The Promtail confi
 
 **"All errors across all services, last 1h":**
 ```logql
-{compose_project="ai-starter-infra"} |~ "(?i)error"
+{compose_project="boringstack-infra"} |~ "(?i)error"
 ```
 
 **"Errors as a numeric series for graphing":**
 ```logql
-sum by (compose_service) (rate({compose_project="ai-starter-infra"} |~ "(?i)error" [5m]))
+sum by (compose_service) (rate({compose_project="boringstack-infra"} |~ "(?i)error" [5m]))
 ```
 
 **"Filter API logs by Pino JSON `level`":**
@@ -68,7 +68,7 @@ sum by (router) (
 ```logql
 # Combined with Grafana's time-range picker, scope to the 30s before the
 # restart event in Prometheus (changes(container_start_time_seconds[5m]) > 0).
-{container="ai-starter-infra-api-dev-1"}
+{container="boringstack-infra-api-dev-1"}
 ```
 
 ## Useful operators

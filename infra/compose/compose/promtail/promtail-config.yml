@@ -28,7 +28,7 @@ scrape_configs:
         refresh_interval: 5s
         filters:
           - name: label
-            values: ["com.docker.compose.project=ai-starter-infra"]
+            values: ["com.docker.compose.project=boringstack-infra"]
     relabel_configs:
       # Skip Pino-speaking containers (handled by the next job with JSON parsing).
       - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
@@ -50,7 +50,7 @@ scrape_configs:
         refresh_interval: 5s
         filters:
           - name: label
-            values: ["com.docker.compose.project=ai-starter-infra"]
+            values: ["com.docker.compose.project=boringstack-infra"]
     relabel_configs:
       - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
         regex: "^(api-dev|api|api-migrate|api-migrate-dev)$"

@@ -13,7 +13,7 @@ fi
 # Compose project name (from `name:` in docker-compose.yml) prefixes the
 # service container name with a numeric suffix per replica.
 if docker ps --format '{{.Names}}' 2>/dev/null \
-  | grep -qE '^ai-starter-infra-api-dev-[0-9]+$'; then
+  | grep -qE '^boringstack-infra-api-dev-[0-9]+$'; then
   cat >&2 <<'MSG'
 
 ──────────────────────────────────────────────────────────────────────

@@ -10,7 +10,9 @@
 #   - "API Template" (Swagger title)        → <Project>
 #   - noreply@example.com                   → noreply@<domain>
 #   - demo@example.com (seeded demo user)   → demo@<domain>
-#   - ai-starter-infra (compose stack name) → <project>-infra
+#
+# The compose stack name (boringstack-infra) and all container/volume
+# names rename via the bare boringstack → <project> rule below.
 #
 # Excluded from rewrite:
 #   - apps/api/src/lib/email/providers/cloudflare.ts and similar prose that
@@ -106,7 +108,6 @@ printf '  %-26s → %s\n' "boringstack-api"    "$PROJECT-api"
 printf '  %-26s → %s\n' "boringstack-ui"     "$PROJECT-ui"
 printf '  %-26s → %s\n' "boringstack-xyz"    "$GHCR_OWNER"
 printf '  %-26s → %s\n' "API Template"       "$PROJECT_TITLE"
-printf '  %-26s → %s\n' "ai-starter-infra"   "$PROJECT-infra"
 printf '  %-26s → %s\n' "noreply@example.com" "noreply@$DOMAIN"
 printf '  %-26s → %s\n' "demo@example.com"   "demo@$DOMAIN"
 echo
@@ -162,7 +163,7 @@ apply_to_file() {
   [[ -f "$file" ]] || return 0
 
   if [[ "$DRY_RUN" == "1" ]]; then
-    if grep -qE 'boringstack|BoringStack|ai-starter-infra|API Template|@example\.com' "$file" 2>/dev/null; then
+    if grep -qE 'boringstack|BoringStack|API Template|@example\.com' "$file" 2>/dev/null; then
       echo "  would edit: $file"
     fi
     return 0
@@ -179,7 +180,6 @@ apply_to_file() {
     -e "s/boringstack-xyz/${GHCR_OWNER}/g" \
     -e "s/boringstack-api/${PROJECT}-api/g" \
     -e "s/boringstack-ui/${PROJECT}-ui/g" \
-    -e "s/ai-starter-infra/${PROJECT}-infra/g" \
     -e "s/BoringStack API/${PROJECT_TITLE} API/g" \
     -e "s/BoringStack UI/${PROJECT_TITLE} UI/g" \
     -e "s/BoringStack/${PROJECT_TITLE}/g" \
