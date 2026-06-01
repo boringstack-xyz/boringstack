@@ -48,3 +48,18 @@ if (typeof globalThis.EventSource === "undefined") {
 vi.mock("lottie-react", () => ({
   default: () => null
 }));
+
+/*
+ * Stub the Sentry SDK across the suite. With VITE_SENTRY_DSN unset Sentry
+ * is a no-op in production anyway, but an explicit mock keeps tests off the
+ * real SDK and lets specs assert capture/user calls. Covers the full surface
+ * the app uses (init / captureException / setUser / addBreadcrumb /
+ * browserTracingIntegration).
+ */
+vi.mock("@sentry/react", () => ({
+  init: vi.fn(),
+  captureException: vi.fn(),
+  setUser: vi.fn(),
+  addBreadcrumb: vi.fn(),
+  browserTracingIntegration: vi.fn(() => ({}))
+}));
