@@ -11,11 +11,28 @@ COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
 # Vite bakes import.meta.env.VITE_* into the bundle at build time. Compose
-# passes the API URL via build.args; an empty default keeps `docker build .`
-# (no args) working for local prod smoke tests behind a same-origin reverse
-# proxy. Override per environment via --build-arg VITE_API_URL=...
+# passes these via build.args; empty defaults keep `docker build .` (no args)
+# working for local prod smoke tests behind a same-origin reverse proxy.
+#
+# Every VITE_* the SPA reads at runtime needs a build arg here — if a value
+# isn't piped through at `bun run build` time it falls back to the Zod
+# schema default (typically `http://localhost:7331` for VITE_PUBLIC_URL,
+# empty for the optional fields). A localhost default leaks into Stripe
+# return URLs and gets rejected by `assertAllowedBillingRedirectUrl`.
 ARG VITE_API_URL=""
 ENV VITE_API_URL=$VITE_API_URL
+
+ARG VITE_APP_NAME="BoringStack"
+ENV VITE_APP_NAME=$VITE_APP_NAME
+
+ARG VITE_PUBLIC_URL=""
+ENV VITE_PUBLIC_URL=$VITE_PUBLIC_URL
+
+ARG VITE_SENTRY_DSN=""
+ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
+
+ARG VITE_VAPID_PUBLIC_KEY=""
+ENV VITE_VAPID_PUBLIC_KEY=$VITE_VAPID_PUBLIC_KEY
 
 COPY . .
 RUN bun run build

@@ -407,6 +407,14 @@ services:
         condition: service_started
       api-migrate-prod:
         condition: service_completed_successfully
+    # Readiness, not liveness. The api starts listening before
+    # `setupQueues()` resolves (see apps/api/src/index.ts) so `/health`
+    # can flip green while BullMQ is still warming up — ui then boots
+    # through `condition: service_healthy` and the first queue-backed
+    # request 503s. `/ready` aggregates db + valkey + queue + email
+    # checks and returns 503 until everything in the startup path is
+    # `ok` or `degraded`. The api-dev profile keeps `/health` because
+    # dev tolerates degraded optional features (e.g. noop email).
     healthcheck:
       test:
         [
@@ -415,7 +423,7 @@ services:
           "--no-verbose",
           "--tries=1",
           "--spider",
-          "http://localhost:7330/health",
+          "http://localhost:7330/ready",
         ]
       interval: 5s
       timeout: 3s
@@ -464,7 +472,14 @@ services:
       context: ../../../apps/ui
       dockerfile: Dockerfile.prod
       args:
+        # Origin only — see compose/.env.example. The SPA appends /api/v1.
         VITE_API_URL: ${PUBLIC_API_URL:-}
+        # Used by Stripe checkout return URLs + share links. Must equal the
+        # API's FRONTEND_URL or `assertAllowedBillingRedirectUrl` rejects it.
+        VITE_PUBLIC_URL: ${FRONTEND_URL:-}
+        VITE_APP_NAME: ${VITE_APP_NAME:-BoringStack}
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        VITE_VAPID_PUBLIC_KEY: ${VITE_VAPID_PUBLIC_KEY:-}
     labels:
       - "wud.watch=true"
       - "wud.trigger.include=docker.app,discord.1,slack.alerts"

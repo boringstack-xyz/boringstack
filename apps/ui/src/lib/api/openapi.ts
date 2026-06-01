@@ -32,25 +32,23 @@ const BASE_URL = env.VITE_API_URL.replace(/\/$/, "");
 let inFlightRefresh: Promise<boolean> | null = null;
 
 /*
- * `/auth/refresh` returns 200 with `{ accessToken: null }` for anonymous
- * callers (no refresh cookie present) and 200 + `{ accessToken: <jwt> }`
- * on successful refresh. A non-null accessToken is the discriminator
- * between the two; `response.ok` alone treats both as success and the
- * SSE reconnect loop retries indefinitely after logout.
+ * `/auth/refresh` returns 200 with `{ success, data: { user: User | null },
+ * timestamp }`. The auth cookie is rotated server-side via httpOnly Set-Cookie;
+ * the body itself never carries a token. `data.user !== null` is the
+ * discriminator between a real refresh and an anonymous probe (no refresh
+ * cookie present). Treating `response.ok` alone as success retries the SSE
+ * reconnect loop indefinitely after logout because the anonymous probe is
+ * also a 200.
  */
-async function readAccessToken(response: Response): Promise<string | null> {
+async function readSessionUserId(response: Response): Promise<string | null> {
   try {
     const body = (await response.clone().json()) as {
-      accessToken?: string | null;
+      data?: { user?: { id?: unknown } | null } | null;
     } | null;
+    const userId = body?.data?.user?.id;
 
-    if (
-      body !== null &&
-      typeof body === "object" &&
-      typeof body.accessToken === "string" &&
-      body.accessToken.length > 0
-    ) {
-      return body.accessToken;
+    if (typeof userId === "string" && userId.length > 0) {
+      return userId;
     }
 
     return null;
@@ -73,8 +71,8 @@ export async function performRefresh(): Promise<boolean> {
         return false;
       }
 
-      const accessToken = await readAccessToken(response);
-      const success = accessToken !== null;
+      const userId = await readSessionUserId(response);
+      const success = userId !== null;
 
       logger.info({ event: "auth.refresh_attempt", success });
 
