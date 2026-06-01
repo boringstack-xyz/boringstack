@@ -1,0 +1,7 @@
+{
+  "name": "fixture-app-a",
+  "devDependencies": {
+    "eslint": "10.4.0",
+    "typescript": "6.0.3"
+  }
+}
