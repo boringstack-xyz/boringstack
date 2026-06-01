@@ -94,6 +94,52 @@ variable "bot_block_paths" {
   }
 }
 
+variable "block_suspicious_user_agents" {
+  type        = bool
+  description = "Also block empty / known-scanner user agents (sqlmap, nikto, …) in the edge bot-block rule."
+  default     = true
+}
+
+variable "enable_auth_rate_limit" {
+  type        = bool
+  description = "Rate-limit /api/auth/* at the Cloudflare edge (Managed Challenge). Uses Cloudflare's one free rate-limiting rule; if your plan rejects it, set this false."
+  default     = true
+}
+
+variable "auth_rate_limit_requests" {
+  type        = number
+  description = "Requests per period per IP on /api/auth/* before the managed challenge triggers."
+  default     = 20
+
+  validation {
+    condition     = var.auth_rate_limit_requests >= 1 && floor(var.auth_rate_limit_requests) == var.auth_rate_limit_requests
+    error_message = "auth_rate_limit_requests must be a whole number >= 1."
+  }
+}
+
+variable "auth_rate_limit_period" {
+  type        = number
+  description = "Rate-limit window in seconds. Cloudflare allows 10, 60, 120, 300, 600, or 3600."
+  default     = 60
+
+  validation {
+    condition     = contains([10, 60, 120, 300, 600, 3600], var.auth_rate_limit_period)
+    error_message = "auth_rate_limit_period must be one of 10, 60, 120, 300, 600, 3600."
+  }
+}
+
+variable "enable_edge_cache" {
+  type        = bool
+  description = "Cache Vite's content-hashed /assets/* at the Cloudflare edge and bypass cache for /api/*."
+  default     = true
+}
+
+variable "enable_dnssec" {
+  type        = bool
+  description = "Enable DNSSEC on the zone. Automatic if the domain is at Cloudflare Registrar; otherwise add the DS record (see the dnssec_ds_record output) at your registrar."
+  default     = true
+}
+
 # ============================================================================
 # VPS sizing + placement
 # ============================================================================

@@ -152,16 +152,36 @@ resource "cloudflare_ruleset" "www_redirect" {
 }
 
 # ----------------------------------------------------------------------------
-# Edge WAF: block common bot/scanner probe paths (/.env, /.git/, /wp-admin, …)
-# at the http_request_firewall_custom phase, before they reach the origin.
-# A single rule ORs every configured path; matching is case-insensitive and
-# substring-based so a path matches anywhere in the URI.
+# Edge WAF: block bot/scanner traffic at the http_request_firewall_custom phase,
+# before it reaches the origin. One rule ORs three clauses:
+#   1. known CMS/scanner probe paths (var.bot_block_paths)
+#   2. any hidden dot-path (/.git, /.ssh, /.htpasswd, …) except the ACME
+#      challenge dir, which Traefik needs reachable over HTTP for certs
+#   3. empty or known-scanner user agents (toggle: block_suspicious_user_agents)
+# Matching is case-insensitive and substring-based.
 # ----------------------------------------------------------------------------
 
 locals {
-  bot_block_expression = join(" or ", [
-    for p in var.bot_block_paths : "(lower(http.request.uri.path) contains \"${p}\")"
-  ])
+  # lower(p) so matching is genuinely case-insensitive regardless of how the
+  # operator writes the pattern — both sides of `contains` are lowercased.
+  bot_block_path_clause = length(var.bot_block_paths) > 0 ? join(" or ", [
+    for p in var.bot_block_paths : "(lower(http.request.uri.path) contains \"${lower(p)}\")"
+  ]) : ""
+
+  bot_block_dotfile_clause = "(lower(http.request.uri.path) contains \"/.\" and not starts_with(lower(http.request.uri.path), \"/.well-known/\"))"
+
+  scanner_user_agents = ["sqlmap", "nikto", "nessus", "masscan", "zgrab", "nmap", "dirbuster", "fimap", "wpscan"]
+
+  bot_block_ua_clause = var.block_suspicious_user_agents ? "(${join(" or ", concat(
+    ["http.user_agent eq \"\""],
+    [for ua in local.scanner_user_agents : "lower(http.user_agent) contains \"${lower(ua)}\""]
+  ))})" : ""
+
+  bot_block_expression = join(" or ", compact([
+    local.bot_block_path_clause,
+    local.bot_block_dotfile_clause,
+    local.bot_block_ua_clause,
+  ]))
 }
 
 resource "cloudflare_ruleset" "bot_block" {
@@ -176,10 +196,104 @@ resource "cloudflare_ruleset" "bot_block" {
   rules = [
     {
       ref         = "block_scanner_paths"
-      description = "Block known bot/scanner probe paths"
+      description = "Block scanner paths, hidden dotfiles, and bad user-agents"
       expression  = local.bot_block_expression
       action      = "block"
       enabled     = true
     }
   ]
+}
+
+# ----------------------------------------------------------------------------
+# Edge rate limit: throttle credential-stuffing / brute force against the auth
+# endpoints, in front of the API's own Valkey limiter. Uses Cloudflare's one
+# free rate-limiting rule. Managed Challenge lets real users through while
+# stalling scripted abuse.
+# ----------------------------------------------------------------------------
+
+resource "cloudflare_ruleset" "auth_rate_limit" {
+  count = var.enable_auth_rate_limit ? 1 : 0
+
+  zone_id     = var.zone_id
+  name        = "boringstack-auth-rate-limit"
+  description = "Rate-limit /api/auth/* at the edge (managed by OpenTofu)"
+  kind        = "zone"
+  phase       = "http_ratelimit"
+
+  rules = [
+    {
+      ref         = "rl_auth_endpoints"
+      description = "Throttle credential-stuffing against /api/auth/*"
+      expression  = "(starts_with(http.request.uri.path, \"/api/auth/\"))"
+      action      = "managed_challenge"
+      enabled     = true
+      ratelimit = {
+        characteristics     = ["ip.src", "cf.colo.id"]
+        period              = var.auth_rate_limit_period
+        requests_per_period = var.auth_rate_limit_requests
+        mitigation_timeout  = var.auth_rate_limit_period
+      }
+    }
+  ]
+}
+
+# ----------------------------------------------------------------------------
+# Edge cache: cache Vite's content-hashed build assets aggressively, and never
+# cache the API. Hashed asset filenames change on every deploy, so a long edge
+# TTL is safe; index.html / dynamic HTML stay uncached by Cloudflare default.
+# ----------------------------------------------------------------------------
+
+resource "cloudflare_ruleset" "edge_cache" {
+  count = var.enable_edge_cache ? 1 : 0
+
+  zone_id     = var.zone_id
+  name        = "boringstack-cache"
+  description = "Edge-cache hashed assets; bypass the API (managed by OpenTofu)"
+  kind        = "zone"
+  phase       = "http_request_cache_settings"
+
+  rules = [
+    {
+      ref         = "no_cache_api"
+      description = "Never cache API responses"
+      expression  = "(starts_with(http.request.uri.path, \"/api/\"))"
+      action      = "set_cache_settings"
+      enabled     = true
+      action_parameters = {
+        cache = false
+      }
+    },
+    {
+      ref         = "cache_hashed_assets"
+      description = "Cache Vite's content-hashed assets for a year"
+      expression  = "(starts_with(http.request.uri.path, \"/assets/\"))"
+      action      = "set_cache_settings"
+      enabled     = true
+      action_parameters = {
+        cache = true
+        edge_ttl = {
+          mode    = "override_origin"
+          default = 31536000
+        }
+        browser_ttl = {
+          mode    = "override_origin"
+          default = 31536000
+        }
+      }
+    }
+  ]
+}
+
+# ----------------------------------------------------------------------------
+# DNSSEC: signs the zone so resolvers can detect tampered DNS answers. Free.
+# If the domain is registered at Cloudflare Registrar this is fully automatic;
+# on an external registrar, paste the `dnssec_ds_record` output's DS record
+# into the registrar once (see outputs.tf).
+# ----------------------------------------------------------------------------
+
+resource "cloudflare_zone_dnssec" "this" {
+  count = var.enable_dnssec ? 1 : 0
+
+  zone_id = var.zone_id
+  status  = "active"
 }

@@ -118,6 +118,12 @@ module "cloudflare" {
   server_ip  = module.hetzner.ipv4
   server_ip6 = module.hetzner.ipv6
 
-  enable_bot_blocking = var.enable_bot_blocking
-  bot_block_paths     = var.bot_block_paths
+  enable_bot_blocking          = var.enable_bot_blocking
+  bot_block_paths              = var.bot_block_paths
+  block_suspicious_user_agents = var.block_suspicious_user_agents
+  enable_auth_rate_limit       = var.enable_auth_rate_limit
+  auth_rate_limit_requests     = var.auth_rate_limit_requests
+  auth_rate_limit_period       = var.auth_rate_limit_period
+  enable_edge_cache            = var.enable_edge_cache
+  enable_dnssec                = var.enable_dnssec
 }

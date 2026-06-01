@@ -120,7 +120,7 @@ Everything in `terraform.tfvars.example` ships with comments explaining what it'
 - **outputs.tf**: VPS IP, DNS records, ready-to-paste SSH command, site URL.
 - **terraform.tfvars.example**: all knobs with comments. Copy to `terraform.tfvars` and fill in.
 - **modules/hetzner/**: VPS, SSH key, firewall, cloud-init injection.
-- **modules/cloudflare/**: DNS records, sane zone setting defaults, redirect rules, and an edge WAF rule that blocks common bot/scanner paths.
+- **modules/cloudflare/**: DNS records, sane zone setting defaults, redirect rules, and edge security/performance — a bot/scanner WAF block rule, an auth rate-limit rule, an asset cache rule, and DNSSEC.
 - **modules/bootstrap/**: cloud-init template that installs Docker plus git, then runs `bootstrap.sh`.
 - **bootstrap.sh**: versioned shell script. Clones the monorepo, renders `compose/.env`, runs `compose pull && compose up -d`.
 
