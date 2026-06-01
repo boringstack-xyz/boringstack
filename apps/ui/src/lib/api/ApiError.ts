@@ -4,6 +4,7 @@ export class ApiError extends Error {
   public readonly status: number;
   public readonly code: string | undefined;
   public readonly fieldErrors: Record<string, string> | undefined;
+  public readonly details: Record<string, unknown> | undefined;
   public readonly requestId: string | undefined;
 
   public constructor(status: number, body: IApiErrorBody) {
@@ -12,6 +13,7 @@ export class ApiError extends Error {
     this.status = status;
     this.code = body.code;
     this.fieldErrors = body.fieldErrors;
+    this.details = body.details;
     this.requestId = body.requestId;
   }
 

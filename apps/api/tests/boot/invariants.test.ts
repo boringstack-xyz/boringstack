@@ -29,6 +29,28 @@ describe("collectBootInvariantViolations", () => {
     expect(collectBootInvariantViolations(baseEnv())).toEqual([]);
   });
 
+  it("blocks E2E_TEST_ENDPOINTS_ENABLED=true in production", () => {
+    const env = baseEnv();
+
+    env.NODE_ENV = "production";
+    env.E2E_TEST_ENDPOINTS_ENABLED = true;
+
+    const violations = collectBootInvariantViolations(env);
+
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toMatch(/E2E_TEST_ENDPOINTS_ENABLED is true/);
+    expect(violations[0]).toMatch(/__test/);
+  });
+
+  it("allows E2E_TEST_ENDPOINTS_ENABLED=true outside production", () => {
+    const env = baseEnv();
+
+    env.NODE_ENV = "development";
+    env.E2E_TEST_ENDPOINTS_ENABLED = true;
+
+    expect(collectBootInvariantViolations(env)).toEqual([]);
+  });
+
   it("treats an empty MFA_ENCRYPTION_KEY as allowed (env validator already gates prod)", () => {
     expect(
       collectBootInvariantViolations(baseEnv({ MFA_ENCRYPTION_KEY: "" }))

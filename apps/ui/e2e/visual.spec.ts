@@ -28,6 +28,13 @@ const VISUAL_OPTS = {
  * per-engine baselines for no real test value.
  */
 test.describe("Visual regression — canonical pages", () => {
+  /*
+   * TODO(@boringstack-xyz/maintainers): this is Playwright's parametric
+   * `test.skip(condition, reason)` form — a runtime branch, not unowned
+   * debt. Kept tagged so the skipped-tests rule has a tracker; if a
+   * future check distinguishes parametric skips from name-skips it can
+   * drop this tag.
+   */
   test.skip(
     ({ browserName }) => browserName !== "chromium",
     "visual regression runs on Chromium only"

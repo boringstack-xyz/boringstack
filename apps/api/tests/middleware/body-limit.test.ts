@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { Elysia, t } from "elysia";
 
-import { bodyLimit } from "../../src/middleware/body-limit";
+import {
+  MAX_BODY_SIZE_BYTES,
+  bodyLimit,
+  enforceBodyLimit,
+} from "../../src/middleware/body-limit";
 import { errorHandler } from "../../src/middleware/error-handler";
 
 const buildApp = () =>
@@ -16,11 +20,57 @@ const buildApp = () =>
       detail: { tags: ["Test"] },
     });
 
-const ONE_MB = 1024 * 1024;
 const ECHO_URL = "http://localhost/echo";
 
-describe("bodyLimit middleware", () => {
-  test("accepts requests under 1 MB", async () => {
+describe("enforceBodyLimit — pure guard", () => {
+  test("passes through unbodied methods regardless of Content-Length", () => {
+    expect(() => {
+      enforceBodyLimit({ method: "GET", contentLength: null });
+    }).not.toThrow();
+    expect(() => {
+      enforceBodyLimit({ method: "DELETE", contentLength: "999999999" });
+    }).not.toThrow();
+  });
+
+  test("rejects bodied requests missing Content-Length (closes chunked bypass)", () => {
+    expect(() => {
+      enforceBodyLimit({ method: "POST", contentLength: null });
+    }).toThrow(/Content-Length header is required/);
+  });
+
+  test("rejects bodied requests with a non-numeric Content-Length", () => {
+    expect(() => {
+      enforceBodyLimit({ method: "POST", contentLength: "not-a-number" });
+    }).toThrow(/Content-Length header must be a number/);
+  });
+
+  test("rejects bodied requests whose Content-Length exceeds 1 MB", () => {
+    expect(() => {
+      enforceBodyLimit({
+        method: "POST",
+        contentLength: String(MAX_BODY_SIZE_BYTES + 1),
+      });
+    }).toThrow(/exceeds 1 MB limit/);
+  });
+
+  test("accepts bodied requests whose Content-Length is exactly the cap", () => {
+    expect(() => {
+      enforceBodyLimit({
+        method: "POST",
+        contentLength: String(MAX_BODY_SIZE_BYTES),
+      });
+    }).not.toThrow();
+  });
+
+  test("accepts small bodied requests", () => {
+    expect(() => {
+      enforceBodyLimit({ method: "PATCH", contentLength: "128" });
+    }).not.toThrow();
+  });
+});
+
+describe("bodyLimit middleware — integration", () => {
+  test("accepts a small POST", async () => {
     const app = buildApp();
     const payload = JSON.stringify({ data: "x".repeat(1024) });
     const res = await app.handle(
@@ -37,14 +87,14 @@ describe("bodyLimit middleware", () => {
     expect(res.status).toBe(200);
   });
 
-  test("rejects requests whose Content-Length advertises >1 MB", async () => {
+  test("rejects when Content-Length advertises >1 MB", async () => {
     const app = buildApp();
     const res = await app.handle(
       new Request(ECHO_URL, {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          "content-length": String(ONE_MB + 1),
+          "content-length": String(MAX_BODY_SIZE_BYTES + 1),
         },
         body: "ignored — the cap fires before parse",
       })
@@ -59,46 +109,13 @@ describe("bodyLimit middleware", () => {
     }
   });
 
-  test("passes through requests with no Content-Length header (e.g. chunked)", async () => {
-    const app = buildApp();
+  test("GET requests pass through untouched (no body required)", async () => {
+    const app = buildApp().get("/ping", () => ({ ok: true }), {
+      response: t.Object({ ok: t.Boolean() }),
+    });
+
     const res = await app.handle(
-      new Request(ECHO_URL, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ok: true }),
-      })
-    );
-
-    expect(res.status).toBe(200);
-  });
-
-  test("ignores a malformed Content-Length value", async () => {
-    const app = buildApp();
-    const res = await app.handle(
-      new Request(ECHO_URL, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "content-length": "not-a-number",
-        },
-        body: JSON.stringify({ ok: true }),
-      })
-    );
-
-    expect(res.status).toBe(200);
-  });
-
-  test("accepts a request whose Content-Length is exactly 1 MB", async () => {
-    const app = buildApp();
-    const res = await app.handle(
-      new Request(ECHO_URL, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "content-length": String(ONE_MB),
-        },
-        body: "{}",
-      })
+      new Request("http://localhost/ping", { method: "GET" })
     );
 
     expect(res.status).toBe(200);

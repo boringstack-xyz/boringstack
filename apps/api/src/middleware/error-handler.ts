@@ -10,18 +10,52 @@ import {
 
 import type { IErrorHandlerArgs } from "./error-handler.types";
 
+/*
+ * Elysia surfaces TypeBox validation failures by embedding the entire
+ * submitted body (passwords, tokens, anything) in `error.message`.
+ * Reproducing that string in either the response OR the structured log
+ * leaks user input to clients and observability — so we only ever
+ * surface the field name (a schema-defined symbol the client already
+ * knows about). The user-facing message stays generic; the developer
+ * still gets the raw framework message in dev via the stack field.
+ */
 const extractFieldErrors = (
   error: unknown
 ): Record<string, string> | undefined => {
   if (
     error instanceof Error &&
     "field" in error &&
-    typeof error.field === "string"
+    typeof error.field === "string" &&
+    error.field !== ""
   ) {
-    return { [error.field]: getErrorMessage(error) };
+    return { [error.field]: "Invalid value" };
   }
 
   return undefined;
+};
+
+const FRAMEWORK_SAFE_MESSAGES: Record<string, string> = {
+  [ElysiaErrorCodes.VALIDATION]: "Validation failed",
+  [ElysiaErrorCodes.PARSE]: "Request body could not be parsed",
+};
+
+/*
+ * Sanitize the message before it can reach the client OR the
+ * structured log. Framework-originated errors (VALIDATION, PARSE) have
+ * the submitted body embedded in `error.message`; both response and
+ * log must collapse to a generic constant. All other paths keep the
+ * raw message — they don't carry user input, just operator-visible
+ * detail (SQL error, route name, etc.), which is fine in logs and
+ * already canonicalised in the response (ApiError.toResponse).
+ */
+const safeMessageFor = (code: string, error: unknown): string => {
+  const framework = FRAMEWORK_SAFE_MESSAGES[code];
+
+  if (framework !== undefined) {
+    return framework;
+  }
+
+  return getErrorMessage(error);
 };
 
 const isClientErrorCode = (code: string): boolean =>
@@ -78,7 +112,8 @@ export const errorHandler = ({
   const basePayload = {
     errorCode: code,
     statusCode: finalStatus,
-    message: getErrorMessage(error),
+    message:
+      error instanceof ApiError ? error.message : safeMessageFor(code, error),
     stack:
       env.isDevelopment && error instanceof Error ? error.stack : undefined,
   };
@@ -112,7 +147,7 @@ export const errorHandler = ({
     case ElysiaErrorCodes.VALIDATION:
     case ElysiaErrorCodes.PARSE:
       apiError = ApiErrors.validation(
-        getErrorMessage(error),
+        safeMessageFor(code, error),
         extractFieldErrors(error)
       );
       break;

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "bun:test";
 import {
   nonEmpty,
   toBool,
+  toBoolWithDefault,
   toCsv,
   toFloat,
   toInt,
@@ -111,6 +112,24 @@ describe("toBool", () => {
   });
 });
 
+describe("toBoolWithDefault", () => {
+  it("returns the schema default when the variable is unset", () => {
+    expect(toBoolWithDefault(undefined, true, "CACHE_ENABLED")).toBe(true);
+    expect(toBoolWithDefault(undefined, false, "DEBUG_FLAG")).toBe(false);
+  });
+
+  it("parses the provided value when set", () => {
+    expect(toBoolWithDefault("false", true, "CACHE_ENABLED")).toBe(false);
+    expect(toBoolWithDefault("true", false, "DEBUG_FLAG")).toBe(true);
+  });
+
+  it("still throws on garbage input (no silent fallback)", () => {
+    expect(() =>
+      toBoolWithDefault("totally-not-a-bool", true, "CACHE_ENABLED")
+    ).toThrow(/CACHE_ENABLED/);
+  });
+});
+
 describe("toCsv", () => {
   it("splits on commas and trims whitespace", () => {
     expect(toCsv("a, b ,c")).toEqual(["a", "b", "c"]);
@@ -185,6 +204,25 @@ beforeEach(() => {
 describe("validateEnv", () => {
   it("accepts a minimally-valid development config", () => {
     expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
+  it("background defaults match the schema when env vars are unset", () => {
+    /*
+     * Schema says QUEUES_ENABLED / CACHE_ENABLED / NOTIFICATIONS_SSE_ENABLED
+     * default to `true`. Operators copying a minimal prod env (compose
+     * without explicit overrides) shouldn't silently end up with cache
+     * off — that weakens JWT revocation and shared rate limits. Lock
+     * the schema↔resolved-config alignment here.
+     */
+    delete testEnv.QUEUES_ENABLED;
+    delete testEnv.CACHE_ENABLED;
+    delete testEnv.NOTIFICATIONS_SSE_ENABLED;
+
+    const resolved = validateEnv(testEnv);
+
+    expect(resolved.QUEUES_ENABLED).toBe(true);
+    expect(resolved.CACHE_ENABLED).toBe(true);
+    expect(resolved.NOTIFICATIONS_SSE_ENABLED).toBe(true);
   });
 
   it("rejects a JWT_SECRET shorter than 32 chars", () => {

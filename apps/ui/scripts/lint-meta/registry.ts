@@ -15,6 +15,7 @@ import { scriptRawFetchRule } from "./rules/source-text/script-raw-fetch";
 import { noOverlappingLibsRule } from "./rules/supply-chain/no-overlapping-libs";
 import { packageJsonExactDepsRule } from "./rules/supply-chain/package-json-exact-deps";
 import { logicFilesRequireTestSiblingRule } from "./rules/testing/logic-files-require-test-sibling";
+import { skippedTestsNeedTrackingRule } from "./rules/testing/skipped-tests-need-tracking";
 import type { IMetaRule } from "./types";
 
 export const META_RULES: readonly IMetaRule[] = [
@@ -40,6 +41,7 @@ export const META_RULES: readonly IMetaRule[] = [
   noSilentErrorSwallowRule,
   // --- testing ---
   logicFilesRequireTestSiblingRule,
+  skippedTestsNeedTrackingRule,
   // --- config ---
   eslintConfigNoWarnRule
 ];

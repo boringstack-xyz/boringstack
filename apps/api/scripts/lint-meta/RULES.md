@@ -30,5 +30,6 @@ Run `bun run lint:meta --list-rules` for the machine-readable list from the regi
 | `no-raw-role-literal`               | source-text  | no          | Use ROLE.* from acl.constants.ts instead of raw owner/admin/member/viewer string literals.                                                      |
 | `routes-require-test-sibling`       | testing      | no          | Route modules must ship with a matching HTTP-level test under tests/api/.                                                                       |
 | `logic-files-require-test-sibling`  | testing      | no          | Logic modules must ship with a matching tests/**/*.test.ts sibling.                                                                             |
+| `skipped-tests-need-tracking`       | testing      | no          | Skipped tests (.skip/.only/xit/xdescribe) must carry an issue URL or TODO(@owner) so the debt has a tracked owner.                              |
 | `touch-tests-too`                   | testing      | no          | Modified logic/route files must include a matching test change (opt-in via LINT_META_TOUCHED_BASE).                                             |
 | `eslint-config-no-warn`             | config       | no          | ESLint severities must be "error" or "off", not "warn".                                                                                         |

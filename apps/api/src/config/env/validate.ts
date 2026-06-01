@@ -63,6 +63,19 @@ export const toBool = (raw: string | undefined, name?: string): boolean => {
   );
 };
 
+/**
+ * For booleans whose schema default is `true`. Calling `toBool` alone
+ * silently flips an unset variable to `false`, drifting from the
+ * documented schema. This helper threads the schema default through so
+ * the resolved value matches what `schema.ts` declares — keeping the
+ * env file, the schema, and validate.ts in lockstep.
+ */
+export const toBoolWithDefault = (
+  raw: string | undefined,
+  defaultValue: boolean,
+  name?: string
+): boolean => (raw === undefined ? defaultValue : toBool(raw, name));
+
 export const toFloat = (
   raw: string | undefined,
   fallback: number,
@@ -264,18 +277,23 @@ const readBilling = (source: EnvSource) => ({
 
 const readBackground = (source: EnvSource) => ({
   /*
-   * QUEUES_ENABLED defaults to true so transactional email retries on
-   * provider failure without the operator having to opt in. Explicitly
-   * set to "false" to disable (dev-only deployments without Valkey).
+   * Schema defaults for QUEUES_ENABLED, CACHE_ENABLED, and
+   * NOTIFICATIONS_SSE_ENABLED are all `true` — see schema.ts. Calling
+   * `toBool` alone would collapse an unset variable to `false`, silently
+   * weakening JWT revocation (cache-backed) and SSE delivery for any
+   * deploy that didn't explicitly set them. `toBoolWithDefault` keeps
+   * the resolved config aligned with the documented schema.
    */
-  QUEUES_ENABLED:
-    source.QUEUES_ENABLED === undefined
-      ? true
-      : toBool(source.QUEUES_ENABLED, "QUEUES_ENABLED"),
-  CACHE_ENABLED: toBool(source.CACHE_ENABLED, "CACHE_ENABLED"),
+  QUEUES_ENABLED: toBoolWithDefault(
+    source.QUEUES_ENABLED,
+    true,
+    "QUEUES_ENABLED"
+  ),
+  CACHE_ENABLED: toBoolWithDefault(source.CACHE_ENABLED, true, "CACHE_ENABLED"),
   CACHE_PROVIDER: source.CACHE_PROVIDER ?? "memory",
-  NOTIFICATIONS_SSE_ENABLED: toBool(
+  NOTIFICATIONS_SSE_ENABLED: toBoolWithDefault(
     source.NOTIFICATIONS_SSE_ENABLED,
+    true,
     "NOTIFICATIONS_SSE_ENABLED"
   ),
 });
