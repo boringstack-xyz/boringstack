@@ -70,6 +70,26 @@ const InvitationsPage = lazy(() =>
   }))
 );
 
+const InvitationAcceptPage = lazy(() =>
+  import("@/features/accounts/components/InvitationAcceptPage").then((m) => ({
+    default: m.InvitationAcceptPage
+  }))
+);
+
+const OwnershipTransferAcceptPage = lazy(() =>
+  import("@/features/accounts/components/OwnershipTransferAcceptPage").then(
+    (m) => ({
+      default: m.OwnershipTransferAcceptPage
+    })
+  )
+);
+
+const JoinRequestsPage = lazy(() =>
+  import("@/features/accounts/components/JoinRequestsPage").then((m) => ({
+    default: m.JoinRequestsPage
+  }))
+);
+
 const AuditLogPage = lazy(() =>
   import("@/features/accounts/components/AuditLogPage").then((m) => ({
     default: m.AuditLogPage
@@ -287,6 +307,57 @@ const router = createBrowserRouter([
       <Suspense fallback={<Fallback />}>
         <VerifyEmailPage />
       </Suspense>
+    )
+  },
+  {
+    /*
+     * Email-link landing for invitations. Auto-accepts the token then
+     * routes to /account/invitations. ProtectedRoute gate sends
+     * anonymous clicks through /login first; the search params survive
+     * the round-trip so the user lands back here.
+     */
+    path: "/invitations/accept",
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<Fallback />}>
+          <InvitationAcceptPage />
+        </Suspense>
+      </ProtectedRoute>
+    )
+  },
+  {
+    /*
+     * Email-link landing for ownership transfers. Renders Accept and
+     * Decline buttons — never auto-fires, because either path mutates
+     * account roles. Authenticated only; the API also enforces that
+     * the recipient JWT matches the offer's `toUserId`.
+     */
+    path: "/account/ownership-transfer/accept",
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <ProtectedRoute>
+        <Suspense fallback={<Fallback />}>
+          <OwnershipTransferAcceptPage />
+        </Suspense>
+      </ProtectedRoute>
+    )
+  },
+  {
+    /*
+     * Reviewer-side inbox for domain-claim join requests. The review
+     * email links here; the API enforces role on every approve/deny.
+     */
+    path: "/account/requests",
+    errorElement: <RouteErrorBoundary />,
+    element: (
+      <ProtectedRoute>
+        <AppShell>
+          <Suspense fallback={<Fallback />}>
+            <JoinRequestsPage />
+          </Suspense>
+        </AppShell>
+      </ProtectedRoute>
     )
   },
   {

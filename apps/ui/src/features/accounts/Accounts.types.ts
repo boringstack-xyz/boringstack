@@ -17,3 +17,13 @@ type CreateInvitationResponse =
 export type ICreateInvitationResult = CreateInvitationResponse;
 
 export type IInviteRole = IInviteMemberInput["roleToAssign"];
+
+type ListJoinRequestsResponse =
+  operations["getApiV1AccountsByIdJoin-requests"]["responses"][200]["content"]["application/json"];
+
+export type IJoinRequest = ListJoinRequestsResponse[number];
+
+type OwnershipTransferResponse =
+  operations["postApiV1InvitationsOwnership-transferAccept"]["responses"][200]["content"]["application/json"]["data"];
+
+export type IOwnershipTransfer = OwnershipTransferResponse;

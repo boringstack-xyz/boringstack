@@ -4,6 +4,13 @@
  * against this union. Sorted to make conflicts during PR rebase trivial.
  */
 export const LOG_EVENTS = [
+  "accounts.invitation_accept_failed",
+  "accounts.invitation_accept_invalid",
+  "accounts.invitation_accepted",
+  "accounts.ownership_transfer_accepted",
+  "accounts.ownership_transfer_declined",
+  "accounts.ownership_transfer_failed",
+  "accounts.ownership_transfer_invalid",
   "api.error_parse_failed",
   "app.bootstrapped",
   "auth.attempt",

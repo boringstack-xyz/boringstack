@@ -467,7 +467,47 @@
         "roleTitle": "This role can't invite teammates",
         "roleBody": "The active membership is a viewer or member, and the ACL only grants `invite TeamMember` to owner and admin. Adjust the role grants in `apps/ui/src/lib/acl/ability.ts` (and its server mirror in `apps/api/src/lib/acl/ability.ts`) if you want other roles to invite.",
         "roleDocsCta": "ACL & feature resolution"
+      },
+      "accept": {
+        "pageTitle": "Accept invitation",
+        "pending": "Accepting your invitation…",
+        "success": "You're in. Heading to your dashboard.",
+        "missingToken": "This link is missing a token. Open the most recent invite email and click the button there.",
+        "errorInvalid": "This invitation link is no longer valid. Ask the inviter for a fresh one.",
+        "errorGeneric": "Couldn't accept the invitation. Try again, or ask the inviter for a fresh link.",
+        "backToLogin": "Back to login"
       }
+    },
+    "ownershipTransfer": {
+      "pageTitle": "Accept ownership transfer",
+      "intro": "The current owner of this account wants to hand it to you. Accepting promotes you to owner; the current owner becomes an admin.",
+      "missingToken": "This link is missing a token. Open the most recent transfer email and click the button there.",
+      "accept": "Accept ownership",
+      "decline": "Decline",
+      "accepting": "Working…",
+      "declining": "Working…",
+      "successAccepted": "You're now the owner of this account.",
+      "successDeclined": "You declined the transfer. The current owner has been notified.",
+      "errorInvalid": "This transfer link is no longer valid.",
+      "errorGeneric": "Couldn't process the transfer. Try again.",
+      "goToAccount": "Go to your account"
+    },
+    "joinRequests": {
+      "pageTitle": "Join requests",
+      "pageSubtitle": "Pending requests from users whose email domain matches this account.",
+      "navLabel": "Join requests",
+      "empty": "No pending join requests.",
+      "loading": "Loading join requests…",
+      "error": "Couldn't load join requests. Try again.",
+      "columns": {
+        "email": "Email",
+        "requested": "Requested",
+        "actions": "Actions"
+      },
+      "approve": "Approve",
+      "deny": "Deny",
+      "approving": "Approving…",
+      "denying": "Denying…"
     }
   },
   "errors": {

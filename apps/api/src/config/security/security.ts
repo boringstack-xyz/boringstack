@@ -4,6 +4,7 @@ import { env } from "../env";
 import { ValkeyRateLimitContext } from "../../lib/rate-limit/valkey-context";
 import {
   CORS_ALLOWED_HEADERS,
+  CORS_EXPOSED_HEADERS,
   CORS_MAX_AGE_SECONDS,
   CORS_METHODS,
 } from "./security.constants";
@@ -25,6 +26,7 @@ export const buildCors = () => {
     credentials: true,
     methods: CORS_METHODS,
     allowedHeaders: CORS_ALLOWED_HEADERS,
+    exposeHeaders: CORS_EXPOSED_HEADERS,
     maxAge: CORS_MAX_AGE_SECONDS,
     aot: true,
   });

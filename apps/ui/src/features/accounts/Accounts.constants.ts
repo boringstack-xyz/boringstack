@@ -5,5 +5,7 @@
  */
 export const ACCOUNTS_QUERY_KEYS = {
   invitations: (accountId: string) =>
-    ["accounts", accountId, "invitations"] as const
+    ["accounts", accountId, "invitations"] as const,
+  joinRequests: (accountId: string) =>
+    ["accounts", accountId, "join-requests"] as const
 };

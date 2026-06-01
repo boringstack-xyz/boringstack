@@ -136,26 +136,38 @@ export class PasswordResetService {
 
   async complete(token: string, newPassword: string): Promise<IMessageResult> {
     const tokenHash = hashOpaqueToken(token);
-    const record = await db.query.passwordResetTokens.findFirst({
-      where: and(
-        eq(passwordResetTokens.tokenHash, tokenHash),
-        gt(passwordResetTokens.expiresAt, now())
-      ),
-    });
-
-    if (!record) {
-      throw ApiErrors.invalidInput("Invalid or expired reset token");
-    }
-
     const passwordHash = await passwordService.hash(newPassword);
 
-    await db.transaction(async (tx) => {
+    const record = await db.transaction(async (tx) => {
+      /*
+       * Atomic token claim — see email-verification.service.ts for the
+       * full rationale. The pre-hash bcrypt cost runs outside the tx so
+       * a duplicate submission still pays it, but only one call gets
+       * past the DELETE...RETURNING. The loser sees an empty result
+       * and surfaces "Invalid or expired" — the user already-completed
+       * state stays consistent because nothing past the claim runs
+       * twice.
+       */
+      const [claimed] = await tx
+        .delete(passwordResetTokens)
+        .where(
+          and(
+            eq(passwordResetTokens.tokenHash, tokenHash),
+            gt(passwordResetTokens.expiresAt, now())
+          )
+        )
+        .returning();
+
+      if (!claimed) {
+        throw ApiErrors.invalidInput("Invalid or expired reset token");
+      }
+
       const updatedProviders = await tx
         .update(userAuthProviders)
         .set({ passwordHash })
         .where(
           and(
-            eq(userAuthProviders.userId, record.userId),
+            eq(userAuthProviders.userId, claimed.userId),
             eq(userAuthProviders.provider, EMAIL_PROVIDER_KEY)
           )
         )
@@ -165,9 +177,7 @@ export class PasswordResetService {
         throw ApiErrors.invalidInput("Password login is not enabled");
       }
 
-      await tx
-        .delete(passwordResetTokens)
-        .where(eq(passwordResetTokens.userId, record.userId));
+      return claimed;
     });
 
     /*

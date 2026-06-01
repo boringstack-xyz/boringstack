@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, or } from "drizzle-orm";
 import Stripe from "stripe";
 
 import { db } from "../../clients/postgres";
@@ -169,17 +169,46 @@ export class BillingService {
     let stripeCustomerId = account.stripeCustomerId;
 
     if (stripeCustomerId === null || stripeCustomerId === "") {
-      const customer = await this.stripe.customers.create({
-        name: account.name,
-        metadata: { accountId: account.id },
-      });
+      /*
+       * Idempotency key keyed on the account id makes Stripe collapse a
+       * double-click into a single customer record. Without it, two
+       * parallel checkout requests each see `stripeCustomerId === null`,
+       * each `customers.create()` returns a *different* id, and the
+       * second DB write wins — the orphaned customer's future webhook
+       * deliveries don't resolve the account and the subscription
+       * silently lands on the wrong tenant. Stripe holds the key for
+       * 24h, which covers any plausible double-submit window.
+       */
+      const customer = await this.stripe.customers.create(
+        {
+          name: account.name,
+          metadata: { accountId: account.id },
+        },
+        { idempotencyKey: `account-customer:${account.id}` }
+      );
 
       stripeCustomerId = customer.id;
 
+      /*
+       * Conditional update — only write the customer id when the column
+       * is still empty. A concurrent request that beat us to the Stripe
+       * API may have already filled it with the same value (idempotency
+       * key collapse) or, in theory, raced past our row in a different
+       * order; either way, leaving the existing value alone keeps the
+       * write idempotent.
+       */
       await db
         .update(accounts)
         .set({ stripeCustomerId })
-        .where(eq(accounts.id, accountId));
+        .where(
+          and(
+            eq(accounts.id, accountId),
+            or(
+              isNull(accounts.stripeCustomerId),
+              eq(accounts.stripeCustomerId, "")
+            )
+          )
+        );
     }
 
     const session = await this.stripe.checkout.sessions.create({
