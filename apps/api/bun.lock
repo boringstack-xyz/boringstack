@@ -51,7 +51,7 @@
         "@boring-stack-pkg/eslint-plugin-env-access": "0.1.3",
         "@boring-stack-pkg/eslint-plugin-jwt-cookies": "0.1.1",
         "@boring-stack-pkg/eslint-plugin-module-boundaries": "0.1.1",
-        "@boring-stack-pkg/eslint-plugin-oauth-security": "0.1.1",
+        "@boring-stack-pkg/eslint-plugin-oauth-security": "0.1.2",
         "@boring-stack-pkg/eslint-plugin-resource-architecture": "0.2.0",
         "@boring-stack-pkg/eslint-plugin-stripe-webhooks": "0.1.1",
         "@boring-stack-pkg/eslint-plugin-structured-logging": "0.1.1",
@@ -117,7 +117,7 @@
 
     "@boring-stack-pkg/eslint-plugin-module-boundaries": ["@boring-stack-pkg/eslint-plugin-module-boundaries@0.1.1", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": "8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-FUSEI5c9sESwGTjF8MrNKdh4kBTfmwUgEJhMl8tVB0MdXsSzn5O7q9YImsh79igzBaIL5WMt31SCQv43t/K6+g=="],
 
-    "@boring-stack-pkg/eslint-plugin-oauth-security": ["@boring-stack-pkg/eslint-plugin-oauth-security@0.1.1", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0", "micromatch": "4.0.5" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-0vF74SrIxAOsDiJwN7cyMLCatWos0KMPw3BSgpZZXtMUNLqydiHc1zCljTUq4Lxq1r4drnIa7NYCeKGnfkpEyQ=="],
+    "@boring-stack-pkg/eslint-plugin-oauth-security": ["@boring-stack-pkg/eslint-plugin-oauth-security@0.1.2", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0", "micromatch": "4.0.5" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-jMrK6nnTSEERAIBLPNTj/6HZKkrb4OSqdf+n6HVzoTol+iSdjO2rOexFYtePae477Z6aHiRAxzK6DXPdl2grpQ=="],
 
     "@boring-stack-pkg/eslint-plugin-resource-architecture": ["@boring-stack-pkg/eslint-plugin-resource-architecture@0.2.0", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0", "micromatch": "4.0.5" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0", "typescript": ">=5.0.0" } }, "sha512-v7EmVtIaiJwk06H+SwlbtlzLkUPHoFpCtw+LBEFVddFtGimkB0YGkQqgnCJaEKFuGviAI8WQ0TCgxx2z9seYEg=="],
 

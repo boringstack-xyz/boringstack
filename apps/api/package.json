@@ -96,7 +96,7 @@
     "@boring-stack-pkg/eslint-plugin-env-access": "0.1.3",
     "@boring-stack-pkg/eslint-plugin-jwt-cookies": "0.1.1",
     "@boring-stack-pkg/eslint-plugin-module-boundaries": "0.1.1",
-    "@boring-stack-pkg/eslint-plugin-oauth-security": "0.1.1",
+    "@boring-stack-pkg/eslint-plugin-oauth-security": "0.1.2",
     "@boring-stack-pkg/eslint-plugin-resource-architecture": "0.2.0",
     "@boring-stack-pkg/eslint-plugin-stripe-webhooks": "0.1.1",
     "@boring-stack-pkg/eslint-plugin-structured-logging": "0.1.1",
