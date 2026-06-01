@@ -26,6 +26,17 @@ The output is a single JSON file. No essays, no praise, no generic advice.
 5. **Rank for an autonomous agent**, not a human reviewer: order `execution_plan` by
    what a coding agent should safely execute first (low blast radius, unblocks others,
    verifiable).
+6. **Guardrail-first mindset (lint as a contract).** This stack prevents defects with
+   linters and parsers, not review. For every finding, decide whether it is a _class_ a
+   static check could catch and fill `guardrail` (which layer, which rule to add/extend).
+   If a guardrail already _claims_ the class but the finding slipped through, that gap IS
+   part of the finding — say so in `guardrail.note`. The executor adds the rule before
+   fixing, so your job is to point it at the right layer. The two layers:
+   - **lint-meta** (in-repo, editable: `apps/<app>/scripts/lint-meta/rules/<category>/`) —
+     repo-level drift: version/SHA pins, CI parity, env cascade, source-text bans,
+     test-sibling coverage, config.
+   - **eslint-plugin** (`@boring-stack-pkg/eslint-plugin-*`, cross-repo) — architecture
+     _inside_ TypeScript modules. Note it, but it can't be edited from this repo.
 
 ## Process
 
@@ -55,8 +66,10 @@ Agent call per cell). Recommended decomposition (~8 cells; adjust to repo size):
 
 Give each subagent: its scope paths, its dimensions, the **finding object schema
 below**, and these orders verbatim: *read-only; cite exact file + line/symbol for every
-finding; return a JSON array of finding objects ONLY (no prose); if evidence is weak,
-return it under a `blocked` array instead; prefer precise over vague.*
+finding; for each finding set `guardrail` — could a lint-meta rule or ESLint plugin
+enforce this class of defect? name the rule to add or extend, or set `enforceable:false`
+for genuine one-offs; return a JSON array of finding objects ONLY (no prose); if evidence
+is weak, return it under a `blocked` array instead; prefer precise over vague.*
 
 ### 3. Merge + rank (orchestrator)
 - Collect all subagent arrays. Dedupe overlapping findings (same file+symbol).
@@ -66,6 +79,8 @@ return it under a `blocked` array instead; prefer precise over vague.*
   `cd apps/ui && bun run check` / `bun run test:ci`, `cd apps/docs && bun run build:ci`,
   or a targeted `grep`/file assertion. Never invent commands.
 - Build `execution_plan` ordered for an autonomous agent (safe-first, unblock-first).
+  Treat `guardrail.enforceable` findings as higher-leverage at equal severity — fixing
+  one closes a whole class, not one instance.
 - `quick_wins` = finding IDs with `effort: "S"` and severity ≥ medium.
 - Anything weak/unverifiable → `blocked_or_uncertain`.
 
@@ -99,7 +114,13 @@ Print to chat ONLY: the path and counts, e.g.
       "impact": "",
       "fix": "",
       "execution_steps": [],
-      "validation": ""
+      "validation": "",
+      "guardrail": {
+        "enforceable": true,
+        "layer": "lint-meta|eslint-plugin|none",
+        "rule": "<existing rule to extend, or proposed new rule name>",
+        "note": "why this class can (or cannot) be a static check"
+      }
     }
   ],
   "execution_plan": [
@@ -136,6 +157,8 @@ Do NOT report: style the formatter/ESLint already enforces, anything without a f
 or "consider adding X" advice with no concrete defect.
 
 ## Red flags — you are doing it wrong if
+- A finding is a class a linter/parser could catch but you left `guardrail.enforceable`
+  unset or didn't name the rule to add/extend.
 - You wrote prose explanation in chat instead of the JSON file.
 - A finding has no `file`. (→ `blocked_or_uncertain`.)
 - You ran the audit single-threaded when the repo is large. (→ fan out.)
