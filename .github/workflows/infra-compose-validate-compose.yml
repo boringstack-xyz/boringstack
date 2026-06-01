@@ -184,9 +184,11 @@ jobs:
           filters: |
             code:
               - 'apps/api/Dockerfile.prod'
+              - 'apps/api/.dockerignore'
               - 'apps/api/package.json'
               - 'apps/api/bun.lock'
               - 'apps/ui/Dockerfile.prod'
+              - 'apps/ui/.dockerignore'
               - 'apps/ui/package.json'
               - 'apps/ui/bun.lock'
               - 'infra/compose/**'
