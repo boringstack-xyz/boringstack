@@ -55,12 +55,16 @@
     "ws": "Pin patched ws (GHSA-58qx-3vcg-4xpx) pulled via miniflare/wrangler dev tooling.",
     "devalue": "Pin patched devalue build-time serialization XSS (GHSA-77vg-94rm-hx3p).",
     "qs": "Pin patched qs (GHSA-q8mj-m7cp-5q26) pulled via the http-server dev preview tool.",
-    "tmp": "Pin patched tmp symlink arbitrary-write advisory; transitive dev-tooling dep."
+    "tmp": "Pin patched tmp symlink arbitrary-write advisory; transitive dev-tooling dep.",
+    "@types/react": "Match the UI app's @types/react pin so React types resolve identically across apps (@astrojs/react pulls them transitively here).",
+    "@types/react-dom": "Match the UI app's @types/react-dom pin for the same cross-app type parity."
   },
   "overrides": {
     "ws": "8.20.1",
     "devalue": "5.8.1",
     "qs": "6.15.2",
-    "tmp": "0.2.6"
+    "tmp": "0.2.6",
+    "@types/react": "19.2.15",
+    "@types/react-dom": "19.2.3"
   }
 }
