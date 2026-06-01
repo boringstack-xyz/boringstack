@@ -77,6 +77,11 @@ case "$STACK" in
       : "${GLITCHTIP_SECRET_KEY:?GLITCHTIP_SECRET_KEY required in prod when GlitchTip is enabled. Generate with: openssl rand -base64 50. Set WITH_GLITCHTIP=0 to skip GlitchTip entirely.}"
       : "${GLITCHTIP_PUBLIC_HOST:?GLITCHTIP_PUBLIC_HOST required in prod (DNS name for the GlitchTip router, e.g. glitchtip.example.com). Set WITH_GLITCHTIP=0 to skip.}"
       : "${GLITCHTIP_BASIC_AUTH_USERS:?GLITCHTIP_BASIC_AUTH_USERS required in prod (htpasswd format, escape \$ as \$\$). Set WITH_GLITCHTIP=0 to skip.}"
+      : "${GLITCHTIP_SUPERUSER_PASSWORD:?GLITCHTIP_SUPERUSER_PASSWORD required in prod when GlitchTip is enabled. Generate with: openssl rand -base64 24. Set WITH_GLITCHTIP=0 to skip.}"
+      if [[ "$GLITCHTIP_SUPERUSER_PASSWORD" == "admin123456" ]]; then
+        echo "[ERROR] GLITCHTIP_SUPERUSER_PASSWORD must not be the dev default (admin123456) in prod. Generate with: openssl rand -base64 24." >&2
+        exit 1
+      fi
     fi
     ;;
   *)
