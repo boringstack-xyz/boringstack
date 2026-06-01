@@ -4,31 +4,31 @@
     "runner": "bun run",
     "folders": [
       {
-        "folder": "[`ci/`](ci/)",
+        "folder": "[ci/](ci/)",
         "purpose": "Pre-push gate, CI manifest"
       },
       {
-        "folder": "[`dev/`](dev/)",
+        "folder": "[dev/](dev/)",
         "purpose": "Local developer workflow guards"
       },
       {
-        "folder": "[`codegen/`](codegen/)",
+        "folder": "[codegen/](codegen/)",
         "purpose": "Scaffolding and OpenAPI contract generation"
       },
       {
-        "folder": "[`quality/`](quality/)",
+        "folder": "[quality/](quality/)",
         "purpose": "Test and bundle adjunct checks outside ESLint"
       },
       {
-        "folder": "[`lint-meta/`](lint-meta/)",
+        "folder": "[lint-meta/](lint-meta/)",
         "purpose": "Static meta-lint rules ([RULES.md](lint-meta/RULES.md))"
       }
     ],
     "commands": [
       {
         "command": "dev",
-        "script": "dev/preflight-host-dev.sh`",
-        "description": "",
+        "script": "dev/preflight-host-dev.sh",
+        "description": "Refuses to run `bun run dev` on the host when the `ui-dev` compose",
         "invocation": "./scripts/dev/preflight-host-dev.sh && vite"
       },
       {
@@ -119,31 +119,31 @@
     "runner": "bun run",
     "folders": [
       {
-        "folder": "[`ci/`](ci/)",
+        "folder": "[ci/](ci/)",
         "purpose": "Pre-push gate, CI manifest"
       },
       {
-        "folder": "[`dev/`](dev/)",
+        "folder": "[dev/](dev/)",
         "purpose": "Local developer workflow guards"
       },
       {
-        "folder": "[`codegen/`](codegen/)",
+        "folder": "[codegen/](codegen/)",
         "purpose": "Scaffolding, ACL type sync, VAPID key generation"
       },
       {
-        "folder": "[`db/`](db/)",
+        "folder": "[db/](db/)",
         "purpose": "Database seed utilities"
       },
       {
-        "folder": "[`loadtest/`](loadtest/)",
+        "folder": "[loadtest/](loadtest/)",
         "purpose": "k6 golden-path load test against the dev stack"
       },
       {
-        "folder": "[`quality/`](quality/)",
+        "folder": "[quality/](quality/)",
         "purpose": "Test and coverage adjunct checks outside ESLint"
       },
       {
-        "folder": "[`lint-meta/`](lint-meta/)",
+        "folder": "[lint-meta/](lint-meta/)",
         "purpose": "Static meta-lint rules ([RULES.md](lint-meta/RULES.md))"
       }
     ],
@@ -162,8 +162,8 @@
       },
       {
         "command": "dev",
-        "script": "dev/preflight-host-dev.sh`",
-        "description": "",
+        "script": "dev/preflight-host-dev.sh",
+        "description": "Refuses to run `bun run dev` on the host when the `api-dev` compose",
         "invocation": "./scripts/dev/preflight-host-dev.sh && bun run build:templates && bun run --watch src/index.ts"
       },
       {
@@ -264,8 +264,8 @@
       },
       {
         "command": "loadtest",
-        "script": "loadtest/run.sh`",
-        "description": "",
+        "script": "loadtest/run.sh",
+        "description": "Run the golden-path k6 load test against the local dev stack.",
         "invocation": "./scripts/loadtest/run.sh"
       }
     ],

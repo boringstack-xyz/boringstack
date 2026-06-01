@@ -94,7 +94,10 @@ function parseMarkdownTableSection(text, heading) {
 }
 
 function stripBackticks(value) {
-  return value.replace(/^`+|`+$/gu, "").trim();
+  // Remove every backtick, not just leading/trailing. Markdown cells like
+  // `` `path/to/script.sh` (then X) `` carry an inline closing backtick that a
+  // start/end-only strip would leave on the token after a whitespace split.
+  return value.replace(/`/gu, "").trim();
 }
 
 function parseCommandName(cell, runner) {

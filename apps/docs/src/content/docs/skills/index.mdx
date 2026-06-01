@@ -3,7 +3,7 @@ title: Agent skills
 description: Slash-command skills shipped with BoringStack. Each one encodes a task, its conventions, and a ready-to-paste prompt.
 ---
 
-BoringStack ships agent skills in `apps/api/.claude/skills/` and `apps/ui/.claude/skills/`. Each skill is a markdown file with a prompt that an agent follows. Type the skill name (e.g., `/add-full-feature`) in Claude Code or Cursor and the agent runs the workflow.
+BoringStack ships agent skills in the repo root `.claude/skills/` (cross-app and audit skills) and per-app in `apps/api/.claude/skills/` and `apps/ui/.claude/skills/`. Each skill is a markdown file with a prompt that an agent follows. Type the skill name (e.g., `/add-full-feature`) in Claude Code or Cursor and the agent runs the workflow.
 
 ## Full-stack skills
 
@@ -40,6 +40,28 @@ Reviews a branch or PR for security regressions. Runs Layer 1 scanners locally (
 Checks BoringStack-specific invariants: ACL ability checks on every route, multi-tenant `accountId` scoping, Stripe webhook signature handling, rate limits on credential routes, audit-log coverage on mutations, idempotent BullMQ jobs.
 
 On the UI: no raw `fetch` outside `openapi.ts`, no `dangerouslySetInnerHTML`, no `import.meta.env` outside `src/lib/env/`, no token storage in `localStorage`, no JSX strings without i18n, CSRF + content-type validation.
+
+## Audit skills
+
+Two repo-root skills that pair up for autonomous, agent-to-agent maintenance. The
+audit is machine-readable on purpose: one agent finds the work, another executes it.
+
+### /audit-monorepo
+
+Read-only, full-monorepo audit (apps/api, apps/ui, apps/docs, infra, scripts, CI). Fans
+out parallel read-only subagents per app and concern, then writes a single
+evidence-backed JSON report to `.audit/audit-report.json` — every finding cites exact
+files, ranked for an autonomous agent to execute. Each finding is also classified by
+whether a linter/parser **guardrail** could enforce it, so fixes extend the tooling
+rather than patch one instance ("lint as a contract").
+
+### /execute-audit
+
+Reads `.audit/audit-report.json` and works every finding to completion on a single
+branch. Guardrail-first: when a finding is a class a rule can catch, it extends the
+relevant `lint:meta` rule so the bug surfaces as a violation, then fixes the code —
+validating each fix with the repo's own `bun run check`, committing per finding, and
+reverting-and-continuing on failure.
 
 ## Related
 

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { collectSourceFiles } from "../../context";
 import type { IMetaRule, IViolation } from "../../types";
 
-const SUFFIX_REQUIRES_TEST = /\.(service|utils|jobs|check)\.ts$/u;
+const SUFFIX_REQUIRES_TEST = /\.(service|utils|jobs|check|channel)\.ts$/u;
 
 export function checkLogicFilesHaveTests(root: string): IViolation[] {
   const violations: IViolation[] = [];
@@ -31,7 +31,7 @@ export function checkLogicFilesHaveTests(root: string): IViolation[] {
       rule: "logic-files-require-test-sibling",
       message: `Missing unit-test sibling. Expected \`${expectedTest.slice(
         root.length + 1
-      )}\` to exist alongside this \`*.{service,utils,jobs,check}.ts\` module — every piece of logic ships with a test.`,
+      )}\` to exist alongside this \`*.{service,utils,jobs,check,channel}.ts\` module — every piece of logic ships with a test.`,
     });
   }
 
