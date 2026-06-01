@@ -116,3 +116,10 @@ jobs:
             --exclude 'github\.com/boringstack-xyz/.*/(blob|tree)/'
             '${{ github.workspace }}/apps/docs/dist/**/*.html'
           fail: false
+        env:
+          # Authenticate github.com link checks so lychee uses the GitHub API
+          # (5000 req/h) instead of anonymous requests (60 req/h). Without this,
+          # every github.com link hits the rate limit and lychee sits in a
+          # multi-minute backoff — the "unexpectedly big rate limit backoff" warns
+          # that dragged this step to ~4m. Needs only the default contents:read.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
