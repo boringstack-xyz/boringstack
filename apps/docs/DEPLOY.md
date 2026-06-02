@@ -23,7 +23,7 @@ This file documents the wire-up so future-you (or a teammate) can rebuild it fro
    | Build command          | `bun run build`     |
    | Build output directory | `dist`              |
    | Root directory         | `apps/docs`         |
-   | Node version           | `22` (via `.nvmrc`) |
+   | Node version           | `24` (via `.nvmrc`) |
    | Environment variables  | _(none)_            |
 
 4. **Custom domain.**
