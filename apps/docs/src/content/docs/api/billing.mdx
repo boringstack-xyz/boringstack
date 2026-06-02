@@ -56,7 +56,7 @@ sequenceDiagram
 Handled events:
 
 - `checkout.session.completed`: creates or updates `billing.account_plans` for the account and plan in session metadata.
-- `customer.subscription.updated`: maps the active Stripe price id back to a local plan and updates the account plan; also tracks `past_due`, `unpaid`, `paused`, `canceled`, `incomplete`, `trialing`, and `active` for the [feature resolver](/api/acl/#status-driven-features).
+- `customer.subscription.updated`: maps the active Stripe price id back to a local plan and updates the account plan; also tracks `past_due`, `unpaid`, `paused`, `canceled`, `incomplete`, `trialing`, and `active` for the [feature resolver](/api/acl/#feature-gates).
 - `customer.subscription.deleted`: marks the row revoked so the resolver falls back to the Free plan.
 - `invoice.paid` / `invoice.payment_failed`: status transitions for the active plan row.
 
