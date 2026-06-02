@@ -92,5 +92,5 @@ jobs:
         uses: github/codeql-action/upload-sarif@7c1e4cf0b20d7c1872b26569c00ba908797a59bf # v4
         with:
           sarif_file: semgrep-results.sarif
-          category: semgrep
+          category: semgrep-api
         continue-on-error: true
