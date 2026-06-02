@@ -73,8 +73,12 @@ step "3/3 yamllint"
 if ! command -v yamllint >/dev/null 2>&1; then
   c_blue "  skipped — yamllint not installed (brew install yamllint). CI still runs it."
 else
-  yamllint -d "{extends: default, rules: {line-length: disable, document-start: disable, truthy: {check-keys: false}}}" \
-    "$COMPOSE_DIR"/*.yml "$INFRA_ROOT/.github/workflows"/*.yml
+  # Mirror CI exactly (validate-compose.yml yamllint job): same relaxed
+  # config, same targets. Workflows live at the repo root — the old
+  # $INFRA_ROOT/.github/workflows glob matched nothing, so workflow YAML
+  # was silently unlinted locally.
+  yamllint -d "{extends: relaxed, rules: {line-length: disable}}" \
+    "$COMPOSE_DIR" "$ROOT/.github/workflows"
   ok "yamllint clean"
 fi
 
