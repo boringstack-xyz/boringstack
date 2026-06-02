@@ -230,6 +230,7 @@ export class BillingService {
     void auditLogService.record({
       userId: actorUserId,
       action: AUDIT_ACTIONS.BILLING_CHECKOUT_SESSION_CREATED,
+      targetAccountId: accountId,
       metadata: { planId: plan.id, sessionId: session.id, accountId },
     });
 
@@ -395,6 +396,19 @@ export class BillingService {
       accountId,
       planId,
     });
+
+    void auditLogService.record({
+      userId: null,
+      action: AUDIT_ACTIONS.STRIPE_RECONCILED,
+      resource: `account:${accountId}`,
+      targetAccountId: accountId,
+      metadata: {
+        eventId: details.eventId,
+        eventType: details.eventType,
+        planId,
+        status: "active",
+      },
+    });
   }
 
   private async handleSubscriptionUpsert(
@@ -456,6 +470,19 @@ export class BillingService {
       lastStripeEventId: details.eventId,
       lastStripeEventAt: stripeEventOccurredAt(details.eventCreated),
     });
+
+    void auditLogService.record({
+      userId: null,
+      action: AUDIT_ACTIONS.STRIPE_RECONCILED,
+      resource: `account:${account.id}`,
+      targetAccountId: account.id,
+      metadata: {
+        eventId: details.eventId,
+        eventType: details.eventType,
+        planId: newPlan.id,
+        status: mapStripeStatus(subscription.status),
+      },
+    });
   }
 
   private async handleSubscriptionDeleted(
@@ -493,6 +520,18 @@ export class BillingService {
           isNull(accountPlans.revokedAt)
         )
       );
+
+    void auditLogService.record({
+      userId: null,
+      action: AUDIT_ACTIONS.STRIPE_RECONCILED,
+      resource: `account:${account.id}`,
+      targetAccountId: account.id,
+      metadata: {
+        eventId: details.eventId,
+        eventType: details.eventType,
+        status: "canceled",
+      },
+    });
   }
 
   async createPortalSession(
@@ -523,6 +562,7 @@ export class BillingService {
     void auditLogService.record({
       userId: actorUserId,
       action: AUDIT_ACTIONS.BILLING_PORTAL_SESSION_CREATED,
+      targetAccountId: accountId,
       metadata: { sessionId: session.id, accountId },
     });
 

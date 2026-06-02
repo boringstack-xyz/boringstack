@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, test } from "bun:test";
 
 import { getBillingService } from "../../../src/api/billing/billing.service";
 import { env } from "../../../src/config/env";
+import { AUDIT_ACTIONS } from "../../../src/lib/audit-log";
 import { ApiError } from "../../../src/lib/errors/api-error";
 import { seedVerifiedUser } from "../../helpers/auth";
 import {
   accountPlans,
   accounts,
   and,
+  auditLog,
   cleanDatabase,
   db,
   eq,
@@ -245,6 +247,58 @@ describe("billingService.handleWebhookEvent", () => {
     expect(row?.planId).toBe(proPlanId);
     expect(row?.status).toBe("active");
     expect(row?.source).toBe("stripe");
+  });
+
+  test("checkout.session.completed records a stripe.reconciled audit row for the account", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const { accountId, customerId, proPlanId } =
+      await seedAccountWithStripeCustomer();
+
+    await getBillingService().handleWebhookEvent(
+      await checkoutSessionCompletedEvent("evt_checkout_audit", {
+        customer: customerId,
+        metadata: { accountId, planId: String(proPlanId) },
+      })
+    );
+
+    /*
+     * record() is fire-and-forget (void), so the insert can land after
+     * handleWebhookEvent resolves — poll briefly instead of asserting
+     * immediately (see tests/helpers/db.ts header).
+     */
+    const resource = `account:${accountId}`;
+    let rows: (typeof auditLog.$inferSelect)[] = [];
+
+    for (let attempt = 0; attempt < 20; attempt++) {
+      rows = await db
+        .select()
+        .from(auditLog)
+        .where(
+          and(
+            eq(auditLog.resource, resource),
+            eq(auditLog.action, AUDIT_ACTIONS.STRIPE_RECONCILED)
+          )
+        );
+
+      if (rows.length > 0) {
+        break;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.action).toBe(AUDIT_ACTIONS.STRIPE_RECONCILED);
+    expect(rows[0]?.userId).toBeNull();
+    expect(rows[0]?.metadata).toEqual({
+      eventId: "evt_checkout_audit",
+      eventType: "checkout.session.completed",
+      planId: proPlanId,
+      status: "active",
+    });
   });
 
   test("checkout.session.completed with missing metadata is a no-op (no throw)", async () => {

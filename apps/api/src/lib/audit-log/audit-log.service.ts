@@ -28,6 +28,7 @@ export class AuditLogService {
         userId: event.userId,
         action: event.action,
         resource: event.resource ?? null,
+        targetAccountId: event.targetAccountId ?? null,
         metadata: event.metadata ?? {},
         ip: event.ip ?? null,
         userAgent: event.userAgent ?? null,

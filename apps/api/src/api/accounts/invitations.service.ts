@@ -88,6 +88,7 @@ export class InvitationsService {
       userId: actorUserId,
       action: AUDIT_ACTIONS.MEMBERSHIP_INVITED,
       resource: `invitation:${invitation.id}`,
+      targetAccountId: input.accountId,
       metadata: {
         accountId: input.accountId,
         role: input.roleToAssign,
@@ -137,6 +138,7 @@ export class InvitationsService {
       userId: actorUserId,
       action: AUDIT_ACTIONS.MEMBERSHIP_INVITED,
       resource: `invitation:${updated.id}`,
+      targetAccountId: accountId,
       metadata: { accountId, resend: true },
     });
 
@@ -176,6 +178,7 @@ export class InvitationsService {
       userId: actorUserId,
       action: AUDIT_ACTIONS.MEMBERSHIP_REVOKED,
       resource: `invitation:${invitationId}`,
+      targetAccountId: accountId,
       metadata: { accountId },
     });
   }
@@ -280,6 +283,7 @@ export class InvitationsService {
         userId,
         action: AUDIT_ACTIONS.MEMBERSHIP_ACCEPTED,
         resource: `invitation:${invitation.id}`,
+        targetAccountId: invitation.accountId,
         metadata: {
           accountId: invitation.accountId,
           role: invitation.roleToAssign,
