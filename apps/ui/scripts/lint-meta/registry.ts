@@ -16,6 +16,7 @@ import { noOverlappingLibsRule } from "./rules/supply-chain/no-overlapping-libs"
 import { packageJsonExactDepsRule } from "./rules/supply-chain/package-json-exact-deps";
 import { logicFilesRequireTestSiblingRule } from "./rules/testing/logic-files-require-test-sibling";
 import { skippedTestsNeedTrackingRule } from "./rules/testing/skipped-tests-need-tracking";
+import { testFilesRequireSourceSiblingRule } from "./rules/testing/test-files-require-source-sibling";
 import type { IMetaRule } from "./types";
 
 export const META_RULES: readonly IMetaRule[] = [
@@ -41,6 +42,7 @@ export const META_RULES: readonly IMetaRule[] = [
   noSilentErrorSwallowRule,
   // --- testing ---
   logicFilesRequireTestSiblingRule,
+  testFilesRequireSourceSiblingRule,
   skippedTestsNeedTrackingRule,
   // --- config ---
   eslintConfigNoWarnRule

@@ -139,6 +139,12 @@
       "description": "Logic modules must ship with a colocated *.test.ts or *.test.tsx sibling."
     },
     {
+      "id": "test-files-require-source-sibling",
+      "category": "testing",
+      "ciCritical": false,
+      "description": "Colocated test files must mirror a source sibling (no orphaned tests)."
+    },
+    {
       "id": "skipped-tests-need-tracking",
       "category": "testing",
       "ciCritical": false,

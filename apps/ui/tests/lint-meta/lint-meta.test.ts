@@ -20,6 +20,7 @@ import {
   checkNoSilentErrorSwallow,
   checkPackageJson,
   checkScriptRawFetch,
+  checkTestFilesHaveSource,
   checkUiEnvCascadeDrift,
   checkWorkflow,
   collectSourceFiles,
@@ -470,6 +471,52 @@ describe("checkCanonicalHelpersSingleHome", () => {
     );
 
     expect(violations).toEqual([]);
+  });
+});
+
+describe("checkTestFilesHaveSource", () => {
+  test("flags a colocated test with no source sibling", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-orphan-"));
+
+    try {
+      mkdirSync(join(root, "src", "lib", "web-push"), { recursive: true });
+      writeFileSync(
+        join(root, "src", "lib", "web-push", "orphan.test.ts"),
+        "import { it } from 'vitest';\nit('x', () => {});\n"
+      );
+
+      const violations = checkTestFilesHaveSource(root);
+
+      expect(
+        violations.some(
+          (row) => row.rule === "test-files-require-source-sibling"
+        )
+      ).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when a .test.tsx mirrors a .tsx source", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-orphan-"));
+
+    try {
+      mkdirSync(join(root, "src", "components"), { recursive: true });
+      writeFileSync(
+        join(root, "src", "components", "Widget.tsx"),
+        "export const Widget = () => null;\n"
+      );
+      writeFileSync(
+        join(root, "src", "components", "Widget.test.tsx"),
+        "import { it } from 'vitest';\nit('x', () => {});\n"
+      );
+
+      const violations = checkTestFilesHaveSource(root);
+
+      expect(violations).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 

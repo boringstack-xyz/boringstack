@@ -12,7 +12,7 @@ import { sanitizeTargetPath } from "@/lib/web-push/sw-url-sanitize";
  */
 const ORIGIN = "https://app.example.test";
 
-describe("in-app notification CTA sanitization", () => {
+describe("sanitizeTargetPath (in-app notification CTA sanitization)", () => {
   it("preserves a same-origin path", () => {
     expect(sanitizeTargetPath("/notifications/123", ORIGIN)).toBe(
       "/notifications/123"
