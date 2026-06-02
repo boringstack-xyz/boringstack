@@ -1,0 +1,6 @@
+{
+  "name": "fixture-app-a",
+  "overrides": {
+    "ws": "8.21.0"
+  }
+}

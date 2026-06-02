@@ -146,10 +146,21 @@
     "vitest": "4.1.7",
     "yaml": "2.9.0"
   },
+  "//overrides": {
+    "_": "Why these transitive deps are pinned. Dev tooling only — lighthouse/lhci and http-server pull the vulnerable ranges; production output is a static bundle.",
+    "ws": "Pin patched ws (GHSA-58qx-3vcg-4xpx) pulled via lighthouse dev tooling; mirrors the docs app pin.",
+    "qs": "Pin patched qs (GHSA-q8mj-m7cp-5q26) pulled via dev tooling; mirrors the docs app pin.",
+    "tmp": "Pin patched tmp symlink arbitrary-write advisory; transitive dev-tooling dep.",
+    "@types/react": "Single React types resolution across the workspace.",
+    "@types/react-dom": "Single React DOM types resolution across the workspace.",
+    "@typescript-eslint/utils": "Match the API app's pin so the shared ESLint plugins resolve one utils version."
+  },
   "overrides": {
     "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
     "@typescript-eslint/utils": "8.60.0",
-    "tmp": "0.2.6"
+    "qs": "6.15.2",
+    "tmp": "0.2.6",
+    "ws": "8.21.0"
   }
 }

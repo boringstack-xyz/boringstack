@@ -30,6 +30,7 @@ import {
   findWorkflows,
   checkGeneratedArtifactContracts,
   checkNoRawRoleLiterals,
+  checkPackageOverrideParity,
   checkPrePushParity,
   checkSharedToolVersionParity,
 } from "../../scripts/lint-meta/cli";
@@ -51,6 +52,43 @@ describe("checkSharedToolVersionParity", () => {
   test("passes when every app pins shared tools to the same version", () => {
     const violations = checkSharedToolVersionParity(
       join(FIXTURES, "shared-tools-clean")
+    );
+
+    expect(violations).toEqual([]);
+  });
+});
+
+describe("checkPackageOverrideParity", () => {
+  test("flags a sibling resolving an overridden package without a mirror", () => {
+    const violations = checkPackageOverrideParity(
+      join(FIXTURES, "override-parity-drift")
+    );
+
+    expect(
+      violations.some(
+        (row) =>
+          row.file.includes("app-b") && row.message.includes("mirror the pin")
+      )
+    ).toBe(true);
+  });
+
+  test("flags an override the app's own lockfile does not resolve", () => {
+    const violations = checkPackageOverrideParity(
+      join(FIXTURES, "override-parity-drift")
+    );
+
+    expect(
+      violations.some(
+        (row) =>
+          row.file.includes("app-c") &&
+          row.message.includes("run `bun install`")
+      )
+    ).toBe(true);
+  });
+
+  test("passes when overrides are applied and siblings resolve the same version", () => {
+    const violations = checkPackageOverrideParity(
+      join(FIXTURES, "override-parity-clean")
     );
 
     expect(violations).toEqual([]);

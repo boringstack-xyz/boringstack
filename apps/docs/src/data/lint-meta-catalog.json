@@ -25,6 +25,12 @@
       "description": "Pinned action SHAs resolve on github.com (lint:meta:verify only)."
     },
     {
+      "id": "github-actions-timeout-required",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "GitHub Actions jobs require an explicit timeout-minutes (reusable-workflow calls exempt)."
+    },
+    {
       "id": "pre-push-ci-parity",
       "category": "ci",
       "ciCritical": false,
@@ -177,6 +183,12 @@
       "description": "package.json must not list forbidden overlapping library pairs."
     },
     {
+      "id": "package-override-parity",
+      "category": "supply-chain",
+      "ciCritical": false,
+      "description": "package.json overrides must be reflected in the app's own bun.lock and mirrored by sibling apps that resolve the same package."
+    },
+    {
       "id": "shared-tool-version-parity",
       "category": "supply-chain",
       "ciCritical": false,
@@ -193,6 +205,12 @@
       "category": "ci",
       "ciCritical": false,
       "description": "Pinned action SHAs resolve on github.com (lint:meta:verify only)."
+    },
+    {
+      "id": "github-actions-timeout-required",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "GitHub Actions jobs require an explicit timeout-minutes (reusable-workflow calls exempt)."
     },
     {
       "id": "pre-push-ci-parity",
