@@ -1,50 +1,52 @@
-import type { Queue } from "bullmq";
+import type { JobsOptions, JobType } from "bullmq";
 import { logger } from "../config/logger";
-import type {
-  AccountMaintenanceWorker,
-  IAccountMaintenanceJobData,
-} from "./account-maintenance";
-import type {
-  EmailDeliveryWorker,
-  IEmailDeliveryJobData,
-} from "./email-delivery";
+import type { IEmailDeliveryJobData } from "./email-delivery";
 import {
   EMAIL_DELIVERY_DEFAULTS,
   EMAIL_DELIVERY_JOB_NAME,
 } from "./email-delivery/email-delivery.constants";
-import type {
-  INotificationDispatchJobData,
-  NotificationDispatchWorker,
-} from "./notification-dispatch";
+import type { INotificationDispatchJobData } from "./notification-dispatch";
 import {
   NOTIFICATION_DISPATCH_DEFAULTS,
   NOTIFICATION_DISPATCH_JOB_NAME,
 } from "./notification-dispatch/notification-dispatch.constants";
-import type {
-  INotificationMaintenanceJobData,
-  NotificationMaintenanceWorker,
-} from "./notification-maintenance";
 import type { IQueueCounts, IQueueStats } from "./queue-stats.types";
-import type {
-  IWebPushDeliveryJobData,
-  WebPushDeliveryWorker,
-} from "./web-push-delivery";
+import type { IWebPushDeliveryJobData } from "./web-push-delivery";
 import {
   WEB_PUSH_DELIVERY_DEFAULTS,
   WEB_PUSH_DELIVERY_JOB_NAME,
 } from "./web-push-delivery/web-push-delivery.constants";
 
+/*
+ * Structural views of the BullMQ surface the manager actually touches.
+ * Real `Queue` / worker-class instances satisfy these implicitly; tests
+ * satisfy them with plain stubs — no Valkey connection required.
+ */
+export interface IManagedWorker {
+  close: () => Promise<void>;
+}
+
+export interface IManagedQueue {
+  readonly name: string;
+  getJobCounts: (...states: JobType[]) => Promise<Record<string, number>>;
+  close: () => Promise<void>;
+}
+
+export interface IEnqueueableQueue<TData> extends IManagedQueue {
+  add: (name: string, data: TData, opts?: JobsOptions) => Promise<unknown>;
+}
+
 interface IQueueManagerInput {
-  accountMaintenanceQueue: Queue<IAccountMaintenanceJobData>;
-  accountMaintenanceWorker: AccountMaintenanceWorker;
-  emailDeliveryQueue: Queue<IEmailDeliveryJobData>;
-  emailDeliveryWorker: EmailDeliveryWorker;
-  notificationDispatchQueue: Queue<INotificationDispatchJobData>;
-  notificationDispatchWorker: NotificationDispatchWorker;
-  notificationMaintenanceQueue: Queue<INotificationMaintenanceJobData>;
-  notificationMaintenanceWorker: NotificationMaintenanceWorker;
-  webPushDeliveryQueue: Queue<IWebPushDeliveryJobData> | null;
-  webPushDeliveryWorker: WebPushDeliveryWorker | null;
+  accountMaintenanceQueue: IManagedQueue;
+  accountMaintenanceWorker: IManagedWorker;
+  emailDeliveryQueue: IEnqueueableQueue<IEmailDeliveryJobData>;
+  emailDeliveryWorker: IManagedWorker;
+  notificationDispatchQueue: IEnqueueableQueue<INotificationDispatchJobData>;
+  notificationDispatchWorker: IManagedWorker;
+  notificationMaintenanceQueue: IManagedQueue;
+  notificationMaintenanceWorker: IManagedWorker;
+  webPushDeliveryQueue: IEnqueueableQueue<IWebPushDeliveryJobData> | null;
+  webPushDeliveryWorker: IManagedWorker | null;
 }
 
 const QUEUE_COUNT_STATES = [
@@ -56,7 +58,9 @@ const QUEUE_COUNT_STATES = [
   "paused",
 ] as const;
 
-const fetchQueueCounts = async (queue: Queue): Promise<IQueueCounts> => {
+const fetchQueueCounts = async (
+  queue: IManagedQueue
+): Promise<IQueueCounts> => {
   const counts = await queue.getJobCounts(...QUEUE_COUNT_STATES);
 
   return {
@@ -79,16 +83,16 @@ const fetchQueueCounts = async (queue: Queue): Promise<IQueueCounts> => {
  * by treating Web Push as a no-op (see `enqueueWebPushDelivery`).
  */
 export class QueueManager {
-  private readonly accountMaintenanceQueue: Queue<IAccountMaintenanceJobData>;
-  private readonly accountMaintenanceWorker: AccountMaintenanceWorker;
-  private readonly emailDeliveryQueue: Queue<IEmailDeliveryJobData>;
-  private readonly emailDeliveryWorker: EmailDeliveryWorker;
-  private readonly notificationDispatchQueue: Queue<INotificationDispatchJobData>;
-  private readonly notificationDispatchWorker: NotificationDispatchWorker;
-  private readonly notificationMaintenanceQueue: Queue<INotificationMaintenanceJobData>;
-  private readonly notificationMaintenanceWorker: NotificationMaintenanceWorker;
-  private readonly webPushDeliveryQueue: Queue<IWebPushDeliveryJobData> | null;
-  private readonly webPushDeliveryWorker: WebPushDeliveryWorker | null;
+  private readonly accountMaintenanceQueue: IManagedQueue;
+  private readonly accountMaintenanceWorker: IManagedWorker;
+  private readonly emailDeliveryQueue: IEnqueueableQueue<IEmailDeliveryJobData>;
+  private readonly emailDeliveryWorker: IManagedWorker;
+  private readonly notificationDispatchQueue: IEnqueueableQueue<INotificationDispatchJobData>;
+  private readonly notificationDispatchWorker: IManagedWorker;
+  private readonly notificationMaintenanceQueue: IManagedQueue;
+  private readonly notificationMaintenanceWorker: IManagedWorker;
+  private readonly webPushDeliveryQueue: IEnqueueableQueue<IWebPushDeliveryJobData> | null;
+  private readonly webPushDeliveryWorker: IManagedWorker | null;
 
   constructor(input: IQueueManagerInput) {
     this.accountMaintenanceQueue = input.accountMaintenanceQueue;
@@ -171,7 +175,7 @@ export class QueueManager {
    * `/admin/queues` endpoint. Pure Valkey reads, safe from a request handler.
    */
   async getStats(): Promise<IQueueStats[]> {
-    const queues: { name: string; queue: Queue }[] = [
+    const queues: { name: string; queue: IManagedQueue }[] = [
       {
         name: this.accountMaintenanceQueue.name,
         queue: this.accountMaintenanceQueue,
