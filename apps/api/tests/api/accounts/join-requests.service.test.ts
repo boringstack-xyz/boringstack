@@ -222,6 +222,38 @@ describe("JoinRequestsService", () => {
       );
     });
 
+    test("404s when approving another account's pending request", async () => {
+      if (!(await requireDb())) {
+        return;
+      }
+
+      const owner = await seedUserAndAccount(OWNER_EMAIL);
+      const otherOwner = await seedUserAndAccount(OTHER_OWNER_EMAIL);
+      const requester = await seedRequesterUser(REQUESTER_EMAIL);
+
+      const created = await createPendingFor(
+        owner.accountId,
+        requester,
+        REQUESTER_EMAIL
+      );
+
+      await expectRejects(
+        joinRequestsService.approve(
+          otherOwner.accountId,
+          created.id,
+          otherOwner.userId
+        )
+      );
+
+      const [row] = await db
+        .select()
+        .from(accountJoinRequests)
+        .where(eq(accountJoinRequests.id, created.id))
+        .limit(1);
+
+      expect(row?.status).toBe("pending");
+    });
+
     test("a second approve of the same request fails", async () => {
       if (!(await requireDb())) {
         return;

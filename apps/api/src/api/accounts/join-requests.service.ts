@@ -159,6 +159,7 @@ export class JoinRequestsService {
         .where(
           and(
             eq(accountJoinRequests.id, requestId),
+            eq(accountJoinRequests.accountId, accountId),
             eq(accountJoinRequests.status, JOIN_REQUEST_STATUS.pending)
           )
         )
