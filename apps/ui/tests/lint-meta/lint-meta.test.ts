@@ -23,6 +23,7 @@ import {
   checkTestFilesHaveSource,
   checkUiEnvCascadeDrift,
   checkWorkflow,
+  checkWorkflowTimeouts,
   collectSourceFiles,
   findWorkflows,
   parseDotenvKeys
@@ -133,6 +134,24 @@ describe("checkWorkflow", () => {
   test("40-char SHA + permissions passes", () => {
     const workflows = findWorkflows(join(FIXTURES, "workflows-good"));
     const v = workflows.flatMap(checkWorkflow);
+
+    expect(v).toEqual([]);
+  });
+});
+
+describe("checkWorkflowTimeouts", () => {
+  test("flags a job missing timeout-minutes, exempts reusable-workflow calls", () => {
+    const workflows = findWorkflows(join(FIXTURES, "workflows-no-timeout"));
+    const v = workflows.flatMap(checkWorkflowTimeouts);
+
+    expect(v).toHaveLength(1);
+    expect(v[0]?.rule).toBe("github-actions-timeout-required");
+    expect(v[0]?.message).toContain('"test"');
+  });
+
+  test("job with timeout-minutes passes", () => {
+    const workflows = findWorkflows(join(FIXTURES, "workflows-good"));
+    const v = workflows.flatMap(checkWorkflowTimeouts);
 
     expect(v).toEqual([]);
   });

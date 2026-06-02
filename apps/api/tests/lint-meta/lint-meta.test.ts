@@ -25,10 +25,12 @@ import {
   checkRouteFilesHaveTests,
   checkTouchedTests,
   checkWorkflowShas,
+  checkWorkflowTimeouts,
   collectSourceFiles,
   findWorkflows,
   checkGeneratedArtifactContracts,
   checkNoRawRoleLiterals,
+  checkPackageOverrideParity,
   checkPrePushParity,
   checkSharedToolVersionParity,
 } from "../../scripts/lint-meta/cli";
@@ -50,6 +52,43 @@ describe("checkSharedToolVersionParity", () => {
   test("passes when every app pins shared tools to the same version", () => {
     const violations = checkSharedToolVersionParity(
       join(FIXTURES, "shared-tools-clean")
+    );
+
+    expect(violations).toEqual([]);
+  });
+});
+
+describe("checkPackageOverrideParity", () => {
+  test("flags a sibling resolving an overridden package without a mirror", () => {
+    const violations = checkPackageOverrideParity(
+      join(FIXTURES, "override-parity-drift")
+    );
+
+    expect(
+      violations.some(
+        (row) =>
+          row.file.includes("app-b") && row.message.includes("mirror the pin")
+      )
+    ).toBe(true);
+  });
+
+  test("flags an override the app's own lockfile does not resolve", () => {
+    const violations = checkPackageOverrideParity(
+      join(FIXTURES, "override-parity-drift")
+    );
+
+    expect(
+      violations.some(
+        (row) =>
+          row.file.includes("app-c") &&
+          row.message.includes("run `bun install`")
+      )
+    ).toBe(true);
+  });
+
+  test("passes when overrides are applied and siblings resolve the same version", () => {
+    const violations = checkPackageOverrideParity(
+      join(FIXTURES, "override-parity-clean")
     );
 
     expect(violations).toEqual([]);
@@ -186,6 +225,24 @@ describe("checkWorkflowShas", () => {
   test("40-char SHA passes", () => {
     const workflows = findWorkflows(join(FIXTURES, "workflows-good"));
     const violations = workflows.flatMap(checkWorkflowShas);
+
+    expect(violations).toEqual([]);
+  });
+});
+
+describe("checkWorkflowTimeouts", () => {
+  test("flags a job missing timeout-minutes, exempts reusable-workflow calls", () => {
+    const workflows = findWorkflows(join(FIXTURES, "workflows-no-timeout"));
+    const violations = workflows.flatMap(checkWorkflowTimeouts);
+
+    expect(violations).toHaveLength(1);
+    expect(violations[0]?.rule).toBe("github-actions-timeout-required");
+    expect(violations[0]?.message).toContain('"test"');
+  });
+
+  test("job with timeout-minutes passes", () => {
+    const workflows = findWorkflows(join(FIXTURES, "workflows-good"));
+    const violations = workflows.flatMap(checkWorkflowTimeouts);
 
     expect(violations).toEqual([]);
   });

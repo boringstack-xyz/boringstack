@@ -20,12 +20,14 @@ import { META_RULES } from "./registry";
 import { printRuleCatalog, runMetaRules, runMetaRulesAsync } from "./runner";
 import { checkDependencyPairs } from "./rules/supply-chain/no-overlapping-libs";
 import { checkExactDependencyVersions } from "./rules/supply-chain/package-json-exact-deps";
+import { checkPackageOverrideParity } from "./rules/supply-chain/package-override-parity";
 import { checkSharedToolVersionParity } from "./rules/supply-chain/shared-tool-version-parity";
 import { checkEslintConfigNoWarn } from "./rules/config/eslint-config-no-warn";
 import { checkEnvSchemaDrift } from "./rules/env/env-cascade-drift";
 import { checkNoDirectProcessEnv } from "./rules/env/no-direct-process-env";
 import { checkGeneratedArtifactContracts } from "./rules/artifacts/generated-artifact-contract";
 import { checkWorkflowShas } from "./rules/ci/github-actions-permissions";
+import { checkWorkflowTimeouts } from "./rules/ci/github-actions-timeout-required";
 import { checkPrePushParity } from "./rules/ci/pre-push-ci-parity";
 import { checkCanonicalHelpersSingleHome } from "./rules/source-text/canonical-helpers-single-home";
 import { checkForbiddenText } from "./rules/source-text/forbidden-text";
@@ -98,9 +100,11 @@ export {
   checkLogicFilesHaveTests,
   checkNoDirectProcessEnv,
   checkNoRawRoleLiterals,
+  checkPackageOverrideParity,
   checkPrePushParity,
   checkRouteFilesHaveTests,
   checkSharedToolVersionParity,
   checkTouchedTests,
   checkWorkflowShas,
+  checkWorkflowTimeouts,
 };
