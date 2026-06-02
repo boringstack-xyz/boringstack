@@ -11,6 +11,9 @@ export interface IWorkflowStep {
 
 export interface IWorkflowJob {
   readonly steps?: IWorkflowStep[];
+  readonly runsOn?: unknown;
+  readonly timeoutMinutes?: unknown;
+  readonly uses?: string;
 }
 
 export interface IWorkflow {
@@ -40,8 +43,26 @@ function toWorkflowJob(value: unknown): IWorkflowJob | undefined {
   }
 
   let steps: IWorkflowStep[] | undefined;
+  let runsOn: unknown;
+  let timeoutMinutes: unknown;
+  let uses: string | undefined;
 
   for (const [k, v] of Object.entries(value)) {
+    if (k === "runs-on") {
+      runsOn = v;
+      continue;
+    }
+
+    if (k === "timeout-minutes") {
+      timeoutMinutes = v;
+      continue;
+    }
+
+    if (k === "uses" && typeof v === "string") {
+      uses = v;
+      continue;
+    }
+
     if (k !== "steps" || !Array.isArray(v)) {
       continue;
     }
@@ -59,7 +80,7 @@ function toWorkflowJob(value: unknown): IWorkflowJob | undefined {
     steps = collected;
   }
 
-  return { steps };
+  return { steps, runsOn, timeoutMinutes, uses };
 }
 
 function toWorkflowJobs(

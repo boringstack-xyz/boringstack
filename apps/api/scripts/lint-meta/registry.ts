@@ -1,6 +1,7 @@
 import { generatedArtifactContractRule } from "./rules/artifacts/generated-artifact-contract";
 import { enginePinParityRule } from "./rules/ci/engine-pin-parity";
 import { githubActionsPermissionsRule } from "./rules/ci/github-actions-permissions";
+import { githubActionsTimeoutRequiredRule } from "./rules/ci/github-actions-timeout-required";
 import { prePushCiParityRule } from "./rules/ci/pre-push-ci-parity";
 import { eslintConfigNoWarnRule } from "./rules/config/eslint-config-no-warn";
 import { envCascadeDriftRule } from "./rules/env/env-cascade-drift";
@@ -22,6 +23,7 @@ export const META_RULES: readonly IMetaRule[] = [
   noOverlappingLibsRule,
   sharedToolVersionParityRule,
   githubActionsPermissionsRule,
+  githubActionsTimeoutRequiredRule,
   prePushCiParityRule,
   enginePinParityRule,
   envCascadeDriftRule,

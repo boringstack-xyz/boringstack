@@ -25,6 +25,7 @@ import {
   checkRouteFilesHaveTests,
   checkTouchedTests,
   checkWorkflowShas,
+  checkWorkflowTimeouts,
   collectSourceFiles,
   findWorkflows,
   checkGeneratedArtifactContracts,
@@ -186,6 +187,24 @@ describe("checkWorkflowShas", () => {
   test("40-char SHA passes", () => {
     const workflows = findWorkflows(join(FIXTURES, "workflows-good"));
     const violations = workflows.flatMap(checkWorkflowShas);
+
+    expect(violations).toEqual([]);
+  });
+});
+
+describe("checkWorkflowTimeouts", () => {
+  test("flags a job missing timeout-minutes, exempts reusable-workflow calls", () => {
+    const workflows = findWorkflows(join(FIXTURES, "workflows-no-timeout"));
+    const violations = workflows.flatMap(checkWorkflowTimeouts);
+
+    expect(violations).toHaveLength(1);
+    expect(violations[0]?.rule).toBe("github-actions-timeout-required");
+    expect(violations[0]?.message).toContain('"test"');
+  });
+
+  test("job with timeout-minutes passes", () => {
+    const workflows = findWorkflows(join(FIXTURES, "workflows-good"));
+    const violations = workflows.flatMap(checkWorkflowTimeouts);
 
     expect(violations).toEqual([]);
   });

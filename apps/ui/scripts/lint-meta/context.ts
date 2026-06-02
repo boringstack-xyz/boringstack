@@ -1,5 +1,5 @@
-import { readdirSync, statSync } from "node:fs";
-import { extname, join } from "node:path";
+import { existsSync, readdirSync, statSync } from "node:fs";
+import { dirname, extname, join } from "node:path";
 
 import type { IMetaContext } from "./types";
 
@@ -85,6 +85,33 @@ export function findWorkflows(dir: string): string[] {
   return out;
 }
 
+/*
+ * Workflows live at the app root when this template is a standalone repo, but
+ * in a monorepo checkout they live at the repository root. Walk up from the
+ * app root to the nearest `.github/workflows` so the CI rules
+ * (github-actions-permissions, github-actions-timeout-required) always scan
+ * the workflows that actually run for this code instead of silently no-oping.
+ */
+export function resolveWorkflowsDir(root: string): string {
+  let current = root;
+
+  for (;;) {
+    const candidate = join(current, ".github", "workflows");
+
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+
+    const parent = dirname(current);
+
+    if (parent === current) {
+      return join(root, ".github", "workflows");
+    }
+
+    current = parent;
+  }
+}
+
 export function buildContext(root: string): IMetaContext {
   const sourceFiles = [
     ...SOURCE_DIRS.flatMap((dir) =>
@@ -99,6 +126,6 @@ export function buildContext(root: string): IMetaContext {
   return {
     root,
     sourceFiles,
-    workflowFiles: findWorkflows(join(root, ".github", "workflows"))
+    workflowFiles: findWorkflows(resolveWorkflowsDir(root))
   };
 }

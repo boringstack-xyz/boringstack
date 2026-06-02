@@ -26,6 +26,7 @@ import { checkEnvSchemaDrift } from "./rules/env/env-cascade-drift";
 import { checkNoDirectProcessEnv } from "./rules/env/no-direct-process-env";
 import { checkGeneratedArtifactContracts } from "./rules/artifacts/generated-artifact-contract";
 import { checkWorkflowShas } from "./rules/ci/github-actions-permissions";
+import { checkWorkflowTimeouts } from "./rules/ci/github-actions-timeout-required";
 import { checkPrePushParity } from "./rules/ci/pre-push-ci-parity";
 import { checkCanonicalHelpersSingleHome } from "./rules/source-text/canonical-helpers-single-home";
 import { checkForbiddenText } from "./rules/source-text/forbidden-text";
@@ -103,4 +104,5 @@ export {
   checkSharedToolVersionParity,
   checkTouchedTests,
   checkWorkflowShas,
+  checkWorkflowTimeouts,
 };
