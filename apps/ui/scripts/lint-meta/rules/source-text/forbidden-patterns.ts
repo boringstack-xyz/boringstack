@@ -66,6 +66,27 @@ export function createForbiddenTextPatterns(
     },
     {
       /*
+       * Casting a value to an inline object type (`x as { … }`) skips
+       * runtime validation — the classic footgun is asserting the shape of
+       * a parsed JSON / API response body and trusting it. The merge bar is
+       * "only `as const`"; ESLint's consistent-type-assertions only bans
+       * object-literal *expressions* (`{} as T`), not assertions *to* an
+       * inline object type, so this closes that gap for production source.
+       * Narrow the value with a type guard instead (see
+       * src/lib/api/openapi.ts `extractApiErrorBody`). Tests, e2e, and
+       * Storybook keep casting for fixtures, so the ban is src-only and
+       * skips colocated `*.test.*` files.
+       */
+      rule: "no-inline-object-cast",
+      pattern: /\bas\s+\{/u,
+      message:
+        "Casting to an inline object type (`as { … }`) skips validation. Narrow the value with a type guard instead.",
+      allow: (file) =>
+        !file.startsWith(resolve(root, "src")) ||
+        /\.test\.(?:ts|tsx)$/u.test(file)
+    },
+    {
+      /*
        * Theme tokens in tailwind.css are the only source of truth for
        * light/dark. Components must reference semantic tokens
        * (bg-background, text-foreground, ...) and never branch on the

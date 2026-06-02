@@ -103,6 +103,12 @@
       "description": "Use the typed apiClient; raw fetch is restricted to src/lib/api/openapi."
     },
     {
+      "id": "no-inline-object-cast",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Casting to an inline object type (`as { … }`) skips validation."
+    },
+    {
       "id": "no-dark-variant",
       "category": "source-text",
       "ciCritical": false,
