@@ -23,6 +23,7 @@ import { checkExactDependencyVersions } from "./rules/supply-chain/package-json-
 import { checkPackageOverrideParity } from "./rules/supply-chain/package-override-parity";
 import { checkSharedToolVersionParity } from "./rules/supply-chain/shared-tool-version-parity";
 import { checkEslintConfigNoWarn } from "./rules/config/eslint-config-no-warn";
+import { checkEslintOverridePathsExist } from "./rules/config/eslint-override-paths-exist";
 import { checkEnvSchemaDrift } from "./rules/env/env-cascade-drift";
 import { checkNoDirectProcessEnv } from "./rules/env/no-direct-process-env";
 import { checkGeneratedArtifactContracts } from "./rules/artifacts/generated-artifact-contract";
@@ -94,6 +95,7 @@ export {
   checkDependencyPairs,
   checkExactDependencyVersions,
   checkEslintConfigNoWarn,
+  checkEslintOverridePathsExist,
   checkEnvSchemaDrift,
   checkForbiddenText,
   checkGeneratedArtifactContracts,

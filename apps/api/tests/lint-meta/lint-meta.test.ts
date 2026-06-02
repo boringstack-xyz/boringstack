@@ -18,6 +18,7 @@ import {
   checkDependencyPairs,
   checkEnvSchemaDrift,
   checkEslintConfigNoWarn,
+  checkEslintOverridePathsExist,
   checkExactDependencyVersions,
   checkForbiddenText,
   checkLogicFilesHaveTests,
@@ -36,6 +37,7 @@ import {
 } from "../../scripts/lint-meta/cli";
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
+const GUARD_TMP_PREFIX = "lint-meta-guard-";
 
 describe("checkSharedToolVersionParity", () => {
   test("flags a shared tool pinned to different versions across apps", () => {
@@ -167,6 +169,54 @@ describe("checkEslintConfigNoWarn", () => {
     );
 
     expect(violations).toEqual([]);
+  });
+});
+
+describe("checkEslintOverridePathsExist", () => {
+  test("flags a literal override path that does not exist, ignores globs", () => {
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
+
+    try {
+      mkdirSync(join(root, "tests"), { recursive: true });
+      writeFileSync(join(root, "tests", "real.test.ts"), "// real\n");
+      writeFileSync(
+        join(root, "eslint.config.js"),
+        [
+          "export default [",
+          "  {",
+          '    files: ["tests/real.test.ts", "tests/missing.test.ts", "tests/**/*.test.ts"],',
+          "  },",
+          "];",
+          "",
+        ].join("\n")
+      );
+
+      const violations = checkEslintOverridePathsExist(root);
+
+      expect(violations).toHaveLength(1);
+      expect(violations[0]?.message).toContain("tests/missing.test.ts");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when every literal override path exists", () => {
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
+
+    try {
+      mkdirSync(join(root, "tests"), { recursive: true });
+      writeFileSync(join(root, "tests", "real.test.ts"), "// real\n");
+      writeFileSync(
+        join(root, "eslint.config.js"),
+        'export default [{ files: ["tests/real.test.ts"] }];\n'
+      );
+
+      const violations = checkEslintOverridePathsExist(root);
+
+      expect(violations).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 
@@ -601,8 +651,6 @@ describe("checkNoDirectProcessEnv", () => {
     }
   });
 });
-
-const GUARD_TMP_PREFIX = "lint-meta-guard-";
 
 describe("lint-meta guardrails", () => {
   test("checkNoRawRoleLiterals flags raw role strings in src", () => {
