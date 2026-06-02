@@ -16,6 +16,11 @@ and the production checklist.
   envelope, so a provider blip silently drops the message.
 - Production Valkey-backed features (queues, Valkey cache, SSE, OAuth
   state) require `VALKEY_PASSWORD`.
+- Production with `CACHE_ENABLED=true` (the default) requires
+  `CACHE_PROVIDER=valkey`. JWT revocation (logout, password-reset
+  session kill, per-jti blocklist) stores its state in the cache; the
+  in-memory provider is per-process, so revocations would vanish on
+  restart and never propagate across replicas.
 - `ALLOWED_ORIGINS` is **optional**. Empty = same-origin deployment
   (BoringStack's default) and CORS is not mounted. When set in
   production, every entry must be HTTPS with no wildcards.

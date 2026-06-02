@@ -176,6 +176,7 @@ const applyProdDefaults = (env: TestEnv): void => {
   env.FRONTEND_URL = "https://app.example.test";
   env.PUBLIC_API_URL = "https://api.example.test";
   env.MFA_ENCRYPTION_KEY = REAL_MFA_KEY;
+  env.CACHE_PROVIDER = "valkey";
 };
 
 /*
@@ -195,6 +196,7 @@ const seedProd = (): TestEnv => ({
   EMAIL_FROM: "noreply@app.example.test",
   RESEND_API_KEY: "rk_test",
   VALKEY_PASSWORD: "secret",
+  CACHE_PROVIDER: "valkey",
 });
 
 beforeEach(() => {
@@ -237,6 +239,27 @@ describe("validateEnv", () => {
     testEnv.RESEND_API_KEY = "rk_test";
     testEnv.VALKEY_PASSWORD = "secret";
     applyProdDefaults(testEnv);
+    expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
+  it("rejects production CACHE_ENABLED with the in-memory cache provider", () => {
+    testEnv.NODE_ENV = "production";
+    testEnv.EMAIL_PROVIDER = "resend";
+    testEnv.RESEND_API_KEY = "rk_test";
+    testEnv.VALKEY_PASSWORD = "secret";
+    applyProdDefaults(testEnv);
+    testEnv.CACHE_PROVIDER = "memory";
+    expect(() => validateEnv(testEnv)).toThrow(/CACHE_PROVIDER must be valkey/);
+  });
+
+  it("accepts production with CACHE_ENABLED=false and the memory provider", () => {
+    testEnv.NODE_ENV = "production";
+    testEnv.EMAIL_PROVIDER = "resend";
+    testEnv.RESEND_API_KEY = "rk_test";
+    testEnv.VALKEY_PASSWORD = "secret";
+    applyProdDefaults(testEnv);
+    testEnv.CACHE_PROVIDER = "memory";
+    testEnv.CACHE_ENABLED = "false";
     expect(() => validateEnv(testEnv)).not.toThrow();
   });
 
