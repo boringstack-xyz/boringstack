@@ -55,6 +55,22 @@ app_changed() {
   return 1
 }
 
+# infra/compose ships a CI gate (infra-compose-validate-compose.yml) that
+# `docker compose config`s every overlay combination + shellchecks + yamllints.
+# Its local mirror is infra/compose/scripts/pre-push.sh. Without this, a push
+# that only touches infra/compose runs smoke (one dev+smoke boot) but never the
+# config matrix — a malformed prod/glitchtip/wud overlay would slip to CI. Gate
+# on the same paths the CI workflow triggers on.
+infra_compose_changed() {
+  if [[ -z "$CHANGED_PATHS" ]]; then
+    return 0
+  fi
+  if echo "$CHANGED_PATHS" | grep -qE "(^infra/compose/|^scripts/|^\.github/workflows/infra-compose-)"; then
+    return 0
+  fi
+  return 1
+}
+
 run_app_gate() {
   local app="$1"
   local husky="apps/${app}/.husky/pre-push"
@@ -110,6 +126,13 @@ for app in api ui docs; do
     RAN_ANY=1
   fi
 done
+
+if infra_compose_changed; then
+  step "Running infra/compose pre-push gate (compose config + shellcheck + yamllint)"
+  bash "$ROOT/infra/compose/scripts/pre-push.sh"
+  ok "infra/compose gate passed"
+  RAN_ANY=1
+fi
 
 if [[ "$RAN_ANY" -eq 0 ]]; then
   ok "No app-scoped changes — root pre-push has nothing to gate."
