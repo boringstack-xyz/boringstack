@@ -30,6 +30,10 @@ describe("AUTH_COOKIE_CONFIG", () => {
   test("sameSite is one of the safe lax/strict values", () => {
     expect(["lax", "strict"]).toContain(AUTH_COOKIE_CONFIG.sameSite);
   });
+
+  test("is always Secure (never shipped over plaintext)", () => {
+    expect(AUTH_COOKIE_CONFIG.secure).toBe(true);
+  });
 });
 
 describe("REFRESH_COOKIE_CONFIG", () => {
@@ -48,5 +52,9 @@ describe("REFRESH_COOKIE_CONFIG", () => {
     expect(REFRESH_COOKIE_CONFIG.maxAge).toBeGreaterThan(
       AUTH_COOKIE_CONFIG.maxAge
     );
+  });
+
+  test("is always Secure (never shipped over plaintext)", () => {
+    expect(REFRESH_COOKIE_CONFIG.secure).toBe(true);
   });
 });

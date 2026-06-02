@@ -35,7 +35,11 @@ export function useRegister(): UseMutationResult<
         throw new ApiError(0, { message: "Empty register response" });
       }
 
-      const message = (data.data as { message?: string }).message;
+      const payload: unknown = data.data;
+      const message =
+        typeof payload === "object" && payload !== null && "message" in payload
+          ? Reflect.get(payload, "message")
+          : undefined;
 
       return typeof message === "string" ? message : "";
     }

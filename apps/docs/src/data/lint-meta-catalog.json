@@ -103,6 +103,12 @@
       "description": "Use the typed apiClient; raw fetch is restricted to src/lib/api/openapi."
     },
     {
+      "id": "no-inline-object-cast",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Casting to an inline object type (`as { … }`) skips validation."
+    },
+    {
       "id": "no-dark-variant",
       "category": "source-text",
       "ciCritical": false,
@@ -137,6 +143,12 @@
       "category": "testing",
       "ciCritical": false,
       "description": "Logic modules must ship with a colocated *.test.ts or *.test.tsx sibling."
+    },
+    {
+      "id": "test-files-require-source-sibling",
+      "category": "testing",
+      "ciCritical": false,
+      "description": "Colocated test files must mirror a source sibling (no orphaned tests)."
     },
     {
       "id": "skipped-tests-need-tracking",

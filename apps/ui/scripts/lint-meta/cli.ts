@@ -80,6 +80,7 @@ export { checkCanonicalHelpersSingleHome } from "./rules/source-text/canonical-h
 export { checkNoCrossRepoImports } from "./rules/source-text/no-cross-repo-import";
 export { checkNoRawRoleLiterals } from "./rules/source-text/no-raw-role-literals";
 export { checkScriptRawFetch } from "./rules/source-text/script-raw-fetch";
+export { checkTestFilesHaveSource } from "./rules/testing/test-files-require-source-sibling";
 
 /** @param file Absolute path to the source file under test */
 export function checkForbiddenText(

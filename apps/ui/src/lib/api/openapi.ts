@@ -40,12 +40,18 @@ let inFlightRefresh: Promise<boolean> | null = null;
  * reconnect loop indefinitely after logout because the anonymous probe is
  * also a 200.
  */
+function getProp(value: unknown, key: string): unknown {
+  if (typeof value !== "object" || value === null || !(key in value)) {
+    return undefined;
+  }
+
+  return Reflect.get(value, key);
+}
+
 async function readSessionUserId(response: Response): Promise<string | null> {
   try {
-    const body = (await response.clone().json()) as {
-      data?: { user?: { id?: unknown } | null } | null;
-    } | null;
-    const userId = body?.data?.user?.id;
+    const body: unknown = await response.clone().json();
+    const userId = getProp(getProp(getProp(body, "data"), "user"), "id");
 
     if (typeof userId === "string" && userId.length > 0) {
       return userId;

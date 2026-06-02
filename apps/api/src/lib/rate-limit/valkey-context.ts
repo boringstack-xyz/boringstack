@@ -40,12 +40,23 @@ interface IIncrementResult {
 
 const RATE_LIMIT_KEY_PREFIX = "rl:";
 
+/*
+ * A non-positive window means rate limiting is failing open on every
+ * request. `init()` already warns once at startup, but startup logs roll
+ * off and the open state would then be invisible to alerting. Re-emit the
+ * warning from the hot increment path, throttled to once per interval so a
+ * persistent misconfiguration keeps an alert rule firing without flooding
+ * the log on every request.
+ */
+const DISABLED_WARN_INTERVAL_MS = 60_000;
+
 const buildKey = (rawKey: string): string =>
   `${RATE_LIMIT_KEY_PREFIX}${rawKey}`;
 
 export class ValkeyRateLimitContext implements RateLimitContext {
   private readonly client: Redis;
   private durationMs = 0;
+  private lastDisabledWarnMs = Number.NEGATIVE_INFINITY;
 
   constructor(client: Redis = new Redis(getValkeyAppClientOptions())) {
     this.client = client;
@@ -93,6 +104,8 @@ export class ValkeyRateLimitContext implements RateLimitContext {
     const durationMs = duration ?? this.durationMs;
 
     if (durationMs <= 0) {
+      this.warnRateLimitingDisabled(now, durationMs);
+
       return this.permissiveFallback(now, durationMs);
     }
 
@@ -187,6 +200,26 @@ export class ValkeyRateLimitContext implements RateLimitContext {
     }
 
     this.client.disconnect();
+  }
+
+  /*
+   * Surface a non-positive window from the request path, throttled so a
+   * persistent misconfiguration stays visible to alerting without flooding
+   * the log. `now` is the request clock, so the throttle is deterministic.
+   */
+  private warnRateLimitingDisabled(now: number, durationMs: number): void {
+    if (now - this.lastDisabledWarnMs < DISABLED_WARN_INTERVAL_MS) {
+      return;
+    }
+
+    this.lastDisabledWarnMs = now;
+    logger.warn(
+      "Rate-limit window is non-positive; Valkey rate limiting is failing open",
+      {
+        event: "rate_limit_misconfigured",
+        durationMs,
+      }
+    );
   }
 
   /**
