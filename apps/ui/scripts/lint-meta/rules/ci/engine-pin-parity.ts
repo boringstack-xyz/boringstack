@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
+import { resolveWorkflowsDir } from "../../context";
 import { readUiPackageJson } from "../../parsers/package-json";
 import type { IMetaRule, IViolation } from "../../types";
 
@@ -66,21 +67,28 @@ function checkDockerNodePins(root: string, nodeMajor: string): IViolation[] {
   return violations;
 }
 
-function checkWorkflowNodePins(root: string, nodeMajor: string): IViolation[] {
-  const workflowDir = join(root, ".github", "workflows");
+/*
+ * Workflows live at the app root in a standalone checkout but at the
+ * repository root in a monorepo (see resolveWorkflowsDir). Scanning the
+ * resolved directory keeps the pin checks honest in both layouts instead of
+ * silently no-oping when the app-local .github/workflows is absent.
+ */
+function listWorkflowFiles(root: string): string[] {
+  const workflowDir = resolveWorkflowsDir(root);
 
   if (!existsSync(workflowDir)) {
     return [];
   }
 
+  return readdirSync(workflowDir)
+    .filter((file) => file.endsWith(".yml") || file.endsWith(".yaml"))
+    .map((file) => join(workflowDir, file));
+}
+
+function checkWorkflowNodePins(root: string, nodeMajor: string): IViolation[] {
   const violations: IViolation[] = [];
 
-  for (const file of readdirSync(workflowDir)) {
-    if (!file.endsWith(".yml") && !file.endsWith(".yaml")) {
-      continue;
-    }
-
-    const workflowPath = join(workflowDir, file);
+  for (const workflowPath of listWorkflowFiles(root)) {
     const content = readFileSync(workflowPath, "utf8");
 
     if (
@@ -94,6 +102,39 @@ function checkWorkflowNodePins(root: string, nodeMajor: string): IViolation[] {
         message:
           "Workflow uses setup-node but neither node-version-file: .nvmrc nor a matching node-version pin."
       });
+    }
+  }
+
+  return violations;
+}
+
+function checkWorkflowBunPins(
+  root: string,
+  pkg: ReturnType<typeof readUiPackageJson>
+): IViolation[] {
+  const packageManager = pkg?.packageManager ?? "";
+  const bunMatch = /^bun@([^+]+)/u.exec(packageManager);
+  const bunVersion = bunMatch?.[1];
+
+  if (bunVersion === undefined) {
+    return [];
+  }
+
+  const violations: IViolation[] = [];
+
+  for (const workflowPath of listWorkflowFiles(root)) {
+    const content = readFileSync(workflowPath, "utf8");
+
+    for (const match of content.matchAll(/bun-version:\s*(\S+)/gu)) {
+      const pinned = match[1];
+
+      if (pinned !== undefined && pinned !== bunVersion) {
+        violations.push({
+          file: workflowPath,
+          rule: "engine-pin-parity",
+          message: `Workflow pins bun-version: ${pinned} but package.json packageManager declares bun@${bunVersion}.`
+        });
+      }
     }
   }
 
@@ -160,6 +201,7 @@ export function checkEnginePinParity(root: string): IViolation[] {
     ...checkPackageJsonNodeEngine(root, nodeMajor, pkg),
     ...checkDockerNodePins(root, nodeMajor),
     ...checkWorkflowNodePins(root, nodeMajor),
+    ...checkWorkflowBunPins(root, pkg),
     ...checkDockerBunPin(root, pkg)
   ];
 }

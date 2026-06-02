@@ -13,6 +13,7 @@ import { describe, expect, test } from "vitest";
 import {
   checkCanonicalHelpersSingleHome,
   checkDependencyPairs,
+  checkEnginePinParity,
   checkForbiddenText,
   checkNoCrossRepoImports,
   checkNoDirectImportMetaEnv,
@@ -532,6 +533,59 @@ describe("checkTestFilesHaveSource", () => {
       );
 
       const violations = checkTestFilesHaveSource(root);
+
+      expect(violations).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkEnginePinParity", () => {
+  function writeEnginePinFixture(root: string, bunWorkflowPin: string): string {
+    const appRoot = join(root, "apps", "ui");
+
+    mkdirSync(appRoot, { recursive: true });
+    mkdirSync(join(root, ".github", "workflows"), { recursive: true });
+    writeFileSync(join(appRoot, ".nvmrc"), "24\n");
+    writeFileSync(
+      join(appRoot, "package.json"),
+      JSON.stringify({
+        engines: { node: ">=24.0.0" },
+        packageManager: "bun@1.3.14"
+      })
+    );
+    writeFileSync(
+      join(root, ".github", "workflows", "validate.yml"),
+      `jobs:\n  validate:\n    steps:\n      - uses: oven-sh/setup-bun@abc\n        with:\n          bun-version: ${bunWorkflowPin}\n`
+    );
+
+    return appRoot;
+  }
+
+  test("flags a workflow bun-version pin that drifts from packageManager", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-engine-"));
+
+    try {
+      const appRoot = writeEnginePinFixture(root, "1.2.0");
+
+      const violations = checkEnginePinParity(appRoot);
+
+      expect(violations.map((row) => row.message)).toContainEqual(
+        expect.stringContaining("bun-version: 1.2.0")
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when the workflow bun-version matches packageManager", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-engine-"));
+
+    try {
+      const appRoot = writeEnginePinFixture(root, "1.3.14");
+
+      const violations = checkEnginePinParity(appRoot);
 
       expect(violations).toEqual([]);
     } finally {
