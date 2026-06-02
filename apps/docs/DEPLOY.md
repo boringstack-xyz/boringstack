@@ -20,10 +20,10 @@ This file documents the wire-up so future-you (or a teammate) can rebuild it fro
    | ---------------------- | ------------------- |
    | Production branch      | `main`              |
    | Framework preset       | Astro               |
-   | Build command          | `bun run build`     |
+   | Build command          | `bun run build:ci`  |
    | Build output directory | `dist`              |
    | Root directory         | `apps/docs`         |
-   | Node version           | `22` (via `.nvmrc`) |
+   | Node version           | `24` (via `.nvmrc`) |
    | Environment variables  | _(none)_            |
 
 4. **Custom domain.**
@@ -47,7 +47,7 @@ The build runs Pagefind automatically (Starlight bundles it), so search works on
 
 ## How deploys work
 
-- Push to `main` → Cloudflare auto-builds with `bun run build` (Astro only; committed JSON in `src/data/` is the catalog source of truth).
+- Push to `main` → Cloudflare auto-builds with `bun run build:ci` (docs-data freshness check + build + fragment-link gate). The committed JSON in `src/data/` is the catalog source of truth; the check fails the deploy when it drifts from `apps/api` / `apps/ui`, instead of silently serving stale catalogs. From the monorepo checkout the sibling defaults resolve without extra env vars.
 - Manual production deploy: `bun run deploy` runs `build:ci` (docs-data check + build) before `wrangler deploy`. From the monorepo, defaults use `apps/ui` and `apps/api` (override with `BORINGSTACK_UI_DIR` / `BORINGSTACK_API_DIR`).
 - Pushes to other branches → preview deployment at `<branch>.boringstack-docs.pages.dev`.
 - PRs from forks get preview deployments too (CF Pages comments the URL on the PR).

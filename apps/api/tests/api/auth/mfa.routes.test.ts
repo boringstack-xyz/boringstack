@@ -3,6 +3,7 @@ import { Secret, TOTP } from "otpauth";
 
 import {
   MFA_CACHE_KEYS,
+  MFA_MAX_CHALLENGE_ATTEMPTS,
   MFA_TOTP_DIGITS,
   MFA_TOTP_STEP_SECONDS,
 } from "../../../src/api/auth/mfa.constants";
@@ -20,6 +21,8 @@ import { cleanDatabase, db, eq, requireDb, users } from "../../helpers/db";
 const PASSWORD = "Hunter2Strong!";
 const JSON_HEADERS = { "content-type": "application/json" } as const;
 const LOGIN_URL = "http://localhost/api/v1/auth/login";
+const SET_COOKIE_HEADER = "set-cookie";
+const NOT_MFA_REQUIRED_ERROR = "login response was not an mfaRequired envelope";
 const uniqueEmail = (prefix: string): string =>
   `${prefix}-${crypto.randomUUID()}@example.com`;
 
@@ -123,12 +126,12 @@ describe("MFA routes", () => {
     );
 
     expect(res.status).toBe(200);
-    expect(res.headers.get("set-cookie")).toBeNull();
+    expect(res.headers.get(SET_COOKIE_HEADER)).toBeNull();
 
     const body: unknown = await res.json();
 
     if (!isMfaRequired(body)) {
-      throw new Error("login response was not an mfaRequired envelope");
+      throw new Error(NOT_MFA_REQUIRED_ERROR);
     }
 
     expect(body.data.mfaRequired).toBe(true);
@@ -155,7 +158,7 @@ describe("MFA routes", () => {
     const loginBody: unknown = await loginRes.json();
 
     if (!isMfaRequired(loginBody)) {
-      throw new Error("login response was not an mfaRequired envelope");
+      throw new Error(NOT_MFA_REQUIRED_ERROR);
     }
 
     const verifyRes = await app.handle(
@@ -171,7 +174,7 @@ describe("MFA routes", () => {
 
     expect(verifyRes.status).toBe(200);
 
-    const setCookie = verifyRes.headers.get("set-cookie") ?? "";
+    const setCookie = verifyRes.headers.get(SET_COOKIE_HEADER) ?? "";
 
     expect(setCookie).toContain(AUTH_COOKIE_NAME);
     expect(setCookie).toContain(REFRESH_COOKIE_NAME);
@@ -210,7 +213,7 @@ describe("MFA routes", () => {
     const loginBody: unknown = await loginRes.json();
 
     if (!isMfaRequired(loginBody)) {
-      throw new Error("login response was not an mfaRequired envelope");
+      throw new Error(NOT_MFA_REQUIRED_ERROR);
     }
 
     const verifyRes = await app.handle(
@@ -225,7 +228,7 @@ describe("MFA routes", () => {
     );
 
     expect(verifyRes.status).toBe(200);
-    expect(verifyRes.headers.get("set-cookie") ?? "").toContain(
+    expect(verifyRes.headers.get(SET_COOKIE_HEADER) ?? "").toContain(
       AUTH_COOKIE_NAME
     );
   });
@@ -251,7 +254,7 @@ describe("MFA routes", () => {
     const loginBody: unknown = await loginRes.json();
 
     if (!isMfaRequired(loginBody)) {
-      throw new Error("login response was not an mfaRequired envelope");
+      throw new Error(NOT_MFA_REQUIRED_ERROR);
     }
 
     const verifyRes = await app.handle(
@@ -266,6 +269,112 @@ describe("MFA routes", () => {
     );
 
     expect(verifyRes.status).toBe(401);
+  });
+
+  test("verify-login locks out after the max failed attempts", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const email = uniqueEmail("mfa-lockout");
+    const { user } = await seedVerifiedUser({ email, password: PASSWORD });
+
+    await enrollViaService(user.id);
+
+    const app = createApp();
+    const loginRes = await app.handle(
+      new Request(LOGIN_URL, {
+        method: "POST",
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ email, password: PASSWORD }),
+      })
+    );
+    const loginBody: unknown = await loginRes.json();
+
+    if (!isMfaRequired(loginBody)) {
+      throw new Error(NOT_MFA_REQUIRED_ERROR);
+    }
+
+    const verifyWithWrongCode = async (): Promise<Response> =>
+      app.handle(
+        new Request("http://localhost/api/v1/auth/mfa/verify-login", {
+          method: "POST",
+          headers: JSON_HEADERS,
+          body: JSON.stringify({
+            challengeToken: loginBody.data.challengeToken,
+            code: "000000",
+          }),
+        })
+      );
+
+    for (let attempt = 1; attempt < MFA_MAX_CHALLENGE_ATTEMPTS; attempt++) {
+      const res = await verifyWithWrongCode();
+
+      expect(res.status).toBe(401);
+      expect(await res.text()).toContain("Invalid code");
+    }
+
+    const lockedRes = await verifyWithWrongCode();
+
+    expect(lockedRes.status).toBe(401);
+    expect(lockedRes.headers.get(SET_COOKIE_HEADER)).toBeNull();
+    expect(await lockedRes.text()).toContain("Too many failed attempts");
+
+    // The challenge is consumed on lockout — retrying reports expiry.
+    const afterLockout = await verifyWithWrongCode();
+
+    expect(afterLockout.status).toBe(401);
+    expect(await afterLockout.text()).toContain("expired");
+  });
+
+  test("verify-recovery locks out after the max failed attempts", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const email = uniqueEmail("mfa-rec-lockout");
+    const { user } = await seedVerifiedUser({ email, password: PASSWORD });
+
+    await enrollViaService(user.id);
+
+    const app = createApp();
+    const loginRes = await app.handle(
+      new Request(LOGIN_URL, {
+        method: "POST",
+        headers: JSON_HEADERS,
+        body: JSON.stringify({ email, password: PASSWORD }),
+      })
+    );
+    const loginBody: unknown = await loginRes.json();
+
+    if (!isMfaRequired(loginBody)) {
+      throw new Error(NOT_MFA_REQUIRED_ERROR);
+    }
+
+    const verifyWithWrongRecoveryCode = async (): Promise<Response> =>
+      app.handle(
+        new Request("http://localhost/api/v1/auth/mfa/verify-recovery", {
+          method: "POST",
+          headers: JSON_HEADERS,
+          body: JSON.stringify({
+            challengeToken: loginBody.data.challengeToken,
+            code: "0000000000",
+          }),
+        })
+      );
+
+    for (let attempt = 1; attempt < MFA_MAX_CHALLENGE_ATTEMPTS; attempt++) {
+      const res = await verifyWithWrongRecoveryCode();
+
+      expect(res.status).toBe(401);
+      expect(await res.text()).toContain("Invalid recovery code");
+    }
+
+    const lockedRes = await verifyWithWrongRecoveryCode();
+
+    expect(lockedRes.status).toBe(401);
+    expect(lockedRes.headers.get(SET_COOKIE_HEADER)).toBeNull();
+    expect(await lockedRes.text()).toContain("Too many failed attempts");
   });
 
   test("login without MFA enabled still issues cookies directly", async () => {
@@ -287,7 +396,9 @@ describe("MFA routes", () => {
     );
 
     expect(res.status).toBe(200);
-    expect(res.headers.get("set-cookie") ?? "").toContain(AUTH_COOKIE_NAME);
+    expect(res.headers.get(SET_COOKIE_HEADER) ?? "").toContain(
+      AUTH_COOKIE_NAME
+    );
   });
 });
 

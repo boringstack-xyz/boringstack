@@ -1,8 +1,20 @@
+import { env } from "../../config/env";
 import { logger } from "../../config/logger";
 import { cacheService } from "../cache";
 import { getErrorMessage } from "../errors";
 import { JWT_TTL_SECONDS } from "./jwt.constants";
 import { nowMs } from "../time/now";
+
+/*
+ * Revocation checks consult the cache on every authenticated request, so
+ * a cache outage forces a policy choice. The default fails open: a cache
+ * blip never turns into a global auth outage, and the exposure window is
+ * bounded by the 15-minute JWT TTL. Deployments that prefer strict
+ * revocation semantics set JWT_REVOCATION_FAIL_CLOSED=true and accept
+ * that cache errors reject every authenticated request instead.
+ */
+const revocationFailMode = (): "closed" | "open" =>
+  env.JWT_REVOCATION_FAIL_CLOSED ? "closed" : "open";
 
 const JTI_KEY_PREFIX = "jwt:revoked:";
 const USER_KEY_PREFIX = "jwt:user:";
@@ -69,27 +81,28 @@ const revokeAllForUser = async (userId: string): Promise<void> => {
 };
 
 /**
- * Whether the given JTI has been blocklisted. Falls back to "not
- * revoked" on cache errors — see module comment on fail-open intent.
+ * Whether the given JTI has been blocklisted. On cache errors the
+ * result follows JWT_REVOCATION_FAIL_CLOSED — see module comment.
  */
 const isJtiRevoked = async (jti: string): Promise<boolean> => {
   try {
     return await cacheService.has(jtiKey(jti));
   } catch (error: unknown) {
-    logger.warn("JWT revocation jti check failed (failing open)", {
+    logger.warn("JWT revocation jti check failed", {
       event: "auth.jwt.revoke_check_failed",
       jti,
+      failMode: revocationFailMode(),
       error: getErrorMessage(error),
     });
 
-    return false;
+    return env.JWT_REVOCATION_FAIL_CLOSED;
   }
 };
 
 /**
  * Whether the token (identified by its `iat`) was issued before the
- * user's revoke-before cutoff. Falls back to "not revoked" on cache
- * errors.
+ * user's revoke-before cutoff. On cache errors the result follows
+ * JWT_REVOCATION_FAIL_CLOSED — see module comment.
  */
 const isUserRevokedSince = async (
   userId: string,
@@ -104,13 +117,14 @@ const isUserRevokedSince = async (
 
     return issuedAtSeconds < cutoff;
   } catch (error: unknown) {
-    logger.warn("JWT revocation user check failed (failing open)", {
+    logger.warn("JWT revocation user check failed", {
       event: "auth.jwt.revoke_user_check_failed",
       userId,
+      failMode: revocationFailMode(),
       error: getErrorMessage(error),
     });
 
-    return false;
+    return env.JWT_REVOCATION_FAIL_CLOSED;
   }
 };
 

@@ -11,6 +11,11 @@ on:
     paths:
       - "infra/compose/**"
       - ".github/workflows/infra-compose-validate-compose.yml"
+      # Prod Dockerfiles COPY the whole app context, so any app source
+      # change can break the prod image build — not just Dockerfile or
+      # lockfile edits.
+      - "apps/api/**"
+      - "apps/ui/**"
   pull_request:
     branches: [main]
 
@@ -183,14 +188,10 @@ jobs:
         with:
           filters: |
             code:
-              - 'apps/api/Dockerfile.prod'
-              - 'apps/api/.dockerignore'
-              - 'apps/api/package.json'
-              - 'apps/api/bun.lock'
-              - 'apps/ui/Dockerfile.prod'
-              - 'apps/ui/.dockerignore'
-              - 'apps/ui/package.json'
-              - 'apps/ui/bun.lock'
+              # Dockerfile.prod runs COPY . . — the whole app tree is
+              # image input, so app-only source changes must rebuild too.
+              - 'apps/api/**'
+              - 'apps/ui/**'
               - 'infra/compose/**'
               - '.github/workflows/infra-compose-validate-compose.yml'
 

@@ -301,6 +301,12 @@
       "category": "config",
       "ciCritical": false,
       "description": "ESLint severities must be \"error\" or \"off\", not \"warn\"."
+    },
+    {
+      "id": "eslint-override-paths-exist",
+      "category": "config",
+      "ciCritical": false,
+      "description": "Literal test-file paths in eslint.config.* overrides must exist on disk."
     }
   ]
 }

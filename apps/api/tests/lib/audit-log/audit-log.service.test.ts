@@ -138,4 +138,92 @@ describe("AuditLogService.record", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.resource).toBe("notification:abc-123");
   });
+
+  test("persists targetAccountId when provided", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const userId = await insertTestUser();
+    const accountId = crypto.randomUUID();
+
+    await auditLogService.record({
+      userId,
+      action: AUDIT_ACTIONS.BILLING_CHECKOUT_SESSION_CREATED,
+      targetAccountId: accountId,
+      metadata: { accountId },
+    });
+
+    const rows = await db
+      .select()
+      .from(auditLog)
+      .where(eq(auditLog.userId, userId));
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.targetAccountId).toBe(accountId);
+  });
+});
+
+describe("AuditLogService.listForAccount", () => {
+  beforeEach(async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    await cleanDatabase();
+  });
+
+  test("returns events matched by targetAccountId without an account resource", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const userId = await insertTestUser();
+    const accountId = crypto.randomUUID();
+
+    /*
+     * The shape billing checkout/portal events write: an entity-free
+     * record whose only tenant link is targetAccountId. Before that
+     * column was persisted, these events were invisible to the
+     * account audit trail.
+     */
+    await auditLogService.record({
+      userId,
+      action: AUDIT_ACTIONS.BILLING_CHECKOUT_SESSION_CREATED,
+      targetAccountId: accountId,
+      metadata: { accountId },
+    });
+
+    await auditLogService.record({
+      userId,
+      action: AUDIT_ACTIONS.AUTH_LOGIN_SUCCESS,
+    });
+
+    const { entries } = await auditLogService.listForAccount({ accountId });
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.action).toBe(
+      AUDIT_ACTIONS.BILLING_CHECKOUT_SESSION_CREATED
+    );
+  });
+
+  test("still returns events matched by the account:{id} resource convention", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const userId = await insertTestUser();
+    const accountId = crypto.randomUUID();
+
+    await auditLogService.record({
+      userId,
+      action: AUDIT_ACTIONS.ACCOUNT_UPDATED,
+      resource: `account:${accountId}`,
+    });
+
+    const { entries } = await auditLogService.listForAccount({ accountId });
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.action).toBe(AUDIT_ACTIONS.ACCOUNT_UPDATED);
+  });
 });

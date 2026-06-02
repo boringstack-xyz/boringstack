@@ -27,6 +27,16 @@ export const envSchema = t.Object({
   DATABASE_SSL_CA: t.String({ default: "" }),
   JWT_SECRET: t.String({ minLength: 32 }),
   /*
+   * Behavior of JWT revocation checks (jti blocklist, user revoke-before
+   * cutoff) when the cache is unreachable. `false` (default) fails open:
+   * a cache outage never blocks authentication, at the cost of honoring
+   * revoked tokens until the cache returns or they expire (bounded by
+   * the 15-minute JWT TTL). `true` fails closed: cache errors reject
+   * every authenticated request — strict revocation semantics for
+   * deployments that prefer an auth outage over a revocation gap.
+   */
+  JWT_REVOCATION_FAIL_CLOSED: t.Boolean({ default: false }),
+  /*
    * AES-256-GCM key used to encrypt TOTP secrets at rest. Base64-encoded
    * 32 random bytes. Generate with `openssl rand -base64 32`. Required
    * once any user enables MFA — empty string is accepted at boot so a

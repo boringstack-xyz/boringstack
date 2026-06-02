@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import { cacheService } from "../../../src/lib/cache";
 import { jwtRevocationService } from "../../../src/lib/jwt";
@@ -83,6 +83,43 @@ describe("jwtRevocationService", () => {
       expect(
         await jwtRevocationService.isUserRevokedSince("test-user", between)
       ).toBe(true);
+    });
+  });
+
+  describe("cache failure policy", () => {
+    /*
+     * Default policy is fail-open (JWT_REVOCATION_FAIL_CLOSED=false):
+     * a cache outage must not turn into a global auth outage. The
+     * fail-closed branch returns env.JWT_REVOCATION_FAIL_CLOSED
+     * directly; its env wiring is covered by validate.test.ts (env is
+     * frozen, so the flag cannot be flipped inside this process).
+     */
+    test("isJtiRevoked fails open when the cache check throws", async () => {
+      const hasSpy = spyOn(cacheService, "has").mockRejectedValueOnce(
+        new Error("cache down")
+      );
+
+      try {
+        expect(await jwtRevocationService.isJtiRevoked("test-jti")).toBe(false);
+      } finally {
+        hasSpy.mockRestore();
+      }
+    });
+
+    test("isUserRevokedSince fails open when the cache check throws", async () => {
+      const getSpy = spyOn(cacheService, "get").mockRejectedValueOnce(
+        new Error("cache down")
+      );
+
+      try {
+        const iat = Math.floor(Date.now() / 1000) - 100;
+
+        expect(
+          await jwtRevocationService.isUserRevokedSince("test-user", iat)
+        ).toBe(false);
+      } finally {
+        getSpy.mockRestore();
+      }
     });
   });
 });

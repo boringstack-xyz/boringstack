@@ -36,3 +36,4 @@ Run `bun run lint:meta --list-rules` for the machine-readable list from the regi
 | `skipped-tests-need-tracking`       | testing      | no          | Skipped tests (.skip/.only/xit/xdescribe) must carry an issue URL or TODO(@owner) so the debt has a tracked owner.                              |
 | `touch-tests-too`                   | testing      | no          | Modified logic/route files must include a matching test change (opt-in via LINT_META_TOUCHED_BASE).                                             |
 | `eslint-config-no-warn`             | config       | no          | ESLint severities must be "error" or "off", not "warn".                                                                                         |
+| `eslint-override-paths-exist`       | config       | no          | Literal test-file paths in eslint.config.* overrides must exist on disk.                                                                        |

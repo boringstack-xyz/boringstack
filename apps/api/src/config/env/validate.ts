@@ -161,6 +161,11 @@ const readAuth = (source: EnvSource) => ({
       ? "test-only-jwt-secret-padded-to-thirty-two-chars"
       : ""
   ),
+  JWT_REVOCATION_FAIL_CLOSED: toBoolWithDefault(
+    source.JWT_REVOCATION_FAIL_CLOSED,
+    false,
+    "JWT_REVOCATION_FAIL_CLOSED"
+  ),
   /*
    * Deterministic test-only key so MFA round-trip tests don't need an
    * env file. 32 bytes base64 = 44 chars. Production deploys must set
@@ -685,6 +690,25 @@ const checkQueuesEnabledInProd = (env: Env): string[] => {
       ];
 };
 
+/**
+ * Production must back the cache with Valkey when caching is enabled.
+ * JWT revocation (logout, password-reset session kill, per-jti blocklist)
+ * keeps its state in cacheService; the in-memory provider is per-process,
+ * so revocations vanish on restart and never propagate across replicas —
+ * a logout on one instance would leave the token valid on every other.
+ */
+const checkCacheProviderInProd = (env: Env): string[] => {
+  if (env.NODE_ENV !== "production" || !env.CACHE_ENABLED) {
+    return [];
+  }
+
+  return env.CACHE_PROVIDER === "valkey"
+    ? []
+    : [
+        "CACHE_PROVIDER must be valkey in production when CACHE_ENABLED=true so JWT revocation state survives restarts and is shared across replicas",
+      ];
+};
+
 const checkValkeyPassword = (env: Env): string[] => {
   if (env.NODE_ENV !== "production" || env.VALKEY_PASSWORD !== "") {
     return [];
@@ -745,6 +769,7 @@ const checkInvariants = (env: Env): string[] => [
   ...checkBilling(env),
   ...checkOAuth(env),
   ...checkQueuesEnabledInProd(env),
+  ...checkCacheProviderInProd(env),
   ...checkValkeyPassword(env),
   ...checkWebPushVapid(env),
   ...checkPlaceholderSecrets(env),

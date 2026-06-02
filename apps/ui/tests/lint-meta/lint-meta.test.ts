@@ -13,12 +13,14 @@ import { describe, expect, test } from "vitest";
 import {
   checkCanonicalHelpersSingleHome,
   checkDependencyPairs,
+  checkEnginePinParity,
   checkForbiddenText,
   checkNoCrossRepoImports,
   checkNoDirectImportMetaEnv,
   checkNoRawRoleLiterals,
   checkNoSilentErrorSwallow,
   checkPackageJson,
+  checkPrePushParity,
   checkScriptRawFetch,
   checkTestFilesHaveSource,
   checkUiEnvCascadeDrift,
@@ -533,6 +535,135 @@ describe("checkTestFilesHaveSource", () => {
       const violations = checkTestFilesHaveSource(root);
 
       expect(violations).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkEnginePinParity", () => {
+  function writeEnginePinFixture(root: string, bunWorkflowPin: string): string {
+    const appRoot = join(root, "apps", "ui");
+
+    mkdirSync(appRoot, { recursive: true });
+    mkdirSync(join(root, ".github", "workflows"), { recursive: true });
+    writeFileSync(join(appRoot, ".nvmrc"), "24\n");
+    writeFileSync(
+      join(appRoot, "package.json"),
+      JSON.stringify({
+        engines: { node: ">=24.0.0" },
+        packageManager: "bun@1.3.14"
+      })
+    );
+    writeFileSync(
+      join(root, ".github", "workflows", "validate.yml"),
+      `jobs:\n  validate:\n    steps:\n      - uses: oven-sh/setup-bun@abc\n        with:\n          bun-version: ${bunWorkflowPin}\n`
+    );
+
+    return appRoot;
+  }
+
+  test("flags a workflow bun-version pin that drifts from packageManager", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-engine-"));
+
+    try {
+      const appRoot = writeEnginePinFixture(root, "1.2.0");
+
+      const violations = checkEnginePinParity(appRoot);
+
+      expect(violations.map((row) => row.message)).toContainEqual(
+        expect.stringContaining("bun-version: 1.2.0")
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when the workflow bun-version matches packageManager", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-engine-"));
+
+    try {
+      const appRoot = writeEnginePinFixture(root, "1.3.14");
+
+      const violations = checkEnginePinParity(appRoot);
+
+      expect(violations).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkPrePushParity", () => {
+  test("flags a malformed manifest instead of silently skipping", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-prepush-"));
+
+    try {
+      mkdirSync(join(root, "scripts", "ci"), { recursive: true });
+      writeFileSync(
+        join(root, "scripts", "ci", "pre-push.manifest.json"),
+        JSON.stringify({ stages: ["bun run check"] })
+      );
+
+      const violations = checkPrePushParity(root);
+
+      expect(violations.map((row) => row.message)).toContainEqual(
+        expect.stringContaining("malformed")
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags an unresolvable ciWorkflow instead of silently skipping", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-prepush-"));
+
+    try {
+      mkdirSync(join(root, "scripts", "ci"), { recursive: true });
+      writeFileSync(
+        join(root, "scripts", "ci", "pre-push.manifest.json"),
+        JSON.stringify({
+          ciWorkflow: ".github/workflows/does-not-exist-anywhere.yml",
+          requiredCommands: ["bun run check"]
+        })
+      );
+
+      const violations = checkPrePushParity(root);
+
+      expect(violations.map((row) => row.message)).toContainEqual(
+        expect.stringContaining("not found from the app root upward")
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("resolves the ciWorkflow at the monorepo root via walk-up", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-prepush-"));
+
+    try {
+      const appRoot = join(root, "apps", "ui");
+
+      mkdirSync(join(appRoot, "scripts", "ci"), { recursive: true });
+      mkdirSync(join(root, ".github", "workflows"), { recursive: true });
+      writeFileSync(
+        join(appRoot, "scripts", "ci", "pre-push.manifest.json"),
+        JSON.stringify({
+          ciWorkflow: ".github/workflows/validate.yml",
+          requiredCommands: ["bun run check", "bun run missing-gate"]
+        })
+      );
+      writeFileSync(
+        join(root, ".github", "workflows", "validate.yml"),
+        "jobs:\n  validate:\n    steps:\n      - run: bun run check\n"
+      );
+
+      const violations = checkPrePushParity(appRoot);
+
+      expect(violations.map((row) => row.message)).toContainEqual(
+        expect.stringContaining("bun run missing-gate")
+      );
+      expect(violations).toHaveLength(1);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

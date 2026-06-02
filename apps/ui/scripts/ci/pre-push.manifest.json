@@ -1,5 +1,6 @@
 {
-  "stages": [
+  "ciWorkflow": ".github/workflows/apps-ui-validate.yml",
+  "requiredCommands": [
     "bun run check",
     "bun run test:ci",
     "bun run build",

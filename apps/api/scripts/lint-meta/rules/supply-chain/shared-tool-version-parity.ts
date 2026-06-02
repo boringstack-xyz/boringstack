@@ -26,6 +26,14 @@ const SHARED_TOOLS = [
   "husky",
 ] as const;
 
+/*
+ * First-party plugin scopes are shared tooling by definition: every app
+ * that declares one must lint with the same release. Matched by prefix so
+ * new plugins are covered the moment a second app adopts them, without
+ * editing this list.
+ */
+const SHARED_TOOL_PREFIXES = ["@boring-stack-pkg/"] as const;
+
 interface IAppDeps {
   readonly app: string;
   readonly file: string;
@@ -92,7 +100,19 @@ export function checkSharedToolVersionParity(appsDir: string): IViolation[] {
   const violations: IViolation[] = [];
   const apps = readApps(appsDir);
 
-  for (const tool of SHARED_TOOLS) {
+  const prefixTools = new Set<string>();
+
+  for (const app of apps) {
+    for (const dep of Object.keys(app.deps)) {
+      if (SHARED_TOOL_PREFIXES.some((prefix) => dep.startsWith(prefix))) {
+        prefixTools.add(dep);
+      }
+    }
+  }
+
+  const tools = [...SHARED_TOOLS, ...[...prefixTools].sort()];
+
+  for (const tool of tools) {
     const declarers: IDeclarer[] = apps
       .map((app) => ({ app: app.app, file: app.file, version: app.deps[tool] }))
       .filter((entry): entry is IDeclarer => typeof entry.version === "string");

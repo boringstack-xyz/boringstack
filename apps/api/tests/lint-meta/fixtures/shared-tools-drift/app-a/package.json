@@ -2,6 +2,7 @@
   "name": "fixture-app-a",
   "devDependencies": {
     "eslint": "10.4.0",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "@boring-stack-pkg/eslint-plugin-demo": "0.2.0"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "ciWorkflow": ".github/workflows/ci.yml",
+  "ciWorkflow": ".github/workflows/apps-api-ci.yml",
   "requiredCommands": [
     "bun run check",
     "bun run test",

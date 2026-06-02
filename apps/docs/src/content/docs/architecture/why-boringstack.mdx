@@ -3,6 +3,8 @@ title: Why BoringStack
 description: Production-grade product infrastructure on day one. Start on your idea, not on auth and billing for the hundredth time.
 ---
 
+import CostCalculator from "../../../components/landing/CostCalculator";
+
 Build the product that solves a problem. Skip rebuilding the infrastructure every SaaS needs from scratch.
 
 ## What is BoringStack
@@ -44,6 +46,8 @@ One monorepo. Layers you can deploy separately when growth asks for it. Postgres
 Postgres and Valkey on one VPS. Bill tracks server size, not per-request meters.
 
 Most products under 50k MAU fit on a CPX31 (4 vCPU, 8 GB, around 11 EUR/month). GHCR images are free if public. Hetzner storage backups are a few euros per month. Stripe and email providers charge on volume, not fixed monthly fees.
+
+<CostCalculator client:visible />
 
 See [Cost methodology](/reference/cost-methodology/) for the full breakdown.
 

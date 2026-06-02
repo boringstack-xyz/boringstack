@@ -437,6 +437,10 @@ services:
       VALKEY_HOST: valkey
       VALKEY_PORT: "6379"
       VALKEY_PASSWORD: ${VALKEY_PASSWORD:-}
+      # JWT revocation state (logout, per-jti blocklist) lives in the
+      # cache; the env validator rejects production CACHE_ENABLED with
+      # the per-process memory provider, so pin the shared Valkey here.
+      CACHE_PROVIDER: ${CACHE_PROVIDER:-valkey}
       NODE_ENV: production
       BUN_ENV: production
       PORT: "7330"

@@ -62,6 +62,7 @@ export class JoinRequestsService {
         userId: input.userId,
         action: AUDIT_ACTIONS.ACCOUNT_JOIN_REQUEST_CREATED,
         resource: `join_request:${inserted.id}`,
+        targetAccountId: input.accountId,
         metadata: { accountId: input.accountId },
       });
 
@@ -159,6 +160,7 @@ export class JoinRequestsService {
         .where(
           and(
             eq(accountJoinRequests.id, requestId),
+            eq(accountJoinRequests.accountId, accountId),
             eq(accountJoinRequests.status, JOIN_REQUEST_STATUS.pending)
           )
         )
@@ -172,6 +174,7 @@ export class JoinRequestsService {
         userId: deciderUserId,
         action: AUDIT_ACTIONS.ACCOUNT_JOIN_REQUEST_APPROVED,
         resource: `join_request:${requestId}`,
+        targetAccountId: accountId,
         metadata: { accountId, requesterId: request.userId },
       });
 
@@ -208,6 +211,7 @@ export class JoinRequestsService {
       userId: deciderUserId,
       action: AUDIT_ACTIONS.ACCOUNT_JOIN_REQUEST_DENIED,
       resource: `join_request:${requestId}`,
+      targetAccountId: accountId,
       metadata: { accountId, requesterId: updated.userId },
     });
 

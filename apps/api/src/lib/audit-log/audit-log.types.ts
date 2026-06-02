@@ -15,6 +15,13 @@ export interface IAuditEventInput {
   action: AuditAction;
   /** Optional resource identifier — e.g. `"user:7c3..."`. */
   resource?: string;
+  /**
+   * Tenant scope for `listForAccount`. Set on every account-scoped event
+   * whose `resource` is not already `account:{id}` — entity resources
+   * (`invitation:…`, `join_request:…`) are invisible to the account
+   * audit trail without it.
+   */
+  targetAccountId?: string;
   /** Small structured payload. Avoid storing PII or secrets here. */
   metadata?: Record<string, unknown>;
   /** Originating IP, when the call site has access to the request. */

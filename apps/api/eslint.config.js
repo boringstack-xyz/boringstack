@@ -1054,7 +1054,6 @@ export default tseslint.config(
     // single source file by design — they verify invariants that span
     // multiple modules.
     files: [
-      "tests/auth/role-schema-parity.test.ts",
       "tests/health.test.ts",
       // The next three test specific concerns inside a multi-function
       // utils file (retry / validation in email.utils.ts; the
