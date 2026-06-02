@@ -68,7 +68,9 @@ class OAuthStateStore {
 
   /**
    * Read + delete the stored state. Returns `null` if absent (expired,
-   * forged, or already consumed). Read-and-delete makes replay
+   * forged, or already consumed) — and equally if the stored value is
+   * not a JSON object: corrupted state must fail the flow, not pass as
+   * a valid state with no extras. Read-and-delete makes replay
    * impossible.
    */
   async consume(state: string): Promise<IStoredState | null> {
@@ -83,7 +85,7 @@ class OAuthStateStore {
       const parsed: unknown = JSON.parse(raw);
 
       if (parsed === null || typeof parsed !== "object") {
-        return {};
+        return null;
       }
 
       const result: IStoredState = {};
@@ -98,7 +100,7 @@ class OAuthStateStore {
 
       return result;
     } catch {
-      return {};
+      return null;
     }
   }
 }
