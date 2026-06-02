@@ -10,6 +10,11 @@
 # of running this in dev is so you've already used the dashboards before
 # prod day-one — disabling it means learning the panels during your first
 # real incident.
+#
+# Every service carries a healthcheck so `depends_on: { condition:
+# service_healthy }` and operator dashboards can tell "running" from
+# "ready." All images ship busybox `wget`, so the readiness probe is a
+# `wget --spider` against each service's own health endpoint.
 
 services:
   prometheus:
@@ -31,6 +36,13 @@ services:
       - frontend
     depends_on:
       - alertmanager
+    healthcheck:
+      test:
+        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     deploy:
       resources:
         limits:
@@ -55,6 +67,13 @@ services:
       - "9093:9093"
     networks:
       - backend
+    healthcheck:
+      test:
+        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     deploy:
       resources:
         limits:
@@ -83,6 +102,13 @@ services:
       - prometheus
       - loki
       - tempo
+    healthcheck:
+      test:
+        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
     deploy:
       resources:
         limits:
@@ -98,6 +124,13 @@ services:
       - loki_data:/loki
     networks:
       - backend
+    healthcheck:
+      test:
+        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 20s
     deploy:
       resources:
         limits:
@@ -117,6 +150,13 @@ services:
       - loki
     networks:
       - backend
+    healthcheck:
+      test:
+        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9080/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     deploy:
       resources:
         limits:
@@ -133,6 +173,13 @@ services:
       - tempo_data:/var/tempo
     networks:
       - backend
+    healthcheck:
+      test:
+        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3200/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 15s
     deploy:
       resources:
         limits:
@@ -150,6 +197,13 @@ services:
         condition: service_healthy
     networks:
       - backend
+    healthcheck:
+      test:
+        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9187/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     deploy:
       resources:
         limits:
@@ -171,6 +225,13 @@ services:
       - /:/rootfs:ro
     networks:
       - backend
+    healthcheck:
+      test:
+        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9100/metrics"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     deploy:
       resources:
         limits:

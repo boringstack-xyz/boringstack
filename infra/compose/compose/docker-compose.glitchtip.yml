@@ -48,6 +48,16 @@ services:
     networks:
       - backend
       - frontend
+    # GlitchTip's image ships no wget/curl, so probe `/_health/` (Django,
+    # returns 200 when ready) with the bundled python3. The worker below
+    # waits on this via `service_healthy`.
+    healthcheck:
+      test:
+        ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/_health/', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
     deploy:
       resources:
         limits:
@@ -74,7 +84,7 @@ services:
     command: ["./bin/run-celery-with-beat.sh"]
     depends_on:
       glitchtip-web:
-        condition: service_started
+        condition: service_healthy
     environment: *glitchtip-env
     networks:
       - backend

@@ -35,6 +35,13 @@ services:
       - frontend
     ports:
       - "7332:7332"
+    healthcheck:
+      test:
+        ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7332/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=backend"
