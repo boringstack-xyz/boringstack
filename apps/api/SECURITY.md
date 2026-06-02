@@ -21,6 +21,13 @@ and the production checklist.
   session kill, per-jti blocklist) stores its state in the cache; the
   in-memory provider is per-process, so revocations would vanish on
   restart and never propagate across replicas.
+- JWT revocation checks **fail open by default** when the cache is
+  unreachable: a Valkey blip never becomes a global auth outage, and
+  the exposure window is bounded by the 15-minute JWT TTL. Strict
+  deployments set `JWT_REVOCATION_FAIL_CLOSED=true` to reject every
+  authenticated request on cache errors instead. Either way the
+  failure is logged as `auth.jwt.revoke_check_failed` /
+  `auth.jwt.revoke_user_check_failed` — alert on those events.
 - `ALLOWED_ORIGINS` is **optional**. Empty = same-origin deployment
   (BoringStack's default) and CORS is not mounted. When set in
   production, every entry must be HTTPS with no wildcards.

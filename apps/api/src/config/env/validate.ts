@@ -161,6 +161,11 @@ const readAuth = (source: EnvSource) => ({
       ? "test-only-jwt-secret-padded-to-thirty-two-chars"
       : ""
   ),
+  JWT_REVOCATION_FAIL_CLOSED: toBoolWithDefault(
+    source.JWT_REVOCATION_FAIL_CLOSED,
+    false,
+    "JWT_REVOCATION_FAIL_CLOSED"
+  ),
   /*
    * Deterministic test-only key so MFA round-trip tests don't need an
    * env file. 32 bytes base64 = 44 chars. Production deploys must set

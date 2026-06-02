@@ -232,6 +232,13 @@ describe("validateEnv", () => {
     expect(() => validateEnv(testEnv)).toThrow(/JWT_SECRET/);
   });
 
+  it("JWT_REVOCATION_FAIL_CLOSED defaults to false and parses true", () => {
+    expect(validateEnv(testEnv).JWT_REVOCATION_FAIL_CLOSED).toBe(false);
+
+    testEnv.JWT_REVOCATION_FAIL_CLOSED = "true";
+    expect(validateEnv(testEnv).JWT_REVOCATION_FAIL_CLOSED).toBe(true);
+  });
+
   it("accepts production with empty ALLOWED_ORIGINS (same-origin deployment)", () => {
     testEnv.NODE_ENV = "production";
     testEnv.ALLOWED_ORIGINS = "";
