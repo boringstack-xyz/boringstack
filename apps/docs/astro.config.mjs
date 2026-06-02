@@ -569,6 +569,7 @@ export default defineConfig({
           items: [
             { label: "Environment variables", link: "/reference/env-vars/" },
             { label: "Commands cheatsheet", link: "/reference/commands/" },
+            { label: "MCP servers for agents", link: "/reference/mcp-servers/" },
             {
               label: "Scripts & tooling",
               link: "/reference/scripts-tooling/",

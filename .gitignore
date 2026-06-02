@@ -16,3 +16,7 @@ coverage/
 .bun-install/
 .audit/
 ROADMAP.md
+
+# Local MCP client config — copied from .mcp.json.example and may carry
+# machine-specific paths or credentials. The committed example is the source.
+.mcp.json

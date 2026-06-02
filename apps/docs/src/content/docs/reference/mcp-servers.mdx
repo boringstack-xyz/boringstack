@@ -1,0 +1,123 @@
+---
+title: MCP servers for agents
+description: Point Postgres and Valkey MCP servers at the local dev stack so your coding agent can read the live schema, rows, cache keys, and queue state instead of guessing.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+A coding agent reads your code fine. It's blind to **runtime state**: the live
+database schema, the actual rows, the cache keys and their TTLs, the BullMQ
+queue backlog. So it guesses — and guesses drift from reality.
+
+[Model Context Protocol](https://modelcontextprotocol.io) servers close that
+gap. The dev stack already publishes Postgres and Valkey on the host (so you can
+`psql` and `valkey-cli` them), which means an MCP server reaches them with no
+extra setup. Same idea as observability: the runtime context is pre-wired —
+[for humans](/topics/observability/) in Grafana, and here for agents.
+
+This is dev-only and opt-in. Two servers, both read-leaning:
+
+| Server | Reach for it when… | What it gives the agent |
+| ------ | ------------------ | ----------------------- |
+| **Postgres** (read-only) | writing a Drizzle migration, debugging a query, checking a constraint | live schema, indexes, row samples, `EXPLAIN` plans, index/health analysis |
+| **Valkey / Redis** | a cache or TTL bug, a stuck job, inspecting rate-limit keys | keys, TTLs, `bull:*` queue state, `INFO` |
+
+## Setup
+
+1. Install [`uv`](https://docs.astral.sh/uv/) (provides `uvx`; the servers run
+   through it — no global installs):
+
+   ```bash
+   brew install uv      # or: curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+2. Bring the dev stack up — this publishes Postgres on `5432` and Valkey on
+   `6379` (the `development-labels` overlay; production never exposes them):
+
+   ```bash
+   cd infra/compose/compose && ./dev.sh up -d
+   ```
+
+3. Copy the committed example into place. Your real config is gitignored, so
+   any local edits stay local:
+
+   ```bash
+   cp .mcp.json.example .mcp.json
+   ```
+
+4. Restart your agent (Claude Code, Cursor, any MCP client) and approve the two
+   servers when prompted.
+
+That's it — ask the agent to "list the tables" or "show the cache keys" and it
+queries the running stack.
+
+## What ships in `.mcp.json.example`
+
+```json
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "uvx",
+      "args": ["--python", "3.13", "postgres-mcp", "--access-mode=restricted"],
+      "env": {
+        "DATABASE_URI": "postgresql://app:app_dev_password@localhost:5432/app"
+      }
+    },
+    "valkey": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "redis-mcp-server@latest",
+        "redis-mcp-server",
+        "--url",
+        "redis://localhost:6379/0"
+      ]
+    }
+  }
+}
+```
+
+- **Postgres** uses [`postgres-mcp`](https://github.com/crystaldba/postgres-mcp)
+  (Postgres MCP Pro). `--access-mode=restricted` is its **read-only** mode:
+  read queries and `EXPLAIN` only, wrapped in read-only transactions. The
+  `--python 3.13` pin sidesteps a missing wheel on newer Python builds.
+- **Valkey** uses the official
+  [`redis-mcp-server`](https://github.com/redis/mcp-redis) over the Redis wire
+  protocol (Valkey is a drop-in). The default values match the dev stack:
+  Postgres `app` / `app_dev_password` / db `app`, and Valkey DB `0` (the API's;
+  DB `1` is GlitchTip's).
+
+<Aside type="caution" title="Dev only — never point these at production">
+The credentials above are the throwaway local defaults, and the `5432`/`6379`
+host ports only exist under the dev overlay. Production keeps data services on
+the internal Docker network with real secrets. Never put a production
+connection string in `.mcp.json` — an agent with your prod DB in context is a
+breach waiting to happen.
+</Aside>
+
+<Aside type="tip" title="Read-only by default">
+`--access-mode=restricted` keeps the agent from mutating your dev database — it
+can read and explain, not write. For defense-in-depth you can also hand it a
+dedicated read-only role instead of `app`:
+
+```sql
+CREATE ROLE mcp_readonly LOGIN PASSWORD 'mcp_readonly';
+GRANT CONNECT ON DATABASE app TO mcp_readonly;
+GRANT USAGE ON SCHEMA public TO mcp_readonly;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO mcp_readonly;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO mcp_readonly;
+```
+
+Then swap the `DATABASE_URI` user to `mcp_readonly`. The Valkey server has no
+restricted mode; treat it as read/write and don't point it at anything you'd
+mind it changing.
+</Aside>
+
+## Why this fits the stack
+
+BoringStack's pitch is that [agents and humans get the same
+contract](/architecture/lint-as-contract/) — lint enforces the architecture for
+both. MCP extends that to runtime: the agent inspects the same database and
+cache you do, so its edits are grounded in what's actually there. Pair it with
+the [spec loop](/skills/spec-loop/) and the agent plans against real schema
+instead of an imagined one.
