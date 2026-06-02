@@ -74,6 +74,7 @@ export { checkDependencyPairs } from "./rules/supply-chain/no-overlapping-libs";
 export { checkPackageJson } from "./rules/supply-chain/package-json-exact-deps";
 export { checkWorkflow } from "./rules/ci/github-actions-permissions";
 export { checkWorkflowTimeouts } from "./rules/ci/github-actions-timeout-required";
+export { checkPrePushParity } from "./rules/ci/pre-push-ci-parity";
 export { checkUiEnvCascadeDrift } from "./rules/env/env-cascade-drift";
 export { checkNoDirectImportMetaEnv } from "./rules/env/no-direct-import-meta-env";
 export { checkNoSilentErrorSwallow } from "./rules/queries/no-silent-error-swallow";

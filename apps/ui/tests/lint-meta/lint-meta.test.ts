@@ -19,6 +19,7 @@ import {
   checkNoRawRoleLiterals,
   checkNoSilentErrorSwallow,
   checkPackageJson,
+  checkPrePushParity,
   checkScriptRawFetch,
   checkTestFilesHaveSource,
   checkUiEnvCascadeDrift,
@@ -533,6 +534,82 @@ describe("checkTestFilesHaveSource", () => {
       const violations = checkTestFilesHaveSource(root);
 
       expect(violations).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkPrePushParity", () => {
+  test("flags a malformed manifest instead of silently skipping", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-prepush-"));
+
+    try {
+      mkdirSync(join(root, "scripts", "ci"), { recursive: true });
+      writeFileSync(
+        join(root, "scripts", "ci", "pre-push.manifest.json"),
+        JSON.stringify({ stages: ["bun run check"] })
+      );
+
+      const violations = checkPrePushParity(root);
+
+      expect(violations.map((row) => row.message)).toContainEqual(
+        expect.stringContaining("malformed")
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags an unresolvable ciWorkflow instead of silently skipping", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-prepush-"));
+
+    try {
+      mkdirSync(join(root, "scripts", "ci"), { recursive: true });
+      writeFileSync(
+        join(root, "scripts", "ci", "pre-push.manifest.json"),
+        JSON.stringify({
+          ciWorkflow: ".github/workflows/does-not-exist-anywhere.yml",
+          requiredCommands: ["bun run check"]
+        })
+      );
+
+      const violations = checkPrePushParity(root);
+
+      expect(violations.map((row) => row.message)).toContainEqual(
+        expect.stringContaining("not found from the app root upward")
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("resolves the ciWorkflow at the monorepo root via walk-up", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-prepush-"));
+
+    try {
+      const appRoot = join(root, "apps", "ui");
+
+      mkdirSync(join(appRoot, "scripts", "ci"), { recursive: true });
+      mkdirSync(join(root, ".github", "workflows"), { recursive: true });
+      writeFileSync(
+        join(appRoot, "scripts", "ci", "pre-push.manifest.json"),
+        JSON.stringify({
+          ciWorkflow: ".github/workflows/validate.yml",
+          requiredCommands: ["bun run check", "bun run missing-gate"]
+        })
+      );
+      writeFileSync(
+        join(root, ".github", "workflows", "validate.yml"),
+        "jobs:\n  validate:\n    steps:\n      - run: bun run check\n"
+      );
+
+      const violations = checkPrePushParity(appRoot);
+
+      expect(violations.map((row) => row.message)).toContainEqual(
+        expect.stringContaining("bun run missing-gate")
+      );
+      expect(violations).toHaveLength(1);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

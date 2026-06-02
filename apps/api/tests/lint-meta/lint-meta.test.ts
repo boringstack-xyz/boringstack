@@ -602,9 +602,11 @@ describe("checkNoDirectProcessEnv", () => {
   });
 });
 
+const GUARD_TMP_PREFIX = "lint-meta-guard-";
+
 describe("lint-meta guardrails", () => {
   test("checkNoRawRoleLiterals flags raw role strings in src", () => {
-    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
 
     try {
       mkdirSync(join(root, "src", "api"), { recursive: true });
@@ -623,7 +625,7 @@ describe("lint-meta guardrails", () => {
   });
 
   test("checkGeneratedArtifactContracts flags missing banner text", () => {
-    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
 
     try {
       const artifactDir = join(root, "..", "ui", "src", "lib", "acl");
@@ -643,7 +645,7 @@ describe("lint-meta guardrails", () => {
   });
 
   test("checkPrePushParity flags CI workflow missing a manifest command", () => {
-    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
 
     try {
       mkdirSync(join(root, "scripts", "ci"), { recursive: true });
@@ -665,6 +667,82 @@ describe("lint-meta guardrails", () => {
       expect(violations.some((row) => row.rule === "pre-push-ci-parity")).toBe(
         true
       );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("checkPrePushParity flags a malformed manifest instead of skipping", () => {
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
+
+    try {
+      mkdirSync(join(root, "scripts", "ci"), { recursive: true });
+      writeFileSync(
+        join(root, "scripts", "ci", "pre-push.manifest.json"),
+        JSON.stringify({ stages: ["bun run check"] })
+      );
+
+      const violations = checkPrePushParity(root);
+
+      expect(violations.some((row) => row.message.includes("malformed"))).toBe(
+        true
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("checkPrePushParity flags an unresolvable ciWorkflow instead of skipping", () => {
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
+
+    try {
+      mkdirSync(join(root, "scripts", "ci"), { recursive: true });
+      writeFileSync(
+        join(root, "scripts", "ci", "pre-push.manifest.json"),
+        JSON.stringify({
+          ciWorkflow: ".github/workflows/does-not-exist-anywhere.yml",
+          requiredCommands: ["bun run check"],
+        })
+      );
+
+      const violations = checkPrePushParity(root);
+
+      expect(
+        violations.some((row) =>
+          row.message.includes("not found from the app root upward")
+        )
+      ).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("checkPrePushParity resolves the ciWorkflow at the monorepo root via walk-up", () => {
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
+
+    try {
+      const appRoot = join(root, "apps", "api");
+
+      mkdirSync(join(appRoot, "scripts", "ci"), { recursive: true });
+      mkdirSync(join(root, ".github", "workflows"), { recursive: true });
+      writeFileSync(
+        join(appRoot, "scripts", "ci", "pre-push.manifest.json"),
+        JSON.stringify({
+          ciWorkflow: ".github/workflows/ci.yml",
+          requiredCommands: ["bun run check", "bun run missing-gate"],
+        })
+      );
+      writeFileSync(
+        join(root, ".github", "workflows", "ci.yml"),
+        "jobs:\n  test:\n    steps:\n      - run: bun run check\n"
+      );
+
+      const violations = checkPrePushParity(appRoot);
+
+      expect(
+        violations.some((row) => row.message.includes("bun run missing-gate"))
+      ).toBe(true);
+      expect(violations).toHaveLength(1);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
