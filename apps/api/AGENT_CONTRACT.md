@@ -5,20 +5,26 @@ Read this first. Long-form patterns are in [AGENTS.md](AGENTS.md).
 ## Merge bar
 
 1. **`bun run validate`** must pass (typecheck + ESLint + tests).
-2. **No** inline `eslint-disable`, no `any`, no `as` (only `as const`),
+2. Push/CI additionally enforce **`bun run test:coverage`** (coverage
+   ratchet — needs the local stack up so integration tests run, or the
+   function floor fails) and the dist build. `validate` alone is the
+   fast local gate, not the whole story — see
+   `scripts/ci/pre-push.manifest.json` for the full list.
+3. **No** inline `eslint-disable`, no `any`, no `as` (only `as const`),
    no `!`. Fix the cause; don't bypass the rule.
-3. If repo guidance conflicts with code, follow the code and flag drift.
+4. If repo guidance conflicts with code, follow the code and flag drift.
 
 ## Commands
 
-|                                      |                                     |
-| ------------------------------------ | ----------------------------------- |
-| `bun run validate`                   | merge gate                          |
-| `bun run check`                      | typecheck + lint + lint:meta + knip |
-| `bun test`                           | tests                               |
-| `bun run dev`                        | watch server                        |
-| `bun run new:resource -- <Name>`     | scaffold a resource                 |
-| `bun run db:generate` / `db:migrate` | Drizzle                             |
+|                                      |                                       |
+| ------------------------------------ | ------------------------------------- |
+| `bun run validate`                   | fast merge gate (check + tests)       |
+| `bun run check`                      | typecheck + lint + lint:meta + knip   |
+| `bun test`                           | tests                                 |
+| `bun run test:coverage`              | coverage ratchet (pre-push/CI gate)   |
+| `bun run dev`                        | watch server                          |
+| `bun run new:resource -- <Name>`     | scaffold a resource                   |
+| `bun run db:generate` / `db:migrate` | Drizzle                               |
 
 ## Resource layout (`src/api/<feature>/`)
 
