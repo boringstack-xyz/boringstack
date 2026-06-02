@@ -51,6 +51,18 @@ describe("checkSharedToolVersionParity", () => {
     expect(violations.some((row) => row.message.includes("eslint"))).toBe(true);
   });
 
+  test("flags drift in prefix-matched @boring-stack-pkg plugins", () => {
+    const violations = checkSharedToolVersionParity(
+      join(FIXTURES, "shared-tools-drift")
+    );
+
+    expect(
+      violations.some((row) =>
+        row.message.includes("@boring-stack-pkg/eslint-plugin-demo")
+      )
+    ).toBe(true);
+  });
+
   test("passes when every app pins shared tools to the same version", () => {
     const violations = checkSharedToolVersionParity(
       join(FIXTURES, "shared-tools-clean")
