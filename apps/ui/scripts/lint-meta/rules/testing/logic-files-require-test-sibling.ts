@@ -13,6 +13,24 @@ import type { IMetaRule, IViolation } from "../../types";
 const LOGIC_SUFFIX_REGEX =
   /\.(utils|queries|mutations|hooks|schemas|store|service)\.(ts|tsx)$/u;
 
+/*
+ * Directories whose every module is logic by definition, regardless of
+ * suffix. Type guards in src/lib/guards narrow `unknown` at parser
+ * boundaries — a regression there silently mis-narrows API payloads, so
+ * they are validation logic and must ship with tests.
+ */
+const LOGIC_DIR_SEGMENTS = [join("src", "lib", "guards")] as const;
+
+function isLogicFile(root: string, file: string): boolean {
+  if (LOGIC_SUFFIX_REGEX.test(file)) {
+    return true;
+  }
+
+  return LOGIC_DIR_SEGMENTS.some((segment) =>
+    file.startsWith(`${join(root, segment)}/`)
+  );
+}
+
 export function checkLogicFilesHaveTests(root: string): IViolation[] {
   const violations: IViolation[] = [];
   const srcRoot = join(root, "src");
@@ -22,7 +40,7 @@ export function checkLogicFilesHaveTests(root: string): IViolation[] {
       continue;
     }
 
-    if (!LOGIC_SUFFIX_REGEX.test(file)) {
+    if (!isLogicFile(root, file)) {
       continue;
     }
 
@@ -38,7 +56,7 @@ export function checkLogicFilesHaveTests(root: string): IViolation[] {
       rule: "logic-files-require-test-sibling",
       message: `Missing colocated test. Expected \`${tsTest.slice(
         root.length + 1
-      )}\` (or \`.test.tsx\`) to exist next to this \`*.{utils,queries,mutations,hooks,schemas,store,service}.{ts,tsx}\` module — every piece of logic ships with a test.`
+      )}\` (or \`.test.tsx\`) to exist next to this logic module (\`*.{utils,queries,mutations,hooks,schemas,store,service}.{ts,tsx}\` or anything under src/lib/guards) — every piece of logic ships with a test.`
     });
   }
 

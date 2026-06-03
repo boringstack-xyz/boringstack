@@ -1,3 +1,5 @@
+import { now } from "@/lib/time/now";
+
 import type { IUser } from "@/features/auth/Auth.types";
 
 /**
@@ -24,8 +26,8 @@ export function makeUser(overrides: Partial<IUser> = {}): IUser {
     firstName: "Demo",
     lastName: "User",
     emailVerified: true,
-    createdAt: "2026-05-11T00:00:00.000Z",
-    updatedAt: "2026-05-11T00:00:00.000Z",
+    createdAt: now(),
+    updatedAt: now(),
     ...overrides
   };
 }

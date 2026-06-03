@@ -28,6 +28,8 @@ import {
   checkRouteFilesHaveTests,
   checkTouchedTests,
   checkWorkflowConcurrencyExplicit,
+  checkWorkflowExpressionSyntax,
+  checkWorkflowServiceImageDigestPin,
   checkWorkflowShas,
   checkWorkflowTimeouts,
   collectSourceFiles,
@@ -409,6 +411,145 @@ describe("checkWorkflowConcurrencyExplicit", () => {
   });
 });
 
+describe("checkWorkflowServiceImageDigestPin", () => {
+  test("flags a service image without a digest", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-svc-image-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(
+        file,
+        "jobs:\n  test:\n    services:\n      postgres:\n        image: postgres:17-alpine\n"
+      );
+
+      const violations = checkWorkflowServiceImageDigestPin(file);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "github-actions-service-image-digest-pin"
+      );
+      expect(
+        violations.some((row) =>
+          row.message.includes("postgres:17-alpine (line 5)")
+        )
+      ).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags latest mixed with a digest", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-svc-image-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(
+        file,
+        "jobs:\n  test:\n    container:\n      image: tool/tool:latest@sha256:0000000000000000000000000000000000000000000000000000000000000000\n"
+      );
+
+      const violations = checkWorkflowServiceImageDigestPin(file);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "github-actions-service-image-digest-pin"
+      );
+      expect(
+        violations.some((row) => row.message.includes("floating :latest tag"))
+      ).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes digest-pinned images and workflows without images", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-svc-image-"));
+
+    try {
+      const pinned = join(root, "pinned.yml");
+
+      writeFileSync(
+        pinned,
+        "jobs:\n  test:\n    services:\n      postgres:\n        image: postgres:17-alpine@sha256:0000000000000000000000000000000000000000000000000000000000000000\n"
+      );
+
+      expect(checkWorkflowServiceImageDigestPin(pinned)).toEqual([]);
+
+      const none = join(root, "none.yml");
+
+      writeFileSync(none, "jobs: {}\n");
+
+      expect(checkWorkflowServiceImageDigestPin(none)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowExpressionSyntax", () => {
+  test("flags the f-string triple-brace opener that bricks a workflow", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-expr-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(
+        file,
+        "jobs:\n  x:\n    steps:\n      - run: |\n          python3 -c \"print(f'${{{pair[0]}:-...}}')\"\n"
+      );
+
+      const violations = checkWorkflowExpressionSyntax(file);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "github-actions-expression-syntax"
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags an opener with no closer on the line", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-expr-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(file, "jobs:\n  x:\n    name: ${{ github.ref\n");
+
+      const violations = checkWorkflowExpressionSyntax(file);
+
+      expect(violations).toHaveLength(1);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes valid expressions, including quoted JSON arguments", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-expr-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(
+        file,
+        [
+          "concurrency:",
+          "  group: x-${{ github.ref }}",
+          "jobs:",
+          "  x:",
+          "    steps:",
+          '      - run: echo ${{ fromJSON(steps.a.outputs.b || \'[{"version":""}]\')[0].version }}',
+          "",
+        ].join("\n")
+      );
+
+      expect(checkWorkflowExpressionSyntax(file)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("checkEnginePinParity", () => {
   function writeEnginePinFixture(
     root: string,
@@ -449,6 +590,40 @@ describe("checkEnginePinParity", () => {
       ).toBe(true);
     } finally {
       rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags a monorepo root package.json without a matching engines.bun pin", () => {
+    const monorepo = mkdtempSync(join(tmpdir(), "lint-meta-engine-mono-"));
+
+    try {
+      writeFileSync(join(monorepo, "package.json"), JSON.stringify({}));
+
+      const appRoot = join(monorepo, "apps", "api");
+
+      mkdirSync(appRoot, { recursive: true });
+      writeEnginePinFixture(appRoot, {
+        engines: { bun: "1.3.14" },
+        dockerBun: "1.3.14",
+        workflowBun: "1.3.14",
+      });
+
+      const violations = checkEnginePinParity(appRoot);
+
+      expect(
+        violations.some((row) =>
+          row.message.includes("Monorepo root package.json")
+        )
+      ).toBe(true);
+
+      writeFileSync(
+        join(monorepo, "package.json"),
+        JSON.stringify({ engines: { bun: "1.3.14" } })
+      );
+
+      expect(checkEnginePinParity(appRoot)).toEqual([]);
+    } finally {
+      rmSync(monorepo, { recursive: true, force: true });
     }
   });
 

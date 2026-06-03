@@ -25,7 +25,11 @@ const tracer = trace.getTracer("boringstack-api/queue");
  */
 export const withQueueSpan = async <T>(
   queueName: string,
-  job: Job,
+  /*
+   * Only the fields the span attributes read — keeps full BullMQ jobs
+   * assignable while letting tests pass a structural stub without casts.
+   */
+  job: Pick<Job, "id" | "name" | "attemptsMade">,
   handler: () => Promise<T>
 ): Promise<T> =>
   tracer.startActiveSpan(

@@ -4,7 +4,7 @@
 
 services:
   bullmq-dashboard:
-    image: deadly0/bull-board:latest@sha256:afd615426192c7d43d6320aea7d8910835170c8b43e9b755b6c416d38946be93
+    image: deadly0/bull-board@sha256:afd615426192c7d43d6320aea7d8910835170c8b43e9b755b6c416d38946be93
     # deadly0/bull-board publishes amd64-only. Pin the platform so Apple
     # Silicon hosts run it under Rosetta with no boot-time warning;
     # bull-board is a low-traffic dev tool so emulation cost is fine.

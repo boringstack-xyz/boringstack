@@ -1,10 +1,15 @@
 import { type APIRequestContext, request } from "@playwright/test";
 import { Secret, TOTP } from "otpauth";
+import { z } from "zod";
+
+import { nowMs } from "@/lib/time/now";
 
 import { expect, test } from "./fixtures/auth";
+import { parseBody } from "./fixtures/parse";
 import { LoginPage } from "./pages/LoginPage";
 
 const API_BASE_URL = "http://localhost:7331";
+const TOTP_STEP_MS = 30_000;
 
 interface IMfaTestUser {
   readonly email: string;
@@ -59,9 +64,15 @@ const provisionEnrolledUser = async (): Promise<{
     throw new Error(`mfa setup failed: ${await setupRes.text()}`);
   }
 
-  const setupBody = (await setupRes.json()) as {
-    data: { secretBase32: string; recoveryCodes: string[] };
-  };
+  const setupBody = await parseBody(
+    setupRes,
+    z.object({
+      data: z.object({
+        secretBase32: z.string(),
+        recoveryCodes: z.array(z.string())
+      })
+    })
+  );
   const totp = new TOTP({
     issuer: "test",
     label: email,
@@ -71,8 +82,17 @@ const provisionEnrolledUser = async (): Promise<{
     secret: Secret.fromBase32(setupBody.data.secretBase32)
   });
 
+  /*
+   * Enrol with the PREVIOUS step's code on purpose. The API accepts a
+   * ±1-step window and records the matched step as the replay
+   * watermark — submitting the previous step parks the watermark one
+   * step behind, so the test's first verify-login with a current-step
+   * code is strictly greater and passes the replay guard immediately.
+   * (The alternative — sleeping to the next 30s boundary — added up to
+   * 30s per run and flaked under CI load.)
+   */
   const verifySetupRes = await ctx.post("/api/v1/auth/mfa/verify-setup", {
-    data: { code: totp.generate() }
+    data: { code: totp.generate({ timestamp: nowMs() - TOTP_STEP_MS }) }
   });
 
   if (!verifySetupRes.ok()) {
@@ -81,18 +101,6 @@ const provisionEnrolledUser = async (): Promise<{
 
   await ctx.post("/api/v1/auth/logout");
   await ctx.dispose();
-
-  /*
-   * Verify-setup just bumped mfaLastTotpStep to the current step, so
-   * any TOTP we generate within the same 30s window would be
-   * rejected by the replay guard. Sleep across the next step
-   * boundary so the test's first verify-login call lands on a
-   * strictly greater step.
-   */
-  const STEP_MS = 30_000;
-  const msUntilNextStep = STEP_MS - (Date.now() % STEP_MS) + 200;
-
-  await new Promise((resolve) => setTimeout(resolve, msUntilNextStep));
 
   return {
     user: { email, password },

@@ -14,7 +14,7 @@ The premise: same as the rest of the observability stack — you should see your
 
 That's it. `dev.sh` auto-seeds a dev-only `GLITCHTIP_SECRET_KEY` if you don't set one. On a fresh boot the GlitchTip image entrypoint:
 - runs Django migrations against the `glitchtip` database (created by `compose/glitchtip/init-db.sql`)
-- creates the superuser `admin@localhost` / `admin123456` (override via `GLITCHTIP_SUPERUSER_*` in `.env`)
+- creates the superuser `admin@localhost` with a random password `dev.sh` generates and persists to `compose/.env` as `GLITCHTIP_SUPERUSER_PASSWORD` (override via `GLITCHTIP_SUPERUSER_*` in `.env`)
 - creates a default organization (`Local`) with two projects (`API`, `Frontend`)
 
 **DSNs are auto-wired.** `dev.sh up -d` runs `scripts/glitchtip-fetch-dsn.sh` in the background once GlitchTip is up. The script reads the DSNs for the `API` and `Frontend` projects from GlitchTip's Django ORM, writes them to `compose/.env` as `SENTRY_DSN` and `VITE_SENTRY_DSN`, and restarts `api-dev` + `ui-dev` so they pick the values up. Re-runs are idempotent — the script exits silently when the wiring already matches.
@@ -44,7 +44,7 @@ If you'd rather point at hosted Sentry or a different GlitchTip, set `SENTRY_DSN
    GLITCHTIP_BASIC_AUTH_USERS=admin:$$apr1$$...               # htpasswd -nb admin pass (escape $ → $$)
    GLITCHTIP_EMAIL_URL=smtp://user:pass@smtp.example.com:587
    GLITCHTIP_SUPERUSER_EMAIL=ops@example.com
-   GLITCHTIP_SUPERUSER_PASSWORD=...                           # rotate the dev default
+   GLITCHTIP_SUPERUSER_PASSWORD=...                           # openssl rand -base64 24 — never the dev value
    ```
 2. Point DNS `glitchtip.example.com` at the host.
 3. Bring up the stack (GlitchTip is on by default; the prod path requires the secrets above and will fail loudly if any are unset):

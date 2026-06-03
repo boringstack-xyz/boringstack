@@ -27,12 +27,15 @@ import {
   checkUiEnvCascadeDrift,
   checkWorkflow,
   checkWorkflowConcurrencyExplicit,
+  checkWorkflowExpressionSyntax,
+  checkWorkflowServiceImageDigestPin,
   checkWorkflowTimeouts,
   collectSourceFiles,
   findWorkflows,
   parseDotenvKeys
 } from "../../scripts/lint-meta/cli";
 import { renderRulesMd } from "../../scripts/lint-meta/generate-rules-md";
+import { checkForbiddenText as checkForbiddenTextWithRoot } from "../../scripts/lint-meta/rules/source-text/forbidden-text";
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
@@ -85,6 +88,68 @@ describe("checkForbiddenText", () => {
     const v = checkForbiddenText(join(FIXTURES, "source-text/clean.ts"));
 
     expect(v).toEqual([]);
+  });
+
+  test("flags hardcoded ISO timestamps in shared factories and e2e only", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-iso-dates-"));
+
+    try {
+      const factoryDir = join(root, "tests", "factories");
+      const srcDir = join(root, "src");
+
+      mkdirSync(factoryDir, { recursive: true });
+      mkdirSync(srcDir, { recursive: true });
+
+      const factory = join(factoryDir, "bad.factory.ts");
+
+      writeFileSync(factory, 'export const t = "2026-05-11T09:30:00.000Z";\n');
+
+      expect(
+        checkForbiddenTextWithRoot(factory, root).map((row) => row.rule)
+      ).toContain("no-hardcoded-iso-dates-in-fixtures");
+
+      const unitTest = join(srcDir, "thing.test.ts");
+
+      writeFileSync(unitTest, 'export const t = "2026-05-11T09:30:00.000Z";\n');
+
+      expect(
+        checkForbiddenTextWithRoot(unitTest, root).map((row) => row.rule)
+      ).not.toContain("no-hardcoded-iso-dates-in-fixtures");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags setTimeout sleeps in e2e files only", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-e2e-sleep-"));
+
+    try {
+      const e2eDir = join(root, "e2e");
+      const srcDir = join(root, "src");
+
+      mkdirSync(e2eDir, { recursive: true });
+      mkdirSync(srcDir, { recursive: true });
+
+      const sleepLine =
+        "await new Promise((resolve) => setTimeout(resolve, 1000));\n";
+      const spec = join(e2eDir, "thing.spec.ts");
+
+      writeFileSync(spec, sleepLine);
+
+      expect(
+        checkForbiddenTextWithRoot(spec, root).map((row) => row.rule)
+      ).toContain("no-sleep-in-e2e");
+
+      const srcFile = join(srcDir, "thing.ts");
+
+      writeFileSync(srcFile, sleepLine);
+
+      expect(
+        checkForbiddenTextWithRoot(srcFile, root).map((row) => row.rule)
+      ).not.toContain("no-sleep-in-e2e");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 
@@ -543,6 +608,70 @@ describe("checkTestFilesHaveSource", () => {
   });
 });
 
+describe("checkWorkflowExpressionSyntax", () => {
+  test("flags the f-string triple-brace opener that bricks a workflow", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-expr-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(
+        file,
+        "jobs:\n  x:\n    steps:\n      - run: |\n          python3 -c \"print(f'${{{pair[0]}:-...}}')\"\n"
+      );
+
+      const violations = checkWorkflowExpressionSyntax(file);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "github-actions-expression-syntax"
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags an opener with no closer on the line", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-expr-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(file, "jobs:\n  x:\n    name: ${{ github.ref\n");
+
+      const violations = checkWorkflowExpressionSyntax(file);
+
+      expect(violations).toHaveLength(1);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes valid expressions, including quoted JSON arguments", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-expr-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(
+        file,
+        [
+          "concurrency:",
+          "  group: x-${{ github.ref }}",
+          "jobs:",
+          "  x:",
+          "    steps:",
+          '      - run: echo ${{ fromJSON(steps.a.outputs.b || \'[{"version":""}]\')[0].version }}',
+          ""
+        ].join("\n")
+      );
+
+      expect(checkWorkflowExpressionSyntax(file)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("checkEnginePinParity", () => {
   function writeEnginePinFixture(root: string, bunWorkflowPin: string): string {
     const appRoot = join(root, "apps", "ui");
@@ -581,6 +710,33 @@ describe("checkEnginePinParity", () => {
     }
   });
 
+  test("flags a monorepo root package.json without a matching engines.bun pin", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-engine-"));
+
+    try {
+      const appRoot = writeEnginePinFixture(root, "1.3.14");
+
+      writeFileSync(join(root, "package.json"), JSON.stringify({}));
+
+      expect(
+        checkEnginePinParity(appRoot).map((row) => row.message)
+      ).toContainEqual(expect.stringContaining("Monorepo root package.json"));
+
+      writeFileSync(
+        join(root, "package.json"),
+        JSON.stringify({ engines: { bun: "1.3.14" } })
+      );
+
+      expect(
+        checkEnginePinParity(appRoot).map((row) => row.message)
+      ).not.toContainEqual(
+        expect.stringContaining("Monorepo root package.json")
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   test("passes when the workflow bun-version matches packageManager", () => {
     const root = mkdtempSync(join(tmpdir(), "lint-meta-engine-"));
 
@@ -590,6 +746,73 @@ describe("checkEnginePinParity", () => {
       const violations = checkEnginePinParity(appRoot);
 
       expect(violations).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowServiceImageDigestPin", () => {
+  test("flags a service image without a digest", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-svc-image-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(
+        file,
+        "jobs:\n  test:\n    services:\n      postgres:\n        image: postgres:17-alpine\n"
+      );
+
+      const violations = checkWorkflowServiceImageDigestPin(file);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "github-actions-service-image-digest-pin"
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags latest mixed with a digest", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-svc-image-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(
+        file,
+        "jobs:\n  test:\n    container:\n      image: tool/tool:latest@sha256:0000000000000000000000000000000000000000000000000000000000000000\n"
+      );
+
+      const violations = checkWorkflowServiceImageDigestPin(file);
+
+      expect(
+        violations.some((row) => row.message.includes("floating :latest tag"))
+      ).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes digest-pinned images and workflows without images", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-svc-image-"));
+
+    try {
+      const pinned = join(root, "pinned.yml");
+
+      writeFileSync(
+        pinned,
+        "jobs:\n  test:\n    services:\n      postgres:\n        image: postgres:17-alpine@sha256:0000000000000000000000000000000000000000000000000000000000000000\n"
+      );
+
+      expect(checkWorkflowServiceImageDigestPin(pinned)).toEqual([]);
+
+      const none = join(root, "none.yml");
+
+      writeFileSync(none, "jobs: {}\n");
+
+      expect(checkWorkflowServiceImageDigestPin(none)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

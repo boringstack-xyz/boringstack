@@ -73,17 +73,45 @@ export function createForbiddenTextPatterns(
        * object-literal *expressions* (`{} as T`), not assertions *to* an
        * inline object type, so this closes that gap for production source.
        * Narrow the value with a type guard instead (see
-       * src/lib/api/openapi.ts `extractApiErrorBody`). Tests, e2e, and
-       * Storybook keep casting for fixtures, so the ban is src-only and
-       * skips colocated `*.test.*` files.
+       * src/lib/api/openapi.ts `extractApiErrorBody`). The ban covers
+       * src and e2e: e2e casts assert real API response shapes, where
+       * contract drift must fail loudly instead of flowing undefined
+       * into assertions (parse with e2e/fixtures/parse.ts). Unit tests
+       * and Storybook keep casting for fixtures, so colocated `*.test.*`
+       * files are skipped.
        */
       rule: "no-inline-object-cast",
       pattern: /\bas\s+\{/u,
       message:
-        "Casting to an inline object type (`as { … }`) skips validation. Narrow the value with a type guard instead.",
+        "Casting to an inline object type (`as { … }`) skips validation. Narrow the value with a type guard instead (e2e: parse responses via e2e/fixtures/parse.ts).",
       allow: (file) =>
-        !file.startsWith(resolve(root, "src")) ||
+        (!file.startsWith(resolve(root, "src")) &&
+          !file.startsWith(resolve(root, "e2e"))) ||
         /\.test\.(?:ts|tsx)$/u.test(file)
+    },
+    {
+      /*
+       * Shared factories and e2e code run against wall-clock-sensitive
+       * consumers — a literal ISO timestamp ages out (relative-time
+       * assertions drift, servers reject stale consent/validity windows).
+       * Generate with now() from @/lib/time/now instead. Inline literals
+       * in colocated unit tests stay allowed: deterministic fixtures
+       * asserted against fixed expectations are a feature there.
+       */
+      rule: "no-sleep-in-e2e",
+      pattern: /\bsetTimeout\s*\(/u,
+      message:
+        "Wall-clock sleeps flake under CI load and tax every run. Use Playwright's expect.poll/waitFor, or make the awaited state deterministic (see mfa.spec.ts's previous-step TOTP enrolment).",
+      allow: (file) => !file.startsWith(resolve(root, "e2e"))
+    },
+    {
+      rule: "no-hardcoded-iso-dates-in-fixtures",
+      pattern: /"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/u,
+      message:
+        "Hardcoded ISO timestamps in shared factories/e2e age out. Generate with now() from @/lib/time/now.",
+      allow: (file) =>
+        !file.startsWith(resolve(root, "tests/factories")) &&
+        !file.startsWith(resolve(root, "e2e"))
     },
     {
       /*

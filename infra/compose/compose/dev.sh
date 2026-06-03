@@ -83,6 +83,31 @@ case "$STACK" in
         exit 1
       fi
     fi
+    if [[ "$WITH_OBSERVABILITY" == "1" ]]; then
+      : "${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD required in prod when observability is enabled. Generate with: openssl rand -base64 24. Set WITH_OBSERVABILITY=0 to skip.}"
+      if [[ "$GRAFANA_ADMIN_PASSWORD" == "change-me" ]]; then
+        echo "[ERROR] GRAFANA_ADMIN_PASSWORD must not be the historical placeholder (change-me) in prod. Generate with: openssl rand -base64 24." >&2
+        exit 1
+      fi
+    fi
+    # Prod deploys must be reproducible and auditable: a floating `latest`
+    # tag deploys whatever was pushed last (including RC/dev builds) with
+    # no record of the version. Require an explicit pin — either a full
+    # *_IMAGE reference or a *_IMAGE_TAG (semver or sha-<digest>).
+    if [[ -z "${API_IMAGE:-}" ]]; then
+      : "${API_IMAGE_TAG:?API_IMAGE_TAG required in prod (semver like v0.1.0 or sha-<digest>; never latest). Or set API_IMAGE to a full pinned reference.}"
+    fi
+    if [[ -z "${UI_IMAGE:-}" ]]; then
+      : "${UI_IMAGE_TAG:?UI_IMAGE_TAG required in prod (semver like v0.1.0 or sha-<digest>; never latest). Or set UI_IMAGE to a full pinned reference.}"
+    fi
+    if [[ "${API_IMAGE_TAG:-}" == "latest" || "${API_IMAGE:-}" == *:latest ]]; then
+      echo "[ERROR] API image must be pinned in prod — API_IMAGE_TAG=latest (or API_IMAGE ending :latest) is not allowed. Use a semver tag (v0.1.0) or sha-<digest>." >&2
+      exit 1
+    fi
+    if [[ "${UI_IMAGE_TAG:-}" == "latest" || "${UI_IMAGE:-}" == *:latest ]]; then
+      echo "[ERROR] UI image must be pinned in prod — UI_IMAGE_TAG=latest (or UI_IMAGE ending :latest) is not allowed. Use a semver tag (v0.1.0) or sha-<digest>." >&2
+      exit 1
+    fi
     ;;
   *)
     echo "[ERROR] STACK must be \"dev\", \"smoke\", or \"prod\" (got: ${STACK})" >&2
@@ -94,6 +119,24 @@ esac
 # Prod requires the operator to generate their own (guarded above).
 if [[ "$WITH_GLITCHTIP" == "1" && "$STACK" != "prod" && -z "${GLITCHTIP_SECRET_KEY:-}" ]]; then
   export GLITCHTIP_SECRET_KEY="dev-only-not-secret-replace-in-prod-pHnZx7s2qB4eYwLm3KvR8tDfJ5cVgHp1aN6yT0uX9oI="
+fi
+
+# Same out-of-the-box promise for the superuser password, but never a
+# published constant (a fallback baked into a template is a credential
+# leak). Generate a random one on first boot and persist it to .env so
+# later boots and the operator can find it.
+if [[ "$WITH_GLITCHTIP" == "1" && "$STACK" != "prod" && -z "${GLITCHTIP_SUPERUSER_PASSWORD:-}" ]]; then
+  GLITCHTIP_SUPERUSER_PASSWORD="$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-24)"
+  export GLITCHTIP_SUPERUSER_PASSWORD
+  printf 'GLITCHTIP_SUPERUSER_PASSWORD=%s\n' "$GLITCHTIP_SUPERUSER_PASSWORD" >> "$ENV_FILE"
+  echo "[dev] Generated GlitchTip superuser password and saved it to ${ENV_FILE} (GLITCHTIP_SUPERUSER_PASSWORD)."
+fi
+
+if [[ "$WITH_OBSERVABILITY" == "1" && "$STACK" != "prod" && -z "${GRAFANA_ADMIN_PASSWORD:-}" ]]; then
+  GRAFANA_ADMIN_PASSWORD="$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-24)"
+  export GRAFANA_ADMIN_PASSWORD
+  printf 'GRAFANA_ADMIN_PASSWORD=%s\n' "$GRAFANA_ADMIN_PASSWORD" >> "$ENV_FILE"
+  echo "[dev] Generated Grafana admin password and saved it to ${ENV_FILE} (GRAFANA_ADMIN_PASSWORD)."
 fi
 
 if [[ "$WITH_OBSERVABILITY" == "1" && -f "$ROOT/docker-compose.observability.yml" ]]; then

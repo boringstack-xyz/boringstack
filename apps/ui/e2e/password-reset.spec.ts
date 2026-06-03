@@ -1,6 +1,8 @@
 import { type APIRequestContext, request } from "@playwright/test";
+import { z } from "zod";
 
 import { expect, test } from "./fixtures/auth";
+import { parseBody } from "./fixtures/parse";
 
 interface IUser {
   readonly email: string;
@@ -62,7 +64,10 @@ async function fetchResetToken(email: string): Promise<string> {
     );
   }
 
-  const body = (await res.json()) as { data?: { token?: string } };
+  const body = await parseBody(
+    res,
+    z.object({ data: z.object({ token: z.string().optional() }).optional() })
+  );
   const token = body.data?.token;
 
   await ctx.dispose();

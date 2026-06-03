@@ -4,14 +4,41 @@ import { join } from "node:path";
 import { collectSourceFiles } from "../../context";
 import type { IMetaRule, IViolation } from "../../types";
 
-const SUFFIX_REQUIRES_TEST = /\.(service|utils|jobs|check|channel)\.ts$/u;
+const SUFFIX_REQUIRES_TEST =
+  /\.(service|utils|jobs|check|channel|helpers)\.ts$/u;
+
+/*
+ * Directories whose every module is logic by definition, regardless of
+ * suffix: observability wrappers (metrics, tracing) and ACL resolution.
+ * Barrel re-exports (index.ts) and type-only modules (*.types.ts) are
+ * exempt — there is nothing to execute.
+ */
+const LOGIC_DIR_SEGMENTS = [
+  join("src", "lib", "metrics"),
+  join("src", "lib", "tracing"),
+  join("src", "lib", "acl"),
+] as const;
+
+function isLogicFile(root: string, file: string): boolean {
+  if (SUFFIX_REQUIRES_TEST.test(file)) {
+    return true;
+  }
+
+  if (file.endsWith("/index.ts") || file.endsWith(".types.ts")) {
+    return false;
+  }
+
+  return LOGIC_DIR_SEGMENTS.some((segment) =>
+    file.startsWith(`${join(root, segment)}/`)
+  );
+}
 
 export function checkLogicFilesHaveTests(root: string): IViolation[] {
   const violations: IViolation[] = [];
   const srcRoot = join(root, "src");
 
   for (const file of collectSourceFiles(srcRoot, [])) {
-    if (!SUFFIX_REQUIRES_TEST.test(file)) {
+    if (!isLogicFile(root, file)) {
       continue;
     }
 
@@ -31,7 +58,7 @@ export function checkLogicFilesHaveTests(root: string): IViolation[] {
       rule: "logic-files-require-test-sibling",
       message: `Missing unit-test sibling. Expected \`${expectedTest.slice(
         root.length + 1
-      )}\` to exist alongside this \`*.{service,utils,jobs,check,channel}.ts\` module — every piece of logic ships with a test.`,
+      )}\` to exist alongside this logic module (\`*.{service,utils,jobs,check,channel,helpers}.ts\` or anything under src/lib/{metrics,tracing,acl}) — every piece of logic ships with a test.`,
     });
   }
 

@@ -26,7 +26,7 @@
 
 services:
   whatsupdocker:
-    image: getwud/wud:latest@sha256:2df7cafa0fc84cdd66ad976163abc5390fa5995e0b5788a90e6a5303706bc21a
+    image: getwud/wud:8.2.2@sha256:2df7cafa0fc84cdd66ad976163abc5390fa5995e0b5788a90e6a5303706bc21a
     profiles: [wud]
     restart: unless-stopped
     environment:

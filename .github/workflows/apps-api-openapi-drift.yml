@@ -30,7 +30,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:17-alpine
+        image: postgres:17-alpine@sha256:979c4379dd698aba0b890599a6104e082035f98ef31d9b9291ec22f2b13059ca
         env:
           POSTGRES_DB: app
           POSTGRES_USER: app
@@ -44,7 +44,7 @@ jobs:
           --health-retries 10
 
       valkey:
-        image: valkey/valkey:8-alpine
+        image: valkey/valkey:8-alpine@sha256:77643d152547b446fc15cbafaff22004545663fcd40c6b28038ad283837baa75
         ports:
           - 6379:6379
         options: >-

@@ -58,6 +58,8 @@ jobs:
           echo "GLITCHTIP_SECRET_KEY=$(openssl rand -base64 50 | tr -d '\n')" >> .env
           echo "GLITCHTIP_PUBLIC_HOST=glitchtip.example.com"                  >> .env
           echo "GLITCHTIP_BASIC_AUTH_USERS=user:placeholder"                  >> .env
+          echo "GLITCHTIP_SUPERUSER_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=')" >> .env
+          echo "GRAFANA_ADMIN_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=')"       >> .env
 
       - name: Validate — dev (base)
         if: steps.filter.outputs.code == 'true'
@@ -108,6 +110,161 @@ jobs:
 
           print("healthcheck present on: " + ", ".join(sorted(services)))
           EOF
+
+      - name: Guardrail — compose images digest-pinned, no floating latest
+        if: steps.filter.outputs.code == 'true'
+        working-directory: infra/compose/compose
+        run: |
+          python3 - <<'EOF'
+          import glob
+          import re
+
+          # Literal image refs must pin a @sha256 digest and must not carry
+          # the floating :latest tag (even alongside a digest — the digest
+          # wins, but the tag misdocuments what is pinned). Interpolated
+          # refs (${VAR...}) are validated at runtime by the stack scripts.
+          IMAGE_RE = re.compile(r"^\s+image:\s*(?P<ref>[^\s#]+)")
+          bad: list[str] = []
+
+          for path in sorted(glob.glob("docker-compose*.yml")):
+              with open(path, encoding="utf-8") as handle:
+                  for lineno, line in enumerate(handle, start=1):
+                      match = IMAGE_RE.match(line)
+                      if match is None:
+                          continue
+                      ref = match.group("ref")
+                      if "${" in ref:
+                          continue
+                      if "@sha256:" not in ref:
+                          bad.append(f"{path}:{lineno}: {ref} (no digest pin)")
+                      elif ":latest@" in ref:
+                          bad.append(f"{path}:{lineno}: {ref} (floating :latest tag)")
+
+          if bad:
+              raise SystemExit("unpinned compose images:\n" + "\n".join(bad))
+
+          print("all literal compose image refs digest-pinned")
+          EOF
+
+      - name: Guardrail — no hardcoded credential fallbacks in compose
+        if: steps.filter.outputs.code == 'true'
+        working-directory: infra/compose/compose
+        run: |
+          python3 - <<'EOF'
+          import glob
+          import re
+
+          # Secret-named env vars must not ship a literal fallback —
+          # `${VAR:-hunter2}` in a published template is a credential leak.
+          # Use `${VAR:?message}` and let dev.sh generate dev values.
+          # The allowlist documents the deliberate dev-only placeholders
+          # that dev.sh fail-closes in prod.
+          SECRET_FALLBACK_RE = re.compile(
+              r"\$\{(?P<var>[A-Za-z0-9_]*(?:PASSWORD|SECRET|_TOKEN|_KEY)[A-Za-z0-9_]*):-(?P<fallback>[^}]+)\}"
+          )
+          ALLOWED = {
+              # Dev DB password documented in .env.example; dev.sh requires
+              # an explicit POSTGRES_PASSWORD when STACK=prod.
+              ("POSTGRES_PASSWORD", "app_dev_password"),
+              # api-dev / api-migrate-dev only run under the dev profile;
+              # prod api reads api.prod.env instead.
+              ("API_DEV_JWT_SECRET", "docker-compose-api-dev-jwt-secret-keys"),
+              ("API_DEV_MFA_ENCRYPTION_KEY", "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="),
+          }
+          bad: list[str] = []
+
+          for path in sorted(glob.glob("docker-compose*.yml")):
+              with open(path, encoding="utf-8") as handle:
+                  for lineno, line in enumerate(handle, start=1):
+                      for match in SECRET_FALLBACK_RE.finditer(line):
+                          pair = (match.group("var"), match.group("fallback"))
+                          if pair in ALLOWED:
+                              continue
+                          # Note: string concat on purpose — emitting a
+                          # dollar followed by double braces here would be
+                          # lexed by GitHub Actions as a broken expression
+                          # and invalidate the entire workflow file.
+                          bad.append(path + ":" + str(lineno) + ": $" + "{" + pair[0] + ":-...}")
+
+          if bad:
+              raise SystemExit(
+                  "hardcoded credential fallbacks in compose:\n" + "\n".join(bad)
+              )
+
+          print("no unallowed credential fallbacks in compose files")
+          EOF
+
+      - name: Guardrail — rooted prod services must drop capabilities
+        if: steps.filter.outputs.code == 'true'
+        working-directory: infra/compose/compose
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            --profile prod config --format json > /tmp/prod-config.json
+          python3 - <<'EOF'
+          import json
+
+          # `user: root` is only tolerated when the root process is
+          # neutered: every capability dropped (allowlist re-adds only),
+          # plus no-new-privileges. Anything less is a full-power root
+          # container one RCE away from the host.
+          with open("/tmp/prod-config.json", encoding="utf-8") as handle:
+              services = json.load(handle)["services"]
+
+          bad: list[str] = []
+
+          for name, svc in services.items():
+              if svc.get("user") not in ("root", "0", "0:0"):
+                  continue
+              if "ALL" not in (svc.get("cap_drop") or []):
+                  bad.append(f"{name}: user root without cap_drop: [ALL]")
+              if "no-new-privileges:true" not in (svc.get("security_opt") or []):
+                  bad.append(f"{name}: user root without no-new-privileges")
+
+          if bad:
+              raise SystemExit("rooted services not neutered:\n" + "\n".join(bad))
+
+          print("all rooted prod services drop capabilities")
+          EOF
+
+      - name: Guardrail — prod rejects unpinned image tags (dev.sh fail-closed)
+        if: steps.filter.outputs.code == 'true'
+        working-directory: infra/compose/compose
+        env:
+          STACK: prod
+          WITH_GLITCHTIP: "0"
+          WITH_OBSERVABILITY: "0"
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: ci-guardrail-placeholder
+          POSTGRES_DB: app
+          JWT_SECRET: ci-guardrail-placeholder-padded-to-32-chars
+          MFA_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+          FRONTEND_URL: https://example.com
+          PUBLIC_API_URL: https://example.com/api
+          PUBLIC_UI_HOST: example.com
+          ACME_EMAIL: ops@example.com
+        run: |
+          chmod +x dev.sh
+
+          # 1. Missing tags must fail closed and name the missing var.
+          if output=$(./dev.sh config --quiet 2>&1); then
+            echo "FAIL: prod accepted unset image tags"; exit 1
+          fi
+          echo "$output" | grep -q "API_IMAGE_TAG" || {
+            echo "FAIL: error does not mention API_IMAGE_TAG"; echo "$output"; exit 1
+          }
+
+          # 2. latest must be rejected explicitly.
+          if output=$(API_IMAGE_TAG=latest UI_IMAGE_TAG=latest ./dev.sh config --quiet 2>&1); then
+            echo "FAIL: prod accepted latest image tags"; exit 1
+          fi
+          echo "$output" | grep -q "must be pinned in prod" || {
+            echo "FAIL: latest rejection message missing"; echo "$output"; exit 1
+          }
+
+          # 3. Pinned tags pass.
+          API_IMAGE_TAG=v0.1.0 UI_IMAGE_TAG=v0.1.0 ./dev.sh config --quiet
+          echo "prod image-tag pinning fail-closed checks passed"
 
       - name: Validate — dev + observability
         if: steps.filter.outputs.code == 'true'
@@ -284,4 +441,3 @@ jobs:
           # don't fail on style nits — only on real syntax errors.
           ~/.local/bin/yamllint -d "{extends: relaxed, rules: {line-length: disable}}" \
             infra/compose/compose/ .github/workflows/
-
