@@ -15,12 +15,37 @@ export function resolveTemplateRoot(envKey, siblingName) {
   return resolve(DOCS_ROOT, "..", siblingName);
 }
 
+/*
+ * Child exports run in sibling apps the docs build does not control — a
+ * hang or failure there must surface with full context instead of
+ * stalling the docs build or losing the error text. The timeout bounds
+ * the wait; the catch re-throws with the child's captured stderr.
+ */
+const JSON_EXPORT_TIMEOUT_MS = 60_000;
+
 function runJsonExport(cwd, command, args) {
-  const stdout = execFileSync(command, args, {
-    cwd,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  let stdout;
+
+  try {
+    stdout = execFileSync(command, args, {
+      cwd,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      timeout: JSON_EXPORT_TIMEOUT_MS,
+    });
+  } catch (error) {
+    const stderr =
+      error !== null && typeof error === "object" && "stderr" in error
+        ? String(error.stderr ?? "").trim()
+        : "";
+    const reason = error instanceof Error ? error.message : String(error);
+
+    throw new Error(
+      `[docs] ${command} ${args.join(" ")} failed in ${cwd}: ${reason}${
+        stderr === "" ? "" : `\n--- child stderr ---\n${stderr}`
+      }`
+    );
+  }
 
   return JSON.parse(stdout);
 }
