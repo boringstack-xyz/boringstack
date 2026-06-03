@@ -37,6 +37,12 @@
       "description": "Workflows with a concurrency block must set cancel-in-progress explicitly."
     },
     {
+      "id": "github-actions-service-image-digest-pin",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Workflow service/container images must be pinned by @sha256 digest, not tag alone."
+    },
+    {
       "id": "pre-push-ci-parity",
       "category": "ci",
       "ciCritical": false,
@@ -229,6 +235,12 @@
       "category": "ci",
       "ciCritical": false,
       "description": "Workflows with a concurrency block must set cancel-in-progress explicitly."
+    },
+    {
+      "id": "github-actions-service-image-digest-pin",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Workflow service/container images must be pinned by @sha256 digest, not tag alone."
     },
     {
       "id": "pre-push-ci-parity",

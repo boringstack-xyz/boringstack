@@ -3,6 +3,7 @@ import { dockerfileBaseImageShaPinRule } from "./rules/ci/dockerfile-base-image-
 import { enginePinParityRule } from "./rules/ci/engine-pin-parity";
 import { githubActionsConcurrencyExplicitRule } from "./rules/ci/github-actions-concurrency-explicit";
 import { githubActionsPermissionsRule } from "./rules/ci/github-actions-permissions";
+import { githubActionsServiceImageDigestPinRule } from "./rules/ci/github-actions-service-image-digest-pin";
 import { githubActionsTimeoutRequiredRule } from "./rules/ci/github-actions-timeout-required";
 import { prePushCiParityRule } from "./rules/ci/pre-push-ci-parity";
 import { eslintConfigNoWarnRule } from "./rules/config/eslint-config-no-warn";
@@ -30,6 +31,7 @@ export const META_RULES: readonly IMetaRule[] = [
   githubActionsPermissionsRule,
   githubActionsTimeoutRequiredRule,
   githubActionsConcurrencyExplicitRule,
+  githubActionsServiceImageDigestPinRule,
   prePushCiParityRule,
   enginePinParityRule,
   dockerfileBaseImageShaPinRule,

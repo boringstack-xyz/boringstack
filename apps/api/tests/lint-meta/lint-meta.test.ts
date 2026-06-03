@@ -28,6 +28,7 @@ import {
   checkRouteFilesHaveTests,
   checkTouchedTests,
   checkWorkflowConcurrencyExplicit,
+  checkWorkflowServiceImageDigestPin,
   checkWorkflowShas,
   checkWorkflowTimeouts,
   collectSourceFiles,
@@ -403,6 +404,81 @@ describe("checkWorkflowConcurrencyExplicit", () => {
       const none = writeWorkflow(root, "jobs: {}\n");
 
       expect(checkWorkflowConcurrencyExplicit(none)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowServiceImageDigestPin", () => {
+  test("flags a service image without a digest", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-svc-image-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(
+        file,
+        "jobs:\n  test:\n    services:\n      postgres:\n        image: postgres:17-alpine\n"
+      );
+
+      const violations = checkWorkflowServiceImageDigestPin(file);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "github-actions-service-image-digest-pin"
+      );
+      expect(
+        violations.some((row) =>
+          row.message.includes("postgres:17-alpine (line 5)")
+        )
+      ).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags latest mixed with a digest", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-svc-image-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(
+        file,
+        "jobs:\n  test:\n    container:\n      image: tool/tool:latest@sha256:0000000000000000000000000000000000000000000000000000000000000000\n"
+      );
+
+      const violations = checkWorkflowServiceImageDigestPin(file);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "github-actions-service-image-digest-pin"
+      );
+      expect(
+        violations.some((row) => row.message.includes("floating :latest tag"))
+      ).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes digest-pinned images and workflows without images", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-svc-image-"));
+
+    try {
+      const pinned = join(root, "pinned.yml");
+
+      writeFileSync(
+        pinned,
+        "jobs:\n  test:\n    services:\n      postgres:\n        image: postgres:17-alpine@sha256:0000000000000000000000000000000000000000000000000000000000000000\n"
+      );
+
+      expect(checkWorkflowServiceImageDigestPin(pinned)).toEqual([]);
+
+      const none = join(root, "none.yml");
+
+      writeFileSync(none, "jobs: {}\n");
+
+      expect(checkWorkflowServiceImageDigestPin(none)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
