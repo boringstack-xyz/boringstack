@@ -32,7 +32,7 @@ These deserve special handling because they affect security, availability, or st
 
 **MFA_ENCRYPTION_KEY**: AES-256-GCM key for TOTP secrets. Once users enrol, losing this key means every MFA user re-enrols from scratch. Generate with `openssl rand -base64 32` and back up to hardware or paper.
 
-**POSTGRES_PASSWORD / VALKEY_PASSWORD**: Data plane secrets. Rotate in production by updating the var, then restarting services. Database passwords should be 32+ random bytes.
+**POSTGRES_PASSWORD / VALKEY_PASSWORD**: Data plane secrets. Rotate in production by updating the var, then restarting services. Database passwords should be 32+ random bytes. `VALKEY_PASSWORD` is required in production — the Valkey server itself enforces it via `--requirepass`, and the API's env validator refuses to boot without it whenever queues, the Valkey cache, SSE notifications, or OAuth are enabled. Leaving it empty (the dev default) disables Valkey auth for local convenience only.
 
 **DATABASE_URL**: Postgres connection string. Must include TLS mode for production (`?ssl=require`). In development defaults to `localhost`; in production, points to a managed provider or socket.
 

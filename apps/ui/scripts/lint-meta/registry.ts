@@ -15,6 +15,7 @@ import { envCascadeDriftRule } from "./rules/env/env-cascade-drift";
 import { noDirectImportMetaEnvRule } from "./rules/env/no-direct-import-meta-env";
 import { noSilentErrorSwallowRule } from "./rules/queries/no-silent-error-swallow";
 import { canonicalHelpersSingleHomeRule } from "./rules/source-text/canonical-helpers-single-home";
+import { docsNoRetiredCredentialsRule } from "./rules/source-text/docs-no-retired-credentials";
 import { forbiddenTextRule } from "./rules/source-text/forbidden-text";
 import { noCrossRepoImportRule } from "./rules/source-text/no-cross-repo-import";
 import { noRawRoleLiteralsRule } from "./rules/source-text/no-raw-role-literals";
@@ -47,6 +48,7 @@ export const META_RULES: readonly IMetaRule[] = [
   modulepreloadSizeLimitRule,
   // --- source-text ---
   canonicalHelpersSingleHomeRule,
+  docsNoRetiredCredentialsRule,
   forbiddenTextRule,
   noCrossRepoImportRule,
   noRawRoleLiteralsRule,

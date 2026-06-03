@@ -97,6 +97,12 @@
       "description": "Helpers in the canonical registry must only be declared in their single source-of-truth file."
     },
     {
+      "id": "docs-no-retired-credentials",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Documentation prose must not reference retired default credentials."
+    },
+    {
       "id": "forbidden-text",
       "category": "source-text",
       "ciCritical": false,
@@ -337,6 +343,12 @@
       "category": "source-text",
       "ciCritical": false,
       "description": "Helpers in the canonical registry must only be declared in their single source-of-truth file."
+    },
+    {
+      "id": "docs-no-retired-credentials",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Documentation prose must not reference retired default credentials."
     },
     {
       "id": "no-raw-role-literal",
