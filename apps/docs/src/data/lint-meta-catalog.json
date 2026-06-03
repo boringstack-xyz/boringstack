@@ -103,6 +103,12 @@
       "description": "Documentation prose must not reference retired default credentials."
     },
     {
+      "id": "i18n-locale-keys-used",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Locale keys defined in en/common.json must be referenced in src (dynamic t() prefixes exempt)."
+    },
+    {
       "id": "forbidden-text",
       "category": "source-text",
       "ciCritical": false,

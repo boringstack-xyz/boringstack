@@ -26,7 +26,11 @@ Compose stack up: Postgres, Valkey, api-dev with migrations applied,
 ui-dev on `localhost:7331`, OpenAPI client generated. No local Bun or
 Postgres needed.
 
-Sign in at `http://localhost:7331` as `demo@example.com / password123`.
+Create an account at `http://localhost:7331` — signup is open in dev and
+the verification email lands in the local Mailpit (or use the seeded demo
+account: uncomment `SUPERUSER_EMAIL` / `SUPERUSER_PASSWORD` in
+`infra/compose/compose/.env` **before** first boot and the migrator seeds
+it for you).
 
 ## The merge bar
 

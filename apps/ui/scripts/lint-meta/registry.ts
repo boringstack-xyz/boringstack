@@ -17,6 +17,7 @@ import { noSilentErrorSwallowRule } from "./rules/queries/no-silent-error-swallo
 import { canonicalHelpersSingleHomeRule } from "./rules/source-text/canonical-helpers-single-home";
 import { docsNoRetiredCredentialsRule } from "./rules/source-text/docs-no-retired-credentials";
 import { forbiddenTextRule } from "./rules/source-text/forbidden-text";
+import { i18nLocaleKeysUsedRule } from "./rules/source-text/i18n-locale-keys-used";
 import { noCrossRepoImportRule } from "./rules/source-text/no-cross-repo-import";
 import { noRawRoleLiteralsRule } from "./rules/source-text/no-raw-role-literals";
 import { scriptRawFetchRule } from "./rules/source-text/script-raw-fetch";
@@ -49,6 +50,7 @@ export const META_RULES: readonly IMetaRule[] = [
   // --- source-text ---
   canonicalHelpersSingleHomeRule,
   docsNoRetiredCredentialsRule,
+  i18nLocaleKeysUsedRule,
   forbiddenTextRule,
   noCrossRepoImportRule,
   noRawRoleLiteralsRule,

@@ -17,6 +17,7 @@ import {
   checkEnginePinParity,
   checkEslintPluginContractParity,
   checkForbiddenText,
+  checkI18nLocaleKeysUsed,
   checkNoCrossRepoImports,
   checkNoDirectImportMetaEnv,
   checkNoRawRoleLiterals,
@@ -668,6 +669,41 @@ describe("checkWorkflowExpressionSyntax", () => {
       );
 
       expect(checkWorkflowExpressionSyntax(file)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkI18nLocaleKeysUsed", () => {
+  test("flags a defined-but-unused leaf key; honors literals and dynamic prefixes", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-i18n-used-"));
+
+    try {
+      const localeDir = join(root, "src", "lib", "i18n", "locales", "en");
+
+      mkdirSync(localeDir, { recursive: true });
+      writeFileSync(
+        join(localeDir, "common.json"),
+        JSON.stringify({
+          billing: { currentPlan: { free: "Free", paid: "Paid" } },
+          auth: { oauth: { google: "Google", github: "GitHub" } }
+        })
+      );
+
+      const srcFile = join(root, "src", "page.tsx");
+
+      writeFileSync(
+        srcFile,
+        't("billing.currentPlan.free");\nt(`auth.oauth.${provider}`);\n'
+      );
+
+      const violations = checkI18nLocaleKeysUsed(root, [srcFile]);
+
+      expect(violations.map((row) => row.message)).toContainEqual(
+        expect.stringContaining("billing.currentPlan.paid")
+      );
+      expect(violations).toHaveLength(1);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

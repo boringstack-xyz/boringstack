@@ -1,14 +1,12 @@
 {
   "app": {
-    "name": "BoringStack",
-    "tagline": "Produktionsreifes SPA-Starter"
+    "name": "BoringStack"
   },
   "a11y": {
     "skipToContent": "Zum Hauptinhalt springen"
   },
   "common": {
     "loading": "Wird geladen…",
-    "loadingAria": "Wird geladen",
     "close": "Schließen"
   },
   "offline": {
@@ -62,8 +60,7 @@
       "signIn": "Anmelden",
       "errors": {
         "network": "Server nicht erreichbar. Bitte erneut versuchen.",
-        "emailTaken": "Mit dieser E-Mail-Adresse existiert bereits ein Konto.",
-        "weakPassword": "Verwende ein stärkeres Passwort (Groß-, Kleinbuchstaben und eine Ziffer)."
+        "emailTaken": "Mit dieser E-Mail-Adresse existiert bereits ein Konto."
       }
     },
     "verifyEmail": {
@@ -194,7 +191,6 @@
   "nav": {
     "ariaPrimary": "Hauptnavigation",
     "openMenu": "Menü öffnen",
-    "closeMenu": "Menü schließen",
     "menuTitle": "Menü",
     "dashboard": "Übersicht",
     "notifications": "Benachrichtigungen",
@@ -213,8 +209,7 @@
     "loadError": "Abrechnungsdetails konnten nicht geladen werden. Seite aktualisieren oder später erneut versuchen.",
     "currentPlan": {
       "label": "Aktueller Tarif",
-      "free": "Kostenlos",
-      "paid": "Bezahlt"
+      "free": "Kostenlos"
     },
     "plansHeading": "Verfügbare Tarife",
     "manage": "Abonnement verwalten",
@@ -286,11 +281,6 @@
         "webPush": "Web Push"
       }
     }
-  },
-  "languageSwitcher": {
-    "label": "Sprache",
-    "english": "English",
-    "german": "Deutsch"
   },
   "accounts": {
     "settings": {
@@ -428,7 +418,6 @@
       "saveSuccess": "Profil aktualisiert",
       "saveError": "Profil konnte nicht aktualisiert werden. Bitte erneut versuchen.",
       "fields": {
-        "name": "Name",
         "firstName": "Vorname",
         "lastName": "Nachname",
         "email": "E-Mail",
@@ -437,9 +426,7 @@
       "identityLabel": "Identität"
     },
     "switcher": {
-      "ariaLabel": "Aktives Konto wechseln",
-      "currentBadge": "Aktiv",
-      "rolePrefix": "Rolle"
+      "ariaLabel": "Aktives Konto wechseln"
     },
     "auditLog": {
       "pageTitle": "Audit-Log",
@@ -447,13 +434,11 @@
       "loading": "Audit-Einträge werden geladen",
       "error": "Audit-Log konnte nicht geladen werden. Bitte erneut versuchen.",
       "empty": "Noch keine Audit-Einträge für dieses Konto.",
-      "systemActor": "System",
-      "navLabel": "Audit-Log"
+      "systemActor": "System"
     },
     "invitations": {
       "pageTitle": "Team",
       "pageSubtitle": "Lade Teammitglieder ein und verwalte offene Einladungen.",
-      "inviteCta": "Teammitglied einladen",
       "tableHeading": "Offene Einladungen",
       "empty": "Keine offenen Einladungen.",
       "columns": {
@@ -471,8 +456,6 @@
         "roleLabel": "Rolle",
         "submit": "Einladung senden",
         "submitting": "Wird gesendet…",
-        "cancel": "Abbrechen",
-        "success": "Einladung gesendet",
         "errorGeneric": "Einladung konnte nicht gesendet werden."
       },
       "roles": {
@@ -516,7 +499,6 @@
     "joinRequests": {
       "pageTitle": "Beitrittsanfragen",
       "pageSubtitle": "Offene Anfragen von Nutzern mit passender E-Mail-Domain.",
-      "navLabel": "Beitrittsanfragen",
       "empty": "Keine offenen Beitrittsanfragen.",
       "loading": "Beitrittsanfragen werden geladen…",
       "error": "Beitrittsanfragen konnten nicht geladen werden. Versuche es erneut.",

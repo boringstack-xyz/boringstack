@@ -85,7 +85,9 @@ print_dev_urls() {
   [[ "$with_glitch" != "0" ]] && row "GlitchTip"    "http://localhost:8055"
 
   echo
-  echo "Sign in as demo@example.com / password123."
+  echo "Create an account at http://localhost:7331 (signup is open in dev),"
+echo "or uncomment SUPERUSER_EMAIL/SUPERUSER_PASSWORD in compose/.env before"
+echo "first boot to have the migrator seed a demo account."
   echo
 }
 
@@ -100,6 +102,6 @@ case "${1:-}" in
     echo "[setup] Done. Next:"
     echo "  cd infra/compose/compose && ./dev.sh up -d --build"
     echo "  open http://localhost:7331"
-    echo "  sign in as demo@example.com / password123"
+    echo "  create an account at http://localhost:7331 (or seed SUPERUSER_* in compose/.env first)"
     ;;
 esac
