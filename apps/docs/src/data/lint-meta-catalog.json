@@ -381,6 +381,12 @@
       "description": "Documentation prose must not reference retired default credentials."
     },
     {
+      "id": "external-client-timeout",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "SDK clients (Stripe/OpenAI/Anthropic) need a timeout option; fetch() in src needs an AbortSignal."
+    },
+    {
       "id": "no-raw-role-literal",
       "category": "source-text",
       "ciCritical": false,

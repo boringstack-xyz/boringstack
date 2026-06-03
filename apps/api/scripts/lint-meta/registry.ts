@@ -17,6 +17,7 @@ import { envCascadeDriftRule } from "./rules/env/env-cascade-drift";
 import { noDirectProcessEnvRule } from "./rules/env/no-direct-process-env";
 import { canonicalHelpersSingleHomeRule } from "./rules/source-text/canonical-helpers-single-home";
 import { docsNoRetiredCredentialsRule } from "./rules/source-text/docs-no-retired-credentials";
+import { externalClientTimeoutRule } from "./rules/source-text/external-client-timeout";
 import { forbiddenTextRule } from "./rules/source-text/forbidden-text";
 import { noRawRoleLiteralsRule } from "./rules/source-text/no-raw-role-literals";
 import { noOverlappingLibsRule } from "./rules/supply-chain/no-overlapping-libs";
@@ -50,6 +51,7 @@ export const META_RULES: readonly IMetaRule[] = [
   forbiddenTextRule,
   canonicalHelpersSingleHomeRule,
   docsNoRetiredCredentialsRule,
+  externalClientTimeoutRule,
   noRawRoleLiteralsRule,
   routesRequireTestSiblingRule,
   logicFilesRequireTestSiblingRule,

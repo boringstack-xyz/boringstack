@@ -23,6 +23,7 @@ import {
   checkEslintOverridePathsExist,
   checkEslintPluginContractParity,
   checkExactDependencyVersions,
+  checkExternalClientTimeouts,
   checkForbiddenText,
   checkLogicFilesHaveTests,
   checkNoDirectProcessEnv,
@@ -592,6 +593,38 @@ describe("checkWorkflowExpressionSyntax", () => {
 
 const CONTRACT_MD = "AGENT_CONTRACT.md";
 const PKG_JSON = "package.json";
+
+describe("checkExternalClientTimeouts", () => {
+  test("flags SDK constructors without timeout and bare fetch; passes bounded ones", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-timeouts-"));
+
+    try {
+      mkdirSync(join(root, "src"), { recursive: true });
+
+      const bad = join(root, "src", "bad.ts");
+
+      writeFileSync(
+        bad,
+        'const s = new Stripe(key);\nconst r = await fetch(url, { method: "POST" });\n'
+      );
+
+      const rules = checkExternalClientTimeouts([bad]).map((row) => row.rule);
+
+      expect(rules).toHaveLength(2);
+
+      const good = join(root, "src", "good.ts");
+
+      writeFileSync(
+        good,
+        "const s = new Stripe(key, { timeout: 10_000 });\nconst r = await fetch(url, { signal: AbortSignal.timeout(10_000) });\n"
+      );
+
+      expect(checkExternalClientTimeouts([good])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
 
 describe("checkTofuBootstrapHardening", () => {
   function makeBootstrap(root: string, mainTf: string): void {

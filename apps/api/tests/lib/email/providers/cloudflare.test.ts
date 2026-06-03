@@ -132,6 +132,24 @@ describe("CloudflareEmailService", () => {
     expect(body.text).toBe("body");
   });
 
+  test("every attempt carries an abort signal (bounded request budget)", async () => {
+    const { calls } = installFakeFetch(
+      new Response(successBody("msg_abc123"), { status: 200 })
+    );
+
+    const svc = new CloudflareEmailService(ACCOUNT_ID, API_TOKEN);
+
+    await svc.send({ to: TO, subject: "subj", html: "<p>body</p>" });
+
+    const init = calls[0]?.init;
+
+    if (!init) {
+      throw new Error("expected a captured fetch call");
+    }
+
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
   test("omits `text` from the body when not provided", async () => {
     const { calls } = installFakeFetch(
       new Response(successBody("msg_abc123"), { status: 200 })

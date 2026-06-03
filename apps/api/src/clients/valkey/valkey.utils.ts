@@ -16,6 +16,7 @@ import { env } from "../../config/env";
  */
 
 const APP_CONNECT_TIMEOUT_MS = 2000;
+const APP_COMMAND_TIMEOUT_MS = 1_000;
 
 const baseConnection = () => ({
   host: env.VALKEY_HOST,
@@ -54,4 +55,10 @@ export const getValkeyAppClientOptions = (
   maxRetriesPerRequest: 1,
   lazyConnect: true,
   connectTimeout: overrides.connectTimeout ?? APP_CONNECT_TIMEOUT_MS,
+  /*
+   * connectTimeout bounds the handshake; commandTimeout bounds every
+   * command after it. Without it an established-but-slow Valkey delays
+   * each cache / rate-limit / OAuth-state operation unboundedly.
+   */
+  commandTimeout: APP_COMMAND_TIMEOUT_MS,
 });

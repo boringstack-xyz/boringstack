@@ -118,12 +118,22 @@ export const splitDisplayName = (
   };
 };
 
+const OAUTH_FETCH_TIMEOUT_MS = 10_000;
+
 /** Wraps `fetch` for OAuth-shaped JSON; throws on non-2xx. */
 export const fetchJson = async (
   url: string,
   init: RequestInit
 ): Promise<unknown> => {
-  const res = await fetch(url, init);
+  /*
+   * Bounded budget — these calls sit on the OAuth callback request
+   * path; a hung IdP token endpoint must not pin the handler. Callers
+   * may override via init.signal.
+   */
+  const res = await fetch(url, {
+    signal: AbortSignal.timeout(OAUTH_FETCH_TIMEOUT_MS),
+    ...init,
+  });
 
   if (!res.ok) {
     const body = await res.text();

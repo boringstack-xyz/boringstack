@@ -40,6 +40,7 @@ import { checkWorkflowTimeouts } from "./rules/ci/github-actions-timeout-require
 import { checkPrePushParity } from "./rules/ci/pre-push-ci-parity";
 import { checkTofuBootstrapHardening } from "./rules/ci/tofu-bootstrap-hardening";
 import { checkCanonicalHelpersSingleHome } from "./rules/source-text/canonical-helpers-single-home";
+import { checkExternalClientTimeouts } from "./rules/source-text/external-client-timeout";
 import { checkForbiddenText } from "./rules/source-text/forbidden-text";
 import { checkNoRawRoleLiterals } from "./rules/source-text/no-raw-role-literals";
 import { checkLogicFilesHaveTests } from "./rules/testing/logic-files-require-test-sibling";
@@ -105,6 +106,7 @@ export {
   checkDockerfileBaseImageShaPin,
   checkEnginePinParity,
   checkExactDependencyVersions,
+  checkExternalClientTimeouts,
   checkEslintConfigNoWarn,
   checkEslintOverridePathsExist,
   checkEslintPluginContractParity,
