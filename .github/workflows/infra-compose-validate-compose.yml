@@ -58,6 +58,8 @@ jobs:
           echo "GLITCHTIP_SECRET_KEY=$(openssl rand -base64 50 | tr -d '\n')" >> .env
           echo "GLITCHTIP_PUBLIC_HOST=glitchtip.example.com"                  >> .env
           echo "GLITCHTIP_BASIC_AUTH_USERS=user:placeholder"                  >> .env
+          echo "GLITCHTIP_SUPERUSER_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=')" >> .env
+          echo "GRAFANA_ADMIN_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=')"       >> .env
 
       - name: Validate — dev (base)
         if: steps.filter.outputs.code == 'true'
@@ -142,6 +144,50 @@ jobs:
               raise SystemExit("unpinned compose images:\n" + "\n".join(bad))
 
           print("all literal compose image refs digest-pinned")
+          EOF
+
+      - name: Guardrail — no hardcoded credential fallbacks in compose
+        if: steps.filter.outputs.code == 'true'
+        working-directory: infra/compose/compose
+        run: |
+          python3 - <<'EOF'
+          import glob
+          import re
+
+          # Secret-named env vars must not ship a literal fallback —
+          # `${VAR:-hunter2}` in a published template is a credential leak.
+          # Use `${VAR:?message}` and let dev.sh generate dev values.
+          # The allowlist documents the deliberate dev-only placeholders
+          # that dev.sh fail-closes in prod.
+          SECRET_FALLBACK_RE = re.compile(
+              r"\$\{(?P<var>[A-Za-z0-9_]*(?:PASSWORD|SECRET|_TOKEN|_KEY)[A-Za-z0-9_]*):-(?P<fallback>[^}]+)\}"
+          )
+          ALLOWED = {
+              # Dev DB password documented in .env.example; dev.sh requires
+              # an explicit POSTGRES_PASSWORD when STACK=prod.
+              ("POSTGRES_PASSWORD", "app_dev_password"),
+              # api-dev / api-migrate-dev only run under the dev profile;
+              # prod api reads api.prod.env instead.
+              ("API_DEV_JWT_SECRET", "docker-compose-api-dev-jwt-secret-keys"),
+              ("API_DEV_MFA_ENCRYPTION_KEY", "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="),
+          }
+          bad: list[str] = []
+
+          for path in sorted(glob.glob("docker-compose*.yml")):
+              with open(path, encoding="utf-8") as handle:
+                  for lineno, line in enumerate(handle, start=1):
+                      for match in SECRET_FALLBACK_RE.finditer(line):
+                          pair = (match.group("var"), match.group("fallback"))
+                          if pair in ALLOWED:
+                              continue
+                          bad.append(f"{path}:{lineno}: ${{{pair[0]}:-...}}")
+
+          if bad:
+              raise SystemExit(
+                  "hardcoded credential fallbacks in compose:\n" + "\n".join(bad)
+              )
+
+          print("no unallowed credential fallbacks in compose files")
           EOF
 
       - name: Validate — dev + observability

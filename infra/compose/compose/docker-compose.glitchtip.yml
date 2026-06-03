@@ -23,7 +23,10 @@ x-glitchtip-env: &glitchtip-env
   CELERY_WORKER_MAX_TASKS_PER_CHILD: "10000"
   # Dev auto-setup (env vars only effective when the DB is empty).
   GLITCHTIP_SUPERUSER_EMAIL: ${GLITCHTIP_SUPERUSER_EMAIL:-admin@localhost}
-  GLITCHTIP_SUPERUSER_PASSWORD: ${GLITCHTIP_SUPERUSER_PASSWORD:-admin123456}
+  # No literal default on purpose — a published fallback password is a
+  # credential leak. dev.sh generates and persists a random one for
+  # dev/smoke; prod requires an explicit value (guarded in dev.sh).
+  GLITCHTIP_SUPERUSER_PASSWORD: ${GLITCHTIP_SUPERUSER_PASSWORD:?GLITCHTIP_SUPERUSER_PASSWORD must be set - dev.sh generates one for dev, or set it in compose/.env}
   GLITCHTIP_DEFAULT_ORG_NAME: ${GLITCHTIP_DEFAULT_ORG_NAME:-Local}
   GLITCHTIP_DEFAULT_PROJECTS: ${GLITCHTIP_DEFAULT_PROJECTS:-API,Frontend}
 
