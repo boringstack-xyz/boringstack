@@ -55,6 +55,12 @@
       "description": "CI workflow must include every command listed in scripts/ci/pre-push.manifest.json."
     },
     {
+      "id": "tofu-bootstrap-hardening",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "infra/bootstrap must keep its hardening invariants: server lifecycle guard, no world-open variable defaults, no curl-pipe-sh."
+    },
+    {
       "id": "engine-pin-parity",
       "category": "ci",
       "ciCritical": false,
@@ -295,6 +301,12 @@
       "category": "ci",
       "ciCritical": false,
       "description": "CI workflow must include every command listed in scripts/ci/pre-push.manifest.json."
+    },
+    {
+      "id": "tofu-bootstrap-hardening",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "infra/bootstrap must keep its hardening invariants: server lifecycle guard, no world-open variable defaults, no curl-pipe-sh."
     },
     {
       "id": "engine-pin-parity",

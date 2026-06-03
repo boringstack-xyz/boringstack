@@ -7,6 +7,7 @@ import { githubActionsPermissionsRule } from "./rules/ci/github-actions-permissi
 import { githubActionsServiceImageDigestPinRule } from "./rules/ci/github-actions-service-image-digest-pin";
 import { githubActionsTimeoutRequiredRule } from "./rules/ci/github-actions-timeout-required";
 import { prePushCiParityRule } from "./rules/ci/pre-push-ci-parity";
+import { tofuBootstrapHardeningRule } from "./rules/ci/tofu-bootstrap-hardening";
 import { eslintConfigNoWarnRule } from "./rules/config/eslint-config-no-warn";
 import { eslintPluginContractParityRule } from "./rules/config/eslint-plugin-contract-parity";
 import { eslintOverridePathsExistRule } from "./rules/config/eslint-override-paths-exist";
@@ -38,6 +39,7 @@ export const META_RULES: readonly IMetaRule[] = [
   githubActionsExpressionSyntaxRule,
   githubActionsServiceImageDigestPinRule,
   prePushCiParityRule,
+  tofuBootstrapHardeningRule,
   enginePinParityRule,
   dockerfileBaseImageShaPinRule,
   envCascadeDriftRule,

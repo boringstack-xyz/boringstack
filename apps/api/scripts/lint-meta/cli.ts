@@ -37,6 +37,7 @@ import { checkWorkflowServiceImageDigestPin } from "./rules/ci/github-actions-se
 import { checkWorkflowShas } from "./rules/ci/github-actions-permissions";
 import { checkWorkflowTimeouts } from "./rules/ci/github-actions-timeout-required";
 import { checkPrePushParity } from "./rules/ci/pre-push-ci-parity";
+import { checkTofuBootstrapHardening } from "./rules/ci/tofu-bootstrap-hardening";
 import { checkCanonicalHelpersSingleHome } from "./rules/source-text/canonical-helpers-single-home";
 import { checkForbiddenText } from "./rules/source-text/forbidden-text";
 import { checkNoRawRoleLiterals } from "./rules/source-text/no-raw-role-literals";
@@ -116,6 +117,7 @@ export {
   checkPrePushParity,
   checkRouteFilesHaveTests,
   checkSharedToolVersionParity,
+  checkTofuBootstrapHardening,
   checkTouchedTests,
   checkTsconfigIncludePathsExist,
   checkWorkflowConcurrencyExplicit,

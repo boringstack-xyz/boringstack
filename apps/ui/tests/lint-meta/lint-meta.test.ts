@@ -26,6 +26,7 @@ import {
   checkPrePushParity,
   checkScriptRawFetch,
   checkTestFilesHaveSource,
+  checkTofuBootstrapHardening,
   checkTsconfigIncludePathsExist,
   checkUiEnvCascadeDrift,
   checkWorkflow,
@@ -704,6 +705,74 @@ describe("checkI18nLocaleKeysUsed", () => {
         expect.stringContaining("billing.currentPlan.paid")
       );
       expect(violations).toHaveLength(1);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkTofuBootstrapHardening", () => {
+  function makeBootstrap(root: string, mainTf: string): void {
+    const dir = join(root, "apps", "self");
+    const bootstrapDir = join(root, "infra", "bootstrap");
+
+    mkdirSync(dir, { recursive: true });
+    mkdirSync(bootstrapDir, { recursive: true });
+    writeFileSync(join(bootstrapDir, "main.tf"), mainTf);
+  }
+
+  test("flags missing lifecycle guard, open defaults, and curl|sh", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-tofu-"));
+
+    try {
+      makeBootstrap(
+        root,
+        [
+          'resource "hcloud_server" "main" {',
+          "  user_data = var.cloud_init",
+          "}",
+          'variable "ssh_allowed_ips" {',
+          '  default = ["0.0.0.0/0"]',
+          "}",
+          '# - [bash, -c, "curl -fsSL https://get.docker.com | sh"]',
+          ""
+        ].join("\n")
+      );
+
+      const rules = checkTofuBootstrapHardening(join(root, "apps", "self")).map(
+        (row) => row.rule
+      );
+
+      expect(rules).toContain("tofu-server-lifecycle-guard");
+      expect(rules).toContain("tofu-no-open-admin-defaults");
+      expect(rules).toContain("no-curl-pipe-sh");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes a guarded server with explicit inputs and verified installs", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-tofu-"));
+
+    try {
+      makeBootstrap(
+        root,
+        [
+          'resource "hcloud_server" "main" {',
+          "  user_data = var.cloud_init",
+          "  lifecycle {",
+          "    ignore_changes = [user_data]",
+          "  }",
+          "}",
+          'variable "ssh_allowed_ips" {',
+          "}",
+          ""
+        ].join("\n")
+      );
+
+      expect(checkTofuBootstrapHardening(join(root, "apps", "self"))).toEqual(
+        []
+      );
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
