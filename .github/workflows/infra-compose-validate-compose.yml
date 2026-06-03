@@ -109,6 +109,41 @@ jobs:
           print("healthcheck present on: " + ", ".join(sorted(services)))
           EOF
 
+      - name: Guardrail — compose images digest-pinned, no floating latest
+        if: steps.filter.outputs.code == 'true'
+        working-directory: infra/compose/compose
+        run: |
+          python3 - <<'EOF'
+          import glob
+          import re
+
+          # Literal image refs must pin a @sha256 digest and must not carry
+          # the floating :latest tag (even alongside a digest — the digest
+          # wins, but the tag misdocuments what is pinned). Interpolated
+          # refs (${VAR...}) are validated at runtime by the stack scripts.
+          IMAGE_RE = re.compile(r"^\s+image:\s*(?P<ref>[^\s#]+)")
+          bad: list[str] = []
+
+          for path in sorted(glob.glob("docker-compose*.yml")):
+              with open(path, encoding="utf-8") as handle:
+                  for lineno, line in enumerate(handle, start=1):
+                      match = IMAGE_RE.match(line)
+                      if match is None:
+                          continue
+                      ref = match.group("ref")
+                      if "${" in ref:
+                          continue
+                      if "@sha256:" not in ref:
+                          bad.append(f"{path}:{lineno}: {ref} (no digest pin)")
+                      elif ":latest@" in ref:
+                          bad.append(f"{path}:{lineno}: {ref} (floating :latest tag)")
+
+          if bad:
+              raise SystemExit("unpinned compose images:\n" + "\n".join(bad))
+
+          print("all literal compose image refs digest-pinned")
+          EOF
+
       - name: Validate — dev + observability
         if: steps.filter.outputs.code == 'true'
         working-directory: infra/compose/compose

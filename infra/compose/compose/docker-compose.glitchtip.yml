@@ -36,7 +36,7 @@ services:
       - ./glitchtip/init-db.sql:/docker-entrypoint-initdb.d/10-glitchtip-init-db.sql:ro
 
   glitchtip-web:
-    image: glitchtip/glitchtip:latest@sha256:f45485d296697531464b4484ee9bb40a51a774df820f74128a2b2ae0c5a0b00f
+    image: glitchtip/glitchtip:6.1.6@sha256:f45485d296697531464b4484ee9bb40a51a774df820f74128a2b2ae0c5a0b00f
     profiles: [glitchtip-dev, glitchtip-prod]
     restart: unless-stopped
     depends_on:
@@ -78,7 +78,7 @@ services:
       - "traefik.http.services.glitchtip-web.loadbalancer.server.port=8000"
 
   glitchtip-worker:
-    image: glitchtip/glitchtip:latest@sha256:f45485d296697531464b4484ee9bb40a51a774df820f74128a2b2ae0c5a0b00f
+    image: glitchtip/glitchtip:6.1.6@sha256:f45485d296697531464b4484ee9bb40a51a774df820f74128a2b2ae0c5a0b00f
     profiles: [glitchtip-dev, glitchtip-prod]
     restart: unless-stopped
     command: ["./bin/run-celery-with-beat.sh"]
