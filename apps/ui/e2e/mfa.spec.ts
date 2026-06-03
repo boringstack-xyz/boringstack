@@ -1,9 +1,11 @@
 import { type APIRequestContext, request } from "@playwright/test";
 import { Secret, TOTP } from "otpauth";
+import { z } from "zod";
 
 import { nowMs } from "@/lib/time/now";
 
 import { expect, test } from "./fixtures/auth";
+import { parseBody } from "./fixtures/parse";
 import { LoginPage } from "./pages/LoginPage";
 
 const API_BASE_URL = "http://localhost:7331";
@@ -62,9 +64,15 @@ const provisionEnrolledUser = async (): Promise<{
     throw new Error(`mfa setup failed: ${await setupRes.text()}`);
   }
 
-  const setupBody = (await setupRes.json()) as {
-    data: { secretBase32: string; recoveryCodes: string[] };
-  };
+  const setupBody = await parseBody(
+    setupRes,
+    z.object({
+      data: z.object({
+        secretBase32: z.string(),
+        recoveryCodes: z.array(z.string())
+      })
+    })
+  );
   const totp = new TOTP({
     issuer: "test",
     label: email,

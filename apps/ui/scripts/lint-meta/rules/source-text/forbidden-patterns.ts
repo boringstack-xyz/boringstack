@@ -73,16 +73,20 @@ export function createForbiddenTextPatterns(
        * object-literal *expressions* (`{} as T`), not assertions *to* an
        * inline object type, so this closes that gap for production source.
        * Narrow the value with a type guard instead (see
-       * src/lib/api/openapi.ts `extractApiErrorBody`). Tests, e2e, and
-       * Storybook keep casting for fixtures, so the ban is src-only and
-       * skips colocated `*.test.*` files.
+       * src/lib/api/openapi.ts `extractApiErrorBody`). The ban covers
+       * src and e2e: e2e casts assert real API response shapes, where
+       * contract drift must fail loudly instead of flowing undefined
+       * into assertions (parse with e2e/fixtures/parse.ts). Unit tests
+       * and Storybook keep casting for fixtures, so colocated `*.test.*`
+       * files are skipped.
        */
       rule: "no-inline-object-cast",
       pattern: /\bas\s+\{/u,
       message:
-        "Casting to an inline object type (`as { … }`) skips validation. Narrow the value with a type guard instead.",
+        "Casting to an inline object type (`as { … }`) skips validation. Narrow the value with a type guard instead (e2e: parse responses via e2e/fixtures/parse.ts).",
       allow: (file) =>
-        !file.startsWith(resolve(root, "src")) ||
+        (!file.startsWith(resolve(root, "src")) &&
+          !file.startsWith(resolve(root, "e2e"))) ||
         /\.test\.(?:ts|tsx)$/u.test(file)
     },
     {

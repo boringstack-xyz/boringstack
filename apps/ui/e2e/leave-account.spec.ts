@@ -1,6 +1,8 @@
 import { type APIRequestContext, request } from "@playwright/test";
+import { z } from "zod";
 
 import { expect, test } from "./fixtures/auth";
+import { parseBody } from "./fixtures/parse";
 
 interface IUser {
   readonly email: string;
@@ -75,14 +77,12 @@ async function activeAccountId(ctx: APIRequestContext): Promise<string> {
     throw new Error(`/me failed (${String(meRes.status())})`);
   }
 
-  const body = (await meRes.json()) as { account?: { id?: string } };
-  const accountId = body.account?.id;
+  const body = await parseBody(
+    meRes,
+    z.object({ account: z.object({ id: z.string() }) })
+  );
 
-  if (typeof accountId !== "string") {
-    throw new Error("missing account.id on /me response");
-  }
-
-  return accountId;
+  return body.account.id;
 }
 
 test.describe("Leave account", () => {
@@ -120,7 +120,10 @@ test.describe("Leave account", () => {
       );
     }
 
-    const inviteBody = (await inviteRes.json()) as { rawToken?: string };
+    const inviteBody = await parseBody(
+      inviteRes,
+      z.object({ rawToken: z.string().optional() })
+    );
     const rawToken = inviteBody.rawToken;
 
     expect(rawToken, "API should expose rawToken in non-prod").toBeTruthy();
