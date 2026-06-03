@@ -76,6 +76,38 @@ jobs:
             -f docker-compose.production-labels.yml \
             --profile prod config --quiet
 
+      # Guardrail: every long-running prod-profile service in the base
+      # compose file must define a healthcheck so `up --wait` and
+      # service_healthy dependents have a readiness signal. One-shot jobs
+      # (restart: "no", e.g. api-migrate-prod) exit by design and are
+      # exempt; overlays ship sidecars and are not scanned.
+      - name: Guardrail — prod services define healthchecks
+        if: steps.filter.outputs.code == 'true'
+        working-directory: infra/compose/compose
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            --profile prod config --format json > /tmp/prod-config.json
+          python3 - <<'EOF'
+          import json
+
+          with open("/tmp/prod-config.json", encoding="utf-8") as handle:
+              services = json.load(handle)["services"]
+
+          missing = sorted(
+              name
+              for name, svc in services.items()
+              if svc.get("restart") != "no" and "healthcheck" not in svc
+          )
+
+          if missing:
+              raise SystemExit(
+                  "prod services missing healthcheck: " + ", ".join(missing)
+              )
+
+          print("healthcheck present on: " + ", ".join(sorted(services)))
+          EOF
+
       - name: Validate — dev + observability
         if: steps.filter.outputs.code == 'true'
         working-directory: infra/compose/compose

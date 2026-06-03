@@ -89,6 +89,15 @@ services:
       - "--metrics.prometheus.entryPoint=metrics"
       - "--metrics.prometheus.addEntryPointsLabels=true"
       - "--metrics.prometheus.addServicesLabels=true"
+      # Internal-only /ping endpoint (default entrypoint :8080, not
+      # published) backing the container healthcheck below.
+      - "--ping=true"
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
@@ -494,6 +503,22 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    # Same /healthz probe as ui-smoke: nginx.conf serves `location = /healthz`
+    # so `docker compose up --wait` has a readiness signal for the SPA too.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:8080/healthz",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
     security_opt:
       - no-new-privileges:true
     deploy:
