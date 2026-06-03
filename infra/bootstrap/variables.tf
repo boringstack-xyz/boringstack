@@ -60,12 +60,11 @@ variable "ssh_public_key" {
 
 variable "ssh_allowed_ips" {
   type        = list(string)
-  description = "Source CIDRs allowed to reach SSH (port 22). Defaults to anywhere; restrict to your bastion / VPN for hardening."
-  default     = ["0.0.0.0/0", "::/0"]
+  description = "Source CIDRs allowed to reach SSH (port 22). No default on purpose — opening an admin port to the world must be an explicit operator choice (your IP, bastion, or VPN range; [\"0.0.0.0/0\", \"::/0\"] if you really mean anywhere)."
 
   validation {
     condition     = length(var.ssh_allowed_ips) > 0 && alltrue([for cidr in var.ssh_allowed_ips : can(cidrhost(cidr, 0))])
-    error_message = "ssh_allowed_ips must contain at least one valid IPv4 or IPv6 CIDR."
+    error_message = "ssh_allowed_ips must contain at least one valid IPv4 or IPv6 CIDR. Set it explicitly — e.g. [\"203.0.113.7/32\"] for a single admin IP."
   }
 }
 
@@ -183,8 +182,8 @@ variable "monorepo_repo" {
   default     = "https://github.com/boringstack-xyz/boringstack"
 
   validation {
-    condition     = length(trimspace(var.monorepo_repo)) > 0 && length(regexall("[\r\n]", var.monorepo_repo)) == 0
-    error_message = "monorepo_repo must be a single-line Git URL."
+    condition     = can(regex("^(https://github\\.com/|git@github\\.com:)[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(\\.git)?$", trimspace(var.monorepo_repo)))
+    error_message = "monorepo_repo must be a GitHub URL: https://github.com/owner/repo or git@github.com:owner/repo (.git optional). A malformed value otherwise only fails inside cloud-init on the booted server."
   }
 }
 
