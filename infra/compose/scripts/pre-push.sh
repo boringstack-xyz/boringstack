@@ -70,7 +70,8 @@ step "2/3 shellcheck"
 if ! command -v shellcheck >/dev/null 2>&1; then
   c_blue "  skipped — shellcheck not installed (brew install shellcheck). CI still runs it."
 else
-  shellcheck -x -S warning "$COMPOSE_DIR/dev.sh" "$INFRA_ROOT"/scripts/*.sh
+  shellcheck -x -S warning "$COMPOSE_DIR/dev.sh" "$INFRA_ROOT"/scripts/*.sh \
+    "$ROOT"/scripts/*.sh "$ROOT"/scripts/ci/*.sh "$ROOT/setup.sh"
   ok "shellcheck clean"
 fi
 

@@ -10,6 +10,10 @@ on:
     branches: [main]
     paths:
       - "infra/compose/**"
+      # Root gate scripts are validated here (shellcheck job) — keep the
+      # trigger in lockstep so direct pushes touching them still run it.
+      - "scripts/**"
+      - "setup.sh"
       - ".github/workflows/infra-compose-validate-compose.yml"
       # Prod Dockerfiles COPY the whole app context, so any app source
       # change can break the prod image build — not just Dockerfile or
@@ -376,7 +380,14 @@ jobs:
         if: steps.filter.outputs.code == 'true'
         run: |
           # Strict: error on warnings, follow `source` directives.
-          shellcheck -x -S warning infra/compose/compose/dev.sh infra/compose/scripts/*.sh
+          # Root gate scripts (scripts/ci/*, stack-*.sh, setup.sh) are the
+          # repo's primary local defense — they get the same bar as infra.
+          shellcheck -x -S warning \
+            infra/compose/compose/dev.sh \
+            infra/compose/scripts/*.sh \
+            scripts/*.sh \
+            scripts/ci/*.sh \
+            setup.sh
 
   prod-image-build:
     name: build prod images (sanity)
