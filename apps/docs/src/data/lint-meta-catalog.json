@@ -37,6 +37,12 @@
       "description": "Workflows with a concurrency block must set cancel-in-progress explicitly."
     },
     {
+      "id": "github-actions-expression-syntax",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Every expression opener in a workflow must be a well-formed Actions expression."
+    },
+    {
       "id": "github-actions-service-image-digest-pin",
       "category": "ci",
       "ciCritical": false,
@@ -247,6 +253,12 @@
       "category": "ci",
       "ciCritical": false,
       "description": "Workflows with a concurrency block must set cancel-in-progress explicitly."
+    },
+    {
+      "id": "github-actions-expression-syntax",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Every expression opener in a workflow must be a well-formed Actions expression."
     },
     {
       "id": "github-actions-service-image-digest-pin",

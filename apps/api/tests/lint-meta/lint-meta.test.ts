@@ -28,6 +28,7 @@ import {
   checkRouteFilesHaveTests,
   checkTouchedTests,
   checkWorkflowConcurrencyExplicit,
+  checkWorkflowExpressionSyntax,
   checkWorkflowServiceImageDigestPin,
   checkWorkflowShas,
   checkWorkflowTimeouts,
@@ -479,6 +480,70 @@ describe("checkWorkflowServiceImageDigestPin", () => {
       writeFileSync(none, "jobs: {}\n");
 
       expect(checkWorkflowServiceImageDigestPin(none)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowExpressionSyntax", () => {
+  test("flags the f-string triple-brace opener that bricks a workflow", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-expr-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(
+        file,
+        "jobs:\n  x:\n    steps:\n      - run: |\n          python3 -c \"print(f'${{{pair[0]}:-...}}')\"\n"
+      );
+
+      const violations = checkWorkflowExpressionSyntax(file);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "github-actions-expression-syntax"
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags an opener with no closer on the line", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-expr-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(file, "jobs:\n  x:\n    name: ${{ github.ref\n");
+
+      const violations = checkWorkflowExpressionSyntax(file);
+
+      expect(violations).toHaveLength(1);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes valid expressions, including quoted JSON arguments", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-expr-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(
+        file,
+        [
+          "concurrency:",
+          "  group: x-${{ github.ref }}",
+          "jobs:",
+          "  x:",
+          "    steps:",
+          '      - run: echo ${{ fromJSON(steps.a.outputs.b || \'[{"version":""}]\')[0].version }}',
+          "",
+        ].join("\n")
+      );
+
+      expect(checkWorkflowExpressionSyntax(file)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

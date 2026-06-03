@@ -180,7 +180,11 @@ jobs:
                           pair = (match.group("var"), match.group("fallback"))
                           if pair in ALLOWED:
                               continue
-                          bad.append(f"{path}:{lineno}: ${{{pair[0]}:-...}}")
+                          # Note: string concat on purpose — emitting a
+                          # dollar followed by double braces here would be
+                          # lexed by GitHub Actions as a broken expression
+                          # and invalidate the entire workflow file.
+                          bad.append(path + ":" + str(lineno) + ": $" + "{" + pair[0] + ":-...}")
 
           if bad:
               raise SystemExit(

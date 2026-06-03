@@ -30,6 +30,7 @@ import { checkGeneratedArtifactContracts } from "./rules/artifacts/generated-art
 import { checkDockerfileBaseImageShaPin } from "./rules/ci/dockerfile-base-image-sha-pin";
 import { checkEnginePinParity } from "./rules/ci/engine-pin-parity";
 import { checkWorkflowConcurrencyExplicit } from "./rules/ci/github-actions-concurrency-explicit";
+import { checkWorkflowExpressionSyntax } from "./rules/ci/github-actions-expression-syntax";
 import { checkWorkflowServiceImageDigestPin } from "./rules/ci/github-actions-service-image-digest-pin";
 import { checkWorkflowShas } from "./rules/ci/github-actions-permissions";
 import { checkWorkflowTimeouts } from "./rules/ci/github-actions-timeout-required";
@@ -114,6 +115,7 @@ export {
   checkSharedToolVersionParity,
   checkTouchedTests,
   checkWorkflowConcurrencyExplicit,
+  checkWorkflowExpressionSyntax,
   checkWorkflowServiceImageDigestPin,
   checkWorkflowShas,
   checkWorkflowTimeouts,

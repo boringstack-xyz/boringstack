@@ -75,6 +75,7 @@ export { checkPackageJson } from "./rules/supply-chain/package-json-exact-deps";
 export { checkDockerfileBaseImageShaPin } from "./rules/ci/dockerfile-base-image-sha-pin";
 export { checkEnginePinParity } from "./rules/ci/engine-pin-parity";
 export { checkWorkflowConcurrencyExplicit } from "./rules/ci/github-actions-concurrency-explicit";
+export { checkWorkflowExpressionSyntax } from "./rules/ci/github-actions-expression-syntax";
 export { checkWorkflowServiceImageDigestPin } from "./rules/ci/github-actions-service-image-digest-pin";
 export { checkWorkflow } from "./rules/ci/github-actions-permissions";
 export { checkWorkflowTimeouts } from "./rules/ci/github-actions-timeout-required";
