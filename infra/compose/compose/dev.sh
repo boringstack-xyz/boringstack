@@ -90,6 +90,24 @@ case "$STACK" in
         exit 1
       fi
     fi
+    # Prod deploys must be reproducible and auditable: a floating `latest`
+    # tag deploys whatever was pushed last (including RC/dev builds) with
+    # no record of the version. Require an explicit pin — either a full
+    # *_IMAGE reference or a *_IMAGE_TAG (semver or sha-<digest>).
+    if [[ -z "${API_IMAGE:-}" ]]; then
+      : "${API_IMAGE_TAG:?API_IMAGE_TAG required in prod (semver like v0.1.0 or sha-<digest>; never latest). Or set API_IMAGE to a full pinned reference.}"
+    fi
+    if [[ -z "${UI_IMAGE:-}" ]]; then
+      : "${UI_IMAGE_TAG:?UI_IMAGE_TAG required in prod (semver like v0.1.0 or sha-<digest>; never latest). Or set UI_IMAGE to a full pinned reference.}"
+    fi
+    if [[ "${API_IMAGE_TAG:-}" == "latest" || "${API_IMAGE:-}" == *:latest ]]; then
+      echo "[ERROR] API image must be pinned in prod — API_IMAGE_TAG=latest (or API_IMAGE ending :latest) is not allowed. Use a semver tag (v0.1.0) or sha-<digest>." >&2
+      exit 1
+    fi
+    if [[ "${UI_IMAGE_TAG:-}" == "latest" || "${UI_IMAGE:-}" == *:latest ]]; then
+      echo "[ERROR] UI image must be pinned in prod — UI_IMAGE_TAG=latest (or UI_IMAGE ending :latest) is not allowed. Use a semver tag (v0.1.0) or sha-<digest>." >&2
+      exit 1
+    fi
     ;;
   *)
     echo "[ERROR] STACK must be \"dev\", \"smoke\", or \"prod\" (got: ${STACK})" >&2
