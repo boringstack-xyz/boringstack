@@ -31,6 +31,7 @@ import { checkNoDirectProcessEnv } from "./rules/env/no-direct-process-env";
 import { checkGeneratedArtifactContracts } from "./rules/artifacts/generated-artifact-contract";
 import { checkDockerfileBaseImageShaPin } from "./rules/ci/dockerfile-base-image-sha-pin";
 import { checkEnginePinParity } from "./rules/ci/engine-pin-parity";
+import { checkWorkflowBunCache } from "./rules/ci/github-actions-bun-cache";
 import { checkWorkflowConcurrencyExplicit } from "./rules/ci/github-actions-concurrency-explicit";
 import { checkWorkflowExpressionSyntax } from "./rules/ci/github-actions-expression-syntax";
 import { checkWorkflowServiceImageDigestPin } from "./rules/ci/github-actions-service-image-digest-pin";
@@ -120,6 +121,7 @@ export {
   checkTofuBootstrapHardening,
   checkTouchedTests,
   checkTsconfigIncludePathsExist,
+  checkWorkflowBunCache,
   checkWorkflowConcurrencyExplicit,
   checkWorkflowExpressionSyntax,
   checkWorkflowServiceImageDigestPin,

@@ -78,6 +78,7 @@ export { checkEslintPluginContractParity } from "./rules/config/eslint-plugin-co
 export { checkI18nLocaleKeysUsed } from "./rules/source-text/i18n-locale-keys-used";
 export { checkTofuBootstrapHardening } from "./rules/ci/tofu-bootstrap-hardening";
 export { checkTsconfigIncludePathsExist } from "./rules/config/tsconfig-include-paths-exist";
+export { checkWorkflowBunCache } from "./rules/ci/github-actions-bun-cache";
 export { checkWorkflowConcurrencyExplicit } from "./rules/ci/github-actions-concurrency-explicit";
 export { checkWorkflowExpressionSyntax } from "./rules/ci/github-actions-expression-syntax";
 export { checkWorkflowServiceImageDigestPin } from "./rules/ci/github-actions-service-image-digest-pin";

@@ -2,6 +2,7 @@ import { generatedArtifactContractRule } from "./rules/artifacts/generated-artif
 import { modulepreloadSizeLimitRule } from "./rules/artifacts/modulepreload-size-limit";
 import { dockerfileBaseImageShaPinRule } from "./rules/ci/dockerfile-base-image-sha-pin";
 import { enginePinParityRule } from "./rules/ci/engine-pin-parity";
+import { githubActionsBunCacheRule } from "./rules/ci/github-actions-bun-cache";
 import { githubActionsConcurrencyExplicitRule } from "./rules/ci/github-actions-concurrency-explicit";
 import { githubActionsExpressionSyntaxRule } from "./rules/ci/github-actions-expression-syntax";
 import { githubActionsPermissionsRule } from "./rules/ci/github-actions-permissions";
@@ -36,6 +37,7 @@ export const META_RULES: readonly IMetaRule[] = [
   // --- ci ---
   githubActionsPermissionsRule,
   githubActionsTimeoutRequiredRule,
+  githubActionsBunCacheRule,
   githubActionsConcurrencyExplicitRule,
   githubActionsExpressionSyntaxRule,
   githubActionsServiceImageDigestPinRule,

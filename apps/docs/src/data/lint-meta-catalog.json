@@ -31,6 +31,12 @@
       "description": "GitHub Actions jobs require an explicit timeout-minutes (reusable-workflow calls exempt)."
     },
     {
+      "id": "github-actions-bun-cache",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Workflows running bun install must cache ~/.bun/install/cache."
+    },
+    {
       "id": "github-actions-concurrency-explicit",
       "category": "ci",
       "ciCritical": false,
@@ -277,6 +283,12 @@
       "category": "ci",
       "ciCritical": false,
       "description": "GitHub Actions jobs require an explicit timeout-minutes (reusable-workflow calls exempt)."
+    },
+    {
+      "id": "github-actions-bun-cache",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Workflows running bun install must cache ~/.bun/install/cache."
     },
     {
       "id": "github-actions-concurrency-explicit",

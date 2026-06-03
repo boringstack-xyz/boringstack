@@ -30,6 +30,7 @@ import {
   checkTsconfigIncludePathsExist,
   checkUiEnvCascadeDrift,
   checkWorkflow,
+  checkWorkflowBunCache,
   checkWorkflowConcurrencyExplicit,
   checkWorkflowExpressionSyntax,
   checkWorkflowServiceImageDigestPin,
@@ -964,6 +965,42 @@ describe("checkEnginePinParity", () => {
       const violations = checkEnginePinParity(appRoot);
 
       expect(violations).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowBunCache", () => {
+  test("flags bun install without a cache step; passes cached and bun-free workflows", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-bun-cache-"));
+
+    try {
+      const uncached = join(root, "uncached.yml");
+
+      writeFileSync(
+        uncached,
+        "jobs:\n  x:\n    steps:\n      - run: bun install\n"
+      );
+
+      expect(checkWorkflowBunCache(uncached).map((row) => row.rule)).toContain(
+        "github-actions-bun-cache"
+      );
+
+      const cached = join(root, "cached.yml");
+
+      writeFileSync(
+        cached,
+        "jobs:\n  x:\n    steps:\n      - uses: actions/cache@abc\n      - run: bun install\n"
+      );
+
+      expect(checkWorkflowBunCache(cached)).toEqual([]);
+
+      const noBun = join(root, "nobun.yml");
+
+      writeFileSync(noBun, "jobs: {}\n");
+
+      expect(checkWorkflowBunCache(noBun)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
