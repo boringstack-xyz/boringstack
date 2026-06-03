@@ -437,4 +437,3 @@ jobs:
           # don't fail on style nits — only on real syntax errors.
           ~/.local/bin/yamllint -d "{extends: relaxed, rules: {line-length: disable}}" \
             infra/compose/compose/ .github/workflows/
-

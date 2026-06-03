@@ -41,6 +41,11 @@ cp "$COMPOSE_DIR/.env.example" "$COMPOSE_DIR/.env" 2>/dev/null || true
   echo "GLITCHTIP_SECRET_KEY=ci-local-placeholder-secret-key"
   echo "GLITCHTIP_PUBLIC_HOST=glitchtip.example.com"
   echo "GLITCHTIP_BASIC_AUTH_USERS=user:placeholder"
+  # Required since the published-default-password removal: compose
+  # interpolation is fail-closed (${VAR:?}) for these two, so config
+  # validation needs values just like CI's Seed .env step.
+  echo "GLITCHTIP_SUPERUSER_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=')"
+  echo "GRAFANA_ADMIN_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=')"
 } >> "$COMPOSE_DIR/.env"
 
 config() {
