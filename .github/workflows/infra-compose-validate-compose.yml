@@ -258,6 +258,10 @@ jobs:
           PUBLIC_API_URL: https://example.com/api
           PUBLIC_UI_HOST: example.com
           ACME_EMAIL: ops@example.com
+          # Required since the valkey-auth hardening: the prod guard
+          # checks VALKEY_PASSWORD before the image-tag checks this
+          # step exercises.
+          VALKEY_PASSWORD: ci-guardrail-placeholder
         run: |
           chmod +x dev.sh
 
