@@ -41,6 +41,8 @@ export const LOG_EVENTS = [
   "auth.password_reset_requested.email_failed",
   "auth.password_reset.notification_email_failed",
   "auth.register.success",
+  "auth.register.existing_email",
+  "auth.register.notice_email_failed",
   "auth.register.verification_email_failed",
   "auth.verification_resent.email_failed",
   "authz.platform_admin_bypass",
