@@ -48,4 +48,12 @@ paths = [
 regexTarget = "line"
 regexes = [
   '''<set-from-your-secret-manager>''',
+  # The well-known dev/test MFA encryption key placeholder — base64 of
+  # the literal string "0123456789abcdef0123456789abcdef". It ships in
+  # docker-compose.yml as the api-dev fallback, the env validator
+  # rejects it in production, and CI guardrail steps reference it as a
+  # fixture. Matched by exact value, so any real key still fails.
+  '''MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=''',
+  # Gitleaks also decodes the base64 and re-flags the decoded literal.
+  '''0123456789abcdef0123456789abcdef''',
 ]
