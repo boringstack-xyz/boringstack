@@ -4,6 +4,9 @@ import { dirname, join } from "node:path";
 import { readApiPackageJson } from "../../parsers/package-json";
 import type { IMetaRule, IViolation } from "../../types";
 
+const PACKAGE_JSON = "package.json";
+const RULE_ID = "engine-pin-parity";
+
 /*
  * In a monorepo checkout the root package.json runs scripts of its own
  * (postinstall hooks, stack-check.sh), so its engines pin must not drift
@@ -14,7 +17,7 @@ function findParentPackageJsonDir(root: string): string | null {
   let current = dirname(root);
 
   for (;;) {
-    if (existsSync(join(current, "package.json"))) {
+    if (existsSync(join(current, PACKAGE_JSON))) {
       return current;
     }
 
@@ -35,8 +38,8 @@ export function checkEnginePinParity(root: string): IViolation[] {
 
   if (bunVersion === undefined || bunVersion.trim() === "") {
     violations.push({
-      file: join(root, "package.json"),
-      rule: "engine-pin-parity",
+      file: join(root, PACKAGE_JSON),
+      rule: RULE_ID,
       message: "Missing package.json engines.bun pin for apps/api.",
     });
 
@@ -55,7 +58,7 @@ export function checkEnginePinParity(root: string): IViolation[] {
     if (!content.includes(`oven/bun:${bunVersion}`)) {
       violations.push({
         file: dockerPath,
-        rule: "engine-pin-parity",
+        rule: RULE_ID,
         message: `Dockerfile must pin oven/bun:${bunVersion} to match package.json engines.bun.`,
       });
     }
@@ -68,8 +71,8 @@ export function checkEnginePinParity(root: string): IViolation[] {
 
     if (rootPkg?.engines?.bun !== bunVersion) {
       violations.push({
-        file: join(monorepoDir, "package.json"),
-        rule: "engine-pin-parity",
+        file: join(monorepoDir, PACKAGE_JSON),
+        rule: RULE_ID,
         message: `Monorepo root package.json must pin engines.bun ${bunVersion} to match apps/api.`,
       });
     }
@@ -83,7 +86,7 @@ export function checkEnginePinParity(root: string): IViolation[] {
     if (!content.includes(`bun-version: ${bunVersion}`)) {
       violations.push({
         file: ciWorkflow,
-        rule: "engine-pin-parity",
+        rule: RULE_ID,
         message: `CI workflow must pin bun-version: ${bunVersion} to match package.json engines.bun.`,
       });
     }
@@ -94,7 +97,7 @@ export function checkEnginePinParity(root: string): IViolation[] {
 
 /** Bun pin must match across package.json, Dockerfiles, and CI. */
 export const enginePinParityRule: IMetaRule = {
-  id: "engine-pin-parity",
+  id: RULE_ID,
   category: "ci",
   description:
     "Bun version pin must stay aligned across package.json, Docker, and CI.",
