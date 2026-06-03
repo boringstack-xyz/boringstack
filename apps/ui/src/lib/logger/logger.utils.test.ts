@@ -85,3 +85,51 @@ describe("emit (logger.utils)", () => {
     expect(attempts[1]?.password).toBe("[redacted]");
   });
 });
+
+/*
+ * Production path: `vi.resetModules()` + `vi.doMock` + dynamic import give
+ * this block a logger module whose `env.DEV` is false, without disturbing
+ * the dev-mode tests above (same pattern as openapi.test.ts).
+ */
+describe("emit (logger.utils) in production mode", () => {
+  afterEach(() => {
+    vi.doUnmock("@/lib/env");
+    vi.doUnmock("@sentry/react");
+    vi.restoreAllMocks();
+  });
+
+  it("records a Sentry breadcrumb and never writes to the console", async () => {
+    vi.resetModules();
+
+    const addBreadcrumb = vi.fn();
+
+    vi.doMock("@/lib/env", () => ({
+      env: { DEV: false, VITE_APP_NAME: "test-app" }
+    }));
+    vi.doMock("@sentry/react", () => ({ addBreadcrumb }));
+
+    const prodLogSpy = vi
+      .spyOn(console, "log")
+      .mockImplementation((): void => undefined);
+    const prodErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation((): void => undefined);
+
+    const { emit: emitProd } = await import("./logger.utils");
+
+    emitProd("info", { event: "auth.login_success", password: "hunter2" });
+
+    expect(addBreadcrumb).toHaveBeenCalledTimes(1);
+
+    const breadcrumb = addBreadcrumb.mock.calls[0]?.[0] as Record<
+      string,
+      unknown
+    >;
+    const data = breadcrumb.data as Record<string, unknown>;
+
+    expect(breadcrumb.category).toBe("auth.login_success");
+    expect(data.password).toBe("[redacted]");
+    expect(prodLogSpy).not.toHaveBeenCalled();
+    expect(prodErrorSpy).not.toHaveBeenCalled();
+  });
+});
