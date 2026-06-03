@@ -31,6 +31,12 @@
       "description": "GitHub Actions jobs require an explicit timeout-minutes (reusable-workflow calls exempt)."
     },
     {
+      "id": "github-actions-concurrency-explicit",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Workflows with a concurrency block must set cancel-in-progress explicitly."
+    },
+    {
       "id": "pre-push-ci-parity",
       "category": "ci",
       "ciCritical": false,
@@ -41,6 +47,12 @@
       "category": "ci",
       "ciCritical": false,
       "description": "Node and Bun version pins must stay aligned across .nvmrc, package.json, Docker, and CI."
+    },
+    {
+      "id": "dockerfile-base-image-sha-pin",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Dockerfile base images must be pinned by @sha256 digest, not tag alone."
     },
     {
       "id": "env-cascade-drift",
@@ -213,6 +225,12 @@
       "description": "GitHub Actions jobs require an explicit timeout-minutes (reusable-workflow calls exempt)."
     },
     {
+      "id": "github-actions-concurrency-explicit",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Workflows with a concurrency block must set cancel-in-progress explicitly."
+    },
+    {
       "id": "pre-push-ci-parity",
       "category": "ci",
       "ciCritical": false,
@@ -223,6 +241,12 @@
       "category": "ci",
       "ciCritical": false,
       "description": "Bun version pin must stay aligned across package.json, Docker, and CI."
+    },
+    {
+      "id": "dockerfile-base-image-sha-pin",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Dockerfile base images must be pinned by @sha256 digest, not tag alone."
     },
     {
       "id": "env-cascade-drift",
