@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { resolveWorkflowsDir } from "../../context";
 import { readUiPackageJson } from "../../parsers/package-json";
@@ -182,6 +182,63 @@ function checkDockerBunPin(
   return violations;
 }
 
+/*
+ * In a monorepo checkout the root package.json runs scripts of its own
+ * (postinstall hooks, stack-check.sh), so its engines.bun pin must not
+ * drift from the app's packageManager pin. Standalone checkouts have no
+ * parent manifest — the check no-ops there.
+ */
+function checkMonorepoRootBunPin(
+  root: string,
+  pkg: ReturnType<typeof readUiPackageJson>
+): IViolation[] {
+  const packageManager = pkg?.packageManager ?? "";
+  const bunMatch = /^bun@([^+]+)/u.exec(packageManager);
+  const bunVersion = bunMatch?.[1];
+
+  if (bunVersion === undefined) {
+    return [];
+  }
+
+  let current = dirname(root);
+
+  for (;;) {
+    const candidate = join(current, "package.json");
+
+    if (existsSync(candidate)) {
+      const parsed: unknown = JSON.parse(readFileSync(candidate, "utf8"));
+      const engines =
+        typeof parsed === "object" && parsed !== null && "engines" in parsed
+          ? parsed.engines
+          : undefined;
+      const bunPin =
+        typeof engines === "object" && engines !== null && "bun" in engines
+          ? engines.bun
+          : undefined;
+
+      if (bunPin === bunVersion) {
+        return [];
+      }
+
+      return [
+        {
+          file: candidate,
+          rule: "engine-pin-parity",
+          message: `Monorepo root package.json must pin engines.bun ${bunVersion} to match apps/ui.`
+        }
+      ];
+    }
+
+    const parent = dirname(current);
+
+    if (parent === current) {
+      return [];
+    }
+
+    current = parent;
+  }
+}
+
 export function checkEnginePinParity(root: string): IViolation[] {
   const nodeMajor = readNodeMajorFromNvmrc(root);
 
@@ -202,7 +259,8 @@ export function checkEnginePinParity(root: string): IViolation[] {
     ...checkDockerNodePins(root, nodeMajor),
     ...checkWorkflowNodePins(root, nodeMajor),
     ...checkWorkflowBunPins(root, pkg),
-    ...checkDockerBunPin(root, pkg)
+    ...checkDockerBunPin(root, pkg),
+    ...checkMonorepoRootBunPin(root, pkg)
   ];
 }
 

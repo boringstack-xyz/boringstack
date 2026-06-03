@@ -613,6 +613,33 @@ describe("checkEnginePinParity", () => {
     }
   });
 
+  test("flags a monorepo root package.json without a matching engines.bun pin", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-engine-"));
+
+    try {
+      const appRoot = writeEnginePinFixture(root, "1.3.14");
+
+      writeFileSync(join(root, "package.json"), JSON.stringify({}));
+
+      expect(
+        checkEnginePinParity(appRoot).map((row) => row.message)
+      ).toContainEqual(expect.stringContaining("Monorepo root package.json"));
+
+      writeFileSync(
+        join(root, "package.json"),
+        JSON.stringify({ engines: { bun: "1.3.14" } })
+      );
+
+      expect(
+        checkEnginePinParity(appRoot).map((row) => row.message)
+      ).not.toContainEqual(
+        expect.stringContaining("Monorepo root package.json")
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   test("passes when the workflow bun-version matches packageManager", () => {
     const root = mkdtempSync(join(tmpdir(), "lint-meta-engine-"));
 

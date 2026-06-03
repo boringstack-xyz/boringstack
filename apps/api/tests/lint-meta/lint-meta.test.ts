@@ -528,6 +528,40 @@ describe("checkEnginePinParity", () => {
     }
   });
 
+  test("flags a monorepo root package.json without a matching engines.bun pin", () => {
+    const monorepo = mkdtempSync(join(tmpdir(), "lint-meta-engine-mono-"));
+
+    try {
+      writeFileSync(join(monorepo, "package.json"), JSON.stringify({}));
+
+      const appRoot = join(monorepo, "apps", "api");
+
+      mkdirSync(appRoot, { recursive: true });
+      writeEnginePinFixture(appRoot, {
+        engines: { bun: "1.3.14" },
+        dockerBun: "1.3.14",
+        workflowBun: "1.3.14",
+      });
+
+      const violations = checkEnginePinParity(appRoot);
+
+      expect(
+        violations.some((row) =>
+          row.message.includes("Monorepo root package.json")
+        )
+      ).toBe(true);
+
+      writeFileSync(
+        join(monorepo, "package.json"),
+        JSON.stringify({ engines: { bun: "1.3.14" } })
+      );
+
+      expect(checkEnginePinParity(appRoot)).toEqual([]);
+    } finally {
+      rmSync(monorepo, { recursive: true, force: true });
+    }
+  });
+
   test("flags a Dockerfile bun tag that drifts from engines.bun", () => {
     const root = mkdtempSync(join(tmpdir(), "lint-meta-engine-"));
 

@@ -1,8 +1,32 @@
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { readApiPackageJson } from "../../parsers/package-json";
 import type { IMetaRule, IViolation } from "../../types";
+
+/*
+ * In a monorepo checkout the root package.json runs scripts of its own
+ * (postinstall hooks, stack-check.sh), so its engines pin must not drift
+ * from the app's. Standalone checkouts have no parent manifest — the
+ * check no-ops there.
+ */
+function findParentPackageJsonDir(root: string): string | null {
+  let current = dirname(root);
+
+  for (;;) {
+    if (existsSync(join(current, "package.json"))) {
+      return current;
+    }
+
+    const parent = dirname(current);
+
+    if (parent === current) {
+      return null;
+    }
+
+    current = parent;
+  }
+}
 
 export function checkEnginePinParity(root: string): IViolation[] {
   const violations: IViolation[] = [];
@@ -33,6 +57,20 @@ export function checkEnginePinParity(root: string): IViolation[] {
         file: dockerPath,
         rule: "engine-pin-parity",
         message: `Dockerfile must pin oven/bun:${bunVersion} to match package.json engines.bun.`,
+      });
+    }
+  }
+
+  const monorepoDir = findParentPackageJsonDir(root);
+
+  if (monorepoDir !== null) {
+    const rootPkg = readApiPackageJson(monorepoDir);
+
+    if (rootPkg?.engines?.bun !== bunVersion) {
+      violations.push({
+        file: join(monorepoDir, "package.json"),
+        rule: "engine-pin-parity",
+        message: `Monorepo root package.json must pin engines.bun ${bunVersion} to match apps/api.`,
       });
     }
   }
