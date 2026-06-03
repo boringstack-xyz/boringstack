@@ -5,6 +5,8 @@ import {
 } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 
+import { now } from "@/lib/time/now";
+
 import { DashboardPage } from "../pages/DashboardPage";
 import { LoginPage } from "../pages/LoginPage";
 
@@ -37,11 +39,16 @@ interface ITestUser {
  * versioned (`.v1`) so an intentional re-prompt later won't break this.
  */
 const CONSENT_STORAGE_KEY = "bs.cookie-consent.v1";
+/*
+ * configuredAt is computed per run so the fixture always represents a
+ * fresh dismissal; a hardcoded date would drift into the past and
+ * silently exercise a stale-consent path if re-prompt logic ever lands.
+ */
 const CONSENT_DISMISSED_STATE = {
   state: {
     status: "configured",
     categories: { essential: true, analytics: false, marketing: false },
-    configuredAt: "2026-01-01T00:00:00.000Z"
+    configuredAt: now()
   },
   version: 0
 };
