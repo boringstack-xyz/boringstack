@@ -17,6 +17,7 @@ import {
   checkCanonicalHelpersSingleHome,
   checkDependencyPairs,
   checkDockerfileBaseImageShaPin,
+  checkEnginePinParity,
   checkEnvSchemaDrift,
   checkEslintConfigNoWarn,
   checkEslintOverridePathsExist,
@@ -351,6 +352,110 @@ describe("checkDockerfileBaseImageShaPin", () => {
       );
 
       const violations = checkDockerfileBaseImageShaPin(root);
+
+      expect(violations).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkEnginePinParity", () => {
+  function writeEnginePinFixture(
+    root: string,
+    options: {
+      engines?: { bun?: string };
+      dockerBun: string;
+      workflowBun: string;
+    }
+  ): void {
+    writeFileSync(
+      join(root, "package.json"),
+      JSON.stringify({ engines: options.engines })
+    );
+    writeFileSync(
+      join(root, "Dockerfile"),
+      `FROM oven/bun:${options.dockerBun}-alpine@sha256:0000000000000000000000000000000000000000000000000000000000000000\n`
+    );
+    mkdirSync(join(root, ".github", "workflows"), { recursive: true });
+    writeFileSync(
+      join(root, ".github", "workflows", "ci.yml"),
+      `jobs:\n  test:\n    steps:\n      - uses: oven-sh/setup-bun@abc\n        with:\n          bun-version: ${options.workflowBun}\n`
+    );
+  }
+
+  test("flags a missing engines.bun pin", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-engine-"));
+
+    try {
+      writeEnginePinFixture(root, {
+        dockerBun: "1.3.14",
+        workflowBun: "1.3.14",
+      });
+
+      const violations = checkEnginePinParity(root);
+
+      expect(
+        violations.some((row) => row.message.includes("engines.bun"))
+      ).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags a Dockerfile bun tag that drifts from engines.bun", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-engine-"));
+
+    try {
+      writeEnginePinFixture(root, {
+        engines: { bun: "1.3.14" },
+        dockerBun: "1.2.0",
+        workflowBun: "1.3.14",
+      });
+
+      const violations = checkEnginePinParity(root);
+
+      expect(
+        violations.some((row) =>
+          row.message.includes("Dockerfile must pin oven/bun:1.3.14")
+        )
+      ).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags a CI workflow bun-version that drifts from engines.bun", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-engine-"));
+
+    try {
+      writeEnginePinFixture(root, {
+        engines: { bun: "1.3.14" },
+        dockerBun: "1.3.14",
+        workflowBun: "1.2.0",
+      });
+
+      const violations = checkEnginePinParity(root);
+
+      expect(
+        violations.some((row) => row.message.includes("bun-version: 1.3.14"))
+      ).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when package.json, Dockerfile, and CI agree", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-engine-"));
+
+    try {
+      writeEnginePinFixture(root, {
+        engines: { bun: "1.3.14" },
+        dockerBun: "1.3.14",
+        workflowBun: "1.3.14",
+      });
+
+      const violations = checkEnginePinParity(root);
 
       expect(violations).toEqual([]);
     } finally {
