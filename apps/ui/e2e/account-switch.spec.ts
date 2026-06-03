@@ -1,89 +1,15 @@
-import { type APIRequestContext, request } from "@playwright/test";
 import { z } from "zod";
 
 import { expect, test } from "./fixtures/auth";
+import {
+  E2E_PASSWORD,
+  type ITestUser,
+  authedContext,
+  fetchActiveAccountId,
+  registerAndVerify,
+  uniqueEmail
+} from "./fixtures/helpers";
 import { parseBody } from "./fixtures/parse";
-
-interface IUser {
-  readonly email: string;
-  readonly password: string;
-}
-
-const BASE_URL = "http://localhost:7331";
-const PASSWORD = "E2EPassword123!";
-
-function uniqueEmail(prefix: string): string {
-  return `e2e-switch-${prefix}-${String(Date.now())}-${String(
-    Math.floor(Math.random() * 1_000_000)
-  )}@e2e.test`;
-}
-
-async function registerAndVerify(
-  user: IUser,
-  firstName: string,
-  lastName: string
-): Promise<void> {
-  const ctx: APIRequestContext = await request.newContext({
-    baseURL: BASE_URL
-  });
-
-  const registerRes = await ctx.post("/api/v1/auth/register", {
-    data: {
-      email: user.email,
-      password: user.password,
-      firstName,
-      lastName
-    }
-  });
-
-  if (!registerRes.ok()) {
-    throw new Error(
-      `register failed (${String(registerRes.status())}): ${await registerRes.text()}`
-    );
-  }
-
-  const verifyRes = await ctx.post("/api/v1/auth/__test/force-verify", {
-    data: { email: user.email }
-  });
-
-  if (!verifyRes.ok()) {
-    throw new Error(
-      `force-verify failed (${String(verifyRes.status())}): ${await verifyRes.text()}`
-    );
-  }
-
-  await ctx.dispose();
-}
-
-async function authedContext(user: IUser): Promise<APIRequestContext> {
-  const ctx = await request.newContext({ baseURL: BASE_URL });
-  const loginRes = await ctx.post("/api/v1/auth/login", {
-    data: { email: user.email, password: user.password }
-  });
-
-  if (!loginRes.ok()) {
-    throw new Error(
-      `login failed (${String(loginRes.status())}): ${await loginRes.text()}`
-    );
-  }
-
-  return ctx;
-}
-
-async function getActiveAccountId(ctx: APIRequestContext): Promise<string> {
-  const meRes = await ctx.get("/api/v1/users/me");
-
-  if (!meRes.ok()) {
-    throw new Error(`/me failed (${String(meRes.status())})`);
-  }
-
-  const body = await parseBody(
-    meRes,
-    z.object({ account: z.object({ id: z.string() }) })
-  );
-
-  return body.account.id;
-}
 
 test.describe("Account switcher", () => {
   test("a member with two memberships can switch the active account", async ({
@@ -95,8 +21,14 @@ test.describe("Account switcher", () => {
      * drive the API directly for setup so the test stays focused on
      * the switcher UI.
      */
-    const userA: IUser = { email: uniqueEmail("a"), password: PASSWORD };
-    const userB: IUser = { email: uniqueEmail("b"), password: PASSWORD };
+    const userA: ITestUser = {
+      email: uniqueEmail("switch-a"),
+      password: E2E_PASSWORD
+    };
+    const userB: ITestUser = {
+      email: uniqueEmail("switch-b"),
+      password: E2E_PASSWORD
+    };
 
     /*
      * Distinct first/last names per user so the personal account
@@ -107,7 +39,7 @@ test.describe("Account switcher", () => {
     await registerAndVerify(userB, "Bravo", "Owner");
 
     const ctxA = await authedContext(userA);
-    const accountA = await getActiveAccountId(ctxA);
+    const accountA = await fetchActiveAccountId(ctxA);
 
     const inviteRes = await ctxA.post(
       `/api/v1/accounts/${accountA}/invitations`,

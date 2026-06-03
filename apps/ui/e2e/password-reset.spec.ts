@@ -1,59 +1,20 @@
-import { type APIRequestContext, request } from "@playwright/test";
+import { request } from "@playwright/test";
 import { z } from "zod";
 
 import { expect, test } from "./fixtures/auth";
+import {
+  E2E_API_BASE_URL,
+  type ITestUser,
+  registerAndVerify,
+  uniqueEmail
+} from "./fixtures/helpers";
 import { parseBody } from "./fixtures/parse";
 
-interface IUser {
-  readonly email: string;
-  readonly password: string;
-}
-
-const BASE_URL = "http://localhost:7331";
 const ORIGINAL_PASSWORD = "OriginalPwd123!";
 const NEW_PASSWORD = "BrandNewPwd456!";
 
-function uniqueEmail(prefix: string): string {
-  return `e2e-reset-${prefix}-${String(Date.now())}-${String(
-    Math.floor(Math.random() * 1_000_000)
-  )}@e2e.test`;
-}
-
-async function registerAndVerify(user: IUser): Promise<void> {
-  const ctx: APIRequestContext = await request.newContext({
-    baseURL: BASE_URL
-  });
-
-  const registerRes = await ctx.post("/api/v1/auth/register", {
-    data: {
-      email: user.email,
-      password: user.password,
-      firstName: "Reset",
-      lastName: "User"
-    }
-  });
-
-  if (!registerRes.ok()) {
-    throw new Error(
-      `register failed (${String(registerRes.status())}): ${await registerRes.text()}`
-    );
-  }
-
-  const verifyRes = await ctx.post("/api/v1/auth/__test/force-verify", {
-    data: { email: user.email }
-  });
-
-  if (!verifyRes.ok()) {
-    throw new Error(
-      `force-verify failed (${String(verifyRes.status())}): ${await verifyRes.text()}`
-    );
-  }
-
-  await ctx.dispose();
-}
-
 async function fetchResetToken(email: string): Promise<string> {
-  const ctx = await request.newContext({ baseURL: BASE_URL });
+  const ctx = await request.newContext({ baseURL: E2E_API_BASE_URL });
   const res = await ctx.post("/api/v1/auth/__test/issue-reset-token", {
     data: { email }
   });
@@ -96,12 +57,12 @@ test.describe("Password reset", () => {
   test("user requests a reset, sets a new password via the link, signs in with it", async ({
     page
   }) => {
-    const user: IUser = {
-      email: uniqueEmail("happy"),
+    const user: ITestUser = {
+      email: uniqueEmail("reset-happy"),
       password: ORIGINAL_PASSWORD
     };
 
-    await registerAndVerify(user);
+    await registerAndVerify(user, "Reset", "User");
 
     /*
      * The forgot-password screen always renders an enumeration-safe

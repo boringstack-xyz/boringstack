@@ -1,4 +1,5 @@
 import { expect, test } from "./fixtures/auth";
+import { uniqueEmail } from "./fixtures/helpers";
 import { SignUpPage } from "./pages/SignUpPage";
 
 test.describe("Sign-up flow", () => {
@@ -36,11 +37,11 @@ test.describe("Sign-up flow", () => {
     page
   }) => {
     const signup = new SignUpPage(page);
-    const uniqueEmail = `e2e-signup-${String(Date.now())}-${String(Math.floor(Math.random() * 1_000_000))}@e2e.test`;
+    const signupEmail = uniqueEmail("signup");
 
     await signup.goto();
     await signup.fill({
-      email: uniqueEmail,
+      email: signupEmail,
       // gitleaks:allow — synthetic test fixture, not a real credential
       password: "Strong-test-pass-1A",
       firstName: "Ada",
@@ -49,7 +50,7 @@ test.describe("Sign-up flow", () => {
     await signup.submit();
 
     await expect(signup.checkEmailHeading()).toBeVisible();
-    await expect(page.getByText(uniqueEmail)).toBeVisible();
+    await expect(page.getByText(signupEmail)).toBeVisible();
   });
 
   test("the 'sign in' link returns to /login", async ({ page }) => {

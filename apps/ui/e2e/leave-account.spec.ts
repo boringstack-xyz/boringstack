@@ -1,98 +1,27 @@
-import { type APIRequestContext, request } from "@playwright/test";
 import { z } from "zod";
 
 import { expect, test } from "./fixtures/auth";
+import {
+  E2E_PASSWORD,
+  type ITestUser,
+  authedContext,
+  fetchActiveAccountId,
+  registerAndVerify,
+  uniqueEmail
+} from "./fixtures/helpers";
 import { parseBody } from "./fixtures/parse";
-
-interface IUser {
-  readonly email: string;
-  readonly password: string;
-}
-
-const BASE_URL = "http://localhost:7331";
-const PASSWORD = "E2EPassword123!";
-
-function uniqueEmail(prefix: string): string {
-  return `e2e-leave-${prefix}-${String(Date.now())}-${String(
-    Math.floor(Math.random() * 1_000_000)
-  )}@e2e.test`;
-}
-
-async function registerAndVerify(
-  user: IUser,
-  firstName: string,
-  lastName: string
-): Promise<void> {
-  const ctx: APIRequestContext = await request.newContext({
-    baseURL: BASE_URL
-  });
-
-  const registerRes = await ctx.post("/api/v1/auth/register", {
-    data: {
-      email: user.email,
-      password: user.password,
-      firstName,
-      lastName
-    }
-  });
-
-  if (!registerRes.ok()) {
-    throw new Error(
-      `register failed (${String(registerRes.status())}): ${await registerRes.text()}`
-    );
-  }
-
-  const verifyRes = await ctx.post("/api/v1/auth/__test/force-verify", {
-    data: { email: user.email }
-  });
-
-  if (!verifyRes.ok()) {
-    throw new Error(
-      `force-verify failed (${String(verifyRes.status())}): ${await verifyRes.text()}`
-    );
-  }
-
-  await ctx.dispose();
-}
-
-async function authedContext(user: IUser): Promise<APIRequestContext> {
-  const ctx = await request.newContext({ baseURL: BASE_URL });
-  const loginRes = await ctx.post("/api/v1/auth/login", {
-    data: { email: user.email, password: user.password }
-  });
-
-  if (!loginRes.ok()) {
-    throw new Error(
-      `login failed (${String(loginRes.status())}): ${await loginRes.text()}`
-    );
-  }
-
-  return ctx;
-}
-
-async function activeAccountId(ctx: APIRequestContext): Promise<string> {
-  const meRes = await ctx.get("/api/v1/users/me");
-
-  if (!meRes.ok()) {
-    throw new Error(`/me failed (${String(meRes.status())})`);
-  }
-
-  const body = await parseBody(
-    meRes,
-    z.object({ account: z.object({ id: z.string() }) })
-  );
-
-  return body.account.id;
-}
 
 test.describe("Leave account", () => {
   test("a member can leave from the danger zone and lands on /login", async ({
     page
   }) => {
-    const owner: IUser = { email: uniqueEmail("owner"), password: PASSWORD };
-    const member: IUser = {
-      email: uniqueEmail("member"),
-      password: PASSWORD
+    const owner: ITestUser = {
+      email: uniqueEmail("leave-owner"),
+      password: E2E_PASSWORD
+    };
+    const member: ITestUser = {
+      email: uniqueEmail("leave-member"),
+      password: E2E_PASSWORD
     };
 
     await registerAndVerify(owner, "Owner", "User");
@@ -105,7 +34,7 @@ test.describe("Leave account", () => {
      * account to fall back to.
      */
     const ctxOwner = await authedContext(owner);
-    const ownerAccountId = await activeAccountId(ctxOwner);
+    const ownerAccountId = await fetchActiveAccountId(ctxOwner);
 
     const inviteRes = await ctxOwner.post(
       `/api/v1/accounts/${ownerAccountId}/invitations`,
