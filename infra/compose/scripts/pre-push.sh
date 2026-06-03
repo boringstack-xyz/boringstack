@@ -55,7 +55,7 @@ config() {
   (cd "$COMPOSE_DIR" && docker compose "$@" --quiet >/dev/null)
 }
 
-step "1/3 Compose config validation (every overlay combo)"
+step "1/4 Compose config validation (every overlay combo)"
 config "dev (base)" -f docker-compose.yml -f docker-compose.development-labels.yml --profile dev config
 config "prod (base)" -f docker-compose.yml -f docker-compose.production-labels.yml --profile prod config
 config "dev + observability" -f docker-compose.yml -f docker-compose.development-labels.yml -f docker-compose.observability.yml --profile dev --profile observability config
@@ -66,7 +66,11 @@ config "dev + wud" -f docker-compose.yml -f docker-compose.development-labels.ym
 config "kitchen-sink (dev + all overlays)" -f docker-compose.yml -f docker-compose.development-labels.yml -f docker-compose.observability.yml -f docker-compose.glitchtip.yml -f docker-compose.bullmq.yml -f docker-compose.wud.yml --profile dev --profile observability --profile glitchtip-dev --profile bullmq --profile wud config
 ok "compose configs valid"
 
-step "2/3 shellcheck"
+step "2/4 Compose guardrails (same script CI runs)"
+"$INFRA_ROOT/scripts/validate-guardrails.sh" all
+ok "guardrails clean"
+
+step "3/4 shellcheck"
 if ! command -v shellcheck >/dev/null 2>&1; then
   c_blue "  skipped — shellcheck not installed (brew install shellcheck). CI still runs it."
 else
@@ -75,7 +79,7 @@ else
   ok "shellcheck clean"
 fi
 
-step "3/3 yamllint"
+step "4/4 yamllint"
 if ! command -v yamllint >/dev/null 2>&1; then
   c_blue "  skipped — yamllint not installed (brew install yamllint). CI still runs it."
 else
