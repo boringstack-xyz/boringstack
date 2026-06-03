@@ -190,6 +190,78 @@ jobs:
           print("no unallowed credential fallbacks in compose files")
           EOF
 
+      - name: Guardrail — rooted prod services must drop capabilities
+        if: steps.filter.outputs.code == 'true'
+        working-directory: infra/compose/compose
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            --profile prod config --format json > /tmp/prod-config.json
+          python3 - <<'EOF'
+          import json
+
+          # `user: root` is only tolerated when the root process is
+          # neutered: every capability dropped (allowlist re-adds only),
+          # plus no-new-privileges. Anything less is a full-power root
+          # container one RCE away from the host.
+          with open("/tmp/prod-config.json", encoding="utf-8") as handle:
+              services = json.load(handle)["services"]
+
+          bad: list[str] = []
+
+          for name, svc in services.items():
+              if svc.get("user") not in ("root", "0", "0:0"):
+                  continue
+              if "ALL" not in (svc.get("cap_drop") or []):
+                  bad.append(f"{name}: user root without cap_drop: [ALL]")
+              if "no-new-privileges:true" not in (svc.get("security_opt") or []):
+                  bad.append(f"{name}: user root without no-new-privileges")
+
+          if bad:
+              raise SystemExit("rooted services not neutered:\n" + "\n".join(bad))
+
+          print("all rooted prod services drop capabilities")
+          EOF
+
+      - name: Guardrail — prod rejects unpinned image tags (dev.sh fail-closed)
+        if: steps.filter.outputs.code == 'true'
+        working-directory: infra/compose/compose
+        env:
+          STACK: prod
+          WITH_GLITCHTIP: "0"
+          WITH_OBSERVABILITY: "0"
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: ci-guardrail-placeholder
+          POSTGRES_DB: app
+          JWT_SECRET: ci-guardrail-placeholder-padded-to-32-chars
+          MFA_ENCRYPTION_KEY: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+          FRONTEND_URL: https://example.com
+          PUBLIC_API_URL: https://example.com/api
+          PUBLIC_UI_HOST: example.com
+          ACME_EMAIL: ops@example.com
+        run: |
+          chmod +x dev.sh
+
+          # 1. Missing tags must fail closed and name the missing var.
+          if output=$(./dev.sh config --quiet 2>&1); then
+            echo "FAIL: prod accepted unset image tags"; exit 1
+          fi
+          echo "$output" | grep -q "API_IMAGE_TAG" || {
+            echo "FAIL: error does not mention API_IMAGE_TAG"; echo "$output"; exit 1
+          }
+
+          # 2. latest must be rejected explicitly.
+          if output=$(API_IMAGE_TAG=latest UI_IMAGE_TAG=latest ./dev.sh config --quiet 2>&1); then
+            echo "FAIL: prod accepted latest image tags"; exit 1
+          fi
+          echo "$output" | grep -q "must be pinned in prod" || {
+            echo "FAIL: latest rejection message missing"; echo "$output"; exit 1
+          }
+
+          # 3. Pinned tags pass.
+          API_IMAGE_TAG=v0.1.0 UI_IMAGE_TAG=v0.1.0 ./dev.sh config --quiet
+          echo "prod image-tag pinning fail-closed checks passed"
+
       - name: Validate — dev + observability
         if: steps.filter.outputs.code == 'true'
         working-directory: infra/compose/compose

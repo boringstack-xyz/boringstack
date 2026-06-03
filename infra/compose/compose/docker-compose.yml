@@ -69,7 +69,18 @@ services:
     image: traefik:v3.7@sha256:6b9cbca6fac42ab0075f5437d8dc1685cfd188626d8d515839ea94f8b6271c42
     container_name: boringstack-traefik
     profiles: [prod]
+    # Root is required: the docker provider reads /var/run/docker.sock,
+    # whose group id varies per host — an unprivileged uid would need a
+    # host-specific group mapping and break the template's portability.
+    # Root is neutered instead: every capability is dropped except binding
+    # :80/:443, and no-new-privileges blocks escalation. An RCE in Traefik
+    # gets a uid-0 process that cannot setuid, chown, ptrace, load
+    # modules, or open raw sockets.
     user: root
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
     restart: unless-stopped
     logging: *default-logging
     security_opt:
