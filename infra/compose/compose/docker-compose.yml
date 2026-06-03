@@ -47,12 +47,29 @@ services:
     image: valkey/valkey:8-alpine@sha256:b027235326507cfdade9b6684056ec1d0b0c0757412e628245129b5d7b788618
     restart: unless-stopped
     logging: *default-logging
+    # Auth is enforced whenever VALKEY_PASSWORD is set (an empty
+    # requirepass disables auth — the dev default). The API already
+    # fail-closes on a missing password in production (env validate),
+    # and dev.sh mirrors that for the stack; this makes the SERVER
+    # enforce what the clients were already configured to send.
+    command:
+      - "valkey-server"
+      - "--requirepass"
+      - "${VALKEY_PASSWORD:-}"
+    environment:
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD:-}
     volumes:
       - valkey_data:/data
     networks:
       - backend
     healthcheck:
-      test: ["CMD", "valkey-cli", "ping"]
+      # $$-deferred so the container shell resolves the conditional:
+      # authenticated ping when a password is set, plain ping otherwise.
+      test:
+        [
+          "CMD-SHELL",
+          'valkey-cli $${VALKEY_PASSWORD:+-a "$$VALKEY_PASSWORD"} ping | grep -q PONG',
+        ]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -224,6 +241,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app_dev_password}@postgres:5432/${POSTGRES_DB:-app}
       VALKEY_HOST: valkey
       VALKEY_PORT: "6379"
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD:-}
       # MFA setup stages the encrypted secret in cache between
       # `/auth/mfa/setup` and `/auth/mfa/verify-setup`. With the
       # default noop cache the second call always returns "Enrollment

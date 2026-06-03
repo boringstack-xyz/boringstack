@@ -17,10 +17,15 @@ const CANONICAL_HELPERS: readonly {
   readonly canonicalSrc: string;
 }[] = [
   /*
-   * Seed the registry with no entries — the API side carries the
-   * deliverability helpers. New UI helpers (formatters, validators,
-   * etc.) are added as duplicates are spotted.
+   * E2e API-driven setup helpers. Four specs once carried their own
+   * drifting copies (the password-reset variant had already diverged);
+   * e2e/fixtures/helpers.ts is the single home.
    */
+  { name: "uniqueEmail", canonicalSrc: "e2e/fixtures/helpers.ts" },
+  { name: "registerAndVerify", canonicalSrc: "e2e/fixtures/helpers.ts" },
+  { name: "authedContext", canonicalSrc: "e2e/fixtures/helpers.ts" },
+  { name: "fetchActiveAccountId", canonicalSrc: "e2e/fixtures/helpers.ts" },
+  { name: "getActiveAccountId", canonicalSrc: "e2e/fixtures/helpers.ts" }
 ];
 
 const DECLARATION_PATTERNS = [

@@ -13,7 +13,7 @@
 
 x-glitchtip-env: &glitchtip-env
   DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app_dev_password}@postgres:5432/glitchtip
-  REDIS_URL: redis://valkey:6379/1
+  REDIS_URL: redis://${VALKEY_PASSWORD:+:${VALKEY_PASSWORD}@}valkey:6379/1
   SECRET_KEY: "${GLITCHTIP_SECRET_KEY:?GLITCHTIP_SECRET_KEY is required - generate with openssl rand -base64 50}"
   PORT: "8000"
   EMAIL_URL: ${GLITCHTIP_EMAIL_URL:-consolemail://}

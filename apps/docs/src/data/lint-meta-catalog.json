@@ -203,6 +203,12 @@
       "category": "config",
       "ciCritical": false,
       "description": "ESLint severities must be \"error\" or \"off\", not \"warn\"."
+    },
+    {
+      "id": "tsconfig-include-paths-exist",
+      "category": "config",
+      "ciCritical": false,
+      "description": "Literal tsconfig include/files entries must point at files that exist (globs exempt); checks this app and sibling apps."
     }
   ],
   "api": [
@@ -367,6 +373,12 @@
       "category": "config",
       "ciCritical": false,
       "description": "Literal test-file paths in eslint.config.* overrides must exist on disk."
+    },
+    {
+      "id": "tsconfig-include-paths-exist",
+      "category": "config",
+      "ciCritical": false,
+      "description": "Literal tsconfig include/files entries must point at files that exist (globs exempt); checks this app and sibling apps."
     }
   ]
 }

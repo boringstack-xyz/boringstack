@@ -51,7 +51,45 @@ export class AuthService {
     });
 
     if (existing) {
-      throw ApiErrors.conflict("User already exists");
+      /*
+       * Enumeration-safe: respond exactly like a fresh registration
+       * (same status, same shape) so the endpoint is no oracle for
+       * which emails hold accounts — the sibling reset/resend flows
+       * already behave this way. The real owner gets a notice email
+       * with sign-in/reset links instead of a new account.
+       */
+      try {
+        await sendTemplate({
+          to: email,
+          subject: EMAIL_SUBJECTS.ACCOUNT_EXISTS,
+          templatePath: TEMPLATE_PATHS.ACCOUNT_EXISTS,
+          variables: {
+            preHeader: "Sign in instead — your email is already registered",
+            loginUrl: `${env.FRONTEND_URL}/login`,
+            resetUrl: `${env.FRONTEND_URL}/forgot-password`,
+          },
+        });
+      } catch (error: unknown) {
+        logger.error("Failed to send account-exists notice", {
+          event: "auth.register.notice_email_failed",
+          userId: existing.id,
+          error: getErrorMessage(error),
+        });
+      }
+
+      logger.info("Registration attempted for existing email", {
+        event: "auth.register.existing_email",
+        userId: existing.id,
+        email: maskEmailForLogging(email),
+      });
+
+      void auditLogService.record({
+        userId: existing.id,
+        action: AUDIT_ACTIONS.AUTH_REGISTER,
+        metadata: { outcome: "existing_email" },
+      });
+
+      return { email };
     }
 
     const passwordHash = await passwordService.hash(data.password);

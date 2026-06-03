@@ -1,0 +1,7 @@
+{
+    "subject": "You already have an account",
+    "preHeader": "Sign in instead — your email is already registered",
+    "appName": "{{appName}}",
+    "loginUrl": "https://example.com/login",
+    "resetUrl": "https://example.com/forgot-password"
+}

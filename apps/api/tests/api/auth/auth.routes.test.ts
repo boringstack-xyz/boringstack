@@ -40,6 +40,15 @@ const uniqueEmail = (prefix: string): string =>
 const isJson = (res: Response): boolean =>
   res.headers.get("content-type")?.includes("application/json") ?? false;
 
+/*
+ * The success envelope carries a per-response timestamp; equality checks
+ * on enumeration-safety compare only the payload.
+ */
+const extractData = (body: unknown): unknown =>
+  body !== null && typeof body === "object" && "data" in body
+    ? body.data
+    : body;
+
 const readJson = async (res: Response): Promise<unknown> => {
   if (!isJson(res)) {
     const got = res.headers.get("content-type") ?? "<missing>";
@@ -352,7 +361,7 @@ describe("auth flow — register → verify → login → me → logout", () => 
     expect(loginRes.status).toBe(401);
   });
 
-  test("register with an existing email → 409", async () => {
+  test("register with an existing email is enumeration-safe (identical 200)", async () => {
     if (!(await requireDb())) {
       return;
     }
@@ -377,9 +386,26 @@ describe("auth flow — register → verify → login → me → logout", () => 
 
     expect(first.status).toBe(200);
 
+    /*
+     * The second attempt must be indistinguishable from the first —
+     * same status, same body — so the endpoint is no oracle for which
+     * emails hold accounts. No duplicate user may be created.
+     */
     const second = await make();
 
-    expect(second.status).toBe(409);
+    expect(second.status).toBe(200);
+
+    const firstBody = await readJson(first);
+    const secondBody = await readJson(second);
+
+    /* Envelope timestamps differ; the payload must not. */
+    expect(JSON.stringify(extractData(secondBody))).toBe(
+      JSON.stringify(extractData(firstBody))
+    );
+
+    const rows = await db.select().from(users).where(eq(users.email, EMAIL));
+
+    expect(rows).toHaveLength(1);
   });
 
   test("4th register attempt for the same email is rate-limited", async () => {
@@ -410,8 +436,8 @@ describe("auth flow — register → verify → login → me → logout", () => 
     const fourth = await make();
 
     expect(first.status).toBe(200);
-    expect([200, 409]).toContain(second.status);
-    expect([200, 409]).toContain(third.status);
+    expect(second.status).toBe(200);
+    expect(third.status).toBe(200);
     expect(fourth.status).toBe(400);
 
     const fourthBody = await readJson(fourth);

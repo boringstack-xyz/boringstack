@@ -80,32 +80,34 @@ describe("AuthService.register", () => {
     expect(membershipRows).toHaveLength(0);
   });
 
-  test("rejects a duplicate email with a 409 ApiError", async () => {
+  test("treats a duplicate email enumeration-safely (same result, no new user)", async () => {
     if (!(await requireDb())) {
       return;
     }
 
-    await authService.register({
+    const first = await authService.register({
       email: "dup@example.com",
       password: VALID_PASSWORD,
     });
 
-    let caught: unknown;
+    /*
+     * No throw, identical return shape, and no second user row — the
+     * existing owner gets a notice email instead, so the service is
+     * no oracle for which emails hold accounts.
+     */
+    const second = await authService.register({
+      email: "dup@example.com",
+      password: VALID_PASSWORD,
+    });
 
-    try {
-      await authService.register({
-        email: "dup@example.com",
-        password: VALID_PASSWORD,
-      });
-    } catch (err: unknown) {
-      caught = err;
-    }
+    expect(second).toEqual(first);
 
-    expect(caught).toBeInstanceOf(ApiError);
+    const rows = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, "dup@example.com"));
 
-    if (caught instanceof ApiError) {
-      expect(caught.statusCode).toBe(409);
-    }
+    expect(rows).toHaveLength(1);
   });
 });
 

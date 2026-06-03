@@ -9,6 +9,7 @@ import { githubActionsTimeoutRequiredRule } from "./rules/ci/github-actions-time
 import { prePushCiParityRule } from "./rules/ci/pre-push-ci-parity";
 import { eslintConfigNoWarnRule } from "./rules/config/eslint-config-no-warn";
 import { eslintOverridePathsExistRule } from "./rules/config/eslint-override-paths-exist";
+import { tsconfigIncludePathsExistRule } from "./rules/config/tsconfig-include-paths-exist";
 import { envCascadeDriftRule } from "./rules/env/env-cascade-drift";
 import { noDirectProcessEnvRule } from "./rules/env/no-direct-process-env";
 import { canonicalHelpersSingleHomeRule } from "./rules/source-text/canonical-helpers-single-home";
@@ -49,4 +50,5 @@ export const META_RULES: readonly IMetaRule[] = [
   touchTestsTooRule,
   eslintConfigNoWarnRule,
   eslintOverridePathsExistRule,
+  tsconfigIncludePathsExistRule,
 ];

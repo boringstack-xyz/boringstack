@@ -194,6 +194,21 @@ jobs:
           print("no unallowed credential fallbacks in compose files")
           EOF
 
+      - name: Guardrail — valkey enforces auth and prod requires the password
+        if: steps.filter.outputs.code == 'true'
+        working-directory: infra/compose/compose
+        run: |
+          # The valkey server must run with --requirepass wired to
+          # VALKEY_PASSWORD (empty = dev-only auth-off), and dev.sh must
+          # fail closed on a missing password in prod.
+          grep -A 3 'command:' docker-compose.yml | grep -q -- '--requirepass' || {
+            echo "FAIL: valkey command does not enforce --requirepass"; exit 1
+          }
+          grep -q 'VALKEY_PASSWORD:?VALKEY_PASSWORD required in prod' dev.sh || {
+            echo "FAIL: dev.sh prod guard for VALKEY_PASSWORD missing"; exit 1
+          }
+          echo "valkey auth guardrail satisfied"
+
       - name: Guardrail — rooted prod services must drop capabilities
         if: steps.filter.outputs.code == 'true'
         working-directory: infra/compose/compose
@@ -243,6 +258,10 @@ jobs:
           PUBLIC_API_URL: https://example.com/api
           PUBLIC_UI_HOST: example.com
           ACME_EMAIL: ops@example.com
+          # Required since the valkey-auth hardening: the prod guard
+          # checks VALKEY_PASSWORD before the image-tag checks this
+          # step exercises.
+          VALKEY_PASSWORD: ci-guardrail-placeholder
         run: |
           chmod +x dev.sh
 

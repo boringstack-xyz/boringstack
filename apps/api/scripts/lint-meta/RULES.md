@@ -41,3 +41,4 @@ Run `bun run lint:meta --list-rules` for the machine-readable list from the regi
 | `touch-tests-too`                         | testing      | no          | Modified logic/route files must include a matching test change (opt-in via LINT_META_TOUCHED_BASE).                                             |
 | `eslint-config-no-warn`                   | config       | no          | ESLint severities must be "error" or "off", not "warn".                                                                                         |
 | `eslint-override-paths-exist`             | config       | no          | Literal test-file paths in eslint.config.* overrides must exist on disk.                                                                        |
+| `tsconfig-include-paths-exist`            | config       | no          | Literal tsconfig include/files entries must point at files that exist (globs exempt); checks this app and sibling apps.                         |
