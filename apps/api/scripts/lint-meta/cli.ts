@@ -24,6 +24,7 @@ import { checkPackageOverrideParity } from "./rules/supply-chain/package-overrid
 import { checkSharedToolVersionParity } from "./rules/supply-chain/shared-tool-version-parity";
 import { checkEslintConfigNoWarn } from "./rules/config/eslint-config-no-warn";
 import { checkEslintOverridePathsExist } from "./rules/config/eslint-override-paths-exist";
+import { checkEslintPluginContractParity } from "./rules/config/eslint-plugin-contract-parity";
 import { checkTsconfigIncludePathsExist } from "./rules/config/tsconfig-include-paths-exist";
 import { checkEnvSchemaDrift } from "./rules/env/env-cascade-drift";
 import { checkNoDirectProcessEnv } from "./rules/env/no-direct-process-env";
@@ -104,6 +105,7 @@ export {
   checkExactDependencyVersions,
   checkEslintConfigNoWarn,
   checkEslintOverridePathsExist,
+  checkEslintPluginContractParity,
   checkEnvSchemaDrift,
   checkForbiddenText,
   checkGeneratedArtifactContracts,

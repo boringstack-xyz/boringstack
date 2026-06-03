@@ -42,3 +42,4 @@ Run `bun run lint:meta --list-rules` for the machine-readable list from the regi
 | `eslint-config-no-warn`                   | config       | no          | ESLint severities must be "error" or "off", not "warn".                                                                                         |
 | `eslint-override-paths-exist`             | config       | no          | Literal test-file paths in eslint.config.* overrides must exist on disk.                                                                        |
 | `tsconfig-include-paths-exist`            | config       | no          | Literal tsconfig include/files entries must point at files that exist (globs exempt); checks this app and sibling apps.                         |
+| `eslint-plugin-contract-parity`           | config       | no          | Every installed @boring-stack-pkg eslint plugin must appear in AGENT_CONTRACT.md, and vice versa.                                               |

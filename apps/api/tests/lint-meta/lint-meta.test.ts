@@ -21,6 +21,7 @@ import {
   checkEnvSchemaDrift,
   checkEslintConfigNoWarn,
   checkEslintOverridePathsExist,
+  checkEslintPluginContractParity,
   checkExactDependencyVersions,
   checkForbiddenText,
   checkLogicFilesHaveTests,
@@ -551,6 +552,70 @@ describe("checkWorkflowExpressionSyntax", () => {
   });
 });
 
+const CONTRACT_MD = "AGENT_CONTRACT.md";
+const PKG_JSON = "package.json";
+
+describe("checkEslintPluginContractParity", () => {
+  test("flags installed-but-undocumented and documented-but-missing plugins", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-contract-"));
+
+    try {
+      writeFileSync(
+        join(root, PKG_JSON),
+        JSON.stringify({
+          devDependencies: {
+            "@boring-stack-pkg/eslint-plugin-code-flow": "0.2.0",
+            "@boring-stack-pkg/eslint-plugin-comment-hygiene": "0.2.0",
+          },
+        })
+      );
+      writeFileSync(
+        join(root, CONTRACT_MD),
+        "| `code-flow` | early returns |\n| `@boring-stack-pkg/eslint-plugin-ghost-plugin` | not installed |\n"
+      );
+
+      const messages = checkEslintPluginContractParity(root).map(
+        (row) => row.message
+      );
+
+      expect(
+        messages.some((message) => message.includes("comment-hygiene"))
+      ).toBe(true);
+      expect(messages.some((message) => message.includes("ghost-plugin"))).toBe(
+        true
+      );
+      expect(messages.some((message) => message.includes("code-flow"))).toBe(
+        false
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when contract and package.json agree", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-contract-"));
+
+    try {
+      writeFileSync(
+        join(root, PKG_JSON),
+        JSON.stringify({
+          devDependencies: {
+            "@boring-stack-pkg/eslint-plugin-code-flow": "0.2.0",
+          },
+        })
+      );
+      writeFileSync(
+        join(root, CONTRACT_MD),
+        "| `@boring-stack-pkg/eslint-plugin-code-flow` | early returns |\n"
+      );
+
+      expect(checkEslintPluginContractParity(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("checkTsconfigIncludePathsExist", () => {
   test("flags a literal include entry that does not exist, skips globs and hidden dirs", () => {
     const root = mkdtempSync(join(tmpdir(), "lint-meta-tsconfig-"));
@@ -611,7 +676,7 @@ describe("checkEnginePinParity", () => {
     }
   ): void {
     writeFileSync(
-      join(root, "package.json"),
+      join(root, PKG_JSON),
       JSON.stringify({ engines: options.engines })
     );
     writeFileSync(
@@ -648,7 +713,7 @@ describe("checkEnginePinParity", () => {
     const monorepo = mkdtempSync(join(tmpdir(), "lint-meta-engine-mono-"));
 
     try {
-      writeFileSync(join(monorepo, "package.json"), JSON.stringify({}));
+      writeFileSync(join(monorepo, PKG_JSON), JSON.stringify({}));
 
       const appRoot = join(monorepo, "apps", "api");
 
@@ -668,7 +733,7 @@ describe("checkEnginePinParity", () => {
       ).toBe(true);
 
       writeFileSync(
-        join(monorepo, "package.json"),
+        join(monorepo, PKG_JSON),
         JSON.stringify({ engines: { bun: "1.3.14" } })
       );
 

@@ -49,6 +49,7 @@ Run `bun run lint:meta --list-rules` for the machine-readable list from the regi
 | `skipped-tests-need-tracking`             | testing      | no          | Skipped tests (.skip/.only/xit/xdescribe) must carry an issue URL or TODO(@owner) so the debt has a tracked owner.                                                                                                                                          |
 | `eslint-config-no-warn`                   | config       | no          | ESLint severities must be "error" or "off", not "warn".                                                                                                                                                                                                     |
 | `tsconfig-include-paths-exist`            | config       | no          | Literal tsconfig include/files entries must point at files that exist (globs exempt); checks this app and sibling apps.                                                                                                                                     |
+| `eslint-plugin-contract-parity`           | config       | no          | Every installed @boring-stack-pkg eslint plugin must appear in AGENT_CONTRACT.md, and vice versa.                                                                                                                                                           |
 
 ## CI-critical rules
 

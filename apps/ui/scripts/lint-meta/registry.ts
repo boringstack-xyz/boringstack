@@ -9,6 +9,7 @@ import { githubActionsServiceImageDigestPinRule } from "./rules/ci/github-action
 import { githubActionsTimeoutRequiredRule } from "./rules/ci/github-actions-timeout-required";
 import { prePushCiParityRule } from "./rules/ci/pre-push-ci-parity";
 import { eslintConfigNoWarnRule } from "./rules/config/eslint-config-no-warn";
+import { eslintPluginContractParityRule } from "./rules/config/eslint-plugin-contract-parity";
 import { tsconfigIncludePathsExistRule } from "./rules/config/tsconfig-include-paths-exist";
 import { envCascadeDriftRule } from "./rules/env/env-cascade-drift";
 import { noDirectImportMetaEnvRule } from "./rules/env/no-direct-import-meta-env";
@@ -57,5 +58,6 @@ export const META_RULES: readonly IMetaRule[] = [
   skippedTestsNeedTrackingRule,
   // --- config ---
   eslintConfigNoWarnRule,
-  tsconfigIncludePathsExistRule
+  tsconfigIncludePathsExistRule,
+  eslintPluginContractParityRule
 ];

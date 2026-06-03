@@ -46,7 +46,7 @@ After schema changes: `bun run db:generate && bun run db:migrate`, commit the SQ
 
 ## ESLint plugins
 
-`bun run check` runs 14 custom plugins on top of typescript-eslint
+`bun run check` runs 16 custom plugins on top of typescript-eslint
 strict-type-checked. Each one catches a specific class of mistake the
 template doesn't tolerate.
 
@@ -65,6 +65,8 @@ template doesn't tolerate.
 | `oauth-security`                                              | OAuth state stored in Valkey (not cookies); PKCE on OIDC providers; bounded state TTL                                                  |
 | `stripe-webhooks`                                             | handlers verify the signature header; no parsed body before verification; idempotent                                                   |
 | `bullmq`                                                      | workers implement `close` + listen on `failed`; constant job names; queue/job options set `removeOnComplete`/`removeOnFail`/`attempts` |
+| `code-flow`                                                   | prefer early returns; no bare `Date.now()` / `new Date()` outside the canonical time helpers                                           |
+| `comment-hygiene`                                             | no historical ("used to be…") or narration ("now we call…") comments — comments explain why, not what                                  |
 | `test-conventions`                                            | no committed `.only` / `fdescribe`; tests route DB through `tests/helpers/db`; every test mirrors a source file                        |
 | `scripts/lint-meta/` ([RULES.md](scripts/lint-meta/RULES.md)) | Static repo guardrails: source-text bans, CI parity, env cascade, cross-repo imports                                                   |
 

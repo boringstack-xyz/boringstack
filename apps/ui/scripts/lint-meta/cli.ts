@@ -74,6 +74,7 @@ export { checkDependencyPairs } from "./rules/supply-chain/no-overlapping-libs";
 export { checkPackageJson } from "./rules/supply-chain/package-json-exact-deps";
 export { checkDockerfileBaseImageShaPin } from "./rules/ci/dockerfile-base-image-sha-pin";
 export { checkEnginePinParity } from "./rules/ci/engine-pin-parity";
+export { checkEslintPluginContractParity } from "./rules/config/eslint-plugin-contract-parity";
 export { checkTsconfigIncludePathsExist } from "./rules/config/tsconfig-include-paths-exist";
 export { checkWorkflowConcurrencyExplicit } from "./rules/ci/github-actions-concurrency-explicit";
 export { checkWorkflowExpressionSyntax } from "./rules/ci/github-actions-expression-syntax";

@@ -209,6 +209,12 @@
       "category": "config",
       "ciCritical": false,
       "description": "Literal tsconfig include/files entries must point at files that exist (globs exempt); checks this app and sibling apps."
+    },
+    {
+      "id": "eslint-plugin-contract-parity",
+      "category": "config",
+      "ciCritical": false,
+      "description": "Every installed @boring-stack-pkg eslint plugin must appear in AGENT_CONTRACT.md, and vice versa."
     }
   ],
   "api": [
@@ -379,6 +385,12 @@
       "category": "config",
       "ciCritical": false,
       "description": "Literal tsconfig include/files entries must point at files that exist (globs exempt); checks this app and sibling apps."
+    },
+    {
+      "id": "eslint-plugin-contract-parity",
+      "category": "config",
+      "ciCritical": false,
+      "description": "Every installed @boring-stack-pkg eslint plugin must appear in AGENT_CONTRACT.md, and vice versa."
     }
   ]
 }

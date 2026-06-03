@@ -104,7 +104,7 @@ installed as ordinary semver-pinned `devDependencies` in `package.json`:
 | Plugin                                                         | Enforces                                                                             |
 | -------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | `@boring-stack-pkg/eslint-plugin-module-boundaries`            | The import-boundary table above                                                      |
-| `@boring-stack-pkg/eslint-plugin-resource-architecture`        | Feature-folder + component-folder shape                                              |
+| `@boring-stack-pkg/eslint-plugin-comment-hygiene`              | No historical / narration comments — comments explain why, not what                  |
 | `@boring-stack-pkg/eslint-plugin-test-conventions`             | No `.only`, tests mirror source                                                      |
 | `scripts/lint-meta/` ([RULES.md](scripts/lint-meta/RULES.md))  | Static repo guardrails: source-text bans, CI parity, env cascade, cross-repo imports |
 | `@boring-stack-pkg/eslint-plugin-structured-logging`           | `logger.*({ event, ... })`, no console, no PII                                       |

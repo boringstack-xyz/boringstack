@@ -15,6 +15,7 @@ import {
   checkDependencyPairs,
   checkDockerfileBaseImageShaPin,
   checkEnginePinParity,
+  checkEslintPluginContractParity,
   checkForbiddenText,
   checkNoCrossRepoImports,
   checkNoDirectImportMetaEnv,
@@ -667,6 +668,67 @@ describe("checkWorkflowExpressionSyntax", () => {
       );
 
       expect(checkWorkflowExpressionSyntax(file)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkEslintPluginContractParity", () => {
+  test("flags installed-but-undocumented and documented-but-missing plugins", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-contract-"));
+
+    try {
+      writeFileSync(
+        join(root, "package.json"),
+        JSON.stringify({
+          devDependencies: {
+            "@boring-stack-pkg/eslint-plugin-code-flow": "0.2.0",
+            "@boring-stack-pkg/eslint-plugin-comment-hygiene": "0.2.0"
+          }
+        })
+      );
+      writeFileSync(
+        join(root, "AGENT_CONTRACT.md"),
+        "| `code-flow` | early returns |\n| `@boring-stack-pkg/eslint-plugin-ghost-plugin` | not installed |\n"
+      );
+
+      const messages = checkEslintPluginContractParity(root).map(
+        (row) => row.message
+      );
+
+      expect(
+        messages.some((message) => message.includes("comment-hygiene"))
+      ).toBe(true);
+      expect(messages.some((message) => message.includes("ghost-plugin"))).toBe(
+        true
+      );
+      expect(messages.some((message) => message.includes("code-flow"))).toBe(
+        false
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when contract and package.json agree", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-contract-"));
+
+    try {
+      writeFileSync(
+        join(root, "package.json"),
+        JSON.stringify({
+          devDependencies: {
+            "@boring-stack-pkg/eslint-plugin-code-flow": "0.2.0"
+          }
+        })
+      );
+      writeFileSync(
+        join(root, "AGENT_CONTRACT.md"),
+        "| `@boring-stack-pkg/eslint-plugin-code-flow` | early returns |\n"
+      );
+
+      expect(checkEslintPluginContractParity(root)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
