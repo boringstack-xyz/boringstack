@@ -1,3 +1,5 @@
+import { now } from "@/lib/time/now";
+
 import type { IDashboardSummary } from "@/features/dashboard/Dashboard.types";
 
 /**
@@ -12,7 +14,7 @@ export function makeDashboardSummary(
       {
         id: "1",
         title: "User signed up",
-        timestamp: "2026-05-11T09:30:00.000Z"
+        timestamp: now()
       }
     ],
     ...overrides

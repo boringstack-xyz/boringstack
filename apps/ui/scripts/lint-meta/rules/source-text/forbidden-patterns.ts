@@ -87,6 +87,23 @@ export function createForbiddenTextPatterns(
     },
     {
       /*
+       * Shared factories and e2e code run against wall-clock-sensitive
+       * consumers — a literal ISO timestamp ages out (relative-time
+       * assertions drift, servers reject stale consent/validity windows).
+       * Generate with now() from @/lib/time/now instead. Inline literals
+       * in colocated unit tests stay allowed: deterministic fixtures
+       * asserted against fixed expectations are a feature there.
+       */
+      rule: "no-hardcoded-iso-dates-in-fixtures",
+      pattern: /"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/u,
+      message:
+        "Hardcoded ISO timestamps in shared factories/e2e age out. Generate with now() from @/lib/time/now.",
+      allow: (file) =>
+        !file.startsWith(resolve(root, "tests/factories")) &&
+        !file.startsWith(resolve(root, "e2e"))
+    },
+    {
+      /*
        * Theme tokens in tailwind.css are the only source of truth for
        * light/dark. Components must reference semantic tokens
        * (bg-background, text-foreground, ...) and never branch on the

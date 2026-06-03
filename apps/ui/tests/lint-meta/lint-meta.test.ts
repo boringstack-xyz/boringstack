@@ -34,6 +34,7 @@ import {
   parseDotenvKeys
 } from "../../scripts/lint-meta/cli";
 import { renderRulesMd } from "../../scripts/lint-meta/generate-rules-md";
+import { checkForbiddenText as checkForbiddenTextWithRoot } from "../../scripts/lint-meta/rules/source-text/forbidden-text";
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 
@@ -86,6 +87,36 @@ describe("checkForbiddenText", () => {
     const v = checkForbiddenText(join(FIXTURES, "source-text/clean.ts"));
 
     expect(v).toEqual([]);
+  });
+
+  test("flags hardcoded ISO timestamps in shared factories and e2e only", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-iso-dates-"));
+
+    try {
+      const factoryDir = join(root, "tests", "factories");
+      const srcDir = join(root, "src");
+
+      mkdirSync(factoryDir, { recursive: true });
+      mkdirSync(srcDir, { recursive: true });
+
+      const factory = join(factoryDir, "bad.factory.ts");
+
+      writeFileSync(factory, 'export const t = "2026-05-11T09:30:00.000Z";\n');
+
+      expect(
+        checkForbiddenTextWithRoot(factory, root).map((row) => row.rule)
+      ).toContain("no-hardcoded-iso-dates-in-fixtures");
+
+      const unitTest = join(srcDir, "thing.test.ts");
+
+      writeFileSync(unitTest, 'export const t = "2026-05-11T09:30:00.000Z";\n');
+
+      expect(
+        checkForbiddenTextWithRoot(unitTest, root).map((row) => row.rule)
+      ).not.toContain("no-hardcoded-iso-dates-in-fixtures");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 

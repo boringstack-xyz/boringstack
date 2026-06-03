@@ -133,6 +133,12 @@
       "description": "Casting to an inline object type (`as { … }`) skips validation."
     },
     {
+      "id": "no-hardcoded-iso-dates-in-fixtures",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Hardcoded ISO timestamps in shared factories/e2e age out."
+    },
+    {
       "id": "no-dark-variant",
       "category": "source-text",
       "ciCritical": false,
