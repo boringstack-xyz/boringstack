@@ -21,13 +21,16 @@ import {
   checkEnvSchemaDrift,
   checkEslintConfigNoWarn,
   checkEslintOverridePathsExist,
+  checkEslintPluginContractParity,
   checkExactDependencyVersions,
+  checkExternalClientTimeouts,
   checkForbiddenText,
   checkLogicFilesHaveTests,
   checkNoDirectProcessEnv,
   checkRouteFilesHaveTests,
   checkTouchedTests,
   checkTsconfigIncludePathsExist,
+  checkWorkflowBunCache,
   checkWorkflowConcurrencyExplicit,
   checkWorkflowExpressionSyntax,
   checkWorkflowServiceImageDigestPin,
@@ -40,6 +43,7 @@ import {
   checkPackageOverrideParity,
   checkPrePushParity,
   checkSharedToolVersionParity,
+  checkTofuBootstrapHardening,
 } from "../../scripts/lint-meta/cli";
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
@@ -412,6 +416,42 @@ describe("checkWorkflowConcurrencyExplicit", () => {
   });
 });
 
+describe("checkWorkflowBunCache", () => {
+  test("flags bun install without a cache step; passes cached and bun-free workflows", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-bun-cache-"));
+
+    try {
+      const uncached = join(root, "uncached.yml");
+
+      writeFileSync(
+        uncached,
+        "jobs:\n  x:\n    steps:\n      - run: bun install\n"
+      );
+
+      expect(checkWorkflowBunCache(uncached).map((row) => row.rule)).toContain(
+        "github-actions-bun-cache"
+      );
+
+      const cached = join(root, "cached.yml");
+
+      writeFileSync(
+        cached,
+        "jobs:\n  x:\n    steps:\n      - uses: actions/cache@abc\n      - run: bun install\n"
+      );
+
+      expect(checkWorkflowBunCache(cached)).toEqual([]);
+
+      const noBun = join(root, "nobun.yml");
+
+      writeFileSync(noBun, "jobs: {}\n");
+
+      expect(checkWorkflowBunCache(noBun)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("checkWorkflowServiceImageDigestPin", () => {
   test("flags a service image without a digest", () => {
     const root = mkdtempSync(join(tmpdir(), "lint-meta-svc-image-"));
@@ -551,6 +591,170 @@ describe("checkWorkflowExpressionSyntax", () => {
   });
 });
 
+const CONTRACT_MD = "AGENT_CONTRACT.md";
+const PKG_JSON = "package.json";
+
+describe("checkExternalClientTimeouts", () => {
+  test("flags SDK constructors without timeout and bare fetch; passes bounded ones", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-timeouts-"));
+
+    try {
+      mkdirSync(join(root, "src"), { recursive: true });
+
+      const bad = join(root, "src", "bad.ts");
+
+      writeFileSync(
+        bad,
+        'const s = new Stripe(key);\nconst r = await fetch(url, { method: "POST" });\n'
+      );
+
+      const rules = checkExternalClientTimeouts([bad]).map((row) => row.rule);
+
+      expect(rules).toHaveLength(2);
+
+      const good = join(root, "src", "good.ts");
+
+      writeFileSync(
+        good,
+        "const s = new Stripe(key, { timeout: 10_000 });\nconst r = await fetch(url, { signal: AbortSignal.timeout(10_000) });\n"
+      );
+
+      expect(checkExternalClientTimeouts([good])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkTofuBootstrapHardening", () => {
+  function makeBootstrap(root: string, mainTf: string): void {
+    const dir = join(root, "apps", "self");
+    const bootstrapDir = join(root, "infra", "bootstrap");
+
+    mkdirSync(dir, { recursive: true });
+    mkdirSync(bootstrapDir, { recursive: true });
+    writeFileSync(join(bootstrapDir, "main.tf"), mainTf);
+  }
+
+  test("flags missing lifecycle guard, open defaults, and curl|sh", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-tofu-"));
+
+    try {
+      makeBootstrap(
+        root,
+        [
+          'resource "hcloud_server" "main" {',
+          "  user_data = var.cloud_init",
+          "}",
+          'variable "ssh_allowed_ips" {',
+          '  default = ["0.0.0.0/0"]',
+          "}",
+          '# - [bash, -c, "curl -fsSL https://get.docker.com | sh"]',
+          "",
+        ].join("\n")
+      );
+
+      const rules = checkTofuBootstrapHardening(join(root, "apps", "self")).map(
+        (row) => row.rule
+      );
+
+      expect(rules).toContain("tofu-server-lifecycle-guard");
+      expect(rules).toContain("tofu-no-open-admin-defaults");
+      expect(rules).toContain("no-curl-pipe-sh");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes a guarded server with explicit inputs and verified installs", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-tofu-"));
+
+    try {
+      makeBootstrap(
+        root,
+        [
+          'resource "hcloud_server" "main" {',
+          "  user_data = var.cloud_init",
+          "  lifecycle {",
+          "    ignore_changes = [user_data]",
+          "  }",
+          "}",
+          'variable "ssh_allowed_ips" {',
+          "}",
+          "",
+        ].join("\n")
+      );
+
+      expect(checkTofuBootstrapHardening(join(root, "apps", "self"))).toEqual(
+        []
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkEslintPluginContractParity", () => {
+  test("flags installed-but-undocumented and documented-but-missing plugins", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-contract-"));
+
+    try {
+      writeFileSync(
+        join(root, PKG_JSON),
+        JSON.stringify({
+          devDependencies: {
+            "@boring-stack-pkg/eslint-plugin-code-flow": "0.2.0",
+            "@boring-stack-pkg/eslint-plugin-comment-hygiene": "0.2.0",
+          },
+        })
+      );
+      writeFileSync(
+        join(root, CONTRACT_MD),
+        "| `code-flow` | early returns |\n| `@boring-stack-pkg/eslint-plugin-ghost-plugin` | not installed |\n"
+      );
+
+      const messages = checkEslintPluginContractParity(root).map(
+        (row) => row.message
+      );
+
+      expect(
+        messages.some((message) => message.includes("comment-hygiene"))
+      ).toBe(true);
+      expect(messages.some((message) => message.includes("ghost-plugin"))).toBe(
+        true
+      );
+      expect(messages.some((message) => message.includes("code-flow"))).toBe(
+        false
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when contract and package.json agree", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-contract-"));
+
+    try {
+      writeFileSync(
+        join(root, PKG_JSON),
+        JSON.stringify({
+          devDependencies: {
+            "@boring-stack-pkg/eslint-plugin-code-flow": "0.2.0",
+          },
+        })
+      );
+      writeFileSync(
+        join(root, CONTRACT_MD),
+        "| `@boring-stack-pkg/eslint-plugin-code-flow` | early returns |\n"
+      );
+
+      expect(checkEslintPluginContractParity(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
 describe("checkTsconfigIncludePathsExist", () => {
   test("flags a literal include entry that does not exist, skips globs and hidden dirs", () => {
     const root = mkdtempSync(join(tmpdir(), "lint-meta-tsconfig-"));
@@ -611,7 +815,7 @@ describe("checkEnginePinParity", () => {
     }
   ): void {
     writeFileSync(
-      join(root, "package.json"),
+      join(root, PKG_JSON),
       JSON.stringify({ engines: options.engines })
     );
     writeFileSync(
@@ -648,7 +852,7 @@ describe("checkEnginePinParity", () => {
     const monorepo = mkdtempSync(join(tmpdir(), "lint-meta-engine-mono-"));
 
     try {
-      writeFileSync(join(monorepo, "package.json"), JSON.stringify({}));
+      writeFileSync(join(monorepo, PKG_JSON), JSON.stringify({}));
 
       const appRoot = join(monorepo, "apps", "api");
 
@@ -668,7 +872,7 @@ describe("checkEnginePinParity", () => {
       ).toBe(true);
 
       writeFileSync(
-        join(monorepo, "package.json"),
+        join(monorepo, PKG_JSON),
         JSON.stringify({ engines: { bun: "1.3.14" } })
       );
 

@@ -1,14 +1,12 @@
 {
   "app": {
-    "name": "BoringStack",
-    "tagline": "Production-grade SPA starter"
+    "name": "BoringStack"
   },
   "a11y": {
     "skipToContent": "Skip to main content"
   },
   "common": {
     "loading": "Loading…",
-    "loadingAria": "Loading",
     "close": "Close"
   },
   "offline": {
@@ -62,8 +60,7 @@
       "signIn": "Sign in",
       "errors": {
         "network": "Could not reach the server. Try again.",
-        "emailTaken": "An account with this email already exists.",
-        "weakPassword": "Use a stronger password (mix of upper, lower, and a digit)."
+        "emailTaken": "An account with this email already exists."
       }
     },
     "verifyEmail": {
@@ -194,7 +191,6 @@
   "nav": {
     "ariaPrimary": "Primary navigation",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu",
     "menuTitle": "Menu",
     "dashboard": "Dashboard",
     "notifications": "Notifications",
@@ -213,8 +209,7 @@
     "loadError": "Could not load billing details. Refresh the page or try again in a moment.",
     "currentPlan": {
       "label": "Current plan",
-      "free": "Free",
-      "paid": "Paid"
+      "free": "Free"
     },
     "plansHeading": "Available plans",
     "manage": "Manage subscription",
@@ -265,11 +260,6 @@
         "webPush": "Web Push"
       }
     }
-  },
-  "languageSwitcher": {
-    "label": "Language",
-    "english": "English",
-    "german": "Deutsch"
   },
   "accounts": {
     "settings": {
@@ -407,7 +397,6 @@
       "saveSuccess": "Profile updated",
       "saveError": "Couldn't update your profile. Try again.",
       "fields": {
-        "name": "Name",
         "firstName": "First name",
         "lastName": "Last name",
         "email": "Email",
@@ -416,9 +405,7 @@
       "identityLabel": "Identity"
     },
     "switcher": {
-      "ariaLabel": "Switch active account",
-      "currentBadge": "Active",
-      "rolePrefix": "Role"
+      "ariaLabel": "Switch active account"
     },
     "auditLog": {
       "pageTitle": "Audit log",
@@ -426,13 +413,11 @@
       "loading": "Loading audit entries",
       "error": "Could not load the audit log. Try again.",
       "empty": "No audit entries for this account yet.",
-      "systemActor": "System",
-      "navLabel": "Audit log"
+      "systemActor": "System"
     },
     "invitations": {
       "pageTitle": "Team",
       "pageSubtitle": "Invite teammates and manage pending invitations.",
-      "inviteCta": "Invite a teammate",
       "tableHeading": "Pending invitations",
       "empty": "No pending invitations.",
       "columns": {
@@ -450,8 +435,6 @@
         "roleLabel": "Role",
         "submit": "Send invitation",
         "submitting": "Sending…",
-        "cancel": "Cancel",
-        "success": "Invitation sent",
         "errorGeneric": "Couldn't send the invitation."
       },
       "roles": {
@@ -495,7 +478,6 @@
     "joinRequests": {
       "pageTitle": "Join requests",
       "pageSubtitle": "Pending requests from users whose email domain matches this account.",
-      "navLabel": "Join requests",
       "empty": "No pending join requests.",
       "loading": "Loading join requests…",
       "error": "Couldn't load join requests. Try again.",

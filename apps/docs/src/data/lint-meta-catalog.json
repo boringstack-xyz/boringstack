@@ -31,6 +31,12 @@
       "description": "GitHub Actions jobs require an explicit timeout-minutes (reusable-workflow calls exempt)."
     },
     {
+      "id": "github-actions-bun-cache",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Workflows running bun install must cache ~/.bun/install/cache."
+    },
+    {
       "id": "github-actions-concurrency-explicit",
       "category": "ci",
       "ciCritical": false,
@@ -53,6 +59,12 @@
       "category": "ci",
       "ciCritical": false,
       "description": "CI workflow must include every command listed in scripts/ci/pre-push.manifest.json."
+    },
+    {
+      "id": "tofu-bootstrap-hardening",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "infra/bootstrap must keep its hardening invariants: server lifecycle guard, no world-open variable defaults, no curl-pipe-sh."
     },
     {
       "id": "engine-pin-parity",
@@ -95,6 +107,18 @@
       "category": "source-text",
       "ciCritical": false,
       "description": "Helpers in the canonical registry must only be declared in their single source-of-truth file."
+    },
+    {
+      "id": "docs-no-retired-credentials",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Documentation prose must not reference retired default credentials."
+    },
+    {
+      "id": "i18n-locale-keys-used",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Locale keys defined in en/common.json must be referenced in src (dynamic t() prefixes exempt)."
     },
     {
       "id": "forbidden-text",
@@ -209,6 +233,12 @@
       "category": "config",
       "ciCritical": false,
       "description": "Literal tsconfig include/files entries must point at files that exist (globs exempt); checks this app and sibling apps."
+    },
+    {
+      "id": "eslint-plugin-contract-parity",
+      "category": "config",
+      "ciCritical": false,
+      "description": "Every installed @boring-stack-pkg eslint plugin must appear in AGENT_CONTRACT.md, and vice versa."
     }
   ],
   "api": [
@@ -255,6 +285,12 @@
       "description": "GitHub Actions jobs require an explicit timeout-minutes (reusable-workflow calls exempt)."
     },
     {
+      "id": "github-actions-bun-cache",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Workflows running bun install must cache ~/.bun/install/cache."
+    },
+    {
       "id": "github-actions-concurrency-explicit",
       "category": "ci",
       "ciCritical": false,
@@ -277,6 +313,12 @@
       "category": "ci",
       "ciCritical": false,
       "description": "CI workflow must include every command listed in scripts/ci/pre-push.manifest.json."
+    },
+    {
+      "id": "tofu-bootstrap-hardening",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "infra/bootstrap must keep its hardening invariants: server lifecycle guard, no world-open variable defaults, no curl-pipe-sh."
     },
     {
       "id": "engine-pin-parity",
@@ -333,6 +375,18 @@
       "description": "Helpers in the canonical registry must only be declared in their single source-of-truth file."
     },
     {
+      "id": "docs-no-retired-credentials",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Documentation prose must not reference retired default credentials."
+    },
+    {
+      "id": "external-client-timeout",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "SDK clients (Stripe/OpenAI/Anthropic) need a timeout option; fetch() in src needs an AbortSignal."
+    },
+    {
       "id": "no-raw-role-literal",
       "category": "source-text",
       "ciCritical": false,
@@ -379,6 +433,12 @@
       "category": "config",
       "ciCritical": false,
       "description": "Literal tsconfig include/files entries must point at files that exist (globs exempt); checks this app and sibling apps."
+    },
+    {
+      "id": "eslint-plugin-contract-parity",
+      "category": "config",
+      "ciCritical": false,
+      "description": "Every installed @boring-stack-pkg eslint plugin must appear in AGENT_CONTRACT.md, and vice versa."
     }
   ]
 }

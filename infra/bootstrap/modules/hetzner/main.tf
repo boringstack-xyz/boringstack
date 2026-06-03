@@ -106,4 +106,15 @@ resource "hcloud_server" "main" {
     role    = "boringstack"
     managed = "opentofu"
   }
+
+  # cloud-init only executes on FIRST boot, but Hetzner replaces the
+  # server whenever user_data changes — so a routine tfvars edit (repo
+  # URL, superuser credentials, backup settings) would otherwise destroy
+  # the VPS and every Docker volume on it (Postgres data, acme.json,
+  # GlitchTip). Ignore post-create drift; rebuild deliberately with
+  #   tofu apply -replace=module.hetzner.hcloud_server.main
+  # when you really want a fresh server.
+  lifecycle {
+    ignore_changes = [user_data]
+  }
 }

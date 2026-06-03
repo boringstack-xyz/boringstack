@@ -25,6 +25,8 @@ import {
  * must be set in production — the env validator enforces this.
  */
 
+const CLOUDFLARE_REQUEST_TIMEOUT_MS = 10_000;
+
 export class CloudflareEmailService implements IEmailService {
   public readonly providerName = "cloudflare" as const;
   private readonly endpoint: string;
@@ -80,6 +82,13 @@ export class CloudflareEmailService implements IEmailService {
       return await retryWithBackoff(async () => {
         const response = await fetch(this.endpoint, {
           method: "POST",
+          /*
+           * Per-attempt budget: without a signal a hung Cloudflare API
+           * pins the caller for the socket lifetime, multiplied by the
+           * retry wrapper. Aborted attempts surface as a normal fetch
+           * rejection and consume one retry like any transient error.
+           */
+          signal: AbortSignal.timeout(CLOUDFLARE_REQUEST_TIMEOUT_MS),
           headers: {
             "content-type": "application/json",
             authorization: `Bearer ${this.apiToken}`,

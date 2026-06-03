@@ -60,7 +60,7 @@ GlitchTip is Apache-licensed and Sentry-API-compatible. It runs as part of the d
 WITH_GLITCHTIP=0 ./dev.sh up -d  # opt out if you'd rather not run it
 ```
 
-First boot bootstraps a superuser (`admin@localhost` / `admin123456`), a default org, and two projects (`API` and `Frontend`). The `dev.sh up -d` command then runs `scripts/glitchtip-fetch-dsn.sh` in the background. It pulls the DSNs from GlitchTip's Django ORM, writes them into `compose/.env` as `SENTRY_DSN` and `VITE_SENTRY_DSN`, and restarts `api-dev` and `ui-dev`. Visit `http://glitchtip.localhost` to browse events. The manual DSN paste step is gone.
+First boot bootstraps a superuser (`admin@localhost` with a random password `dev.sh` generates and persists to `compose/.env` as `GLITCHTIP_SUPERUSER_PASSWORD` — there is deliberately no published default), a default org, and two projects (`API` and `Frontend`). The `dev.sh up -d` command then runs `scripts/glitchtip-fetch-dsn.sh` in the background. It pulls the DSNs from GlitchTip's Django ORM, writes them into `compose/.env` as `SENTRY_DSN` and `VITE_SENTRY_DSN`, and restarts `api-dev` and `ui-dev`. Visit `http://glitchtip.localhost` to browse events. The manual DSN paste step is gone.
 
 The overlay reuses the base stack's Postgres (in a separate `glitchtip` database) and Valkey (DB 1). Adding GlitchTip costs two extra containers, not a separate database server.
 

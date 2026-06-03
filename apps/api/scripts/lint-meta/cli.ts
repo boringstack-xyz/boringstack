@@ -24,19 +24,23 @@ import { checkPackageOverrideParity } from "./rules/supply-chain/package-overrid
 import { checkSharedToolVersionParity } from "./rules/supply-chain/shared-tool-version-parity";
 import { checkEslintConfigNoWarn } from "./rules/config/eslint-config-no-warn";
 import { checkEslintOverridePathsExist } from "./rules/config/eslint-override-paths-exist";
+import { checkEslintPluginContractParity } from "./rules/config/eslint-plugin-contract-parity";
 import { checkTsconfigIncludePathsExist } from "./rules/config/tsconfig-include-paths-exist";
 import { checkEnvSchemaDrift } from "./rules/env/env-cascade-drift";
 import { checkNoDirectProcessEnv } from "./rules/env/no-direct-process-env";
 import { checkGeneratedArtifactContracts } from "./rules/artifacts/generated-artifact-contract";
 import { checkDockerfileBaseImageShaPin } from "./rules/ci/dockerfile-base-image-sha-pin";
 import { checkEnginePinParity } from "./rules/ci/engine-pin-parity";
+import { checkWorkflowBunCache } from "./rules/ci/github-actions-bun-cache";
 import { checkWorkflowConcurrencyExplicit } from "./rules/ci/github-actions-concurrency-explicit";
 import { checkWorkflowExpressionSyntax } from "./rules/ci/github-actions-expression-syntax";
 import { checkWorkflowServiceImageDigestPin } from "./rules/ci/github-actions-service-image-digest-pin";
 import { checkWorkflowShas } from "./rules/ci/github-actions-permissions";
 import { checkWorkflowTimeouts } from "./rules/ci/github-actions-timeout-required";
 import { checkPrePushParity } from "./rules/ci/pre-push-ci-parity";
+import { checkTofuBootstrapHardening } from "./rules/ci/tofu-bootstrap-hardening";
 import { checkCanonicalHelpersSingleHome } from "./rules/source-text/canonical-helpers-single-home";
+import { checkExternalClientTimeouts } from "./rules/source-text/external-client-timeout";
 import { checkForbiddenText } from "./rules/source-text/forbidden-text";
 import { checkNoRawRoleLiterals } from "./rules/source-text/no-raw-role-literals";
 import { checkLogicFilesHaveTests } from "./rules/testing/logic-files-require-test-sibling";
@@ -102,8 +106,10 @@ export {
   checkDockerfileBaseImageShaPin,
   checkEnginePinParity,
   checkExactDependencyVersions,
+  checkExternalClientTimeouts,
   checkEslintConfigNoWarn,
   checkEslintOverridePathsExist,
+  checkEslintPluginContractParity,
   checkEnvSchemaDrift,
   checkForbiddenText,
   checkGeneratedArtifactContracts,
@@ -114,8 +120,10 @@ export {
   checkPrePushParity,
   checkRouteFilesHaveTests,
   checkSharedToolVersionParity,
+  checkTofuBootstrapHardening,
   checkTouchedTests,
   checkTsconfigIncludePathsExist,
+  checkWorkflowBunCache,
   checkWorkflowConcurrencyExplicit,
   checkWorkflowExpressionSyntax,
   checkWorkflowServiceImageDigestPin,

@@ -63,6 +63,14 @@ jobs:
         if: steps.filter.outputs.docs == 'true'
         with:
           bun-version: 1.3.14
+      - name: Cache bun install
+        if: steps.filter.outputs.docs == 'true'
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('apps/docs/bun.lock', 'apps/ui/bun.lock', 'apps/api/bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
 
       - name: Install docs deps
         if: steps.filter.outputs.docs == 'true'

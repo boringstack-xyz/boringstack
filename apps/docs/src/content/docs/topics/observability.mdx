@@ -31,7 +31,7 @@ flowchart LR
 
 ### Grafana
 
-Host `:3010`. Default credentials: admin / change-me (override via env). Datasources for Prometheus and Loki are auto-provisioned. Five baseline dashboards auto-load (see "Default dashboards" section below).
+Host `:3010`. Credentials: `admin` with a random password `dev.sh` generates and persists to `compose/.env` as `GRAFANA_ADMIN_PASSWORD` on first boot (there is deliberately no published default; prod requires an explicit value). Datasources for Prometheus and Loki are auto-provisioned. Five baseline dashboards auto-load (see "Default dashboards" section below).
 
 **Verify:** Open `http://localhost:3010`. You should see the BoringStack folder with the five dashboards listed.
 

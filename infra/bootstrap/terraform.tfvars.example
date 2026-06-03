@@ -22,7 +22,9 @@ cloudflare_zone_id   = ""  # Zone overview page, right sidebar
 
 domain          = "example.com"
 ssh_public_key  = ""  # paste full key including "ssh-ed25519 ..."
-# ssh_allowed_ips = ["0.0.0.0/0", "::/0"]  # uncomment to restrict SSH source
+ssh_allowed_ips = []  # REQUIRED: your admin CIDRs, e.g. ["203.0.113.7/32"].
+                      # ["0.0.0.0/0", "::/0"] opens SSH to the world - only
+                      # if you truly mean it. Empty fails validation.
 
 # ----------------------------------------------------------------------------
 # Edge security + performance  (optional; all on by default, all free-tier)

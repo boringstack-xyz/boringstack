@@ -11,6 +11,8 @@ import type {
 import type { IAnthropicMessagesClient } from "./anthropic.types";
 import { extractText, toAnthropicMessages } from "./anthropic.utils";
 
+const AI_REQUEST_TIMEOUT_MS = 60_000;
+
 export class AnthropicProvider implements IAIProvider {
   public readonly providerName: AIProviderName = "anthropic";
   private readonly messages: IAnthropicMessagesClient;
@@ -22,7 +24,8 @@ export class AnthropicProvider implements IAIProvider {
       return;
     }
 
-    const client = new Anthropic({ apiKey });
+    // The SDK default is 10 minutes — far past any request budget.
+    const client = new Anthropic({ apiKey, timeout: AI_REQUEST_TIMEOUT_MS });
 
     this.messages = {
       create: (body) => client.messages.create(body),

@@ -1,18 +1,23 @@
 import { generatedArtifactContractRule } from "./rules/artifacts/generated-artifact-contract";
 import { dockerfileBaseImageShaPinRule } from "./rules/ci/dockerfile-base-image-sha-pin";
 import { enginePinParityRule } from "./rules/ci/engine-pin-parity";
+import { githubActionsBunCacheRule } from "./rules/ci/github-actions-bun-cache";
 import { githubActionsConcurrencyExplicitRule } from "./rules/ci/github-actions-concurrency-explicit";
 import { githubActionsExpressionSyntaxRule } from "./rules/ci/github-actions-expression-syntax";
 import { githubActionsPermissionsRule } from "./rules/ci/github-actions-permissions";
 import { githubActionsServiceImageDigestPinRule } from "./rules/ci/github-actions-service-image-digest-pin";
 import { githubActionsTimeoutRequiredRule } from "./rules/ci/github-actions-timeout-required";
 import { prePushCiParityRule } from "./rules/ci/pre-push-ci-parity";
+import { tofuBootstrapHardeningRule } from "./rules/ci/tofu-bootstrap-hardening";
 import { eslintConfigNoWarnRule } from "./rules/config/eslint-config-no-warn";
+import { eslintPluginContractParityRule } from "./rules/config/eslint-plugin-contract-parity";
 import { eslintOverridePathsExistRule } from "./rules/config/eslint-override-paths-exist";
 import { tsconfigIncludePathsExistRule } from "./rules/config/tsconfig-include-paths-exist";
 import { envCascadeDriftRule } from "./rules/env/env-cascade-drift";
 import { noDirectProcessEnvRule } from "./rules/env/no-direct-process-env";
 import { canonicalHelpersSingleHomeRule } from "./rules/source-text/canonical-helpers-single-home";
+import { docsNoRetiredCredentialsRule } from "./rules/source-text/docs-no-retired-credentials";
+import { externalClientTimeoutRule } from "./rules/source-text/external-client-timeout";
 import { forbiddenTextRule } from "./rules/source-text/forbidden-text";
 import { noRawRoleLiteralsRule } from "./rules/source-text/no-raw-role-literals";
 import { noOverlappingLibsRule } from "./rules/supply-chain/no-overlapping-libs";
@@ -32,10 +37,12 @@ export const META_RULES: readonly IMetaRule[] = [
   sharedToolVersionParityRule,
   githubActionsPermissionsRule,
   githubActionsTimeoutRequiredRule,
+  githubActionsBunCacheRule,
   githubActionsConcurrencyExplicitRule,
   githubActionsExpressionSyntaxRule,
   githubActionsServiceImageDigestPinRule,
   prePushCiParityRule,
+  tofuBootstrapHardeningRule,
   enginePinParityRule,
   dockerfileBaseImageShaPinRule,
   envCascadeDriftRule,
@@ -43,6 +50,8 @@ export const META_RULES: readonly IMetaRule[] = [
   generatedArtifactContractRule,
   forbiddenTextRule,
   canonicalHelpersSingleHomeRule,
+  docsNoRetiredCredentialsRule,
+  externalClientTimeoutRule,
   noRawRoleLiteralsRule,
   routesRequireTestSiblingRule,
   logicFilesRequireTestSiblingRule,
@@ -51,4 +60,5 @@ export const META_RULES: readonly IMetaRule[] = [
   eslintConfigNoWarnRule,
   eslintOverridePathsExistRule,
   tsconfigIncludePathsExistRule,
+  eslintPluginContractParityRule,
 ];

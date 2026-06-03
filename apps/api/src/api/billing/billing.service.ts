@@ -65,6 +65,8 @@ const isOlderStripeEvent = (
   return Date.parse(lastEventAt) > eventCreated * 1000;
 };
 
+const STRIPE_REQUEST_TIMEOUT_MS = 10_000;
+
 export class BillingService {
   private readonly stripe: Stripe;
 
@@ -75,7 +77,15 @@ export class BillingService {
       );
     }
 
-    this.stripe = new Stripe(env.STRIPE_SECRET_KEY);
+    /*
+     * Explicit budget — the SDK's implicit 80s default would hold
+     * checkout/portal request handlers hostage to a slow Stripe API.
+     * The SDK retries idempotent calls internally, so each attempt
+     * gets this budget.
+     */
+    this.stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+      timeout: STRIPE_REQUEST_TIMEOUT_MS,
+    });
   }
 
   async listPlans(): Promise<IPlanSummary[]> {

@@ -14,12 +14,10 @@
 # The compose stack name (boringstack-infra) and all container/volume
 # names rename via the bare boringstack → <project> rule below.
 #
-# Excluded from rewrite:
-#   - apps/api/src/lib/email/providers/cloudflare.ts and similar prose that
-#     legitimately references example.com URLs in docstrings.
-#   - generated artifacts: dist/, node_modules/, build/, .turbo/, coverage/.
-#   - lockfiles (bun.lock) — rerun `bun install` after the rename.
-#   - CHANGELOG.md history.
+# Coverage is inventory-driven (every file matching the identifiers, minus
+# the exclude list below) and self-verified: the script fails if any
+# upstream identifier survives the rewrite. Bare example.com docstring URLs
+# are untouched — only noreply@/demo@ mailbox forms are rewritten.
 #
 # Idempotent: re-running with the same names is a no-op.
 #
@@ -112,46 +110,39 @@ printf '  %-26s → %s\n' "noreply@example.com" "noreply@$DOMAIN"
 printf '  %-26s → %s\n' "demo@example.com"   "demo@$DOMAIN"
 echo
 
-# Files to rewrite. Trade thoroughness against false positives — we keep
-# the list narrow enough that "example.com" inside provider docstrings
-# (cloudflare.ts, oauth provider URLs) survives. find -prune skips trees
-# we never want to touch.
-SCAN_PATHS=(
-  README.md
-  AGENTS.md
-  ROADMAP.md
-  setup.sh
-  package.json
-  apps/api/package.json
-  apps/api/.env.example
-  apps/api/Dockerfile
-  apps/api/Dockerfile.prod
-  apps/api/README.md
-  apps/api/AGENTS.md
-  apps/api/AGENT_CONTRACT.md
-  apps/api/CLAUDE.md
-  apps/api/SECURITY.md
-  apps/api/CONTRIBUTING.md
-  apps/api/src/config/swagger/swagger.ts
-  apps/ui/package.json
-  apps/ui/.env.example
-  apps/ui/README.md
-  apps/ui/AGENTS.md
-  apps/ui/AGENT_CONTRACT.md
-  apps/ui/CLAUDE.md
-  apps/ui/SECURITY.md
-  apps/docs/package.json
-  apps/docs/astro.config.mjs
-  apps/docs/README.md
-  apps/docs/DEPLOY.md
-  infra/compose/compose/docker-compose.yml
-  infra/compose/compose/.env.example
-  infra/compose/scripts/compose-up.sh
-  infra/compose/scripts/compose-down.sh
-  infra/compose/scripts/compose-down-clean.sh
-  infra/bootstrap/variables.tf
-  infra/bootstrap/terraform.tfvars.example
+# Inventory-driven: rewrite EVERY file that carries an upstream identifier,
+# minus an explicit exclude list. The previous static allowlist silently
+# missed new files (metrics labels, tracer names, dev.sh project names);
+# with an inventory the failure mode is gone — and the zero-hits assertion
+# at the end proves it on every run.
+#
+# Exclusions:
+#   - .git / generated trees (node_modules, dist, build, coverage, .astro,
+#     .wrangler, .audit) — regenerated or never shipped.
+#   - bun.lock — rerun `bun install` after the rename instead.
+#   - CHANGELOG.md — history stays history.
+#   - LICENSE — the MIT copyright line keeps the original attribution.
+#   - this script itself (it must keep the upstream literals to find them).
+IDENTIFIER_PATTERN='boringstack|BoringStack|API Template|noreply@example\.com|demo@example\.com'
+GREP_EXCLUDES=(
+  -I
+  --exclude-dir=.git
+  --exclude-dir=node_modules
+  --exclude-dir=dist
+  --exclude-dir=build
+  --exclude-dir=coverage
+  --exclude-dir=.astro
+  --exclude-dir=.wrangler
+  --exclude-dir=.audit
+  --exclude=bun.lock
+  --exclude=CHANGELOG.md
+  --exclude=LICENSE
+  --exclude=rename-project.sh
 )
+
+inventory_files() {
+  grep -rlE "$IDENTIFIER_PATTERN" "${GREP_EXCLUDES[@]}" . 2>/dev/null || true
+}
 
 # Apply the substitutions to a single file in-place. We orchestrate
 # multiple sed expressions because BSD/macOS and GNU sed both accept this
@@ -163,9 +154,8 @@ apply_to_file() {
   [[ -f "$file" ]] || return 0
 
   if [[ "$DRY_RUN" == "1" ]]; then
-    if grep -qE 'boringstack|BoringStack|API Template|@example\.com' "$file" 2>/dev/null; then
-      echo "  would edit: $file"
-    fi
+    # inventory_files already guarantees a match
+    echo "  would edit: $file"
     return 0
   fi
 
@@ -186,19 +176,30 @@ apply_to_file() {
     -e "s/boringstack/${PROJECT}/g" \
     -e "s/\"API Template\"/\"${PROJECT_TITLE}\"/g" \
     -e "s/APP_NAME=API Template/APP_NAME=${PROJECT_TITLE}/g" \
+    -e "s/APP_NAME: API Template/APP_NAME: ${PROJECT_TITLE}/g" \
     -e "s/noreply@example\.com/noreply@${DOMAIN}/g" \
     -e "s/demo@example\.com/demo@${DOMAIN}/g" \
     "$file"
 }
 
-for path in "${SCAN_PATHS[@]}"; do
+while IFS= read -r path; do
   apply_to_file "$path"
-done
+done < <(inventory_files)
 
 if [[ "$DRY_RUN" == "1" ]]; then
   echo
   echo "Dry run complete. Re-run without DRY_RUN=1 to apply."
   exit 0
+fi
+
+# Self-verification: after a real run, no upstream identifier may survive
+# outside the excluded paths. If one does, the rename has a coverage bug —
+# fail loudly instead of shipping a half-branded fork.
+leftover="$(inventory_files)"
+if [[ -n "$leftover" ]]; then
+  echo "ERROR: rename incomplete — upstream identifiers survive in:" >&2
+  echo "$leftover" >&2
+  exit 1
 fi
 
 cat <<EOF
@@ -210,11 +211,9 @@ Rename complete. Next:
   4. Drift gate:       bun run check
   5. Boot the stack:   ./setup.sh --up
 
-Things this script does NOT rebrand (do them once by hand):
-  - GitHub repo URL in apps/api/.gitleaks.toml [allowlist]
-  - WUD trigger labels in docker-compose.yml (wud.trigger.include=...)
-  - LICENSE attribution
+Things this script deliberately does NOT touch:
+  - LICENSE attribution (the MIT copyright line keeps the original author)
+  - CHANGELOG.md history
+  - bun.lock files (step 2 regenerates them)
   - Sentry / GlitchTip DSNs (your real DSN goes in compose/.env)
-  - apps/docs/src/content/docs/* prose that mentions "BoringStack" as the
-    project's brand — read through and rewrite where appropriate.
 EOF

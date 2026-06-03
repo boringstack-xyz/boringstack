@@ -13,7 +13,7 @@ Once verified, the session uses two tokens. An `auth_token` is a 15-minute state
 
 ## Verify-before-account
 
-Password signup splits across two endpoints. `POST /auth/register` writes only the pending user row, the argon2id hash, and a single-use verification token. No `app.accounts` row, no membership, no session cookies. The response is a `{ message }` envelope so the SPA can render "check your inbox at user@example.com." `POST /auth/verify-email` flips `users.email_verified_at`, atomically calls `provisionAfterVerification`, and _then_ issues the auth + refresh cookies. That's where the user gets their account.
+Password signup splits across two endpoints. `POST /auth/register` writes only the pending user row, the argon2id hash, and a single-use verification token. No `app.accounts` row, no membership, no session cookies. The response is a `{ message }` envelope so the SPA can render "check your inbox at user@example.com." The endpoint is enumeration-safe: an already-registered email gets the **identical 200 response** (no 409, no distinguishable body) — the account owner receives a "you already have an account" notice email with sign-in and reset links instead of a duplicate account. `POST /auth/verify-email` flips `users.email_verified_at`, atomically calls `provisionAfterVerification`, and _then_ issues the auth + refresh cookies. That's where the user gets their account.
 
 ```mermaid
 sequenceDiagram
