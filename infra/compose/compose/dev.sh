@@ -94,6 +94,11 @@ case "$STACK" in
     # tag deploys whatever was pushed last (including RC/dev builds) with
     # no record of the version. Require an explicit pin — either a full
     # *_IMAGE reference or a *_IMAGE_TAG (semver or sha-<digest>).
+    # The API's env validator already refuses to boot in prod without
+    # VALKEY_PASSWORD; requiring it here too means the valkey server
+    # (which now enforces requirepass) and every sidecar get it from
+    # the same fail-closed source.
+    : "${VALKEY_PASSWORD:?VALKEY_PASSWORD required in prod (the valkey server enforces auth). Generate with: openssl rand -base64 24}"
     if [[ -z "${API_IMAGE:-}" ]]; then
       : "${API_IMAGE_TAG:?API_IMAGE_TAG required in prod (semver like v0.1.0 or sha-<digest>; never latest). Or set API_IMAGE to a full pinned reference.}"
     fi
