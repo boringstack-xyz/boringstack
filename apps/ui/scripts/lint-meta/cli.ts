@@ -72,6 +72,7 @@ export { collectSourceFiles, findWorkflows } from "./context";
 export { parseDotenvKeys } from "./parsers/dotenv";
 export { checkDependencyPairs } from "./rules/supply-chain/no-overlapping-libs";
 export { checkPackageJson } from "./rules/supply-chain/package-json-exact-deps";
+export { checkDockerfileBaseImageShaPin } from "./rules/ci/dockerfile-base-image-sha-pin";
 export { checkEnginePinParity } from "./rules/ci/engine-pin-parity";
 export { checkWorkflow } from "./rules/ci/github-actions-permissions";
 export { checkWorkflowTimeouts } from "./rules/ci/github-actions-timeout-required";

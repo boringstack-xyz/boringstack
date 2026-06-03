@@ -16,6 +16,7 @@ import { renderRulesMd } from "../../scripts/lint-meta/generate-rules-md";
 import {
   checkCanonicalHelpersSingleHome,
   checkDependencyPairs,
+  checkDockerfileBaseImageShaPin,
   checkEnvSchemaDrift,
   checkEslintConfigNoWarn,
   checkEslintOverridePathsExist,
@@ -307,6 +308,54 @@ describe("checkWorkflowTimeouts", () => {
     const violations = workflows.flatMap(checkWorkflowTimeouts);
 
     expect(violations).toEqual([]);
+  });
+});
+
+describe("checkDockerfileBaseImageShaPin", () => {
+  test("flags a FROM tag without a digest", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-dockerpin-"));
+
+    try {
+      writeFileSync(
+        join(root, "Dockerfile.prod"),
+        "FROM oven/bun:1.3.14-alpine AS builder\n"
+      );
+
+      const violations = checkDockerfileBaseImageShaPin(root);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "dockerfile-base-image-sha-pin"
+      );
+      expect(
+        violations.some((row) =>
+          row.message.includes("oven/bun:1.3.14-alpine (line 1)")
+        )
+      ).toBe(true);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes digest-pinned images and skips earlier stage aliases", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-dockerpin-"));
+
+    try {
+      writeFileSync(
+        join(root, "Dockerfile.prod"),
+        [
+          "FROM oven/bun:1.3.14-alpine@sha256:0000000000000000000000000000000000000000000000000000000000000000 AS builder",
+          "FROM builder AS assets",
+          "FROM oven/bun:1.3.14-alpine@sha256:0000000000000000000000000000000000000000000000000000000000000000 AS production",
+          "",
+        ].join("\n")
+      );
+
+      const violations = checkDockerfileBaseImageShaPin(root);
+
+      expect(violations).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 

@@ -27,6 +27,7 @@ import { checkEslintOverridePathsExist } from "./rules/config/eslint-override-pa
 import { checkEnvSchemaDrift } from "./rules/env/env-cascade-drift";
 import { checkNoDirectProcessEnv } from "./rules/env/no-direct-process-env";
 import { checkGeneratedArtifactContracts } from "./rules/artifacts/generated-artifact-contract";
+import { checkDockerfileBaseImageShaPin } from "./rules/ci/dockerfile-base-image-sha-pin";
 import { checkWorkflowShas } from "./rules/ci/github-actions-permissions";
 import { checkWorkflowTimeouts } from "./rules/ci/github-actions-timeout-required";
 import { checkPrePushParity } from "./rules/ci/pre-push-ci-parity";
@@ -93,6 +94,7 @@ export { parseTypeboxEnvSchemaKeys as parseEnvSchemaKeys } from "./parsers/typeb
 export {
   checkCanonicalHelpersSingleHome,
   checkDependencyPairs,
+  checkDockerfileBaseImageShaPin,
   checkExactDependencyVersions,
   checkEslintConfigNoWarn,
   checkEslintOverridePathsExist,

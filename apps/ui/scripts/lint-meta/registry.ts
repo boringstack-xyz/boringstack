@@ -1,5 +1,6 @@
 import { generatedArtifactContractRule } from "./rules/artifacts/generated-artifact-contract";
 import { modulepreloadSizeLimitRule } from "./rules/artifacts/modulepreload-size-limit";
+import { dockerfileBaseImageShaPinRule } from "./rules/ci/dockerfile-base-image-sha-pin";
 import { enginePinParityRule } from "./rules/ci/engine-pin-parity";
 import { githubActionsPermissionsRule } from "./rules/ci/github-actions-permissions";
 import { githubActionsTimeoutRequiredRule } from "./rules/ci/github-actions-timeout-required";
@@ -29,6 +30,7 @@ export const META_RULES: readonly IMetaRule[] = [
   githubActionsTimeoutRequiredRule,
   prePushCiParityRule,
   enginePinParityRule,
+  dockerfileBaseImageShaPinRule,
   // --- env ---
   envCascadeDriftRule,
   noDirectImportMetaEnvRule,
