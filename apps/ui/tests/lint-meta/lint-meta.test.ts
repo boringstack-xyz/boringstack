@@ -26,6 +26,7 @@ import {
   checkTestFilesHaveSource,
   checkUiEnvCascadeDrift,
   checkWorkflow,
+  checkWorkflowConcurrencyExplicit,
   checkWorkflowTimeouts,
   collectSourceFiles,
   findWorkflows,
@@ -589,6 +590,52 @@ describe("checkEnginePinParity", () => {
       const violations = checkEnginePinParity(appRoot);
 
       expect(violations).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowConcurrencyExplicit", () => {
+  test("flags a concurrency block without cancel-in-progress", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-concurrency-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(
+        file,
+        "concurrency:\n  group: x-${{ github.ref }}\n\njobs: {}\n"
+      );
+
+      const violations = checkWorkflowConcurrencyExplicit(file);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "github-actions-concurrency-explicit"
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes explicit cancel-in-progress and workflows without concurrency", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-concurrency-"));
+
+    try {
+      const explicit = join(root, "explicit.yml");
+
+      writeFileSync(
+        explicit,
+        "concurrency:\n  group: x-${{ github.ref }}\n  cancel-in-progress: true\n\njobs: {}\n"
+      );
+
+      expect(checkWorkflowConcurrencyExplicit(explicit)).toEqual([]);
+
+      const none = join(root, "none.yml");
+
+      writeFileSync(none, "jobs: {}\n");
+
+      expect(checkWorkflowConcurrencyExplicit(none)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

@@ -29,6 +29,7 @@ import { checkNoDirectProcessEnv } from "./rules/env/no-direct-process-env";
 import { checkGeneratedArtifactContracts } from "./rules/artifacts/generated-artifact-contract";
 import { checkDockerfileBaseImageShaPin } from "./rules/ci/dockerfile-base-image-sha-pin";
 import { checkEnginePinParity } from "./rules/ci/engine-pin-parity";
+import { checkWorkflowConcurrencyExplicit } from "./rules/ci/github-actions-concurrency-explicit";
 import { checkWorkflowShas } from "./rules/ci/github-actions-permissions";
 import { checkWorkflowTimeouts } from "./rules/ci/github-actions-timeout-required";
 import { checkPrePushParity } from "./rules/ci/pre-push-ci-parity";
@@ -111,6 +112,7 @@ export {
   checkRouteFilesHaveTests,
   checkSharedToolVersionParity,
   checkTouchedTests,
+  checkWorkflowConcurrencyExplicit,
   checkWorkflowShas,
   checkWorkflowTimeouts,
 };

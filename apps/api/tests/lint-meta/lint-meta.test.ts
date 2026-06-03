@@ -27,6 +27,7 @@ import {
   checkNoDirectProcessEnv,
   checkRouteFilesHaveTests,
   checkTouchedTests,
+  checkWorkflowConcurrencyExplicit,
   checkWorkflowShas,
   checkWorkflowTimeouts,
   collectSourceFiles,
@@ -354,6 +355,54 @@ describe("checkDockerfileBaseImageShaPin", () => {
       const violations = checkDockerfileBaseImageShaPin(root);
 
       expect(violations).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowConcurrencyExplicit", () => {
+  function writeWorkflow(root: string, content: string): string {
+    const file = join(root, "wf.yml");
+
+    writeFileSync(file, content);
+
+    return file;
+  }
+
+  test("flags a concurrency block without cancel-in-progress", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-concurrency-"));
+
+    try {
+      const file = writeWorkflow(
+        root,
+        "concurrency:\n  group: x-${{ github.ref }}\n\njobs: {}\n"
+      );
+
+      const violations = checkWorkflowConcurrencyExplicit(file);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "github-actions-concurrency-explicit"
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes explicit cancel-in-progress and workflows without concurrency", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-concurrency-"));
+
+    try {
+      const explicit = writeWorkflow(
+        root,
+        "concurrency:\n  group: x-${{ github.ref }}\n  cancel-in-progress: false\n\njobs: {}\n"
+      );
+
+      expect(checkWorkflowConcurrencyExplicit(explicit)).toEqual([]);
+
+      const none = writeWorkflow(root, "jobs: {}\n");
+
+      expect(checkWorkflowConcurrencyExplicit(none)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

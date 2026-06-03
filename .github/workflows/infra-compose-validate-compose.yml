@@ -21,6 +21,7 @@ on:
 
 concurrency:
   group: infra-compose-validate-compose-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

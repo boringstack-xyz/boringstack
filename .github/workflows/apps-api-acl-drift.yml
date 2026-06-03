@@ -20,6 +20,7 @@ on:
 
 concurrency:
   group: apps-api-acl-drift-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
