@@ -118,6 +118,38 @@ describe("checkForbiddenText", () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  test("flags setTimeout sleeps in e2e files only", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-e2e-sleep-"));
+
+    try {
+      const e2eDir = join(root, "e2e");
+      const srcDir = join(root, "src");
+
+      mkdirSync(e2eDir, { recursive: true });
+      mkdirSync(srcDir, { recursive: true });
+
+      const sleepLine =
+        "await new Promise((resolve) => setTimeout(resolve, 1000));\n";
+      const spec = join(e2eDir, "thing.spec.ts");
+
+      writeFileSync(spec, sleepLine);
+
+      expect(
+        checkForbiddenTextWithRoot(spec, root).map((row) => row.rule)
+      ).toContain("no-sleep-in-e2e");
+
+      const srcFile = join(srcDir, "thing.ts");
+
+      writeFileSync(srcFile, sleepLine);
+
+      expect(
+        checkForbiddenTextWithRoot(srcFile, root).map((row) => row.rule)
+      ).not.toContain("no-sleep-in-e2e");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("checkPackageJson", () => {

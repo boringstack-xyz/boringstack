@@ -94,6 +94,13 @@ export function createForbiddenTextPatterns(
        * in colocated unit tests stay allowed: deterministic fixtures
        * asserted against fixed expectations are a feature there.
        */
+      rule: "no-sleep-in-e2e",
+      pattern: /\bsetTimeout\s*\(/u,
+      message:
+        "Wall-clock sleeps flake under CI load and tax every run. Use Playwright's expect.poll/waitFor, or make the awaited state deterministic (see mfa.spec.ts's previous-step TOTP enrolment).",
+      allow: (file) => !file.startsWith(resolve(root, "e2e"))
+    },
+    {
       rule: "no-hardcoded-iso-dates-in-fixtures",
       pattern: /"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/u,
       message:

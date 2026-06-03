@@ -133,6 +133,12 @@
       "description": "Casting to an inline object type (`as { … }`) skips validation."
     },
     {
+      "id": "no-sleep-in-e2e",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Wall-clock sleeps flake under CI load and tax every run."
+    },
+    {
       "id": "no-hardcoded-iso-dates-in-fixtures",
       "category": "source-text",
       "ciCritical": false,
