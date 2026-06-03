@@ -48,6 +48,7 @@ Run `bun run lint:meta --list-rules` for the machine-readable list from the regi
 | `test-files-require-source-sibling`       | testing      | no          | Colocated test files must mirror a source sibling (no orphaned tests).                                                                                                                                                                                      |
 | `skipped-tests-need-tracking`             | testing      | no          | Skipped tests (.skip/.only/xit/xdescribe) must carry an issue URL or TODO(@owner) so the debt has a tracked owner.                                                                                                                                          |
 | `eslint-config-no-warn`                   | config       | no          | ESLint severities must be "error" or "off", not "warn".                                                                                                                                                                                                     |
+| `tsconfig-include-paths-exist`            | config       | no          | Literal tsconfig include/files entries must point at files that exist (globs exempt); checks this app and sibling apps.                                                                                                                                     |
 
 ## CI-critical rules
 

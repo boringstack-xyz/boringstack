@@ -27,6 +27,7 @@ import {
   checkNoDirectProcessEnv,
   checkRouteFilesHaveTests,
   checkTouchedTests,
+  checkTsconfigIncludePathsExist,
   checkWorkflowConcurrencyExplicit,
   checkWorkflowExpressionSyntax,
   checkWorkflowServiceImageDigestPin,
@@ -544,6 +545,56 @@ describe("checkWorkflowExpressionSyntax", () => {
       );
 
       expect(checkWorkflowExpressionSyntax(file)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkTsconfigIncludePathsExist", () => {
+  test("flags a literal include entry that does not exist, skips globs and hidden dirs", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-tsconfig-"));
+
+    try {
+      const appRoot = join(root, "apps", "self");
+      const sibling = join(root, "apps", "docs");
+
+      mkdirSync(appRoot, { recursive: true });
+      mkdirSync(sibling, { recursive: true });
+      writeFileSync(
+        join(appRoot, "tsconfig.json"),
+        JSON.stringify({ include: ["**/*"] })
+      );
+      writeFileSync(
+        join(sibling, "tsconfig.json"),
+        JSON.stringify({
+          include: ["**/*", ".astro/types.d.ts", "./missing.d.ts"],
+        })
+      );
+
+      const violations = checkTsconfigIncludePathsExist(appRoot);
+
+      expect(violations).toHaveLength(1);
+      expect(violations[0]?.message).toContain("./missing.d.ts");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when every literal entry exists", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-tsconfig-"));
+
+    try {
+      const appRoot = join(root, "apps", "self");
+
+      mkdirSync(appRoot, { recursive: true });
+      writeFileSync(join(appRoot, "real.d.ts"), "export {};\n");
+      writeFileSync(
+        join(appRoot, "tsconfig.json"),
+        JSON.stringify({ include: ["real.d.ts", "**/*"] })
+      );
+
+      expect(checkTsconfigIncludePathsExist(appRoot)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
