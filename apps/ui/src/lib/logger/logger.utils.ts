@@ -47,11 +47,14 @@ export function emit(level: ILogLevel, payload: ILogEvent): void {
     return;
   }
 
+  /*
+   * Production is breadcrumb-only: entries ride along with Sentry events
+   * instead of landing in the browser console, where they would expose the
+   * app's event stream to anyone with devtools open.
+   */
   Sentry.addBreadcrumb({
     level: level === "warn" ? "warning" : level,
     category: typeof masked.event === "string" ? masked.event : "log",
     data: masked
   });
-
-  console.log(JSON.stringify(entry));
 }

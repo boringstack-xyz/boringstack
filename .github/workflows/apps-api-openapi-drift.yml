@@ -12,6 +12,7 @@ on:
 
 concurrency:
   group: apps-api-openapi-drift-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

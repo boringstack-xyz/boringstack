@@ -13,6 +13,7 @@ import { describe, expect, test } from "vitest";
 import {
   checkCanonicalHelpersSingleHome,
   checkDependencyPairs,
+  checkDockerfileBaseImageShaPin,
   checkEnginePinParity,
   checkForbiddenText,
   checkNoCrossRepoImports,
@@ -25,6 +26,7 @@ import {
   checkTestFilesHaveSource,
   checkUiEnvCascadeDrift,
   checkWorkflow,
+  checkWorkflowConcurrencyExplicit,
   checkWorkflowTimeouts,
   collectSourceFiles,
   findWorkflows,
@@ -586,6 +588,95 @@ describe("checkEnginePinParity", () => {
       const appRoot = writeEnginePinFixture(root, "1.3.14");
 
       const violations = checkEnginePinParity(appRoot);
+
+      expect(violations).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowConcurrencyExplicit", () => {
+  test("flags a concurrency block without cancel-in-progress", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-concurrency-"));
+
+    try {
+      const file = join(root, "wf.yml");
+
+      writeFileSync(
+        file,
+        "concurrency:\n  group: x-${{ github.ref }}\n\njobs: {}\n"
+      );
+
+      const violations = checkWorkflowConcurrencyExplicit(file);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "github-actions-concurrency-explicit"
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes explicit cancel-in-progress and workflows without concurrency", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-concurrency-"));
+
+    try {
+      const explicit = join(root, "explicit.yml");
+
+      writeFileSync(
+        explicit,
+        "concurrency:\n  group: x-${{ github.ref }}\n  cancel-in-progress: true\n\njobs: {}\n"
+      );
+
+      expect(checkWorkflowConcurrencyExplicit(explicit)).toEqual([]);
+
+      const none = join(root, "none.yml");
+
+      writeFileSync(none, "jobs: {}\n");
+
+      expect(checkWorkflowConcurrencyExplicit(none)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkDockerfileBaseImageShaPin", () => {
+  test("flags a FROM tag without a digest", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-dockerpin-"));
+
+    try {
+      writeFileSync(
+        join(root, "Dockerfile.prod"),
+        "FROM oven/bun:1.3.14-alpine AS builder\n"
+      );
+
+      const violations = checkDockerfileBaseImageShaPin(root);
+
+      expect(violations.map((row) => row.message)).toContainEqual(
+        expect.stringContaining("oven/bun:1.3.14-alpine (line 1)")
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes digest-pinned images and skips earlier stage aliases", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-dockerpin-"));
+
+    try {
+      writeFileSync(
+        join(root, "Dockerfile.prod"),
+        [
+          "FROM oven/bun:1.3.14-alpine@sha256:0000000000000000000000000000000000000000000000000000000000000000 AS builder",
+          "FROM builder AS assets",
+          "FROM nginx:1.31-alpine@sha256:0000000000000000000000000000000000000000000000000000000000000000 AS runner",
+          ""
+        ].join("\n")
+      );
+
+      const violations = checkDockerfileBaseImageShaPin(root);
 
       expect(violations).toEqual([]);
     } finally {
