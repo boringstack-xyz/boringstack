@@ -9,7 +9,12 @@ import type { IMetaRule, IViolation } from "../../types";
  * retired default trains users to hardcode it back — every literal here
  * must stay banned from documentation prose forever.
  */
-const RETIRED_CREDENTIALS = ["admin123456", "admin / change-me"] as const;
+const RETIRED_CREDENTIALS = [
+  "admin123456",
+  "admin / change-me",
+  "password123",
+  "demo@example.com / password123"
+] as const;
 
 const DOC_EXTENSIONS = new Set([".md", ".mdx"]);
 

@@ -1524,13 +1524,18 @@ describe("checkDocsNoRetiredCredentials", () => {
       mkdirSync(join(base, "docs", "src", "content"), { recursive: true });
       writeFileSync(
         join(base, "docs", "src", "content", "setup.md"),
-        "Log in with admin123456 to get started.\n"
+        "Log in with admin123456 or demo@example.com / password123.\n"
       );
 
       const violations = checkDocsNoRetiredCredentials(root);
 
-      expect(violations.length).toBe(1);
-      expect(violations[0]?.rule).toBe("docs-no-retired-credentials");
+      expect(violations.length).toBeGreaterThanOrEqual(2);
+      expect(
+        violations.every((v) => v.rule === "docs-no-retired-credentials")
+      ).toBe(true);
+      expect(violations.some((v) => v.message.includes("password123"))).toBe(
+        true
+      );
     } finally {
       rmSync(base, { recursive: true, force: true });
     }
