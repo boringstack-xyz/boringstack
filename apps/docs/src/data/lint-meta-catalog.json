@@ -64,7 +64,7 @@
       "id": "tofu-bootstrap-hardening",
       "category": "ci",
       "ciCritical": false,
-      "description": "infra/bootstrap must keep its hardening invariants: server lifecycle guard, no world-open variable defaults, no curl-pipe-sh."
+      "description": "infra/bootstrap must keep its hardening invariants: server lifecycle guard, no world-open variable defaults, no curl-pipe-sh, version-pinned required_providers."
     },
     {
       "id": "engine-pin-parity",
@@ -324,7 +324,7 @@
       "id": "tofu-bootstrap-hardening",
       "category": "ci",
       "ciCritical": false,
-      "description": "infra/bootstrap must keep its hardening invariants: server lifecycle guard, no world-open variable defaults, no curl-pipe-sh."
+      "description": "infra/bootstrap must keep its hardening invariants: server lifecycle guard, no world-open variable defaults, no curl-pipe-sh, version-pinned required_providers."
     },
     {
       "id": "engine-pin-parity",

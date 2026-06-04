@@ -728,6 +728,48 @@ describe("checkTofuBootstrapHardening", () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  test("flags a required_providers entry without a version, passes a pinned one", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-tofu-"));
+
+    try {
+      makeBootstrap(
+        root,
+        [
+          "terraform {",
+          "  required_providers {",
+          '    hcloud = { source = "hetznercloud/hcloud" }',
+          "  }",
+          "}",
+          "",
+        ].join("\n")
+      );
+
+      expect(
+        checkTofuBootstrapHardening(join(root, "apps", "self")).map(
+          (row) => row.rule
+        )
+      ).toContain("tofu-provider-version-pin");
+
+      makeBootstrap(
+        root,
+        [
+          "terraform {",
+          "  required_providers {",
+          '    hcloud = { source = "hetznercloud/hcloud", version = "~> 1.48" }',
+          "  }",
+          "}",
+          "",
+        ].join("\n")
+      );
+
+      expect(checkTofuBootstrapHardening(join(root, "apps", "self"))).toEqual(
+        []
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("checkEslintPluginContractParity", () => {
