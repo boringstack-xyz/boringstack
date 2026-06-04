@@ -116,17 +116,30 @@ jobs:
         uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
         continue-on-error: true
         with:
-          # --max-retries 0 is the load-bearing flag here. This step is
-          # warning-only, so a retry buys nothing — and on a shared CI runner
-          # IP, github.com answers a burst of link checks with HTTP 429 +
-          # a giant Retry-After. lychee honours that with a per-retry backoff
-          # ("unexpectedly big rate limit backoff … capping to 1m"), which
-          # serialised into a multi-minute near-hang on every run. The
-          # GITHUB_TOKEN below only authenticates the parseable owner/repo
-          # URLs lychee routes through api.github.com; org pages, /join and
-          # template placeholders still fall back to plain HTTP and get
-          # throttled. With retries disabled a throttled link surfaces as a
-          # warning immediately instead of blocking the runner.
+          # This step is warning-only, so it must never block the runner. Two
+          # changes keep it fast on a shared CI IP that github.com throttles:
+          #
+          #   --max-retries 0   A throttled link (HTTP 429 + a giant
+          #                     Retry-After) becomes an immediate warning
+          #                     instead of a per-retry backoff loop
+          #                     ("unexpectedly big rate limit backoff … capping
+          #                     to 1m") that serialised into a multi-minute hang.
+          #
+          #   exclude self-repo Starlight renders an "Edit this page" link
+          #                     (github.com/.../edit/main/<page>) on EVERY doc
+          #                     page — ~one github.com request per page. Plus
+          #                     the blob/tree source links. None are API-eligible,
+          #                     so the token can't help them and they dominated
+          #                     the throttling. They are auto-generated /
+          #                     self-referential and verifying our own repo from
+          #                     CI adds nothing a public repo + the internal link
+          #                     check don't already cover. Excluding the whole
+          #                     boringstack-xyz org covers edit + blob + tree +
+          #                     org/repo-root in one pattern.
+          #
+          # Third-party github.com links (ripgrep, gitleaks, …) are still
+          # checked — the GITHUB_TOKEN below routes those parseable owner/repo
+          # URLs through api.github.com (5000 req/h), where they don't throttle.
           args: >-
             --no-progress
             --max-retries 0
@@ -134,13 +147,11 @@ jobs:
             --exclude-path './llms-full.txt'
             --exclude-path './llms-small.txt'
             --exclude '^https?://(localhost|127\.0\.0\.1|.*\.localhost)'
-            --exclude 'github\.com/boringstack-xyz/.*/(blob|tree)/'
+            --exclude 'github\.com/boringstack-xyz'
             '${{ github.workspace }}/apps/docs/dist/**/*.html'
           fail: false
         env:
-          # Authenticates the github.com links lychee can route through the
-          # GitHub API (5000 req/h) instead of anonymous HTTP (60 req/h).
-          # Helps, but does not cover org/placeholder URLs — see --max-retries
-          # above for why that alone never stopped the backoff hang. Needs only
-          # the default contents:read.
+          # Routes the remaining (third-party) github.com links through the
+          # GitHub API (5000 req/h) instead of anonymous HTTP (60 req/h), so
+          # they don't throttle. Needs only the default contents:read.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
