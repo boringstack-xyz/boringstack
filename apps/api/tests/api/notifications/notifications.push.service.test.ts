@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
+  and,
+  auditLog,
   cleanDatabase,
   db,
   eq,
@@ -8,6 +10,7 @@ import {
   users,
 } from "../../helpers/db";
 import { notificationsPushService } from "../../../src/api/notifications/notifications.push.service";
+import { AUDIT_ACTIONS } from "../../../src/lib/audit-log";
 
 const insertTestUser = async (suffix: string): Promise<string> => {
   const [created] = await db
@@ -96,6 +99,45 @@ describe("NotificationsPushService.subscribe", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.p256dhKey).toBe("rotated-p256dh");
     expect(rows[0]?.authKey).toBe("rotated-auth");
+
+    /*
+     * record() is fire-and-forget (void), so the refresh audit row can land
+     * after subscribe() resolves — poll briefly (see tests/helpers/db.ts).
+     * The create and refresh both audit, so expect two rows for this user.
+     */
+    let auditRows: (typeof auditLog.$inferSelect)[] = [];
+
+    for (let attempt = 0; attempt < 20; attempt++) {
+      auditRows = await db
+        .select()
+        .from(auditLog)
+        .where(
+          and(
+            eq(auditLog.userId, userId),
+            eq(auditLog.action, AUDIT_ACTIONS.NOTIFICATION_PUSH_SUBSCRIBED)
+          )
+        );
+
+      if (auditRows.length >= 2) {
+        break;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+
+    expect(auditRows).toHaveLength(2);
+    expect(
+      auditRows.some((row) => {
+        const meta = row.metadata;
+
+        return (
+          typeof meta === "object" &&
+          meta !== null &&
+          "refreshed" in meta &&
+          meta.refreshed === true
+        );
+      })
+    ).toBe(true);
   });
 });
 
