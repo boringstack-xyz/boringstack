@@ -14,6 +14,13 @@ on:
       - "apps/docs/astro.config.mjs"
       - "apps/docs/package.json"
       - "apps/docs/bun.lock"
+      # Build/install/scan config: wrangler (Cloudflare asset + build settings),
+      # bunfig (install behavior), osv-scanner (vuln allowlist). A config-only
+      # push must still rebuild + linkcheck so a broken config can't land
+      # unverified.
+      - "apps/docs/wrangler.jsonc"
+      - "apps/docs/bunfig.toml"
+      - "apps/docs/osv-scanner.toml"
       - ".github/workflows/apps-docs-linkcheck.yml"
       # Catalog inputs: the generated docs data is derived from sibling-app
       # scripts/README.md, package.json scripts, and lint-meta export-catalog.
