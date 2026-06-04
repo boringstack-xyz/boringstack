@@ -136,6 +136,53 @@ function parseCommandName(cell, runner) {
   return stripped;
 }
 
+function firstSentence(paragraph) {
+  const collapsed = paragraph.replace(/\s+/gu, " ").trim();
+
+  if (collapsed === "") {
+    return "";
+  }
+
+  const sentence = /^(.*?[.!?])(?:\s|$)/u.exec(collapsed)?.[1];
+
+  if (sentence !== undefined) {
+    return sentence;
+  }
+
+  // No sentence terminator: this is a colon/semicolon lead-in (e.g.
+  // "Scaffolds a new API resource:") whose detail lives in an indented list
+  // we deliberately dropped. Normalize the dangling mark to a period so the
+  // catalog reads as a complete summary instead of a fragment.
+  return collapsed.replace(/[:;,]+$/u, ".");
+}
+
+// Assemble the first prose paragraph, then keep its first sentence. Lines that
+// the header indents (usage examples, bullet lists) end the paragraph — pulling
+// them in is exactly what produced mid-sentence cuts on the public docs site.
+function firstParagraphDescription(strippedLines) {
+  const paragraph = [];
+
+  for (const line of strippedLines) {
+    const isBoundary =
+      line.trim() === "" ||
+      /^\s/u.test(line) ||
+      line.startsWith("@") ||
+      /^Usage:/iu.test(line.trim());
+
+    if (isBoundary) {
+      if (paragraph.length > 0) {
+        break;
+      }
+
+      continue;
+    }
+
+    paragraph.push(line.trim());
+  }
+
+  return firstSentence(paragraph.join(" "));
+}
+
 function readScriptHeaderDescription(root, scriptPath) {
   const fullPath = join(root, "scripts", scriptPath);
 
@@ -146,14 +193,21 @@ function readScriptHeaderDescription(root, scriptPath) {
   const text = readFileSync(fullPath, "utf8");
 
   if (fullPath.endsWith(".sh")) {
-    const description = text
-      .split("\n")
-      .slice(0, 12)
-      .filter((line) => line.startsWith("#") && !line.startsWith("#!"))
-      .map((line) => line.replace(/^#\s?/u, "").trim())
-      .find((line) => line.length > 0);
+    const lines = [];
 
-    return description ?? "";
+    for (const line of text.split("\n")) {
+      if (line.startsWith("#!")) {
+        continue;
+      }
+
+      if (!line.startsWith("#")) {
+        break;
+      }
+
+      lines.push(line.replace(/^#\s?/u, ""));
+    }
+
+    return firstParagraphDescription(lines);
   }
 
   const block = /\/\*\*([\s\S]*?)\*\//u.exec(text)?.[1];
@@ -162,13 +216,66 @@ function readScriptHeaderDescription(root, scriptPath) {
     return "";
   }
 
-  const paragraph = block
-    .split("\n")
-    .map((line) => line.replace(/^\s*\*\s?/u, "").trim())
-    .filter((line) => line.length > 0 && !line.startsWith("@"))
-    .find((line) => !line.startsWith("Usage:"));
+  const lines = block.split("\n").map((line) => line.replace(/^\s*\*\s?/u, ""));
 
-  return paragraph ?? "";
+  return firstParagraphDescription(lines);
+}
+
+// A catalog description that ends on a conjunction/article/preposition, or
+// on a clause-joining mark, was cut mid-sentence by the extractor — the
+// generated docs render it verbatim on the public site. This set is the
+// guardrail: assertCatalogDescriptionsComplete refuses to emit such a
+// description, so truncation can never silently ship again.
+const DANGLING_TAIL = new Set([
+  "a", "an", "the", "and", "or", "but", "to", "of", "for", "with", "in",
+  "on", "at", "by", "from", "as", "that", "is", "are", "via", "into",
+  "when", "if", "so", "then", "than",
+]);
+
+export function isDescriptionComplete(description) {
+  const trimmed = description.trim();
+
+  if (trimmed === "") {
+    return true;
+  }
+
+  if (/[,;:]$/u.test(trimmed)) {
+    return false;
+  }
+
+  const lastWord = trimmed
+    .split(/\s+/u)
+    .at(-1)
+    ?.replace(/[^\p{L}\p{N}-]/gu, "")
+    .toLowerCase();
+
+  return lastWord === undefined || !DANGLING_TAIL.has(lastWord);
+}
+
+function assertCatalogDescriptionsComplete(catalog) {
+  const bad = [];
+
+  for (const [template, data] of Object.entries(catalog)) {
+    for (const command of data.commands) {
+      if (!isDescriptionComplete(command.description)) {
+        bad.push([`${template} ${command.command}`, command.description]);
+      }
+    }
+
+    for (const entry of data.manual) {
+      if (!isDescriptionComplete(entry.description)) {
+        bad.push([`${template} ${entry.task}`, entry.description]);
+      }
+    }
+  }
+
+  if (bad.length > 0) {
+    throw new Error(
+      `[docs] ${bad.length} script description(s) cut mid-sentence:\n${bad
+        .map(([label, description]) => `  ${label}: "…${description.slice(-48)}"`)
+        .join("\n")}`
+    );
+  }
 }
 
 function readPrePushStages(root) {
@@ -265,10 +372,14 @@ export function buildScriptsCatalog() {
   const uiRoot = resolveTemplateRoot("BORINGSTACK_UI_DIR", "ui");
   const apiRoot = resolveTemplateRoot("BORINGSTACK_API_DIR", "api");
 
-  return {
+  const catalog = {
     ui: buildTemplateScriptsCatalog(uiRoot, "ui", "bun run"),
     api: buildTemplateScriptsCatalog(apiRoot, "api", "bun run"),
   };
+
+  assertCatalogDescriptionsComplete(catalog);
+
+  return catalog;
 }
 
 export function writeOrCheck(outputPath, payload, checkMode) {

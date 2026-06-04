@@ -28,25 +28,25 @@
       {
         "command": "dev",
         "script": "dev/preflight-host-dev.sh",
-        "description": "Refuses to run `bun run dev` on the host when the `ui-dev` compose",
+        "description": "Refuses to run `bun run dev` on the host when the `ui-dev` compose container is already up.",
         "invocation": "./scripts/dev/preflight-host-dev.sh && vite"
       },
       {
         "command": "size:check:modulepreload",
         "script": "quality/check-modulepreload-size-coverage.ts",
-        "description": "After `bun run build`, every `<link rel=\"modulepreload\">` in dist/index.html",
+        "description": "After `bun run build`, every `<link rel=\"modulepreload\">` in dist/index.html must match at least one glob in `.size-limit.json`.",
         "invocation": "tsx scripts/quality/check-modulepreload-size-coverage.ts"
       },
       {
         "command": "lint:meta",
         "script": "lint-meta/cli.ts",
-        "description": "Static checks for files ESLint can't parse as JavaScript:",
+        "description": "Static checks for files ESLint can't parse as JavaScript.",
         "invocation": "tsx scripts/lint-meta/cli.ts"
       },
       {
         "command": "lint:meta:verify",
         "script": "lint-meta/cli.ts",
-        "description": "Static checks for files ESLint can't parse as JavaScript:",
+        "description": "Static checks for files ESLint can't parse as JavaScript.",
         "invocation": "tsx scripts/lint-meta/cli.ts --verify"
       },
       {
@@ -100,7 +100,7 @@
       {
         "command": "pre-push",
         "script": "ci/pre-push.sh",
-        "description": "Local mirror of the UI app's CI gate. Runs everything CI runs so that a",
+        "description": "Local mirror of the UI app's CI gate.",
         "invocation": "./scripts/ci/pre-push.sh"
       }
     ],
@@ -163,25 +163,25 @@
       {
         "command": "dev",
         "script": "dev/preflight-host-dev.sh",
-        "description": "Refuses to run `bun run dev` on the host when the `api-dev` compose",
+        "description": "Refuses to run `bun run dev` on the host when the `api-dev` compose container is already up.",
         "invocation": "./scripts/dev/preflight-host-dev.sh && bun run build:templates && bun run --watch src/index.ts"
       },
       {
         "command": "db:seed",
         "script": "db/seed-superuser.ts",
-        "description": "Optional first-boot superuser bootstrap. Reads SUPERUSER_EMAIL and",
+        "description": "Optional first-boot superuser bootstrap.",
         "invocation": "bun run scripts/db/seed-superuser.ts"
       },
       {
         "command": "lint:meta",
         "script": "lint-meta/cli.ts",
-        "description": "Static checks for files ESLint can't parse as JavaScript:",
+        "description": "Static checks for files ESLint can't parse as JavaScript.",
         "invocation": "bun run scripts/lint-meta/cli.ts"
       },
       {
         "command": "lint:meta:verify",
         "script": "lint-meta/cli.ts",
-        "description": "Static checks for files ESLint can't parse as JavaScript:",
+        "description": "Static checks for files ESLint can't parse as JavaScript.",
         "invocation": "bun run scripts/lint-meta/cli.ts --verify"
       },
       {
@@ -205,7 +205,7 @@
       {
         "command": "new:resource",
         "script": "codegen/new-resource.ts",
-        "description": "Scaffolds a new API resource:",
+        "description": "Scaffolds a new API resource.",
         "invocation": "bun run scripts/codegen/new-resource.ts"
       },
       {
@@ -217,7 +217,7 @@
       {
         "command": "new:notification-event",
         "script": "codegen/new-notification-event.ts",
-        "description": "Scaffolds a new notification event:",
+        "description": "Scaffolds a new notification event.",
         "invocation": "bun run scripts/codegen/new-notification-event.ts"
       },
       {
@@ -247,19 +247,19 @@
       {
         "command": "generate:acl-types",
         "script": "codegen/generate-acl-types.ts",
-        "description": "Copies the canonical ACL type spine from apps/api to",
+        "description": "Copies the canonical ACL type spine from apps/api to apps/ui so the two workspace apps stay byte-identical on Role / Action / Subject / FeatureKey unions.",
         "invocation": "bun run scripts/codegen/generate-acl-types.ts"
       },
       {
         "command": "generate:acl-types:check",
         "script": "codegen/generate-acl-types.ts",
-        "description": "Copies the canonical ACL type spine from apps/api to",
+        "description": "Copies the canonical ACL type spine from apps/api to apps/ui so the two workspace apps stay byte-identical on Role / Action / Subject / FeatureKey unions.",
         "invocation": "bun run scripts/codegen/generate-acl-types.ts --check"
       },
       {
         "command": "pre-push",
         "script": "ci/pre-push.sh",
-        "description": "Local mirror of apps/api CI gate. Runs everything CI runs so that a",
+        "description": "Local mirror of apps/api CI gate.",
         "invocation": "./scripts/ci/pre-push.sh"
       },
       {

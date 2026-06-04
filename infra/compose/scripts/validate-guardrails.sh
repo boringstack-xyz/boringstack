@@ -34,16 +34,21 @@ render_prod_config() {
 render_full_config() {
   # Base prod stack plus every prod-capable overlay, so the hardening
   # checks see the optional services operators actually enable in
-  # production (observability, GlitchTip) alongside the dev-only ones.
+  # production (observability, GlitchTip, BullMQ, WUD). WUD is enabled by
+  # default when STACK=prod (dev.sh), so it MUST be rendered here or the
+  # privilege-escalation guardrail is blind to the one service that mounts
+  # the docker socket. Dev-only overlays (mailpit) are deliberately absent.
   docker compose \
     -f docker-compose.yml \
     -f docker-compose.observability.yml \
     -f docker-compose.glitchtip.yml \
     -f docker-compose.bullmq.yml \
+    -f docker-compose.wud.yml \
     --profile prod \
     --profile observability \
     --profile glitchtip-prod \
     --profile bullmq \
+    --profile wud \
     config --format json \
     > /tmp/guardrails-full-config.json 2>/dev/null
 }

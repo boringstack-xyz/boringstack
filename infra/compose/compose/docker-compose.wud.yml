@@ -29,6 +29,8 @@ services:
     image: getwud/wud:8.2.2@sha256:2df7cafa0fc84cdd66ad976163abc5390fa5995e0b5788a90e6a5303706bc21a
     profiles: [wud]
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     environment:
       WUD_LOG_LEVEL: ${WUD_LOG_LEVEL:-info}
       WUD_WATCHER_LOCAL_CRON: ${WUD_SCHEDULE:-0 */6 * * *}
