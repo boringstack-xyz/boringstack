@@ -42,6 +42,8 @@ services:
     image: glitchtip/glitchtip:6.1.6@sha256:f45485d296697531464b4484ee9bb40a51a774df820f74128a2b2ae0c5a0b00f
     profiles: [glitchtip-dev, glitchtip-prod]
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     depends_on:
       postgres:
         condition: service_healthy
@@ -84,6 +86,8 @@ services:
     image: glitchtip/glitchtip:6.1.6@sha256:f45485d296697531464b4484ee9bb40a51a774df820f74128a2b2ae0c5a0b00f
     profiles: [glitchtip-dev, glitchtip-prod]
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     command: ["./bin/run-celery-with-beat.sh"]
     depends_on:
       glitchtip-web:

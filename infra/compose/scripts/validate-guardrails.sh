@@ -9,7 +9,7 @@
 #   ./validate-guardrails.sh [check]
 #
 # Checks: healthchecks | digest-pins | credential-fallbacks | valkey-auth
-#         | rooted-caps | prod-image-tags | all (default)
+#         | rooted-caps | no-new-privileges | prod-image-tags | all (default)
 #
 # Requires: docker (compose config rendering), python3.
 
@@ -29,6 +29,23 @@ ok()      { c_green "✓ $*"; }
 render_prod_config() {
   docker compose -f docker-compose.yml --profile prod config --format json \
     > /tmp/guardrails-prod-config.json
+}
+
+render_full_config() {
+  # Base prod stack plus every prod-capable overlay, so the hardening
+  # checks see the optional services operators actually enable in
+  # production (observability, GlitchTip) alongside the dev-only ones.
+  docker compose \
+    -f docker-compose.yml \
+    -f docker-compose.observability.yml \
+    -f docker-compose.glitchtip.yml \
+    -f docker-compose.bullmq.yml \
+    --profile prod \
+    --profile observability \
+    --profile glitchtip-prod \
+    --profile bullmq \
+    config --format json \
+    > /tmp/guardrails-full-config.json 2>/dev/null
 }
 
 check_healthchecks() {
@@ -166,6 +183,39 @@ EOF
   ok "rooted-caps"
 }
 
+check_no_new_privileges() {
+  render_full_config
+  python3 - <<'EOF'
+import json
+
+# Every long-running service — base AND optional overlay — must block
+# privilege escalation. The base stack (traefik/api/ui) already sets it;
+# the observability/GlitchTip/BullMQ overlays did not, leaving an RCE in
+# Grafana or GlitchTip one setuid binary away from host escalation.
+# One-shot jobs (restart: no) are exempt; document any other exception.
+with open("/tmp/guardrails-full-config.json", encoding="utf-8") as handle:
+    services = json.load(handle)["services"]
+
+ALLOWED: set[str] = set()
+
+missing = sorted(
+    name
+    for name, svc in services.items()
+    if svc.get("restart") != "no"
+    and name not in ALLOWED
+    and "no-new-privileges:true" not in (svc.get("security_opt") or [])
+)
+
+if missing:
+    raise SystemExit(
+        "services missing security_opt no-new-privileges:true: " + ", ".join(missing)
+    )
+
+print("no-new-privileges on: " + ", ".join(sorted(services)))
+EOF
+  ok "no-new-privileges"
+}
+
 check_prod_image_tags() {
   # Behavioral test of dev.sh's fail-closed prod guard, with a curated
   # env so only the image-tag checks are exercised. ENV_FILE diverts the
@@ -219,6 +269,7 @@ case "$CHECK" in
   credential-fallbacks) check_credential_fallbacks ;;
   valkey-auth)          check_valkey_auth ;;
   rooted-caps)          check_rooted_caps ;;
+  no-new-privileges)    check_no_new_privileges ;;
   prod-image-tags)      check_prod_image_tags ;;
   all)
     check_digest_pins
@@ -226,10 +277,11 @@ case "$CHECK" in
     check_valkey_auth
     check_healthchecks
     check_rooted_caps
+    check_no_new_privileges
     check_prod_image_tags
     c_green "✓ all compose guardrails passed"
     ;;
   *)
-    fail "unknown check: $CHECK (healthchecks|digest-pins|credential-fallbacks|valkey-auth|rooted-caps|prod-image-tags|all)"
+    fail "unknown check: $CHECK (healthchecks|digest-pins|credential-fallbacks|valkey-auth|rooted-caps|no-new-privileges|prod-image-tags|all)"
     ;;
 esac
