@@ -57,6 +57,13 @@ export class NotificationsPushService {
           throw ApiErrors.internal("Failed to refresh push subscription");
         }
 
+        /* Without this, a silent key rotation leaves an audit-trail blind spot. */
+        void auditLogService.record({
+          userId: input.userId,
+          action: AUDIT_ACTIONS.NOTIFICATION_PUSH_SUBSCRIBED,
+          metadata: { subscriptionId: updated.id, refreshed: true },
+        });
+
         return toPublicPushSubscription(updated);
       }
 

@@ -104,11 +104,16 @@ export class BillingService {
     await this.ensureConfiguredPlans();
 
     const [accountPlan, defaultPlan] = await Promise.all([
+      /*
+       * Eager-load the related plan in the same round-trip via the
+       * accountPlans→plan relation instead of a follow-up findFirst.
+       */
       db.query.accountPlans.findFirst({
         where: and(
           eq(accountPlans.accountId, accountId),
           isNull(accountPlans.revokedAt)
         ),
+        with: { plan: true },
       }),
       db.query.plans.findFirst({ where: eq(plans.isDefault, true) }),
     ]);
@@ -127,14 +132,8 @@ export class BillingService {
       };
     }
 
-    const plan = await db.query.plans.findFirst({
-      where: eq(plans.id, accountPlan.planId),
-    });
-
-    if (plan === undefined) {
-      throw ApiErrors.internal("Account plan references a missing plan row");
-    }
-
+    // plan is guaranteed by the not-null account_plans_plan_id_fkey FK.
+    const plan = accountPlan.plan;
     const stripeSubscriptionId = accountPlan.stripeSubscriptionId ?? "";
 
     return {

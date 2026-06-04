@@ -3,8 +3,16 @@ import { basename } from "node:path";
 
 import type { IMetaRule, IViolation } from "../../types";
 
+/*
+ * Logic/route suffixes that require a test. Kept a superset of
+ * logic-files-require-test-sibling's SUFFIX_REQUIRES_TEST
+ * (service|utils|jobs|check|channel|helpers) plus `routes` (guarded by
+ * routes-require-test-sibling). check/channel/helpers were missing here, so
+ * editing one without touching its test slipped past the opt-in touched-tests
+ * reminder even though the test sibling itself is mandatory.
+ */
 const TOUCHED_REQUIRES_TEST_PATTERN =
-  /^src\/.+\.(service|routes|utils|jobs)\.ts$/u;
+  /^src\/.+\.(service|routes|utils|jobs|check|channel|helpers)\.ts$/u;
 
 export function checkTouchedTests(baseRef: string, root: string): IViolation[] {
   const violations: IViolation[] = [];
