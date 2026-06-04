@@ -1,6 +1,23 @@
 import { describe, expect, test } from "bun:test";
 
-import { buildEmailService } from "../../../src/lib/email/email.service.utils";
+import {
+  buildEmailService,
+  resolveMissingCredential,
+} from "../../../src/lib/email/email.service.utils";
+
+describe("resolveMissingCredential", () => {
+  test("fails closed in production when the credential is missing", () => {
+    expect(() =>
+      resolveMissingCredential(true, "resend", "RESEND_API_KEY")
+    ).toThrow(/RESEND_API_KEY/);
+  });
+
+  test("falls back to noop (without throwing) outside production", () => {
+    expect(
+      resolveMissingCredential(false, "resend", "RESEND_API_KEY").providerName
+    ).toBe("noop");
+  });
+});
 
 describe("buildEmailService", () => {
   test("returns an email service with a known providerName", () => {

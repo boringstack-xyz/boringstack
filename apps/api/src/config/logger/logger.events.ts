@@ -85,6 +85,7 @@ export const LOG_EVENTS = [
   "email_suppression.mirrored",
   "email_suppression.recorded",
   "email_suppression.write_failed",
+  "email.provider_fallback_noop",
   "email.templates.partials_load_failed",
   "email.templates.partials_missing",
   "email.templates.render_failed",
