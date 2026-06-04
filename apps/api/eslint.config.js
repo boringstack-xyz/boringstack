@@ -1108,10 +1108,7 @@ export default tseslint.config(
      * unit tests against `verifyResendWebhook` and
      * `verifySendGridWebhook`.
      */
-    files: [
-      "src/api/webhooks/**/*.ts",
-      "tests/api/webhooks/**/*.ts",
-    ],
+    files: ["src/api/webhooks/**/*.ts", "tests/api/webhooks/**/*.ts"],
     rules: {
       "stripe-webhooks/require-stripe-signature-header": "off",
       "stripe-webhooks/handler-must-handle-event-type": "off",
@@ -1133,14 +1130,20 @@ export default tseslint.config(
     },
   },
   {
-    // Email template build/preview tools — same one-shot CLI semantics.
+    /*
+     * Email template build/preview tools — standalone one-shot CLIs that run
+     * outside the request lifecycle. They print to console for human output,
+     * read PREVIEW_PORT directly (a dev-only knob, not a production env var
+     * that belongs in the boot-validated singleton), and stringify raw errors
+     * rather than routing through structured logging. Their throws are
+     * additionally exempted from elysia/no-direct-error-throw in the
+     * config/env + email block below, which legitimately spans a wider set.
+     */
     files: ["src/templates/email/build.ts", "src/templates/email/preview.ts"],
     rules: {
       "structured-logging/no-error-stringify": "off",
-      // The preview script reads PREVIEW_PORT directly — it's a dev-only
-      // override knob, not a production env var that belongs in the
-      // boot-validated singleton.
       "env-access/no-direct-process-env": "off",
+      "no-console": "off",
     },
   },
   {
@@ -1248,14 +1251,6 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-implied-eval": "off",
       "@typescript-eslint/no-unsafe-call": "off",
-    },
-  },
-  {
-    // Standalone CLIs run outside the request lifecycle and use console
-    // for human output.
-    files: ["src/templates/email/build.ts", "src/templates/email/preview.ts"],
-    rules: {
-      "no-console": "off",
     },
   }
 );
