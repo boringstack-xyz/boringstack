@@ -28,6 +28,10 @@ fail()    { c_red   "✗ $*"; exit 1; }
 ok()      { c_green "✓ $*"; }
 
 step "1/4 Docs data (monorepo apps)"
+# BORINGSTACK_UI_DIR / BORINGSTACK_API_DIR: optional absolute-path overrides
+# for the sibling app roots (defaults: ../ui, ../api). See resolveTemplateRoot
+# in scripts/docs-catalog-lib.mjs. Pass-through here so a non-monorepo layout
+# (shallow clone / worktree) can still locate the catalog source apps.
 BORINGSTACK_UI_DIR="$BORINGSTACK_UI_DIR" \
 BORINGSTACK_API_DIR="$BORINGSTACK_API_DIR" \
   bun run check:docs-data || fail "docs data drift: run bun run generate:docs-data from apps/docs"

@@ -5,6 +5,18 @@ import { fileURLToPath } from "node:url";
 
 const DOCS_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+/*
+ * Build-time only. Resolves a sibling template app's root for catalog
+ * generation. By default it assumes the monorepo layout (apps/<siblingName>
+ * next to apps/docs). Two optional env overrides exist for setups where that
+ * assumption breaks — shallow CI clones, isolated worktrees, or docs built
+ * outside the monorepo:
+ *   - BORINGSTACK_UI_DIR  — absolute path to the ui app (sibling default: ../ui)
+ *   - BORINGSTACK_API_DIR — absolute path to the api app (sibling default: ../api)
+ * Empty/unset falls back to the sibling path. These are internal contributor
+ * knobs, not product config, so they are documented here at the resolution
+ * point rather than in the published docs site.
+ */
 export function resolveTemplateRoot(envKey, siblingName) {
   const fromEnv = process.env[envKey];
 
