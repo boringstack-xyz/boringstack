@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import type { IMetaRule, IViolation } from "../../types";
 
-function checkEslintConfigNoWarn(root: string): IViolation[] {
+export function checkEslintConfigNoWarn(root: string): IViolation[] {
   const violations: IViolation[] = [];
   const names = [
     "eslint.config.mjs",

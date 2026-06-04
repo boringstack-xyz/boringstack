@@ -24,6 +24,7 @@ import { noOverlappingLibsRule } from "./rules/supply-chain/no-overlapping-libs"
 import { packageJsonExactDepsRule } from "./rules/supply-chain/package-json-exact-deps";
 import { packageOverrideParityRule } from "./rules/supply-chain/package-override-parity";
 import { sharedToolVersionParityRule } from "./rules/supply-chain/shared-tool-version-parity";
+import { lintMetaRulesSelfCoveredRule } from "./rules/testing/lint-meta-rules-self-covered";
 import { logicFilesRequireTestSiblingRule } from "./rules/testing/logic-files-require-test-sibling";
 import { routesRequireTestSiblingRule } from "./rules/testing/routes-require-test-sibling";
 import { skippedTestsNeedTrackingRule } from "./rules/testing/skipped-tests-need-tracking";
@@ -55,6 +56,7 @@ export const META_RULES: readonly IMetaRule[] = [
   noRawRoleLiteralsRule,
   routesRequireTestSiblingRule,
   logicFilesRequireTestSiblingRule,
+  lintMetaRulesSelfCoveredRule,
   skippedTestsNeedTrackingRule,
   touchTestsTooRule,
   eslintConfigNoWarnRule,

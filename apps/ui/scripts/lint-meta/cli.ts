@@ -92,6 +92,13 @@ export { checkCanonicalHelpersSingleHome } from "./rules/source-text/canonical-h
 export { checkNoCrossRepoImports } from "./rules/source-text/no-cross-repo-import";
 export { checkNoRawRoleLiterals } from "./rules/source-text/no-raw-role-literals";
 export { checkScriptRawFetch } from "./rules/source-text/script-raw-fetch";
+export { checkEslintConfigNoWarn } from "./rules/config/eslint-config-no-warn";
+export { checkDocsNoRetiredCredentials } from "./rules/source-text/docs-no-retired-credentials";
+export { checkGeneratedArtifactContracts } from "./rules/artifacts/generated-artifact-contract";
+export { checkModulepreloadSizeLimitPatterns } from "./rules/artifacts/modulepreload-size-limit";
+export { checkLintMetaRulesSelfCovered } from "./rules/testing/lint-meta-rules-self-covered";
+export { checkLogicFilesHaveTests } from "./rules/testing/logic-files-require-test-sibling";
+export { checkSkippedTestsHaveTracking } from "./rules/testing/skipped-tests-need-tracking";
 export { checkTestFilesHaveSource } from "./rules/testing/test-files-require-source-sibling";
 
 /** @param file Absolute path to the source file under test */

@@ -44,10 +44,14 @@ import {
   checkPrePushParity,
   checkSharedToolVersionParity,
   checkTofuBootstrapHardening,
+  checkDocsNoRetiredCredentials,
+  checkLintMetaRulesSelfCovered,
+  checkSkippedTestsHaveTracking,
 } from "../../scripts/lint-meta/cli";
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 const GUARD_TMP_PREFIX = "lint-meta-guard-";
+const RULE_SELF_COVERED = "lint-meta-rules-self-covered";
 
 describe("checkSharedToolVersionParity", () => {
   test("flags a shared tool pinned to different versions across apps", () => {
@@ -1436,6 +1440,134 @@ describe("lint-meta guardrails", () => {
         violations.some((row) => row.message.includes("bun run missing-gate"))
       ).toBe(true);
       expect(violations).toHaveLength(1);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkSkippedTestsHaveTracking", () => {
+  test("flags a skipped test with no tracking comment", () => {
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
+
+    try {
+      mkdirSync(join(root, "tests"), { recursive: true });
+      writeFileSync(
+        join(root, "tests", "sample.test.ts"),
+        'import { it } from "bun:test";\nit.skip("later", () => {});\n'
+      );
+
+      const violations = checkSkippedTestsHaveTracking(root);
+
+      expect(violations.length).toBe(1);
+      expect(violations[0]?.rule).toBe("skipped-tests-need-tracking");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when the skip carries a TODO(@owner) tracking comment", () => {
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
+
+    try {
+      mkdirSync(join(root, "tests"), { recursive: true });
+      writeFileSync(
+        join(root, "tests", "sample.test.ts"),
+        'import { it } from "bun:test";\n// TODO(@alice): unflake the clock\nit.skip("later", () => {});\n'
+      );
+
+      expect(checkSkippedTestsHaveTracking(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkDocsNoRetiredCredentials", () => {
+  test("flags a retired credential in sibling docs prose", () => {
+    const base = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
+    const root = join(base, "api");
+
+    try {
+      mkdirSync(join(base, "docs", "src", "content"), { recursive: true });
+      writeFileSync(
+        join(base, "docs", "src", "content", "setup.md"),
+        "Log in with admin123456 to get started.\n"
+      );
+
+      const violations = checkDocsNoRetiredCredentials(root);
+
+      expect(violations.length).toBe(1);
+      expect(violations[0]?.rule).toBe("docs-no-retired-credentials");
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when docs prose references no retired credential", () => {
+    const base = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
+    const root = join(base, "api");
+
+    try {
+      mkdirSync(join(base, "docs", "src", "content"), { recursive: true });
+      writeFileSync(
+        join(base, "docs", "src", "content", "setup.md"),
+        "Sign up in dev; the verification email lands in Mailpit.\n"
+      );
+
+      expect(checkDocsNoRetiredCredentials(root)).toEqual([]);
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkLintMetaRulesSelfCovered", () => {
+  function scaffold(root: string, cliExports: string, testBody: string): void {
+    mkdirSync(join(root, "scripts", "lint-meta", "rules", "source-text"), {
+      recursive: true,
+    });
+    mkdirSync(join(root, "tests", "lint-meta"), { recursive: true });
+    writeFileSync(
+      join(root, "scripts", "lint-meta", "cli.ts"),
+      `export {\n${cliExports}\n};\n`
+    );
+    writeFileSync(
+      join(root, "tests", "lint-meta", "lint-meta.test.ts"),
+      testBody
+    );
+    writeFileSync(
+      join(root, "scripts", "lint-meta", "rules", "source-text", "demo.ts"),
+      "export function checkDemo() {\n  return [];\n}\nexport const demoRule = { id: 'demo' };\n"
+    );
+  }
+
+  test("flags a rule whose check fn is unexported and untested", () => {
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
+
+    try {
+      scaffold(root, "  somethingElse,", "describe('checkSomethingElse');\n");
+
+      const violations = checkLintMetaRulesSelfCovered(root);
+      const messages = violations.map((row) => row.message).join("\n");
+
+      expect(violations.every((row) => row.rule === RULE_SELF_COVERED)).toBe(
+        true
+      );
+      expect(messages).toContain("not re-exported");
+      expect(messages).toContain('describe("checkDemo"');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when the check fn is exported from cli.ts and has a test", () => {
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
+
+    try {
+      scaffold(root, "  checkDemo,", 'describe("checkDemo", () => {});\n');
+
+      expect(checkLintMetaRulesSelfCovered(root)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
