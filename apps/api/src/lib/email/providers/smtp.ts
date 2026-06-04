@@ -3,6 +3,7 @@ import type SMTPTransport from "nodemailer/lib/smtp-transport";
 import { env } from "../../../config/env";
 import { logger } from "../../../config/logger";
 import { ApiErrors, getErrorMessage } from "../../errors";
+import { EMAIL_REQUEST_TIMEOUT_MS } from "../email.constants";
 import type {
   IEmailMessage,
   IEmailResult,
@@ -37,6 +38,15 @@ export class SmtpEmailService implements IEmailService {
        * negotiates correctly for both cases.
        */
       secure: port === 465,
+      /*
+       * SMTP is synchronous at the protocol level: without explicit budgets
+       * an unreachable or stalled server hangs sendMail for the socket
+       * lifetime and pins the request worker. Bound connect, greeting, and
+       * idle-socket waits to the shared email budget.
+       */
+      connectionTimeout: EMAIL_REQUEST_TIMEOUT_MS,
+      greetingTimeout: EMAIL_REQUEST_TIMEOUT_MS,
+      socketTimeout: EMAIL_REQUEST_TIMEOUT_MS,
       auth:
         user !== undefined && user !== "" && pass !== undefined
           ? { user, pass }

@@ -628,6 +628,38 @@ describe("checkExternalClientTimeouts", () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  test("flags an email transport module that is not bounded, passes a wrapped one", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-timeouts-"));
+
+    try {
+      mkdirSync(join(root, "src"), { recursive: true });
+
+      const unbounded = join(root, "src", "resend.ts");
+
+      writeFileSync(
+        unbounded,
+        "const client = new Resend(apiKey);\nawait client.emails.send(payload);\n"
+      );
+
+      const rules = checkExternalClientTimeouts([unbounded]).map(
+        (row) => row.rule
+      );
+
+      expect(rules).toEqual(["external-client-timeout"]);
+
+      const bounded = join(root, "src", "resend-ok.ts");
+
+      writeFileSync(
+        bounded,
+        "const client = new Resend(apiKey);\nawait withEmailTimeout(() => client.emails.send(payload));\n"
+      );
+
+      expect(checkExternalClientTimeouts([bounded])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("checkTofuBootstrapHardening", () => {

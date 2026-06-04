@@ -11,6 +11,7 @@ import {
   maskEmailForLogging,
   retryWithBackoff,
   validateEmailMessage,
+  withEmailTimeout,
 } from "../email.utils";
 import { EMAIL_SUPPRESSION_PROVIDERS } from "../suppression.constants";
 import {
@@ -47,13 +48,15 @@ export class SendGridEmailService implements IEmailService {
 
     try {
       return await retryWithBackoff(async () => {
-        const [response] = await this.client.send({
-          from: env.EMAIL_FROM,
-          to: message.to,
-          subject: message.subject,
-          html: message.html,
-          ...(message.text !== undefined && { text: message.text }),
-        });
+        const [response] = await withEmailTimeout(() =>
+          this.client.send({
+            from: env.EMAIL_FROM,
+            to: message.to,
+            subject: message.subject,
+            html: message.html,
+            ...(message.text !== undefined && { text: message.text }),
+          })
+        );
 
         const id = SendGridEmailService.extractMessageId(response.headers);
 

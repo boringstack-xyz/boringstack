@@ -390,7 +390,7 @@
       "id": "external-client-timeout",
       "category": "source-text",
       "ciCritical": false,
-      "description": "SDK clients (Stripe/OpenAI/Anthropic) need a timeout option; fetch() in src needs an AbortSignal."
+      "description": "SDK clients (Stripe/OpenAI/Anthropic) need a timeout option; email transports (Resend/SendGrid/nodemailer) must be bounded; fetch() in src needs an AbortSignal."
     },
     {
       "id": "no-raw-role-literal",

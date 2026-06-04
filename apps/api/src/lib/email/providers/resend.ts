@@ -11,6 +11,7 @@ import {
   maskEmailForLogging,
   retryWithBackoff,
   validateEmailMessage,
+  withEmailTimeout,
 } from "../email.utils";
 import { EMAIL_SUPPRESSION_PROVIDERS } from "../suppression.constants";
 import {
@@ -32,13 +33,15 @@ export class ResendEmailService implements IEmailService {
 
     try {
       return await retryWithBackoff(async () => {
-        const result = await this.client.emails.send({
-          from: env.EMAIL_FROM,
-          to: [message.to],
-          subject: message.subject,
-          html: message.html,
-          ...(message.text !== undefined && { text: message.text }),
-        });
+        const result = await withEmailTimeout(() =>
+          this.client.emails.send({
+            from: env.EMAIL_FROM,
+            to: [message.to],
+            subject: message.subject,
+            html: message.html,
+            ...(message.text !== undefined && { text: message.text }),
+          })
+        );
 
         if (result.error !== null) {
           if (isProviderSuppressionError(result.error.message)) {

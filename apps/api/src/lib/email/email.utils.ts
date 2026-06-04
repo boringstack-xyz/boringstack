@@ -2,6 +2,7 @@ import { env } from "../../config/env";
 import { ApiErrors } from "../errors";
 import {
   EMAIL_REGEX,
+  EMAIL_REQUEST_TIMEOUT_MS,
   RETRY_DEFAULTS,
   TRANSIENT_MESSAGE_PATTERNS,
   TRANSIENT_NAME_PATTERNS,
@@ -136,6 +137,38 @@ export const isRetryableError = (
 
 const delay = async (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Bound a single provider call to an explicit budget. Resend and SendGrid
+ * wrap `fetch` and expose no timeout option, so the only way to stop a hung
+ * mail upstream from pinning the request worker is to race the send against
+ * a timer. The rejection message contains "timeout" so `retryWithBackoff`
+ * treats it as transient and retries, mirroring an aborted fetch attempt.
+ */
+export const withEmailTimeout = async <T>(
+  operation: () => Promise<T>,
+  timeoutMs: number = EMAIL_REQUEST_TIMEOUT_MS
+): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const guard = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      reject(
+        ApiErrors.externalService(
+          `Email provider timeout after ${String(timeoutMs)}ms`
+        )
+      );
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([operation(), guard]);
+  } finally {
+    if (timer !== undefined) {
+      clearTimeout(timer);
+    }
+  }
+};
 
 /**
  * Retry an async function with exponential backoff. Only transient errors
