@@ -147,7 +147,7 @@
     "yaml": "2.9.0"
   },
   "//overrides": {
-    "_": "Why these transitive deps are pinned. Dev tooling only — lighthouse/lhci and http-server pull the vulnerable ranges; production output is a static bundle.",
+    "_": "Why these transitive deps are pinned. Dev tooling only — lighthouse/lhci and http-server pull the vulnerable ranges; production output is a static bundle. Astro-only build deps (e.g. devalue, GHSA-77vg-94rm-hx3p) are pinned in apps/docs, not here — the Vite toolchain does not pull them.",
     "ws": "Pin patched ws (GHSA-58qx-3vcg-4xpx) pulled via lighthouse dev tooling; mirrors the docs app pin.",
     "qs": "Pin patched qs (GHSA-q8mj-m7cp-5q26) pulled via dev tooling; mirrors the docs app pin.",
     "tmp": "Pin patched tmp symlink arbitrary-write advisory; transitive dev-tooling dep.",
