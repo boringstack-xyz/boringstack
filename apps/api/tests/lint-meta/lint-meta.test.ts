@@ -1189,6 +1189,15 @@ describe("checkLogicFilesHaveTests", () => {
 });
 
 describe("checkTouchedTests", () => {
+  const GIT_ADD = "git add -A";
+
+  function initGitRepo(repo: string): void {
+    execSync("git init -q -b main", { cwd: repo });
+    execSync('git config user.email "test@example.com"', { cwd: repo });
+    execSync('git config user.name "Test"', { cwd: repo });
+    execSync("git config commit.gpgsign false", { cwd: repo });
+  }
+
   test("invalid base ref → silent skip (no violations)", () => {
     const violations = checkTouchedTests(
       "definitely-not-a-real-ref-xyz",
@@ -1202,10 +1211,7 @@ describe("checkTouchedTests", () => {
     const repo = mkdtempSync(join(tmpdir(), "lint-meta-touched-"));
 
     try {
-      execSync("git init -q -b main", { cwd: repo });
-      execSync('git config user.email "test@example.com"', { cwd: repo });
-      execSync('git config user.name "Test"', { cwd: repo });
-      execSync("git config commit.gpgsign false", { cwd: repo });
+      initGitRepo(repo);
 
       mkdirSync(join(repo, "src", "api"), { recursive: true });
       mkdirSync(join(repo, "tests", "api"), { recursive: true });
@@ -1218,14 +1224,14 @@ describe("checkTouchedTests", () => {
         join(repo, "tests", "api", "tickets.service.test.ts"),
         "import { describe } from 'bun:test';\ndescribe('placeholder', () => {});\n"
       );
-      execSync("git add -A", { cwd: repo });
+      execSync(GIT_ADD, { cwd: repo });
       execSync('git commit -q -m "init"', { cwd: repo });
 
       writeFileSync(
         join(repo, "src", "api", "tickets.service.ts"),
         "export const ticketsService = { add: () => 1 };\n"
       );
-      execSync("git add -A", { cwd: repo });
+      execSync(GIT_ADD, { cwd: repo });
       execSync('git commit -q -m "modify service without touching test"', {
         cwd: repo,
       });
@@ -1244,10 +1250,7 @@ describe("checkTouchedTests", () => {
     const repo = mkdtempSync(join(tmpdir(), "lint-meta-touched-"));
 
     try {
-      execSync("git init -q -b main", { cwd: repo });
-      execSync('git config user.email "test@example.com"', { cwd: repo });
-      execSync('git config user.name "Test"', { cwd: repo });
-      execSync("git config commit.gpgsign false", { cwd: repo });
+      initGitRepo(repo);
 
       mkdirSync(join(repo, "src", "api"), { recursive: true });
       mkdirSync(join(repo, "tests", "api"), { recursive: true });
@@ -1260,7 +1263,7 @@ describe("checkTouchedTests", () => {
         join(repo, "tests", "api", "tickets.service.test.ts"),
         "import { describe } from 'bun:test';\ndescribe('init', () => {});\n"
       );
-      execSync("git add -A", { cwd: repo });
+      execSync(GIT_ADD, { cwd: repo });
       execSync('git commit -q -m "init"', { cwd: repo });
 
       writeFileSync(
@@ -1271,12 +1274,51 @@ describe("checkTouchedTests", () => {
         join(repo, "tests", "api", "tickets.service.test.ts"),
         "import { describe, expect, test } from 'bun:test';\ntest('add', () => { expect(1).toBe(1); });\n"
       );
-      execSync("git add -A", { cwd: repo });
+      execSync(GIT_ADD, { cwd: repo });
       execSync('git commit -q -m "service + test together"', { cwd: repo });
 
       const violations = checkTouchedTests("HEAD~1", repo);
 
       expect(violations).toEqual([]);
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
+    }
+  });
+
+  test("flags a .check.ts modified without its test (parity with logic-files suffixes)", () => {
+    const repo = mkdtempSync(join(tmpdir(), "lint-meta-touched-"));
+
+    try {
+      initGitRepo(repo);
+
+      mkdirSync(join(repo, "src", "checks"), { recursive: true });
+      mkdirSync(join(repo, "tests", "checks"), { recursive: true });
+
+      writeFileSync(
+        join(repo, "src", "checks", "database.check.ts"),
+        "export const databaseCheck = () => true;\n"
+      );
+      writeFileSync(
+        join(repo, "tests", "checks", "database.check.test.ts"),
+        "import { describe } from 'bun:test';\ndescribe('placeholder', () => {});\n"
+      );
+      execSync(GIT_ADD, { cwd: repo });
+      execSync('git commit -q -m "init"', { cwd: repo });
+
+      writeFileSync(
+        join(repo, "src", "checks", "database.check.ts"),
+        "export const databaseCheck = () => false;\n"
+      );
+      execSync(GIT_ADD, { cwd: repo });
+      execSync('git commit -q -m "modify check without touching test"', {
+        cwd: repo,
+      });
+
+      const violations = checkTouchedTests("HEAD~1", repo);
+
+      expect(violations.length).toBe(1);
+      expect(violations[0]?.rule).toBe("touch-tests-too");
+      expect(violations[0]?.message).toContain("database.check");
     } finally {
       rmSync(repo, { recursive: true, force: true });
     }
