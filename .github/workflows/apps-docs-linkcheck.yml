@@ -116,8 +116,20 @@ jobs:
         uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
         continue-on-error: true
         with:
+          # --max-retries 0 is the load-bearing flag here. This step is
+          # warning-only, so a retry buys nothing — and on a shared CI runner
+          # IP, github.com answers a burst of link checks with HTTP 429 +
+          # a giant Retry-After. lychee honours that with a per-retry backoff
+          # ("unexpectedly big rate limit backoff … capping to 1m"), which
+          # serialised into a multi-minute near-hang on every run. The
+          # GITHUB_TOKEN below only authenticates the parseable owner/repo
+          # URLs lychee routes through api.github.com; org pages, /join and
+          # template placeholders still fall back to plain HTTP and get
+          # throttled. With retries disabled a throttled link surfaces as a
+          # warning immediately instead of blocking the runner.
           args: >-
             --no-progress
+            --max-retries 0
             --root-dir ${{ github.workspace }}/apps/docs/dist
             --exclude-path './llms-full.txt'
             --exclude-path './llms-small.txt'
@@ -126,9 +138,9 @@ jobs:
             '${{ github.workspace }}/apps/docs/dist/**/*.html'
           fail: false
         env:
-          # Authenticate github.com link checks so lychee uses the GitHub API
-          # (5000 req/h) instead of anonymous requests (60 req/h). Without this,
-          # every github.com link hits the rate limit and lychee sits in a
-          # multi-minute backoff — the "unexpectedly big rate limit backoff" warns
-          # that dragged this step to ~4m. Needs only the default contents:read.
+          # Authenticates the github.com links lychee can route through the
+          # GitHub API (5000 req/h) instead of anonymous HTTP (60 req/h).
+          # Helps, but does not cover org/placeholder URLs — see --max-retries
+          # above for why that alone never stopped the backoff hang. Needs only
+          # the default contents:read.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
