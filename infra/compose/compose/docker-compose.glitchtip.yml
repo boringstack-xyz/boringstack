@@ -95,6 +95,34 @@ services:
     environment: *glitchtip-env
     networks:
       - backend
+    # The worker is `./manage.py runworker` (GlitchTip 6 dropped Celery) — no
+    # HTTP port, and the image ships only python3 (no curl/wget/ps/pgrep). So
+    # probe liveness by scanning /proc for the runworker process, mirroring the
+    # python3-only self-probe glitchtip-web uses above.
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - |
+          import os, sys
+          me = str(os.getpid())  # skip self: this probe's own cmdline contains "runworker"
+          def alive():
+              for pid in os.listdir("/proc"):
+                  if not pid.isdigit() or pid == me:
+                      continue
+                  try:
+                      with open(f"/proc/{pid}/cmdline", "rb") as fh:
+                          if b"runworker" in fh.read():
+                              return True
+                  except OSError:
+                      continue
+              return False
+          sys.exit(0 if alive() else 1)
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     deploy:
       resources:
         limits:
