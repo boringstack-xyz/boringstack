@@ -16,6 +16,8 @@ services:
   postgres:
     image: postgres:17-alpine@sha256:979c4379dd698aba0b890599a6104e082035f98ef31d9b9291ec22f2b13059ca
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     logging: *default-logging
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-app}
@@ -46,6 +48,8 @@ services:
   valkey:
     image: valkey/valkey:8-alpine@sha256:b027235326507cfdade9b6684056ec1d0b0c0757412e628245129b5d7b788618
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     logging: *default-logging
     # Auth is enforced whenever VALKEY_PASSWORD is set (an empty
     # requirepass disables auth — the dev default). The API already

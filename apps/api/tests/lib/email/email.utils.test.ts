@@ -4,11 +4,43 @@ import {
   baseTemplateVariables,
   normalizeEmail,
   validateEmailMessage,
+  withEmailTimeout,
 } from "../../../src/lib/email/email.utils";
 import { ApiError } from "../../../src/lib/errors";
 import { env } from "../../../src/config/env";
 
 const EXPECTED_API_ERROR = "expected ApiError";
+
+describe("withEmailTimeout", () => {
+  test("resolves when the operation finishes within the budget", async () => {
+    const result = await withEmailTimeout(() => Promise.resolve("ok"), 1000);
+
+    expect(result).toBe("ok");
+  });
+
+  test("rejects with a retryable timeout error when the operation hangs", async () => {
+    let settle: (() => void) | undefined;
+    const hang = new Promise<string>((resolve) => {
+      settle = () => {
+        resolve("late");
+      };
+    });
+
+    try {
+      await withEmailTimeout(() => hang, 10);
+
+      throw new Error(EXPECTED_API_ERROR);
+    } catch (error: unknown) {
+      if (!(error instanceof ApiError)) {
+        throw new Error(EXPECTED_API_ERROR, { cause: error });
+      }
+
+      expect(error.message.toLowerCase()).toContain("timeout");
+    } finally {
+      settle?.();
+    }
+  });
+});
 
 describe("validateEmailMessage", () => {
   const VALID_FROM = "noreply@example.com";

@@ -14,10 +14,16 @@ import {
   checkCanonicalHelpersSingleHome,
   checkDependencyPairs,
   checkDockerfileBaseImageShaPin,
+  checkDocsNoRetiredCredentials,
   checkEnginePinParity,
+  checkEslintConfigNoWarn,
   checkEslintPluginContractParity,
   checkForbiddenText,
+  checkGeneratedArtifactContracts,
   checkI18nLocaleKeysUsed,
+  checkLintMetaRulesSelfCovered,
+  checkLogicFilesHaveTests,
+  checkModulepreloadSizeLimitPatterns,
   checkNoCrossRepoImports,
   checkNoDirectImportMetaEnv,
   checkNoRawRoleLiterals,
@@ -25,6 +31,7 @@ import {
   checkPackageJson,
   checkPrePushParity,
   checkScriptRawFetch,
+  checkSkippedTestsHaveTracking,
   checkTestFilesHaveSource,
   checkTofuBootstrapHardening,
   checkTsconfigIncludePathsExist,
@@ -778,6 +785,48 @@ describe("checkTofuBootstrapHardening", () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  test("flags a required_providers entry without a version, passes a pinned one", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-tofu-"));
+
+    try {
+      makeBootstrap(
+        root,
+        [
+          "terraform {",
+          "  required_providers {",
+          '    hcloud = { source = "hetznercloud/hcloud" }',
+          "  }",
+          "}",
+          ""
+        ].join("\n")
+      );
+
+      expect(
+        checkTofuBootstrapHardening(join(root, "apps", "self")).map(
+          (row) => row.rule
+        )
+      ).toContain("tofu-provider-version-pin");
+
+      makeBootstrap(
+        root,
+        [
+          "terraform {",
+          "  required_providers {",
+          '    hcloud = { source = "hetznercloud/hcloud", version = "~> 1.48" }',
+          "  }",
+          "}",
+          ""
+        ].join("\n")
+      );
+
+      expect(checkTofuBootstrapHardening(join(root, "apps", "self"))).toEqual(
+        []
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("checkEslintPluginContractParity", () => {
@@ -1233,6 +1282,279 @@ describe("checkPrePushParity", () => {
         expect.stringContaining("bun run missing-gate")
       );
       expect(violations).toHaveLength(1);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkEslintConfigNoWarn", () => {
+  test("flags a warn severity in the eslint config", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+
+    try {
+      writeFileSync(
+        join(root, "eslint.config.mjs"),
+        'export default [{ rules: { "no-x": "warn" } }];\n'
+      );
+
+      const violations = checkEslintConfigNoWarn(root);
+
+      expect(violations.length).toBeGreaterThan(0);
+      expect(violations[0]?.rule).toBe("eslint-config-no-warn");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when every severity is error or off", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+
+    try {
+      writeFileSync(
+        join(root, "eslint.config.mjs"),
+        'export default [{ rules: { "no-x": "error", "no-y": "off" } }];\n'
+      );
+
+      expect(checkEslintConfigNoWarn(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkDocsNoRetiredCredentials", () => {
+  test("flags a retired credential in sibling docs prose", () => {
+    const base = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+    const root = join(base, "ui");
+
+    try {
+      mkdirSync(join(base, "docs", "src", "content"), { recursive: true });
+      writeFileSync(
+        join(base, "docs", "src", "content", "setup.md"),
+        "Log in with admin123456 to start.\n"
+      );
+
+      const violations = checkDocsNoRetiredCredentials(root);
+
+      expect(violations.length).toBe(1);
+      expect(violations[0]?.rule).toBe("docs-no-retired-credentials");
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when docs reference no retired credential", () => {
+    const base = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+    const root = join(base, "ui");
+
+    try {
+      mkdirSync(join(base, "docs", "src", "content"), { recursive: true });
+      writeFileSync(
+        join(base, "docs", "src", "content", "setup.md"),
+        "Sign up in dev; the verification email lands in Mailpit.\n"
+      );
+
+      expect(checkDocsNoRetiredCredentials(root)).toEqual([]);
+    } finally {
+      rmSync(base, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkGeneratedArtifactContracts", () => {
+  test("flags a generated artifact missing its banner text", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+
+    try {
+      mkdirSync(join(root, "src", "lib", "acl"), { recursive: true });
+      writeFileSync(
+        join(root, "src", "lib", "acl", "acl.types.generated.ts"),
+        "export type Role = string;\n"
+      );
+
+      const violations = checkGeneratedArtifactContracts(root);
+
+      expect(violations.length).toBeGreaterThanOrEqual(1);
+      expect(violations[0]?.rule).toBe("generated-artifact-contract");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when every generated artifact carries its banner", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+
+    try {
+      mkdirSync(join(root, "src", "lib", "acl"), { recursive: true });
+      mkdirSync(join(root, "src", "lib", "api"), { recursive: true });
+      writeFileSync(
+        join(root, "src", "lib", "acl", "acl.types.generated.ts"),
+        "// AUTO-GENERATED by generate:acl-types — do not edit.\nexport type Role = string;\n"
+      );
+      writeFileSync(
+        join(root, "src", "lib", "api", "schema.d.ts"),
+        "// DO NOT EDIT — regenerate via generate:api.\nexport type Schema = unknown;\n"
+      );
+
+      expect(checkGeneratedArtifactContracts(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkLogicFilesHaveTests", () => {
+  test("flags a logic module under src/lib/guards without a test sibling", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+
+    try {
+      mkdirSync(join(root, "src", "lib", "guards"), { recursive: true });
+      writeFileSync(
+        join(root, "src", "lib", "guards", "auth.ts"),
+        "export const guard = () => true;\n"
+      );
+
+      const violations = checkLogicFilesHaveTests(root);
+
+      expect(violations.length).toBe(1);
+      expect(violations[0]?.rule).toBe("logic-files-require-test-sibling");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when the logic module has a colocated test", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+
+    try {
+      mkdirSync(join(root, "src", "lib", "guards"), { recursive: true });
+      writeFileSync(
+        join(root, "src", "lib", "guards", "auth.ts"),
+        "export const guard = () => true;\n"
+      );
+      writeFileSync(
+        join(root, "src", "lib", "guards", "auth.test.ts"),
+        'import { test } from "vitest";\ntest("g", () => {});\n'
+      );
+
+      expect(checkLogicFilesHaveTests(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkModulepreloadSizeLimitPatterns", () => {
+  test("flags a .size-limit.json missing required modulepreload globs", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+
+    try {
+      writeFileSync(join(root, ".size-limit.json"), "[]\n");
+
+      const violations = checkModulepreloadSizeLimitPatterns(root);
+
+      expect(violations.length).toBeGreaterThan(0);
+      expect(violations[0]?.rule).toBe("modulepreload-size-limit-coverage");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes (no-ops) when there is no .size-limit.json", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+
+    try {
+      expect(checkModulepreloadSizeLimitPatterns(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkSkippedTestsHaveTracking", () => {
+  test("flags a skipped test with no tracking comment", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+
+    try {
+      mkdirSync(join(root, "tests"), { recursive: true });
+      writeFileSync(
+        join(root, "tests", "sample.test.ts"),
+        'import { it } from "vitest";\nit.skip("later", () => {});\n'
+      );
+
+      const violations = checkSkippedTestsHaveTracking(root);
+
+      expect(violations.length).toBe(1);
+      expect(violations[0]?.rule).toBe("skipped-tests-need-tracking");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when the skip carries a TODO(@owner) comment", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+
+    try {
+      mkdirSync(join(root, "tests"), { recursive: true });
+      writeFileSync(
+        join(root, "tests", "sample.test.ts"),
+        'import { it } from "vitest";\n// TODO(@alice): unflake\nit.skip("later", () => {});\n'
+      );
+
+      expect(checkSkippedTestsHaveTracking(root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkLintMetaRulesSelfCovered", () => {
+  function scaffold(root: string, cliExports: string, testBody: string): void {
+    mkdirSync(join(root, "scripts", "lint-meta", "rules", "source-text"), {
+      recursive: true
+    });
+    mkdirSync(join(root, "tests", "lint-meta"), { recursive: true });
+    writeFileSync(
+      join(root, "scripts", "lint-meta", "cli.ts"),
+      `export {\n${cliExports}\n};\n`
+    );
+    writeFileSync(
+      join(root, "tests", "lint-meta", "lint-meta.test.ts"),
+      testBody
+    );
+    writeFileSync(
+      join(root, "scripts", "lint-meta", "rules", "source-text", "demo.ts"),
+      "export function checkDemo() {\n  return [];\n}\nexport const demoRule = { id: 'demo' };\n"
+    );
+  }
+
+  test("flags a rule whose check fn is unexported and untested", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+
+    try {
+      scaffold(root, "  somethingElse", "describe('checkSomethingElse');\n");
+
+      const violations = checkLintMetaRulesSelfCovered(root);
+      const messages = violations.map((row) => row.message).join("\n");
+
+      expect(
+        violations.every((row) => row.rule === "lint-meta-rules-self-covered")
+      ).toBe(true);
+      expect(messages).toContain("not re-exported");
+      expect(messages).toContain('describe("checkDemo"');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when the check fn is exported and has a test", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-guard-"));
+
+    try {
+      scaffold(root, "  checkDemo", 'describe("checkDemo", () => {});\n');
+
+      expect(checkLintMetaRulesSelfCovered(root)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

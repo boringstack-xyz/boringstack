@@ -64,7 +64,7 @@
       "id": "tofu-bootstrap-hardening",
       "category": "ci",
       "ciCritical": false,
-      "description": "infra/bootstrap must keep its hardening invariants: server lifecycle guard, no world-open variable defaults, no curl-pipe-sh."
+      "description": "infra/bootstrap must keep its hardening invariants: server lifecycle guard, no world-open variable defaults, no curl-pipe-sh, version-pinned required_providers."
     },
     {
       "id": "engine-pin-parity",
@@ -211,6 +211,12 @@
       "description": "Logic modules must ship with a colocated *.test.ts or *.test.tsx sibling."
     },
     {
+      "id": "lint-meta-rules-self-covered",
+      "category": "testing",
+      "ciCritical": false,
+      "description": "Every lint-meta rule module must re-export its check function from cli.ts and carry a describe() test block — the guardrails must themselves be guarded."
+    },
+    {
       "id": "test-files-require-source-sibling",
       "category": "testing",
       "ciCritical": false,
@@ -318,7 +324,7 @@
       "id": "tofu-bootstrap-hardening",
       "category": "ci",
       "ciCritical": false,
-      "description": "infra/bootstrap must keep its hardening invariants: server lifecycle guard, no world-open variable defaults, no curl-pipe-sh."
+      "description": "infra/bootstrap must keep its hardening invariants: server lifecycle guard, no world-open variable defaults, no curl-pipe-sh, version-pinned required_providers."
     },
     {
       "id": "engine-pin-parity",
@@ -384,7 +390,7 @@
       "id": "external-client-timeout",
       "category": "source-text",
       "ciCritical": false,
-      "description": "SDK clients (Stripe/OpenAI/Anthropic) need a timeout option; fetch() in src needs an AbortSignal."
+      "description": "SDK clients (Stripe/OpenAI/Anthropic) need a timeout option; email transports (Resend/SendGrid/nodemailer) must be bounded; fetch() in src needs an AbortSignal."
     },
     {
       "id": "no-raw-role-literal",
@@ -403,6 +409,12 @@
       "category": "testing",
       "ciCritical": false,
       "description": "Logic modules must ship with a matching tests/**/*.test.ts sibling."
+    },
+    {
+      "id": "lint-meta-rules-self-covered",
+      "category": "testing",
+      "ciCritical": false,
+      "description": "Every lint-meta rule module must re-export its check function from cli.ts and carry a describe() test block — the guardrails must themselves be guarded."
     },
     {
       "id": "skipped-tests-need-tracking",

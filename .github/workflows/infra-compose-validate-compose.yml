@@ -118,6 +118,12 @@ jobs:
         # so CI and local guardrails cannot drift.
         run: ../scripts/validate-guardrails.sh rooted-caps
         working-directory: infra/compose/compose
+      - name: Guardrail — every service blocks privilege escalation
+        if: steps.filter.outputs.code == 'true'
+        # Single-source: the same script runs in the local pre-push gate,
+        # so CI and local guardrails cannot drift.
+        run: ../scripts/validate-guardrails.sh no-new-privileges
+        working-directory: infra/compose/compose
       - name: Guardrail — prod rejects unpinned image tags (dev.sh fail-closed)
         if: steps.filter.outputs.code == 'true'
         # Single-source: the same script runs in the local pre-push gate,

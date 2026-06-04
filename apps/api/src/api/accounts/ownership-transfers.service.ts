@@ -1,4 +1,5 @@
 import { and, eq, gt, isNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "../../clients/postgres";
 import {
@@ -376,14 +377,26 @@ export class OwnershipTransfersService {
     transferId: string,
     rawToken: string
   ): Promise<void> {
+    /*
+     * One query over the transfer row: the recipient (toUser) and account
+     * are required inner joins; the originator (fromUser) is a left join so
+     * a since-deleted sender still lets the notice go out with an empty
+     * fromUserEmail, matching the prior per-query fallback.
+     */
+    const fromUser = alias(users, "from_user");
+    const toUser = alias(users, "to_user");
+
     const [row] = await db
       .select({
         accountName: accounts.name,
-        toEmail: users.email,
+        toEmail: toUser.email,
+        fromEmail: fromUser.email,
+        expiresAt: accountOwnershipTransfers.expiresAt,
       })
       .from(accountOwnershipTransfers)
       .innerJoin(accounts, eq(accounts.id, accountOwnershipTransfers.accountId))
-      .innerJoin(users, eq(users.id, accountOwnershipTransfers.toUserId))
+      .innerJoin(toUser, eq(toUser.id, accountOwnershipTransfers.toUserId))
+      .leftJoin(fromUser, eq(fromUser.id, accountOwnershipTransfers.fromUserId))
       .where(eq(accountOwnershipTransfers.id, transferId))
       .limit(1);
 
@@ -391,26 +404,13 @@ export class OwnershipTransfersService {
       return;
     }
 
-    const [fromUserRow] = await db
-      .select({ email: users.email })
-      .from(accountOwnershipTransfers)
-      .innerJoin(users, eq(users.id, accountOwnershipTransfers.fromUserId))
-      .where(eq(accountOwnershipTransfers.id, transferId))
-      .limit(1);
-
-    const [transferRow] = await db
-      .select({ expiresAt: accountOwnershipTransfers.expiresAt })
-      .from(accountOwnershipTransfers)
-      .where(eq(accountOwnershipTransfers.id, transferId))
-      .limit(1);
-
     await dispatchOwnershipTransferEmail({
       toEmail: row.toEmail,
       accountName: row.accountName,
-      fromUserEmail: fromUserRow?.email ?? "",
+      fromUserEmail: row.fromEmail ?? "",
       rawToken,
       acceptUrl: `${env.FRONTEND_URL}/account/ownership-transfer/accept`,
-      expiresAt: transferRow?.expiresAt ?? "",
+      expiresAt: row.expiresAt,
       transferId,
     });
   }

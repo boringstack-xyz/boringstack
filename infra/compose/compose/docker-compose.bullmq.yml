@@ -13,6 +13,8 @@ services:
     platform: linux/amd64
     profiles: [bullmq]
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     environment:
       # Listen on 7332 instead of bull-board's default 3000. Port 3000 is
       # the universal "default Node app" port and collides with most

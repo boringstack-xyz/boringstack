@@ -25,6 +25,7 @@ import { noRawRoleLiteralsRule } from "./rules/source-text/no-raw-role-literals"
 import { scriptRawFetchRule } from "./rules/source-text/script-raw-fetch";
 import { noOverlappingLibsRule } from "./rules/supply-chain/no-overlapping-libs";
 import { packageJsonExactDepsRule } from "./rules/supply-chain/package-json-exact-deps";
+import { lintMetaRulesSelfCoveredRule } from "./rules/testing/lint-meta-rules-self-covered";
 import { logicFilesRequireTestSiblingRule } from "./rules/testing/logic-files-require-test-sibling";
 import { skippedTestsNeedTrackingRule } from "./rules/testing/skipped-tests-need-tracking";
 import { testFilesRequireSourceSiblingRule } from "./rules/testing/test-files-require-source-sibling";
@@ -62,6 +63,7 @@ export const META_RULES: readonly IMetaRule[] = [
   noSilentErrorSwallowRule,
   // --- testing ---
   logicFilesRequireTestSiblingRule,
+  lintMetaRulesSelfCoveredRule,
   testFilesRequireSourceSiblingRule,
   skippedTestsNeedTrackingRule,
   // --- config ---
