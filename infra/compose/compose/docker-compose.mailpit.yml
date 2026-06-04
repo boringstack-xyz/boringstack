@@ -14,6 +14,12 @@ services:
     image: axllent/mailpit:v1.21@sha256:81370195cd4a0eab9604d17c2617a7525b0486f9365555253b6c5376c6350f1a
     profiles: [mailpit]
     restart: unless-stopped
+    # Defense-in-depth: block privilege escalation even on this dev-only
+    # daemon, matching every other long-running service in the stack. (The
+    # no-new-privileges guardrail renders prod overlays only, so it does not
+    # enforce this here — we set it for consistency, not to satisfy a check.)
+    security_opt:
+      - no-new-privileges:true
     environment:
       MP_MAX_MESSAGES: "5000"
       MP_DATABASE: /data/mailpit.db
