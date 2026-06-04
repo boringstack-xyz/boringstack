@@ -66,6 +66,9 @@ services:
         limits:
           cpus: "${WUD_LIMITS_CPUS:-0.25}"
           memory: "${WUD_LIMITS_MEMORY:-256M}"
+        reservations:
+          cpus: "${WUD_RESERVATIONS_CPUS:-0.05}"
+          memory: "${WUD_RESERVATIONS_MEMORY:-64M}"
 
 volumes:
   wud_data:
