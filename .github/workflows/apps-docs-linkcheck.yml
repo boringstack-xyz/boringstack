@@ -15,6 +15,14 @@ on:
       - "apps/docs/package.json"
       - "apps/docs/bun.lock"
       - ".github/workflows/apps-docs-linkcheck.yml"
+      # Catalog inputs: the generated docs data is derived from sibling-app
+      # scripts/README.md, package.json scripts, and lint-meta export-catalog.
+      # Changes here can stale the committed catalogs, so they must trigger the
+      # freshness check even when no apps/docs file changed.
+      - "apps/api/scripts/**"
+      - "apps/api/package.json"
+      - "apps/ui/scripts/**"
+      - "apps/ui/package.json"
   # PR trigger has NO `paths:` filter — the `linkcheck` check is in
   # branch protection's required-checks list, so the workflow must run
   # on every PR or branch protection will wait forever for a status
@@ -54,17 +62,22 @@ jobs:
               - 'apps/docs/package.json'
               - 'apps/docs/bun.lock'
               - '.github/workflows/apps-docs-linkcheck.yml'
+            catalog:
+              - 'apps/api/scripts/**'
+              - 'apps/api/package.json'
+              - 'apps/ui/scripts/**'
+              - 'apps/ui/package.json'
 
-      - name: No-op notice for non-docs PRs
-        if: steps.filter.outputs.docs != 'true'
-        run: echo "No docs files changed in this PR — link check skipped."
+      - name: No-op notice for unaffected PRs
+        if: steps.filter.outputs.docs != 'true' && steps.filter.outputs.catalog != 'true'
+        run: echo "No docs or catalog-input files changed in this PR — skipped."
 
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        if: steps.filter.outputs.docs == 'true'
+        if: steps.filter.outputs.docs == 'true' || steps.filter.outputs.catalog == 'true'
         with:
           bun-version: 1.3.14
       - name: Cache bun install
-        if: steps.filter.outputs.docs == 'true'
+        if: steps.filter.outputs.docs == 'true' || steps.filter.outputs.catalog == 'true'
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.bun/install/cache
@@ -73,26 +86,29 @@ jobs:
             bun-${{ runner.os }}-
 
       - name: Install docs deps
-        if: steps.filter.outputs.docs == 'true'
+        if: steps.filter.outputs.docs == 'true' || steps.filter.outputs.catalog == 'true'
         run: bun install --frozen-lockfile
 
       - name: Install apps/ui deps for lint-meta export
-        if: steps.filter.outputs.docs == 'true'
+        if: steps.filter.outputs.docs == 'true' || steps.filter.outputs.catalog == 'true'
         working-directory: apps/ui
         run: bun install --frozen-lockfile
 
       - name: Install apps/api deps for lint-meta export
-        if: steps.filter.outputs.docs == 'true'
+        if: steps.filter.outputs.docs == 'true' || steps.filter.outputs.catalog == 'true'
         working-directory: apps/api
         run: bun install --frozen-lockfile
 
       - name: Verify generated docs data
-        if: steps.filter.outputs.docs == 'true'
+        if: steps.filter.outputs.docs == 'true' || steps.filter.outputs.catalog == 'true'
         env:
           BORINGSTACK_UI_DIR: ${{ github.workspace }}/apps/ui
           BORINGSTACK_API_DIR: ${{ github.workspace }}/apps/api
         run: bun run check:docs-data
 
+      # The full site build + lychee link check stay gated on docs changes
+      # only — a catalog-input change needs the freshness check above, not a
+      # multi-minute rebuild of the whole site.
       - name: Build docs site
         if: steps.filter.outputs.docs == 'true'
         env:

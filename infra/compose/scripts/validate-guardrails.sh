@@ -54,11 +54,17 @@ render_full_config() {
 }
 
 check_healthchecks() {
-  render_prod_config
+  # Render the FULL stack (base prod + every prod-capable overlay), not just
+  # the base prod services. Overlay daemons (glitchtip-worker, whatsupdocker,
+  # BullMQ, observability) are exactly the long-running services that need a
+  # readiness probe so `docker compose up --wait` and `service_healthy`
+  # gating work — checking only the base stack let them ship probe-less. This
+  # mirrors check_no_new_privileges, which already renders the full config.
+  render_full_config
   python3 - <<'EOF'
 import json
 
-with open("/tmp/guardrails-prod-config.json", encoding="utf-8") as handle:
+with open("/tmp/guardrails-full-config.json", encoding="utf-8") as handle:
     services = json.load(handle)["services"]
 
 missing = sorted(
@@ -68,7 +74,7 @@ missing = sorted(
 )
 
 if missing:
-    raise SystemExit("prod services missing healthcheck: " + ", ".join(missing))
+    raise SystemExit("services missing healthcheck: " + ", ".join(missing))
 
 print("healthcheck present on: " + ", ".join(sorted(services)))
 EOF
