@@ -44,6 +44,9 @@ services:
         limits:
           cpus: "${MAILPIT_LIMITS_CPUS:-0.25}"
           memory: "${MAILPIT_LIMITS_MEMORY:-128M}"
+        reservations:
+          cpus: "${MAILPIT_RESERVATIONS_CPUS:-0.05}"
+          memory: "${MAILPIT_RESERVATIONS_MEMORY:-32M}"
 
 volumes:
   mailpit_data:

@@ -50,6 +50,9 @@ services:
         limits:
           cpus: "${PROMETHEUS_LIMITS_CPUS:-0.5}"
           memory: "${PROMETHEUS_LIMITS_MEMORY:-512M}"
+        reservations:
+          cpus: "${PROMETHEUS_RESERVATIONS_CPUS:-0.1}"
+          memory: "${PROMETHEUS_RESERVATIONS_MEMORY:-128M}"
 
   alertmanager:
     profiles: ["observability"]
@@ -83,6 +86,9 @@ services:
         limits:
           cpus: "${ALERTMANAGER_LIMITS_CPUS:-0.25}"
           memory: "${ALERTMANAGER_LIMITS_MEMORY:-128M}"
+        reservations:
+          cpus: "${ALERTMANAGER_RESERVATIONS_CPUS:-0.05}"
+          memory: "${ALERTMANAGER_RESERVATIONS_MEMORY:-32M}"
 
   grafana:
     profiles: ["observability"]
@@ -123,6 +129,9 @@ services:
         limits:
           cpus: "${GRAFANA_LIMITS_CPUS:-0.5}"
           memory: "${GRAFANA_LIMITS_MEMORY:-512M}"
+        reservations:
+          cpus: "${GRAFANA_RESERVATIONS_CPUS:-0.1}"
+          memory: "${GRAFANA_RESERVATIONS_MEMORY:-128M}"
 
   loki:
     profiles: ["observability"]
@@ -147,6 +156,9 @@ services:
         limits:
           cpus: "${LOKI_LIMITS_CPUS:-0.5}"
           memory: "${LOKI_LIMITS_MEMORY:-512M}"
+        reservations:
+          cpus: "${LOKI_RESERVATIONS_CPUS:-0.1}"
+          memory: "${LOKI_RESERVATIONS_MEMORY:-128M}"
 
   promtail:
     profiles: ["observability"]
@@ -175,6 +187,9 @@ services:
         limits:
           cpus: "${PROMTAIL_LIMITS_CPUS:-0.25}"
           memory: "${PROMTAIL_LIMITS_MEMORY:-128M}"
+        reservations:
+          cpus: "${PROMTAIL_RESERVATIONS_CPUS:-0.05}"
+          memory: "${PROMTAIL_RESERVATIONS_MEMORY:-32M}"
 
   tempo:
     profiles: ["observability"]
@@ -200,6 +215,9 @@ services:
         limits:
           cpus: "${TEMPO_LIMITS_CPUS:-0.5}"
           memory: "${TEMPO_LIMITS_MEMORY:-512M}"
+        reservations:
+          cpus: "${TEMPO_RESERVATIONS_CPUS:-0.1}"
+          memory: "${TEMPO_RESERVATIONS_MEMORY:-128M}"
 
   postgres-exporter:
     profiles: ["observability"]
@@ -226,6 +244,9 @@ services:
         limits:
           cpus: "${POSTGRES_EXPORTER_LIMITS_CPUS:-0.1}"
           memory: "${POSTGRES_EXPORTER_LIMITS_MEMORY:-64M}"
+        reservations:
+          cpus: "${POSTGRES_EXPORTER_RESERVATIONS_CPUS:-0.05}"
+          memory: "${POSTGRES_EXPORTER_RESERVATIONS_MEMORY:-32M}"
 
   node-exporter:
     profiles: ["observability"]
@@ -256,6 +277,9 @@ services:
         limits:
           cpus: "${NODE_EXPORTER_LIMITS_CPUS:-0.1}"
           memory: "${NODE_EXPORTER_LIMITS_MEMORY:-64M}"
+        reservations:
+          cpus: "${NODE_EXPORTER_RESERVATIONS_CPUS:-0.05}"
+          memory: "${NODE_EXPORTER_RESERVATIONS_MEMORY:-32M}"
 
 volumes:
   prometheus_data:

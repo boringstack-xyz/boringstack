@@ -9,7 +9,8 @@
 #   ./validate-guardrails.sh [check]
 #
 # Checks: healthchecks | digest-pins | credential-fallbacks | valkey-auth
-#         | rooted-caps | no-new-privileges | prod-image-tags | all (default)
+#         | rooted-caps | no-new-privileges | resource-reservations
+#         | prod-image-tags | all (default)
 #
 # Requires: docker (compose config rendering), python3.
 
@@ -274,6 +275,41 @@ check_prod_image_tags() {
   ok "prod-image-tags"
 }
 
+check_resource_reservations() {
+  # Render the FULL stack (base prod + every prod-capable overlay) and require
+  # that every long-running service declares deploy.resources.reservations, not
+  # just limits. Limits cap a container; reservations guarantee its floor — the
+  # scheduler honors them so an observability/exporter container can't be
+  # starved or OOM-killed under host memory pressure, which is exactly when an
+  # operator needs metrics and dashboards. The base stack, GlitchTip, and
+  # BullMQ already set reservations; the observability + WUD overlays drifted.
+  # One-shot jobs (restart: no) are exempt — same criterion as
+  # check_healthchecks. Dev-only overlays (mailpit) are out of scope here, like
+  # the other full-stack guardrails.
+  render_full_config
+  python3 - <<'EOF'
+import json
+
+with open("/tmp/guardrails-full-config.json", encoding="utf-8") as handle:
+    services = json.load(handle)["services"]
+
+missing = sorted(
+    name
+    for name, svc in services.items()
+    if svc.get("restart") != "no"
+    and (svc.get("deploy") or {}).get("resources", {}).get("reservations") is None
+)
+
+if missing:
+    raise SystemExit(
+        "services missing deploy.resources.reservations: " + ", ".join(missing)
+    )
+
+print("reservations present on: " + ", ".join(sorted(services)))
+EOF
+  ok "resource-reservations"
+}
+
 case "$CHECK" in
   healthchecks)         check_healthchecks ;;
   digest-pins)          check_digest_pins ;;
@@ -281,6 +317,7 @@ case "$CHECK" in
   valkey-auth)          check_valkey_auth ;;
   rooted-caps)          check_rooted_caps ;;
   no-new-privileges)    check_no_new_privileges ;;
+  resource-reservations) check_resource_reservations ;;
   prod-image-tags)      check_prod_image_tags ;;
   all)
     check_digest_pins
@@ -289,10 +326,11 @@ case "$CHECK" in
     check_healthchecks
     check_rooted_caps
     check_no_new_privileges
+    check_resource_reservations
     check_prod_image_tags
     c_green "✓ all compose guardrails passed"
     ;;
   *)
-    fail "unknown check: $CHECK (healthchecks|digest-pins|credential-fallbacks|valkey-auth|rooted-caps|no-new-privileges|prod-image-tags|all)"
+    fail "unknown check: $CHECK (healthchecks|digest-pins|credential-fallbacks|valkey-auth|rooted-caps|no-new-privileges|resource-reservations|prod-image-tags|all)"
     ;;
 esac
