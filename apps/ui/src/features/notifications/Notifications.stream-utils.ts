@@ -14,27 +14,41 @@ export function buildStreamUrl(): string {
   return `${env.VITE_API_URL.replace(/\/$/, "")}/api/v1/notifications/stream`;
 }
 
+/*
+ * Cast-free narrowing: `in` + `typeof` checks let TypeScript prove the shape,
+ * so the type predicate returns the narrowed type with no `as` assertion. The
+ * id check is the field the cache keys on (Notifications.utils dedupes by id).
+ */
+function isStreamMessage(value: unknown): value is INotificationStreamMessage {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  if (!("type" in value) || value.type !== "notification.created") {
+    return false;
+  }
+
+  if (!("notification" in value)) {
+    return false;
+  }
+
+  const notification = value.notification;
+
+  return (
+    typeof notification === "object" &&
+    notification !== null &&
+    "id" in notification &&
+    typeof notification.id === "string"
+  );
+}
+
 export function parseStreamMessage(
   raw: string
 ): INotificationStreamMessage | undefined {
   try {
     const parsed: unknown = JSON.parse(raw);
 
-    if (typeof parsed !== "object" || parsed === null) {
-      return undefined;
-    }
-
-    const record = parsed as Record<string, unknown>;
-
-    if (
-      record.type !== "notification.created" ||
-      typeof record.notification !== "object" ||
-      record.notification === null
-    ) {
-      return undefined;
-    }
-
-    return parsed as INotificationStreamMessage;
+    return isStreamMessage(parsed) ? parsed : undefined;
   } catch (error) {
     logger.warn({
       event: "notifications.stream.parse_failed",

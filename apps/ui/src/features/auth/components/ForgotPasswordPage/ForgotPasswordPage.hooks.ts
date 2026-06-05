@@ -43,7 +43,7 @@ export function useForgotPasswordPage(
         setSubmittedEmail(input.email);
         logger.info({ event: "auth.forgot_password_requested" });
       } catch (error) {
-        if (applyServerErrors(error, setError)) {
+        if (applyServerErrors(error, setError, ["email"])) {
           return;
         }
 

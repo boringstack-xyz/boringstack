@@ -9,6 +9,7 @@ import {
 import { apiClient } from "@/lib/api/client";
 
 import {
+  INITIAL_LIST_CURSOR,
   NOTIFICATIONS_LIST_PAGE_SIZE,
   NOTIFICATIONS_QUERY_KEYS
 } from "./Notifications.constants";
@@ -23,7 +24,7 @@ export function useNotificationsList(
 ): UseInfiniteQueryResult<IInfiniteCache, unknown> {
   return useInfiniteQuery({
     queryKey: [...NOTIFICATIONS_QUERY_KEYS.list, status ?? "all"] as const,
-    initialPageParam: undefined as string | undefined,
+    initialPageParam: INITIAL_LIST_CURSOR,
     queryFn: async () => {
       const { data } = await apiClient.GET("/api/v1/notifications/", {
         params: {

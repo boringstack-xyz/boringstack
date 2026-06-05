@@ -64,7 +64,7 @@ export function useResetPasswordPage(
         setIsSuccess(true);
         logger.info({ event: "auth.reset_password_success" });
       } catch (error) {
-        if (applyServerErrors(error, setError)) {
+        if (applyServerErrors(error, setError, ["password"])) {
           if (
             error instanceof ApiError &&
             error.fieldErrors?.token !== undefined

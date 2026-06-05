@@ -10,8 +10,8 @@ const ROOT = resolve(process.cwd());
 const INDEX_HTML = join(ROOT, "dist", "index.html");
 const SIZE_LIMIT = join(ROOT, ".size-limit.json");
 
-interface ISizeLimitEntry {
-  readonly path?: string | readonly string[];
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 function globToRegExp(pattern: string): RegExp {
@@ -29,30 +29,28 @@ function globToRegExp(pattern: string): RegExp {
   return new RegExp(`^${regex}$`, "u");
 }
 
-function collectSizeLimitPatterns(
-  entries: readonly ISizeLimitEntry[]
-): string[] {
+function collectSizeLimitPatterns(entries: readonly unknown[]): string[] {
   const patterns: string[] = [];
 
   for (const entry of entries) {
-    if (entry.path === undefined) {
+    if (!isRecord(entry)) {
       continue;
     }
 
-    if (Array.isArray(entry.path)) {
-      for (const pathPattern of entry.path) {
-        if (typeof pathPattern !== "string") {
-          continue;
-        }
+    const path = entry.path;
 
-        patterns.push(pathPattern);
+    if (Array.isArray(path)) {
+      for (const pathPattern of path) {
+        if (typeof pathPattern === "string") {
+          patterns.push(pathPattern);
+        }
       }
 
       continue;
     }
 
-    if (typeof entry.path === "string") {
-      patterns.push(entry.path);
+    if (typeof path === "string") {
+      patterns.push(path);
     }
   }
 
@@ -102,9 +100,8 @@ function main(): void {
     process.exit(1);
   }
 
-  const entries = JSON.parse(
-    readFileSync(SIZE_LIMIT, "utf8")
-  ) as ISizeLimitEntry[];
+  const parsed: unknown = JSON.parse(readFileSync(SIZE_LIMIT, "utf8"));
+  const entries: readonly unknown[] = Array.isArray(parsed) ? parsed : [];
   const patterns = collectSizeLimitPatterns(entries);
   const html = readFileSync(INDEX_HTML, "utf8");
   const hrefs = extractModulepreloadHrefs(html);

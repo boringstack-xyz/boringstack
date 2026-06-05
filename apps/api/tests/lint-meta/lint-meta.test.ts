@@ -19,6 +19,7 @@ import {
   checkDockerfileBaseImageShaPin,
   checkEnginePinParity,
   checkEnvSchemaDrift,
+  checkEslintBanTypeAssertions,
   checkEslintConfigNoWarn,
   checkEslintOverridePathsExist,
   checkEslintPluginContractParity,
@@ -198,6 +199,98 @@ describe("checkEslintConfigNoWarn", () => {
   });
 });
 
+describe("checkEslintBanTypeAssertions", () => {
+  const runOn = (body: string) => {
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
+
+    try {
+      writeFileSync(join(root, "eslint.config.mjs"), body);
+
+      return checkEslintBanTypeAssertions(root);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  };
+
+  const NEVER =
+    'export default [{ rules: { "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "never" }] } }];\n';
+
+  test("passes when assertionStyle is pinned to never with no rule-off", () => {
+    expect(runOn(NEVER)).toEqual([]);
+  });
+
+  test('flags assertionStyle "as" — the exact drift that let casts ship', () => {
+    const violations = runOn(
+      'export default [{ rules: { "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "as", objectLiteralTypeAssertions: "never" }] } }];\n'
+    );
+
+    expect(violations.some((v) => v.message.includes("still permits"))).toBe(
+      true
+    );
+    expect(violations[0]?.rule).toBe("eslint-ban-type-assertions");
+  });
+
+  test('flags assertionStyle "angle-bracket"', () => {
+    const violations = runOn(
+      'export default [{ rules: { "@typescript-eslint/consistent-type-assertions": ["error", { assertionStyle: "angle-bracket" }] } }];\n'
+    );
+
+    expect(violations.some((v) => v.message.includes("still permits"))).toBe(
+      true
+    );
+  });
+
+  test("flags a config that never pins the rule to never at all", () => {
+    const violations = runOn("export default [{ rules: {} }];\n");
+
+    expect(
+      violations.some((v) =>
+        v.message.includes('pinned to `assertionStyle: "never"`')
+      )
+    ).toBe(true);
+  });
+
+  test("accepts single-quoted assertionStyle 'never'", () => {
+    expect(
+      runOn(
+        "export default [{ rules: { '@typescript-eslint/consistent-type-assertions': ['error', { assertionStyle: 'never' }] } }];\n"
+      )
+    ).toEqual([]);
+  });
+
+  test("flags the rule turned off without a justification marker", () => {
+    const violations = runOn(
+      `${NEVER.trimEnd()}\nexport const extra = [{ files: ["x.ts"], rules: { "@typescript-eslint/consistent-type-assertions": "off" } }];\n`
+    );
+
+    expect(violations).toHaveLength(1);
+    expect(violations[0]?.message).toContain("without justification");
+  });
+
+  test("allows the rule off when a same-line exemption marker is present", () => {
+    const violations = runOn(
+      `${NEVER.trimEnd()}\nexport const extra = [{ files: ["x.ts"], rules: { "@typescript-eslint/consistent-type-assertions": "off" } }]; // eslint-meta-allow-assertion-exemption: genuine boundary\n`
+    );
+
+    expect(violations).toEqual([]);
+  });
+
+  test("still flags off when the marker is on a different line (must be same-line)", () => {
+    const violations = runOn(
+      `${NEVER.trimEnd()}\n// eslint-meta-allow-assertion-exemption: wrong place\nexport const extra = [{ rules: { "@typescript-eslint/consistent-type-assertions": "off" } }];\n`
+    );
+
+    expect(violations).toHaveLength(1);
+    expect(violations[0]?.message).toContain("without justification");
+  });
+
+  test("the live api eslint config is compliant (0 violations)", () => {
+    const appRoot = join(FIXTURES, "..", "..", "..");
+
+    expect(checkEslintBanTypeAssertions(appRoot)).toEqual([]);
+  });
+});
+
 describe("checkEslintOverridePathsExist", () => {
   test("flags a literal override path that does not exist, ignores globs", () => {
     const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
@@ -303,6 +396,26 @@ describe("checkWorkflowShas", () => {
     const violations = workflows.flatMap(checkWorkflowShas);
 
     expect(violations).toEqual([]);
+  });
+
+  test("flags id-token: write with no OIDC consumer", () => {
+    const workflows = findWorkflows(
+      join(FIXTURES, "workflows-id-token-unused")
+    );
+    const violations = workflows.flatMap(checkWorkflowShas);
+
+    expect(violations.some((v) => v.message.includes("id-token: write"))).toBe(
+      true
+    );
+  });
+
+  test("allows id-token: write when a cosign step consumes it", () => {
+    const workflows = findWorkflows(join(FIXTURES, "workflows-id-token-used"));
+    const violations = workflows.flatMap(checkWorkflowShas);
+
+    expect(violations.some((v) => v.message.includes("id-token: write"))).toBe(
+      false
+    );
   });
 });
 

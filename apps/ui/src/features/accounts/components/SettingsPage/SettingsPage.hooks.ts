@@ -181,7 +181,7 @@ export function useSettingsPage(): ISettingsPageView {
         toast.success(t("accounts.settings.account.renameSuccess"));
         logger.info({ event: "settings.account_renamed" });
       } catch (error) {
-        if (applyServerErrors(error, setRenameAccountError)) {
+        if (applyServerErrors(error, setRenameAccountError, ["name"])) {
           return;
         }
 
@@ -209,7 +209,12 @@ export function useSettingsPage(): ISettingsPageView {
         toast.success(t("accounts.settings.security.passwordChanged"));
         logger.info({ event: "settings.password_changed" });
       } catch (error) {
-        if (applyServerErrors(error, setChangePasswordError)) {
+        if (
+          applyServerErrors(error, setChangePasswordError, [
+            "currentPassword",
+            "newPassword"
+          ])
+        ) {
           return;
         }
 

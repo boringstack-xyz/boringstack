@@ -104,7 +104,7 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
         logger.info({ event: "auth.login_success" });
         await navigate(redirectTarget, { replace: true });
       } catch (error) {
-        if (applyServerErrors(error, setError)) {
+        if (applyServerErrors(error, setError, ["email", "password"])) {
           return;
         }
 

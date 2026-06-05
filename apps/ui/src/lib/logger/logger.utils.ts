@@ -1,23 +1,24 @@
 import * as Sentry from "@sentry/react";
 
 import { env } from "@/lib/env";
+import { isRecord } from "@/lib/guards/isRecord";
 import { now } from "@/lib/time/now";
 
 import { PII_KEYS } from "./logger.constants";
 import type { ILogEvent, ILogLevel } from "./logger.types";
 
 function mask(value: unknown): unknown {
-  if (typeof value !== "object" || value === null) {
-    return value;
-  }
-
   if (Array.isArray(value)) {
     return value.map(mask);
   }
 
+  if (!isRecord(value)) {
+    return value;
+  }
+
   const out: Record<string, unknown> = {};
 
-  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+  for (const [key, raw] of Object.entries(value)) {
     if (PII_KEYS.includes(key)) {
       out[key] = "[redacted]";
     } else if (typeof raw === "object" && raw !== null) {
@@ -31,7 +32,8 @@ function mask(value: unknown): unknown {
 }
 
 export function emit(level: ILogLevel, payload: ILogEvent): void {
-  const masked = mask(payload) as Record<string, unknown>;
+  const maskedRaw = mask(payload);
+  const masked: Record<string, unknown> = isRecord(maskedRaw) ? maskedRaw : {};
   const entry = {
     level,
     timestamp: now(),

@@ -7,7 +7,10 @@ import {
 
 import { apiClient } from "@/lib/api/client";
 
-import { DASHBOARD_QUERY_KEYS } from "./Dashboard.constants";
+import {
+  DASHBOARD_QUERY_KEYS,
+  INITIAL_ACTIVITY_CURSOR
+} from "./Dashboard.constants";
 import type { IActivityPage, IDashboardSummary } from "./Dashboard.types";
 
 export function useDashboardPendingInvitations(
@@ -90,7 +93,7 @@ export function useActivityFeed(): UseInfiniteQueryResult<
 > {
   return useInfiniteQuery({
     queryKey: DASHBOARD_QUERY_KEYS.activity,
-    initialPageParam: undefined as string | undefined,
+    initialPageParam: INITIAL_ACTIVITY_CURSOR,
     queryFn: async ({ pageParam }) => {
       const { data } = await apiClient.GET("/api/v1/dashboard/activity", {
         params: { query: { cursor: pageParam, limit: "20" } }

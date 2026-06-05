@@ -28,8 +28,6 @@ permissions:
   contents: write
   pull-requests: write
   packages: write
-  # Reserved for future cosign keyless signing.
-  id-token: write
 
 jobs:
   release:

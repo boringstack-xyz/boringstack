@@ -235,6 +235,12 @@
       "description": "ESLint severities must be \"error\" or \"off\", not \"warn\"."
     },
     {
+      "id": "eslint-ban-type-assertions",
+      "category": "config",
+      "ciCritical": false,
+      "description": "ESLint must pin @typescript-eslint/consistent-type-assertions to assertionStyle \"never\"; disabling it requires an audited eslint-meta-allow-assertion-exemption marker."
+    },
+    {
       "id": "tsconfig-include-paths-exist",
       "category": "config",
       "ciCritical": false,
@@ -433,6 +439,12 @@
       "category": "config",
       "ciCritical": false,
       "description": "ESLint severities must be \"error\" or \"off\", not \"warn\"."
+    },
+    {
+      "id": "eslint-ban-type-assertions",
+      "category": "config",
+      "ciCritical": false,
+      "description": "ESLint must pin @typescript-eslint/consistent-type-assertions to assertionStyle \"never\"; disabling it requires an audited eslint-meta-allow-assertion-exemption marker."
     },
     {
       "id": "eslint-override-paths-exist",
