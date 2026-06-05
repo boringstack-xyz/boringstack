@@ -84,6 +84,17 @@ describe("parseStreamMessage", () => {
     expect(message).toBeUndefined();
   });
 
+  it("returns undefined when the notification has no string id", () => {
+    const message = parseStreamMessage(
+      JSON.stringify({
+        type: "notification.created",
+        notification: { title: "no id here" }
+      })
+    );
+
+    expect(message).toBeUndefined();
+  });
+
   it("returns undefined on malformed JSON", () => {
     expect(parseStreamMessage("{not json")).toBeUndefined();
   });

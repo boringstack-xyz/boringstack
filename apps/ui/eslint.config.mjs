@@ -291,8 +291,7 @@ export default tseslint.config(
       "@typescript-eslint/consistent-type-assertions": [
         "error",
         {
-          assertionStyle: "as",
-          objectLiteralTypeAssertions: "never"
+          assertionStyle: "never"
         }
       ],
       "@typescript-eslint/no-unsafe-assignment": "error",
@@ -843,6 +842,13 @@ export default tseslint.config(
       "structured-logging/typed-event-names": "off",
       "react-hooks/rules-of-hooks": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
+      /*
+       * Tests construct partial mocks and cross the type boundary on purpose
+       * (React synthetic events, loose openapi clients, fixture shaping). This
+       * sits beside the other relaxed type-safety rules above; production code
+       * is held to assertionStyle:"never" with no exemption.
+       */
+      "@typescript-eslint/consistent-type-assertions": "off", // eslint-meta-allow-assertion-exemption: tests construct partial mocks across the type boundary
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-call": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",

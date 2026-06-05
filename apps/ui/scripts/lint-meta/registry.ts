@@ -10,6 +10,7 @@ import { githubActionsServiceImageDigestPinRule } from "./rules/ci/github-action
 import { githubActionsTimeoutRequiredRule } from "./rules/ci/github-actions-timeout-required";
 import { prePushCiParityRule } from "./rules/ci/pre-push-ci-parity";
 import { tofuBootstrapHardeningRule } from "./rules/ci/tofu-bootstrap-hardening";
+import { eslintBanTypeAssertionsRule } from "./rules/config/eslint-ban-type-assertions";
 import { eslintConfigNoWarnRule } from "./rules/config/eslint-config-no-warn";
 import { eslintPluginContractParityRule } from "./rules/config/eslint-plugin-contract-parity";
 import { tsconfigIncludePathsExistRule } from "./rules/config/tsconfig-include-paths-exist";
@@ -68,6 +69,7 @@ export const META_RULES: readonly IMetaRule[] = [
   skippedTestsNeedTrackingRule,
   // --- config ---
   eslintConfigNoWarnRule,
+  eslintBanTypeAssertionsRule,
   tsconfigIncludePathsExistRule,
   eslintPluginContractParityRule
 ];

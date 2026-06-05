@@ -22,6 +22,7 @@ import { checkDependencyPairs } from "./rules/supply-chain/no-overlapping-libs";
 import { checkExactDependencyVersions } from "./rules/supply-chain/package-json-exact-deps";
 import { checkPackageOverrideParity } from "./rules/supply-chain/package-override-parity";
 import { checkSharedToolVersionParity } from "./rules/supply-chain/shared-tool-version-parity";
+import { checkEslintBanTypeAssertions } from "./rules/config/eslint-ban-type-assertions";
 import { checkEslintConfigNoWarn } from "./rules/config/eslint-config-no-warn";
 import { checkEslintOverridePathsExist } from "./rules/config/eslint-override-paths-exist";
 import { checkEslintPluginContractParity } from "./rules/config/eslint-plugin-contract-parity";
@@ -111,6 +112,7 @@ export {
   checkEnginePinParity,
   checkExactDependencyVersions,
   checkExternalClientTimeouts,
+  checkEslintBanTypeAssertions,
   checkEslintConfigNoWarn,
   checkEslintOverridePathsExist,
   checkEslintPluginContractParity,

@@ -92,6 +92,7 @@ export { checkCanonicalHelpersSingleHome } from "./rules/source-text/canonical-h
 export { checkNoCrossRepoImports } from "./rules/source-text/no-cross-repo-import";
 export { checkNoRawRoleLiterals } from "./rules/source-text/no-raw-role-literals";
 export { checkScriptRawFetch } from "./rules/source-text/script-raw-fetch";
+export { checkEslintBanTypeAssertions } from "./rules/config/eslint-ban-type-assertions";
 export { checkEslintConfigNoWarn } from "./rules/config/eslint-config-no-warn";
 export { checkDocsNoRetiredCredentials } from "./rules/source-text/docs-no-retired-credentials";
 export { checkGeneratedArtifactContracts } from "./rules/artifacts/generated-artifact-contract";

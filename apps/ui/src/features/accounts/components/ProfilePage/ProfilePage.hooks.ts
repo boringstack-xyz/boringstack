@@ -78,7 +78,7 @@ export function useProfilePage(): IProfilePageView {
         toast.success(t("accounts.profile.saveSuccess"));
         logger.info({ event: "profile.updated" });
       } catch (error) {
-        if (applyServerErrors(error, setError)) {
+        if (applyServerErrors(error, setError, ["firstName", "lastName"])) {
           return;
         }
 

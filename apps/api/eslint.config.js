@@ -1241,7 +1241,7 @@ export default tseslint.config(
     // cast is at the storage boundary.
     files: ["src/lib/cache/providers/*.ts"],
     rules: {
-      "@typescript-eslint/consistent-type-assertions": "off",
+      "@typescript-eslint/consistent-type-assertions": "off", // eslint-meta-allow-assertion-exemption: generic <T> cache storage boundary
     },
   },
   {

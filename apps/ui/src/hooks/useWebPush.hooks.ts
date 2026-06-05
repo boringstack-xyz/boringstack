@@ -137,17 +137,13 @@ export function useWebPush(): IUseWebPushView {
       const registration = await navigator.serviceWorker.ready;
       const existing = await registration.pushManager.getSubscription();
       /*
-       * The Web Push spec wants a `BufferSource`; openapi-fetch + TS lib
-       * narrow the type more strictly than the spec. The base64-url decoder
-       * returns a `Uint8Array` whose `.buffer` is `ArrayBufferLike`, which
-       * TS rejects against the strict `ArrayBuffer`-only signature. Slicing
-       * forces a concrete `ArrayBuffer` view.
+       * The decoder returns a `Uint8Array<ArrayBufferLike>`, but `subscribe`
+       * wants an `ArrayBuffer`-backed `BufferSource`. `Uint8Array.from` copies
+       * into a fresh `Uint8Array<ArrayBuffer>`, satisfying the strict signature
+       * without a type assertion.
        */
       const keyBytes = urlBase64ToUint8Array(env.VITE_VAPID_PUBLIC_KEY);
-      const applicationServerKey = keyBytes.buffer.slice(
-        keyBytes.byteOffset,
-        keyBytes.byteOffset + keyBytes.byteLength
-      ) as ArrayBuffer;
+      const applicationServerKey = Uint8Array.from(keyBytes);
       const subscription =
         existing ??
         (await registration.pushManager.subscribe({

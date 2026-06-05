@@ -6,6 +6,13 @@ export const NOTIFICATIONS_QUERY_KEYS = {
 
 export const NOTIFICATIONS_LIST_PAGE_SIZE = 20;
 
+/*
+ * Seed for useInfiniteQuery's cursor pageParam. Declared `string | undefined`
+ * so TanStack infers TPageParam correctly; a function-local `undefined` would
+ * be control-flow-narrowed to the literal and collapse the type.
+ */
+export const INITIAL_LIST_CURSOR: string | undefined = undefined;
+
 export const NOTIFICATIONS_ROUTES = {
   index: "/notifications",
   preferences: "/notifications/preferences"

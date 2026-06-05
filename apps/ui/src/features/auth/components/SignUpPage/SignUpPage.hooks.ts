@@ -43,7 +43,14 @@ export function useSignUpPage(_props: ISignUpPageProps = {}): ISignUpPageView {
         setSubmittedEmail(input.email);
         logger.info({ event: "auth.signup_success" });
       } catch (error) {
-        if (applyServerErrors(error, setError)) {
+        if (
+          applyServerErrors(error, setError, [
+            "email",
+            "password",
+            "firstName",
+            "lastName"
+          ])
+        ) {
           return;
         }
 

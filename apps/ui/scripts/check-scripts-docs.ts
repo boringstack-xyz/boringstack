@@ -12,18 +12,22 @@ function referencesScriptsDir(value: string): boolean {
   return /(?:^|[&|;]\s*|\s)(?:\.\/)?scripts\//u.test(value);
 }
 
-function readPackageScriptKeys(): string[] {
-  const pkg = JSON.parse(readFileSync(PACKAGE_JSON_PATH, "utf8")) as {
-    scripts?: Record<string, string>;
-  };
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 
-  return Object.entries(pkg.scripts ?? {})
+function readPackageScriptKeys(): string[] {
+  const parsed: unknown = JSON.parse(readFileSync(PACKAGE_JSON_PATH, "utf8"));
+  const scripts: Record<string, unknown> =
+    isRecord(parsed) && isRecord(parsed.scripts) ? parsed.scripts : {};
+
+  return Object.entries(scripts)
     .filter(([key, value]) => {
       if (SKIP_SCRIPT_KEYS.has(key)) {
         return false;
       }
 
-      return referencesScriptsDir(value);
+      return typeof value === "string" && referencesScriptsDir(value);
     })
     .map(([key]) => key);
 }

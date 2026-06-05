@@ -401,6 +401,24 @@ describe("throwOnError middleware", () => {
     });
   });
 
+  it("falls back to a string message when a JSON error body omits `message`", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(400, { code: "MALFORMED" }));
+    const client = await importClient();
+
+    await expect(
+      (
+        client as unknown as {
+          POST: (path: string, opts?: unknown) => Promise<unknown>;
+        }
+      ).POST("/api/v1/users", { body: {} })
+    ).rejects.toMatchObject({
+      name: "ApiError",
+      status: 400,
+      code: "MALFORMED",
+      message: "Unknown error"
+    });
+  });
+
   it("falls back to statusText when the body isn't JSON and logs the parse failure", async () => {
     fetchMock.mockResolvedValueOnce(textResponse(503, "Service Unavailable"));
     const client = await importClient();

@@ -9,6 +9,8 @@ interface ILoginForm extends Record<string, unknown> {
   password: string;
 }
 
+const FIELDS = ["email", "password"] as const;
+
 describe("applyServerErrors", () => {
   it("maps each fieldError into setError with type 'server'", () => {
     const setError = vi.fn();
@@ -16,7 +18,7 @@ describe("applyServerErrors", () => {
       message: "Validation failed",
       fieldErrors: { email: "Taken", password: "Too weak" }
     });
-    const applied = applyServerErrors<ILoginForm>(error, setError);
+    const applied = applyServerErrors<ILoginForm>(error, setError, FIELDS);
 
     expect(applied).toBe(true);
     expect(setError).toHaveBeenCalledWith("email", {
@@ -29,12 +31,28 @@ describe("applyServerErrors", () => {
     });
   });
 
+  it("ignores server keys that are not declared form fields", () => {
+    const setError = vi.fn();
+    const error = new ApiError(422, {
+      message: "Validation failed",
+      fieldErrors: { email: "Taken", captcha: "spurious" }
+    });
+    const applied = applyServerErrors<ILoginForm>(error, setError, FIELDS);
+
+    expect(applied).toBe(true);
+    expect(setError).toHaveBeenCalledTimes(1);
+    expect(setError).toHaveBeenCalledWith("email", {
+      type: "server",
+      message: "Taken"
+    });
+  });
+
   it("returns false for non-ApiError input", () => {
     const setError = vi.fn();
 
-    expect(applyServerErrors<ILoginForm>(new Error("boom"), setError)).toBe(
-      false
-    );
+    expect(
+      applyServerErrors<ILoginForm>(new Error("boom"), setError, FIELDS)
+    ).toBe(false);
     expect(setError).not.toHaveBeenCalled();
   });
 
@@ -42,15 +60,17 @@ describe("applyServerErrors", () => {
     const setError = vi.fn();
     const error = new ApiError(500, { message: "Server error" });
 
-    expect(applyServerErrors<ILoginForm>(error, setError)).toBe(false);
+    expect(applyServerErrors<ILoginForm>(error, setError, FIELDS)).toBe(false);
     expect(setError).not.toHaveBeenCalled();
   });
 
   it("returns false for null / undefined / string", () => {
     const setError = vi.fn();
 
-    expect(applyServerErrors<ILoginForm>(null, setError)).toBe(false);
-    expect(applyServerErrors<ILoginForm>(undefined, setError)).toBe(false);
-    expect(applyServerErrors<ILoginForm>("oops", setError)).toBe(false);
+    expect(applyServerErrors<ILoginForm>(null, setError, FIELDS)).toBe(false);
+    expect(applyServerErrors<ILoginForm>(undefined, setError, FIELDS)).toBe(
+      false
+    );
+    expect(applyServerErrors<ILoginForm>("oops", setError, FIELDS)).toBe(false);
   });
 });

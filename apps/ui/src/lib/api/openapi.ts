@@ -158,6 +158,56 @@ const tokenRefresh: Middleware = {
  * slips through — opaque proxy errors, 502s from edge, etc. — so the
  * caller always sees a usable code/message instead of `undefined`.
  */
+/* Keep only string-valued entries — fieldErrors is `Record<string, string>`. */
+const toStringRecord = (value: unknown): Record<string, string> | undefined => {
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
+
+  const out: Record<string, string> = {};
+
+  for (const [key, val] of Object.entries(value)) {
+    if (typeof val === "string") {
+      out[key] = val;
+    }
+  }
+
+  return out;
+};
+
+const toUnknownRecord = (
+  value: unknown
+): Record<string, unknown> | undefined => {
+  if (typeof value !== "object" || value === null) {
+    return undefined;
+  }
+
+  return { ...value };
+};
+
+/*
+ * Build a trusted IApiErrorBody from an arbitrary object: `message` is the only
+ * required field, so it is guaranteed a string; every other field is copied
+ * only when it has the right runtime type. This replaces a blind `as` cast that
+ * let a malformed body surface `undefined` where callers expect strings.
+ */
+const toErrorBody = (value: object): IApiErrorBody => {
+  const record: Record<string, unknown> = { ...value };
+  const fieldErrors = toStringRecord(record.fieldErrors);
+  const details = toUnknownRecord(record.details);
+
+  return {
+    message:
+      typeof record.message === "string" ? record.message : "Unknown error",
+    ...(typeof record.code === "string" ? { code: record.code } : {}),
+    ...(fieldErrors === undefined ? {} : { fieldErrors }),
+    ...(details === undefined ? {} : { details }),
+    ...(typeof record.requestId === "string"
+      ? { requestId: record.requestId }
+      : {})
+  };
+};
+
 const extractApiErrorBody = (raw: unknown): IApiErrorBody => {
   if (typeof raw !== "object" || raw === null) {
     return { message: "Unknown error" };
@@ -167,11 +217,11 @@ const extractApiErrorBody = (raw: unknown): IApiErrorBody => {
     const nested: unknown = raw.error;
 
     if (typeof nested === "object" && nested !== null) {
-      return nested as IApiErrorBody;
+      return toErrorBody(nested);
     }
   }
 
-  return raw as IApiErrorBody;
+  return toErrorBody(raw);
 };
 
 const throwOnError: Middleware = {
