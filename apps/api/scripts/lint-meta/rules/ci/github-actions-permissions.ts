@@ -4,15 +4,48 @@ import type { IMetaRule, IViolation } from "../../types";
 
 const SHA_REGEX = /^[0-9a-f]{40}$/u;
 
+const ID_TOKEN_WRITE_REGEX = /^[ \t]*id-token:[ \t]*write\b/mu;
+
+/*
+ * `id-token: write` only does anything when a step exchanges the OIDC token —
+ * keyless signing (cosign/sigstore) or cloud OIDC auth. Granting it with no
+ * consumer hands every step in the job a needless token-minting capability.
+ * This allowlist names the consumers we recognise; extend it when adding a new
+ * OIDC integration so least-privilege stays enforced for template consumers.
+ */
+const OIDC_CONSUMER_REGEX =
+  /cosign|sigstore|configure-aws-credentials|google-github-actions\/auth|azure\/login|vault-action|ACTIONS_ID_TOKEN_REQUEST/iu;
+
+/*
+ * Drop YAML comments so a "reserved for future cosign" note can't masquerade
+ * as a real OIDC consumer.
+ */
+function stripYamlComments(text: string): string {
+  return text.replace(/(^|[ \t])#.*$/gmu, "");
+}
+
 export function checkWorkflowShas(file: string): IViolation[] {
   const violations: IViolation[] = [];
   const text = readFileSync(file, "utf8");
+  const scrubbed = stripYamlComments(text);
 
   if (!/^permissions\s*:/mu.test(text)) {
     violations.push({
       file,
       rule: "github-actions-permissions",
       message: "Workflow is missing a top-level `permissions:` block.",
+    });
+  }
+
+  if (
+    ID_TOKEN_WRITE_REGEX.test(scrubbed) &&
+    !OIDC_CONSUMER_REGEX.test(scrubbed)
+  ) {
+    violations.push({
+      file,
+      rule: "github-actions-permissions",
+      message:
+        "`id-token: write` is granted but no OIDC consumer (cosign/sigstore signing or cloud OIDC auth) uses it — drop the permission until a step needs it (least privilege).",
     });
   }
 

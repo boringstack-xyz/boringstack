@@ -23,8 +23,6 @@ concurrency:
 permissions:
   contents: read
   packages: write
-  # Reserved for future cosign keyless signing; harmless when unused.
-  id-token: write
 
 jobs:
   build-and-push:

@@ -304,6 +304,26 @@ describe("checkWorkflowShas", () => {
 
     expect(violations).toEqual([]);
   });
+
+  test("flags id-token: write with no OIDC consumer", () => {
+    const workflows = findWorkflows(
+      join(FIXTURES, "workflows-id-token-unused")
+    );
+    const violations = workflows.flatMap(checkWorkflowShas);
+
+    expect(violations.some((v) => v.message.includes("id-token: write"))).toBe(
+      true
+    );
+  });
+
+  test("allows id-token: write when a cosign step consumes it", () => {
+    const workflows = findWorkflows(join(FIXTURES, "workflows-id-token-used"));
+    const violations = workflows.flatMap(checkWorkflowShas);
+
+    expect(violations.some((v) => v.message.includes("id-token: write"))).toBe(
+      false
+    );
+  });
 });
 
 describe("checkWorkflowTimeouts", () => {

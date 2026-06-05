@@ -1,0 +1,11 @@
+name: used-id-token
+on: push
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: cosign sign --yes "$IMAGE"
