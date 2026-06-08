@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@astrojs/react": "5.0.5",
-    "@astrojs/sitemap": "3.7.2",
+    "@astrojs/sitemap": "3.7.3",
     "@astrojs/starlight": "0.39.2",
     "@tailwindcss/vite": "4.3.0",
     "astro": "6.3.7",
