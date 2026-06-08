@@ -49,7 +49,7 @@
         "@boring-stack-pkg/eslint-plugin-drizzle-conventions": "0.1.1",
         "@boring-stack-pkg/eslint-plugin-elysia": "0.1.1",
         "@boring-stack-pkg/eslint-plugin-env-access": "0.1.3",
-        "@boring-stack-pkg/eslint-plugin-jwt-cookies": "0.1.1",
+        "@boring-stack-pkg/eslint-plugin-jwt-cookies": "0.1.2",
         "@boring-stack-pkg/eslint-plugin-module-boundaries": "0.1.1",
         "@boring-stack-pkg/eslint-plugin-oauth-security": "0.1.2",
         "@boring-stack-pkg/eslint-plugin-resource-architecture": "0.2.0",
@@ -113,7 +113,7 @@
 
     "@boring-stack-pkg/eslint-plugin-env-access": ["@boring-stack-pkg/eslint-plugin-env-access@0.1.3", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0", "micromatch": "4.0.5" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-/951c0LKgfKIJ/sysxn57JTrCGyj1pkWkcm0P7kSiAfq7LAwTgXPb99aSfitsRFeqH0Tk9JAcveucwMpw0Kt3A=="],
 
-    "@boring-stack-pkg/eslint-plugin-jwt-cookies": ["@boring-stack-pkg/eslint-plugin-jwt-cookies@0.1.1", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-p4GNNXDKL4t9J9TQl/YFi9Sqmkmze3AiNVuKghjc6IuGvKU0Uw4cmtYZY0b7ph+ARPVvfTcUx0kDD+ciBn+ZYg=="],
+    "@boring-stack-pkg/eslint-plugin-jwt-cookies": ["@boring-stack-pkg/eslint-plugin-jwt-cookies@0.1.2", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-vJnKzuoKbBSN6EPoshEqQ3BfBOs3AH2gg/Z6raB8r5wa8UWi6dHYsAfHdqzLIBeVoFEcLDvi59j9EHNU3EyORw=="],
 
     "@boring-stack-pkg/eslint-plugin-module-boundaries": ["@boring-stack-pkg/eslint-plugin-module-boundaries@0.1.1", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": "8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-FUSEI5c9sESwGTjF8MrNKdh4kBTfmwUgEJhMl8tVB0MdXsSzn5O7q9YImsh79igzBaIL5WMt31SCQv43t/K6+g=="],
 
