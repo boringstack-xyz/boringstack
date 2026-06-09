@@ -74,7 +74,7 @@
     "handlebars": "4.7.9",
     "ioredis": "5.10.1",
     "nodemailer": "8.0.10",
-    "openai": "6.39.1",
+    "openai": "6.41.0",
     "otpauth": "9.5.1",
     "pg": "8.21.0",
     "pino": "10.3.1",
