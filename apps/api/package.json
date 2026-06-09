@@ -74,7 +74,7 @@
     "handlebars": "4.7.9",
     "ioredis": "5.10.1",
     "nodemailer": "8.0.10",
-    "openai": "6.39.1",
+    "openai": "6.41.0",
     "otpauth": "9.5.1",
     "pg": "8.21.0",
     "pino": "10.3.1",
@@ -122,9 +122,9 @@
     "knip": "6.14.2",
     "prettier": "3.8.3",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.60.0"
+    "typescript-eslint": "8.60.1"
   },
   "overrides": {
-    "@typescript-eslint/utils": "8.60.0"
+    "@typescript-eslint/utils": "8.60.1"
   }
 }
