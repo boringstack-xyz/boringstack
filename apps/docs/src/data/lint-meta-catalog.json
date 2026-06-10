@@ -435,6 +435,12 @@
       "description": "Use ROLE.* from acl.constants.ts instead of raw owner/admin/member/viewer string literals."
     },
     {
+      "id": "audit-log-read-account-scoped",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "Queries filtering auditLog by userId must also reference auditLog.targetAccountId — userId-only reads bleed a multi-account user's events across tenant boundaries."
+    },
+    {
       "id": "routes-require-test-sibling",
       "category": "testing",
       "ciCritical": false,
