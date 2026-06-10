@@ -35,7 +35,7 @@ permissions:
 jobs:
   compose-config:
     name: docker compose config (all overlay combinations)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
 
     # Build contexts point at monorepo apps (`../../../apps/api` and
@@ -209,7 +209,7 @@ jobs:
 
   shellcheck:
     name: shellcheck (scripts/)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
       - name: Checkout
@@ -241,7 +241,7 @@ jobs:
 
   prod-image-build:
     name: build prod images (sanity)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     # Cheaper than booting the prod profile end-to-end, but still
     # exercises the actual prod Dockerfiles. Catches broken
@@ -297,7 +297,7 @@ jobs:
 
   yamllint:
     name: yamllint (compose + workflows)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     env:
       # Single source for the yamllint pin — the local pre-push gate

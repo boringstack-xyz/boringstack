@@ -37,6 +37,7 @@ import {
   checkWorkflowExpressionSyntax,
   checkWorkflowPathsFilterParity,
   checkWorkflowPipInstallPinned,
+  checkWorkflowRunnerPinned,
   checkWorkflowSecurityNoCancel,
   checkWorkflowServiceImageDigestPin,
   checkWorkflowShas,
@@ -696,6 +697,54 @@ describe("checkWorkflowPipInstallPinned", () => {
       );
 
       expect(checkWorkflowPipInstallPinned(file)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowRunnerPinned", () => {
+  test("flags floating *-latest runner labels", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-runner-pin-"));
+
+    try {
+      const file = writeNamedWorkflow(
+        root,
+        "wf.yml",
+        "jobs:\n  build:\n    runs-on: ubuntu-latest\n    steps: []\n"
+      );
+
+      const messages = checkWorkflowRunnerPinned(file).map(
+        (row) => row.message
+      );
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0]).toContain("ubuntu-latest");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes pinned OS versions and expression labels", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-runner-pin-"));
+
+    try {
+      const file = writeNamedWorkflow(
+        root,
+        "wf.yml",
+        [
+          "jobs:",
+          "  build:",
+          "    runs-on: ubuntu-24.04",
+          "    steps: []",
+          "  matrix:",
+          "    runs-on: ${{ matrix.os }}",
+          "    steps: []",
+          "",
+        ].join("\n")
+      );
+
+      expect(checkWorkflowRunnerPinned(file)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

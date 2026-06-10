@@ -6,6 +6,7 @@ import { githubActionsConcurrencyExplicitRule } from "./rules/ci/github-actions-
 import { githubActionsExpressionSyntaxRule } from "./rules/ci/github-actions-expression-syntax";
 import { githubActionsPathsFilterParityRule } from "./rules/ci/github-actions-paths-filter-parity";
 import { githubActionsPipInstallPinnedRule } from "./rules/ci/github-actions-pip-install-pinned";
+import { githubActionsRunnerPinnedRule } from "./rules/ci/github-actions-runner-pinned";
 import { githubActionsPermissionsRule } from "./rules/ci/github-actions-permissions";
 import { githubActionsSecurityNoCancelRule } from "./rules/ci/github-actions-security-no-cancel";
 import { githubActionsServiceImageDigestPinRule } from "./rules/ci/github-actions-service-image-digest-pin";
@@ -47,6 +48,7 @@ export const META_RULES: readonly IMetaRule[] = [
   githubActionsConcurrencyExplicitRule,
   githubActionsPathsFilterParityRule,
   githubActionsPipInstallPinnedRule,
+  githubActionsRunnerPinnedRule,
   githubActionsSecurityNoCancelRule,
   githubActionsExpressionSyntaxRule,
   githubActionsServiceImageDigestPinRule,

@@ -321,6 +321,12 @@
       "description": "Workflow pip install steps must pin package versions with == so CI tools cannot drift with PyPI releases."
     },
     {
+      "id": "github-actions-runner-pinned",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Workflows must pin runner images to an explicit OS version instead of floating *-latest labels."
+    },
+    {
       "id": "github-actions-security-no-cancel",
       "category": "ci",
       "ciCritical": false,

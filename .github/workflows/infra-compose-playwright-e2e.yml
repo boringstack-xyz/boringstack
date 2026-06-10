@@ -39,7 +39,7 @@ permissions:
 jobs:
   playwright:
     name: UI Playwright E2E (browser-based smoke)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # 15 min upper bound: Playwright's own inner timeout is 12 min; the
     # buffer covers compose build + image pulls + browser install. A
     # genuine hang surfaces within minutes of the inner timeout rather

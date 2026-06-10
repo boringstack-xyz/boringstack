@@ -26,7 +26,7 @@ jobs:
     defaults:
       run:
         working-directory: apps/api
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     container:
       image: semgrep/semgrep:1.142.0@sha256:03402a5040a88a570dec58375ef1a19fa777dd61575afdc7d5527ddf308dd765
