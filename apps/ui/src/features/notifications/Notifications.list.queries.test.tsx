@@ -70,4 +70,37 @@ describe("useNotificationsList", () => {
     });
     expect(result.current.data?.pages[0]?.items[0]?.id).toBe("n1");
   });
+
+  it("sends the previous page's cursor when fetching the next page", async () => {
+    apiMock.GET.mockResolvedValueOnce({
+      data: { items: [makeNotification({ id: "n1" })], nextCursor: "p1" },
+      response: {}
+    }).mockResolvedValueOnce({
+      data: { items: [makeNotification({ id: "n2" })], nextCursor: null },
+      response: {}
+    });
+    const { Wrapper } = makeWrapper();
+    const { result } = renderHook(() => useNotificationsList(), {
+      wrapper: Wrapper
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    await result.current.fetchNextPage();
+
+    await waitFor(() => {
+      expect(apiMock.GET).toHaveBeenCalledTimes(2);
+    });
+    expect(apiMock.GET).toHaveBeenNthCalledWith(
+      2,
+      "/api/v1/notifications/",
+      expect.objectContaining({
+        params: expect.objectContaining({
+          query: expect.objectContaining({ cursor: "p1" })
+        })
+      })
+    );
+  });
 });
