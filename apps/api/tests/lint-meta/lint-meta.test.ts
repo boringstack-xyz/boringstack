@@ -29,6 +29,7 @@ import {
   checkLogicFilesHaveTests,
   checkNoDirectProcessEnv,
   checkRouteFilesHaveTests,
+  checkSecurityScannerVersionParity,
   checkTouchedTests,
   checkTsconfigIncludePathsExist,
   checkWorkflowBunCache,
@@ -54,6 +55,18 @@ import {
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 const GUARD_TMP_PREFIX = "lint-meta-guard-";
 const RULE_SELF_COVERED = "lint-meta-rules-self-covered";
+
+function writeNamedWorkflow(
+  root: string,
+  name: string,
+  content: string
+): string {
+  const file = join(root, name);
+
+  writeFileSync(file, content);
+
+  return file;
+}
 
 describe("checkSharedToolVersionParity", () => {
   test("flags a shared tool pinned to different versions across apps", () => {
@@ -549,19 +562,11 @@ describe("checkWorkflowConcurrencyExplicit", () => {
 });
 
 describe("checkWorkflowSecurityNoCancel", () => {
-  function writeNamed(root: string, name: string, content: string): string {
-    const file = join(root, name);
-
-    writeFileSync(file, content);
-
-    return file;
-  }
-
   test("flags a security workflow with cancel-in-progress: true", () => {
     const root = mkdtempSync(join(tmpdir(), "lint-meta-secnocancel-"));
 
     try {
-      const file = writeNamed(
+      const file = writeNamedWorkflow(
         root,
         "apps-api-security-sast.yml",
         "concurrency:\n  group: x-${{ github.ref }}\n  cancel-in-progress: true\n\njobs: {}\n"
@@ -579,7 +584,7 @@ describe("checkWorkflowSecurityNoCancel", () => {
     const root = mkdtempSync(join(tmpdir(), "lint-meta-secnocancel-"));
 
     try {
-      const file = writeNamed(
+      const file = writeNamedWorkflow(
         root,
         "infra-compose-security-secrets.yml",
         "concurrency:\n  group: x-${{ github.ref }}\n  cancel-in-progress: false\n\njobs: {}\n"
@@ -595,13 +600,75 @@ describe("checkWorkflowSecurityNoCancel", () => {
     const root = mkdtempSync(join(tmpdir(), "lint-meta-secnocancel-"));
 
     try {
-      const file = writeNamed(
+      const file = writeNamedWorkflow(
         root,
         "apps-api-ci.yml",
         "concurrency:\n  group: x-${{ github.ref }}\n  cancel-in-progress: true\n\njobs: {}\n"
       );
 
       expect(checkWorkflowSecurityNoCancel(file)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkSecurityScannerVersionParity", () => {
+  test("flags a gitleaks version that drifts between workflows", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-scanver-"));
+
+    try {
+      const a = writeNamedWorkflow(
+        root,
+        "apps-api-security-secrets.yml",
+        'env:\n  GITLEAKS_VERSION: "8.30.1"\n'
+      );
+      const b = writeNamedWorkflow(
+        root,
+        "apps-ui-security-secrets.yml",
+        'env:\n  GITLEAKS_VERSION: "8.30.0"\n'
+      );
+
+      const violations = checkSecurityScannerVersionParity([a, b]);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "security-scanner-version-parity"
+      );
+      expect(violations.some((row) => row.message.includes("gitleaks"))).toBe(
+        true
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when gitleaks and semgrep pins agree across workflows", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-scanver-"));
+
+    try {
+      const digest = "@sha256:" + "a".repeat(64);
+      const a = writeNamedWorkflow(
+        root,
+        "apps-api-security-secrets.yml",
+        'env:\n  GITLEAKS_VERSION: "8.30.1"\n'
+      );
+      const b = writeNamedWorkflow(
+        root,
+        "apps-ui-security-secrets.yml",
+        'env:\n  GITLEAKS_VERSION: "8.30.1"\n'
+      );
+      const c = writeNamedWorkflow(
+        root,
+        "apps-api-security-sast.yml",
+        `jobs:\n  sast:\n    container: semgrep/semgrep:1.142.0${digest}\n`
+      );
+      const d = writeNamedWorkflow(
+        root,
+        "apps-ui-security-sast.yml",
+        `jobs:\n  sast:\n    container: semgrep/semgrep:1.142.0${digest}\n`
+      );
+
+      expect(checkSecurityScannerVersionParity([a, b, c, d])).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

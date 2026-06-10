@@ -40,6 +40,7 @@ import { checkWorkflowServiceImageDigestPin } from "./rules/ci/github-actions-se
 import { checkWorkflowShas } from "./rules/ci/github-actions-permissions";
 import { checkWorkflowTimeouts } from "./rules/ci/github-actions-timeout-required";
 import { checkPrePushParity } from "./rules/ci/pre-push-ci-parity";
+import { checkSecurityScannerVersionParity } from "./rules/ci/security-scanner-version-parity";
 import { checkTofuBootstrapHardening } from "./rules/ci/tofu-bootstrap-hardening";
 import { checkCanonicalHelpersSingleHome } from "./rules/source-text/canonical-helpers-single-home";
 import { checkDocsNoRetiredCredentials } from "./rules/source-text/docs-no-retired-credentials";
@@ -127,6 +128,7 @@ export {
   checkPackageOverrideParity,
   checkPrePushParity,
   checkRouteFilesHaveTests,
+  checkSecurityScannerVersionParity,
   checkSharedToolVersionParity,
   checkSkippedTestsHaveTracking,
   checkTofuBootstrapHardening,

@@ -9,6 +9,7 @@ import { githubActionsSecurityNoCancelRule } from "./rules/ci/github-actions-sec
 import { githubActionsServiceImageDigestPinRule } from "./rules/ci/github-actions-service-image-digest-pin";
 import { githubActionsTimeoutRequiredRule } from "./rules/ci/github-actions-timeout-required";
 import { prePushCiParityRule } from "./rules/ci/pre-push-ci-parity";
+import { securityScannerVersionParityRule } from "./rules/ci/security-scanner-version-parity";
 import { tofuBootstrapHardeningRule } from "./rules/ci/tofu-bootstrap-hardening";
 import { eslintBanTypeAssertionsRule } from "./rules/config/eslint-ban-type-assertions";
 import { eslintConfigNoWarnRule } from "./rules/config/eslint-config-no-warn";
@@ -46,6 +47,7 @@ export const META_RULES: readonly IMetaRule[] = [
   githubActionsExpressionSyntaxRule,
   githubActionsServiceImageDigestPinRule,
   prePushCiParityRule,
+  securityScannerVersionParityRule,
   tofuBootstrapHardeningRule,
   enginePinParityRule,
   dockerfileBaseImageShaPinRule,

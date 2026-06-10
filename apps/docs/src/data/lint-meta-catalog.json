@@ -333,6 +333,12 @@
       "description": "CI workflow must include every command listed in scripts/ci/pre-push.manifest.json."
     },
     {
+      "id": "security-scanner-version-parity",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "All security workflows must pin a single gitleaks version and a single semgrep image so every scan runs the same ruleset."
+    },
+    {
       "id": "tofu-bootstrap-hardening",
       "category": "ci",
       "ciCritical": false,
