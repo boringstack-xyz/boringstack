@@ -32,5 +32,4 @@ const AppPageTestShell: FC<{ readonly children: ReactNode }> = ({
 
 AppPageTestShell.displayName = "AppPageTestShell";
 
-export default AppPageTestShell;
 export { AppPageTestShell };

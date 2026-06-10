@@ -1,27 +1,12 @@
 import type { ForcedSubject, MongoAbility } from "@casl/ability";
 
-import type {
-  ACTIONS,
-  FEATURES,
-  FEATURE_KEYS,
-  ROLES,
-  SUBJECTS
-} from "./acl.types.generated";
+import type { ACTIONS, ROLES, SUBJECTS } from "./acl.types.generated";
 
 export { ROLE } from "./acl.types.generated";
 
 export type Role = (typeof ROLES)[number];
 export type Action = (typeof ACTIONS)[number];
 export type Subject = (typeof SUBJECTS)[number];
-export type FeatureKey = (typeof FEATURE_KEYS)[number];
-
-export interface IFeatureDef {
-  readonly kind: "boolean" | "limit";
-  readonly default: boolean | number;
-}
-
-export type FeatureValue<K extends FeatureKey> =
-  (typeof FEATURES)[K]["kind"] extends "boolean" ? boolean : number;
 
 export interface ITeamMemberSubject extends ForcedSubject<"TeamMember"> {
   readonly accountId: string;

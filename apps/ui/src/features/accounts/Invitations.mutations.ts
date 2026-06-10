@@ -7,43 +7,11 @@ import {
 import { ApiError } from "@/lib/api/ApiError";
 import { apiClient } from "@/lib/api/client";
 
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
-
 import { ACCOUNTS_QUERY_KEYS } from "./Accounts.constants";
 import type {
   ICreateInvitationResult,
   IInviteMemberInput
 } from "./Accounts.types";
-
-export function useAcceptInvitation(): UseMutationResult<
-  { accepted: boolean },
-  unknown,
-  { token: string }
-> {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (input: { token: string }) => {
-      const { data } = await apiClient.POST("/api/v1/invitations/accept", {
-        body: { token: input.token }
-      });
-
-      if (!data?.data) {
-        throw new ApiError(0, { message: "Empty accept response" });
-      }
-
-      return data.data;
-    },
-    onSuccess: async () => {
-      /*
-       * Acceptance grants a new membership. /me carries the membership
-       * set the AbilityProvider rebuilds against, so the next paint
-       * sees the new account in the switcher.
-       */
-      await qc.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me });
-    }
-  });
-}
 
 export function useInviteMember(
   accountId: string | undefined
