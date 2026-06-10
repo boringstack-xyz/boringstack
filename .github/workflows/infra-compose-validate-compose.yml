@@ -14,7 +14,9 @@ on:
       # trigger in lockstep so direct pushes touching them still run it.
       - "scripts/**"
       - "setup.sh"
-      - ".github/workflows/infra-compose-validate-compose.yml"
+      # The yamllint job lints every workflow file, so any workflow edit
+      # must trigger this run — not just edits to this file.
+      - ".github/workflows/**"
       # Prod Dockerfiles COPY the whole app context, so any app source
       # change can break the prod image build — not just Dockerfile or
       # lockfile edits.
@@ -221,6 +223,7 @@ jobs:
             code:
               - 'infra/compose/**'
               - 'scripts/**'
+              - 'setup.sh'
               - '.github/workflows/**'
 
       - name: ShellCheck

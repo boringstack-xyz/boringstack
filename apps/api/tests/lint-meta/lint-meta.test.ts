@@ -35,6 +35,7 @@ import {
   checkWorkflowBunCache,
   checkWorkflowConcurrencyExplicit,
   checkWorkflowExpressionSyntax,
+  checkWorkflowPathsFilterParity,
   checkWorkflowSecurityNoCancel,
   checkWorkflowServiceImageDigestPin,
   checkWorkflowShas,
@@ -555,6 +556,97 @@ describe("checkWorkflowConcurrencyExplicit", () => {
       const none = writeWorkflow(root, "jobs: {}\n");
 
       expect(checkWorkflowConcurrencyExplicit(none)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowPathsFilterParity", () => {
+  test("flags push-only and filter-only path drift in both directions", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-filter-parity-"));
+
+    try {
+      const file = writeNamedWorkflow(
+        root,
+        "wf.yml",
+        [
+          "on:",
+          "  push:",
+          "    branches: [main]",
+          "    paths:",
+          '      - "apps/x/**"',
+          '      - "setup.sh"',
+          "  pull_request: {}",
+          "",
+          "jobs:",
+          "  scan:",
+          "    steps:",
+          "      - uses: dorny/paths-filter@abc",
+          "        with:",
+          "          filters: |",
+          "            code:",
+          "              - 'apps/x/**'",
+          "              - '.github/workflows/**'",
+          "",
+        ].join("\n")
+      );
+
+      const messages = checkWorkflowPathsFilterParity(file).map(
+        (row) => row.message
+      );
+
+      expect(messages).toHaveLength(2);
+      expect(messages.some((m) => m.includes("'setup.sh'"))).toBe(true);
+      expect(messages.some((m) => m.includes("'.github/workflows/**'"))).toBe(
+        true
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes glob-covered parity and skips workflows missing either list", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-filter-parity-"));
+
+    try {
+      const covered = writeNamedWorkflow(
+        root,
+        "wf.yml",
+        [
+          "on:",
+          "  push:",
+          "    branches: [main]",
+          "    paths:",
+          '      - "apps/x/**"',
+          "      # comment between entries must not end the list",
+          '      - ".github/workflows/wf.yml"',
+          "  pull_request: {}",
+          "",
+          "jobs:",
+          "  scan:",
+          "    steps:",
+          "      - uses: dorny/paths-filter@abc",
+          "        with:",
+          "          filters: |",
+          "            code:",
+          "              - 'apps/x/sub/**'",
+          "              - 'apps/x/**'",
+          "            other:",
+          "              - '.github/workflows/wf.yml'",
+          "",
+        ].join("\n")
+      );
+
+      expect(checkWorkflowPathsFilterParity(covered)).toEqual([]);
+
+      const pushOnly = writeNamedWorkflow(
+        root,
+        "push-only.yml",
+        'on:\n  push:\n    paths:\n      - "apps/x/**"\n\njobs: {}\n'
+      );
+
+      expect(checkWorkflowPathsFilterParity(pushOnly)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

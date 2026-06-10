@@ -68,6 +68,9 @@ jobs:
               - 'apps/docs/astro.config.mjs'
               - 'apps/docs/package.json'
               - 'apps/docs/bun.lock'
+              - 'apps/docs/wrangler.jsonc'
+              - 'apps/docs/bunfig.toml'
+              - 'apps/docs/osv-scanner.toml'
               - '.github/workflows/apps-docs-linkcheck.yml'
             catalog:
               - 'apps/api/scripts/**'

@@ -309,6 +309,12 @@
       "description": "Workflows with a concurrency block must set cancel-in-progress explicitly."
     },
     {
+      "id": "github-actions-paths-filter-parity",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Workflows pairing push.paths with a dorny/paths-filter gate must keep the two path sets mutually covered."
+    },
+    {
       "id": "github-actions-security-no-cancel",
       "category": "ci",
       "ciCritical": false,
