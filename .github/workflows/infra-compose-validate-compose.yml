@@ -299,6 +299,11 @@ jobs:
     name: yamllint (compose + workflows)
     runs-on: ubuntu-latest
     timeout-minutes: 2
+    env:
+      # Single source for the yamllint pin — the local pre-push gate
+      # (infra/compose/scripts/pre-push.sh) reads this value at runtime to
+      # warn when the brew-installed yamllint diverges from CI.
+      YAMLLINT_VERSION: "1.38.0"
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -316,7 +321,7 @@ jobs:
       - name: yamllint
         if: steps.filter.outputs.code == 'true'
         run: |
-          pip install --user yamllint
+          pip install --user "yamllint==${YAMLLINT_VERSION}"
           # Document syntax (line length, indentation, truthy values) but
           # don't fail on style nits — only on real syntax errors.
           ~/.local/bin/yamllint -d "{extends: relaxed, rules: {line-length: disable}}" \

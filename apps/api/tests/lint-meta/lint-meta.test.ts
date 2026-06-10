@@ -36,6 +36,7 @@ import {
   checkWorkflowConcurrencyExplicit,
   checkWorkflowExpressionSyntax,
   checkWorkflowPathsFilterParity,
+  checkWorkflowPipInstallPinned,
   checkWorkflowSecurityNoCancel,
   checkWorkflowServiceImageDigestPin,
   checkWorkflowShas,
@@ -647,6 +648,54 @@ describe("checkWorkflowPathsFilterParity", () => {
       );
 
       expect(checkWorkflowPathsFilterParity(pushOnly)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowPipInstallPinned", () => {
+  test("flags pip install without a version pin", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-pip-pin-"));
+
+    try {
+      const file = writeNamedWorkflow(
+        root,
+        "wf.yml",
+        "jobs:\n  lint:\n    steps:\n      - run: |\n          pip install --user yamllint\n"
+      );
+
+      const messages = checkWorkflowPipInstallPinned(file).map(
+        (row) => row.message
+      );
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0]).toContain("'yamllint'");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes == pins, env-var pins, flags, and requirement files", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-pip-pin-"));
+
+    try {
+      const file = writeNamedWorkflow(
+        root,
+        "wf.yml",
+        [
+          "jobs:",
+          "  lint:",
+          "    steps:",
+          "      - run: |",
+          "          pip install --user yamllint==1.38.0",
+          '          pip3 install "semgrep==${SEMGREP_VERSION}"',
+          "          pip install -r requirements.txt",
+          "",
+        ].join("\n")
+      );
+
+      expect(checkWorkflowPipInstallPinned(file)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
