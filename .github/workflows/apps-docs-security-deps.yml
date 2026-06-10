@@ -25,7 +25,7 @@ jobs:
     defaults:
       run:
         working-directory: apps/docs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     env:
@@ -41,9 +41,7 @@ jobs:
         with:
           filters: |
             code:
-              - 'apps/docs/package.json'
-              - 'apps/docs/bun.lock'
-              - 'apps/docs/scripts/**'
+              - 'apps/docs/**'
               - '.github/workflows/apps-docs-security-deps.yml'
 
       - name: Install osv-scanner CLI

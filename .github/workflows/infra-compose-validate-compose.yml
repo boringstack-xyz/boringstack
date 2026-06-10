@@ -14,7 +14,9 @@ on:
       # trigger in lockstep so direct pushes touching them still run it.
       - "scripts/**"
       - "setup.sh"
-      - ".github/workflows/infra-compose-validate-compose.yml"
+      # The yamllint job lints every workflow file, so any workflow edit
+      # must trigger this run — not just edits to this file.
+      - ".github/workflows/**"
       # Prod Dockerfiles COPY the whole app context, so any app source
       # change can break the prod image build — not just Dockerfile or
       # lockfile edits.
@@ -33,7 +35,7 @@ permissions:
 jobs:
   compose-config:
     name: docker compose config (all overlay combinations)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
 
     # Build contexts point at monorepo apps (`../../../apps/api` and
@@ -207,7 +209,7 @@ jobs:
 
   shellcheck:
     name: shellcheck (scripts/)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
       - name: Checkout
@@ -221,6 +223,7 @@ jobs:
             code:
               - 'infra/compose/**'
               - 'scripts/**'
+              - 'setup.sh'
               - '.github/workflows/**'
 
       - name: ShellCheck
@@ -238,7 +241,7 @@ jobs:
 
   prod-image-build:
     name: build prod images (sanity)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     # Cheaper than booting the prod profile end-to-end, but still
     # exercises the actual prod Dockerfiles. Catches broken
@@ -294,8 +297,13 @@ jobs:
 
   yamllint:
     name: yamllint (compose + workflows)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 2
+    env:
+      # Single source for the yamllint pin — the local pre-push gate
+      # (infra/compose/scripts/pre-push.sh) reads this value at runtime to
+      # warn when the brew-installed yamllint diverges from CI.
+      YAMLLINT_VERSION: "1.38.0"
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -313,7 +321,7 @@ jobs:
       - name: yamllint
         if: steps.filter.outputs.code == 'true'
         run: |
-          pip install --user yamllint
+          pip install --user "yamllint==${YAMLLINT_VERSION}"
           # Document syntax (line length, indentation, truthy values) but
           # don't fail on style nits — only on real syntax errors.
           ~/.local/bin/yamllint -d "{extends: relaxed, rules: {line-length: disable}}" \

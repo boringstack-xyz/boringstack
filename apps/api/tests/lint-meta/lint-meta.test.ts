@@ -35,6 +35,9 @@ import {
   checkWorkflowBunCache,
   checkWorkflowConcurrencyExplicit,
   checkWorkflowExpressionSyntax,
+  checkWorkflowPathsFilterParity,
+  checkWorkflowPipInstallPinned,
+  checkWorkflowRunnerPinned,
   checkWorkflowSecurityNoCancel,
   checkWorkflowServiceImageDigestPin,
   checkWorkflowShas,
@@ -555,6 +558,193 @@ describe("checkWorkflowConcurrencyExplicit", () => {
       const none = writeWorkflow(root, "jobs: {}\n");
 
       expect(checkWorkflowConcurrencyExplicit(none)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowPathsFilterParity", () => {
+  test("flags push-only and filter-only path drift in both directions", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-filter-parity-"));
+
+    try {
+      const file = writeNamedWorkflow(
+        root,
+        "wf.yml",
+        [
+          "on:",
+          "  push:",
+          "    branches: [main]",
+          "    paths:",
+          '      - "apps/x/**"',
+          '      - "setup.sh"',
+          "  pull_request: {}",
+          "",
+          "jobs:",
+          "  scan:",
+          "    steps:",
+          "      - uses: dorny/paths-filter@abc",
+          "        with:",
+          "          filters: |",
+          "            code:",
+          "              - 'apps/x/**'",
+          "              - '.github/workflows/**'",
+          "",
+        ].join("\n")
+      );
+
+      const messages = checkWorkflowPathsFilterParity(file).map(
+        (row) => row.message
+      );
+
+      expect(messages).toHaveLength(2);
+      expect(messages.some((m) => m.includes("'setup.sh'"))).toBe(true);
+      expect(messages.some((m) => m.includes("'.github/workflows/**'"))).toBe(
+        true
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes glob-covered parity and skips workflows missing either list", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-filter-parity-"));
+
+    try {
+      const covered = writeNamedWorkflow(
+        root,
+        "wf.yml",
+        [
+          "on:",
+          "  push:",
+          "    branches: [main]",
+          "    paths:",
+          '      - "apps/x/**"',
+          "      # comment between entries must not end the list",
+          '      - ".github/workflows/wf.yml"',
+          "  pull_request: {}",
+          "",
+          "jobs:",
+          "  scan:",
+          "    steps:",
+          "      - uses: dorny/paths-filter@abc",
+          "        with:",
+          "          filters: |",
+          "            code:",
+          "              - 'apps/x/sub/**'",
+          "              - 'apps/x/**'",
+          "            other:",
+          "              - '.github/workflows/wf.yml'",
+          "",
+        ].join("\n")
+      );
+
+      expect(checkWorkflowPathsFilterParity(covered)).toEqual([]);
+
+      const pushOnly = writeNamedWorkflow(
+        root,
+        "push-only.yml",
+        'on:\n  push:\n    paths:\n      - "apps/x/**"\n\njobs: {}\n'
+      );
+
+      expect(checkWorkflowPathsFilterParity(pushOnly)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowPipInstallPinned", () => {
+  test("flags pip install without a version pin", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-pip-pin-"));
+
+    try {
+      const file = writeNamedWorkflow(
+        root,
+        "wf.yml",
+        "jobs:\n  lint:\n    steps:\n      - run: |\n          pip install --user yamllint\n"
+      );
+
+      const messages = checkWorkflowPipInstallPinned(file).map(
+        (row) => row.message
+      );
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0]).toContain("'yamllint'");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes == pins, env-var pins, flags, and requirement files", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-pip-pin-"));
+
+    try {
+      const file = writeNamedWorkflow(
+        root,
+        "wf.yml",
+        [
+          "jobs:",
+          "  lint:",
+          "    steps:",
+          "      - run: |",
+          "          pip install --user yamllint==1.38.0",
+          '          pip3 install "semgrep==${SEMGREP_VERSION}"',
+          "          pip install -r requirements.txt",
+          "",
+        ].join("\n")
+      );
+
+      expect(checkWorkflowPipInstallPinned(file)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowRunnerPinned", () => {
+  test("flags floating *-latest runner labels", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-runner-pin-"));
+
+    try {
+      const file = writeNamedWorkflow(
+        root,
+        "wf.yml",
+        "jobs:\n  build:\n    runs-on: ubuntu-latest\n    steps: []\n"
+      );
+
+      const messages = checkWorkflowRunnerPinned(file).map(
+        (row) => row.message
+      );
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0]).toContain("ubuntu-latest");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes pinned OS versions and expression labels", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-runner-pin-"));
+
+    try {
+      const file = writeNamedWorkflow(
+        root,
+        "wf.yml",
+        [
+          "jobs:",
+          "  build:",
+          "    runs-on: ubuntu-24.04",
+          "    steps: []",
+          "  matrix:",
+          "    runs-on: ${{ matrix.os }}",
+          "    steps: []",
+          "",
+        ].join("\n")
+      );
+
+      expect(checkWorkflowRunnerPinned(file)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

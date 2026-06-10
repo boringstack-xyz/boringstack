@@ -39,7 +39,7 @@ permissions:
 jobs:
   smoke:
     name: register → login → /me through the full stack
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # 8 min upper bound: with Playwright moved out, the curl-only path
     # completes in ~3–4 min on a warm runner. A short ceiling means a
     # stuck step fails fast instead of running for 20 min like the old

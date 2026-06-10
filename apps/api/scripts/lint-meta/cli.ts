@@ -35,6 +35,9 @@ import { checkEnginePinParity } from "./rules/ci/engine-pin-parity";
 import { checkWorkflowBunCache } from "./rules/ci/github-actions-bun-cache";
 import { checkWorkflowConcurrencyExplicit } from "./rules/ci/github-actions-concurrency-explicit";
 import { checkWorkflowExpressionSyntax } from "./rules/ci/github-actions-expression-syntax";
+import { checkWorkflowPathsFilterParity } from "./rules/ci/github-actions-paths-filter-parity";
+import { checkWorkflowPipInstallPinned } from "./rules/ci/github-actions-pip-install-pinned";
+import { checkWorkflowRunnerPinned } from "./rules/ci/github-actions-runner-pinned";
 import { checkWorkflowSecurityNoCancel } from "./rules/ci/github-actions-security-no-cancel";
 import { checkWorkflowServiceImageDigestPin } from "./rules/ci/github-actions-service-image-digest-pin";
 import { checkWorkflowShas } from "./rules/ci/github-actions-permissions";
@@ -137,6 +140,9 @@ export {
   checkWorkflowBunCache,
   checkWorkflowConcurrencyExplicit,
   checkWorkflowExpressionSyntax,
+  checkWorkflowPathsFilterParity,
+  checkWorkflowPipInstallPinned,
+  checkWorkflowRunnerPinned,
   checkWorkflowSecurityNoCancel,
   checkWorkflowServiceImageDigestPin,
   checkWorkflowShas,

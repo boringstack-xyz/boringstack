@@ -309,6 +309,24 @@
       "description": "Workflows with a concurrency block must set cancel-in-progress explicitly."
     },
     {
+      "id": "github-actions-paths-filter-parity",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Workflows pairing push.paths with a dorny/paths-filter gate must keep the two path sets mutually covered."
+    },
+    {
+      "id": "github-actions-pip-install-pinned",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Workflow pip install steps must pin package versions with == so CI tools cannot drift with PyPI releases."
+    },
+    {
+      "id": "github-actions-runner-pinned",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Workflows must pin runner images to an explicit OS version instead of floating *-latest labels."
+    },
+    {
       "id": "github-actions-security-no-cancel",
       "category": "ci",
       "ciCritical": false,

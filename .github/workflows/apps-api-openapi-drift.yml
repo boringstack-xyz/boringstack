@@ -20,7 +20,7 @@ permissions:
 jobs:
   drift:
     name: apps/ui OpenAPI schema is fresh
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 8
 
     # The job always runs (so the required-status-check rule on `main` is

@@ -83,6 +83,16 @@ step "4/4 yamllint"
 if ! command -v yamllint >/dev/null 2>&1; then
   c_blue "  skipped — yamllint not installed (brew install yamllint). CI still runs it."
 else
+  # Single-source the version from the CI workflow (same idiom as the
+  # gitleaks check in scripts/ci/pre-push-security.sh): warn when the
+  # local yamllint diverges from the CI pin — rulesets change between
+  # releases, so a version gap means lint results can differ from CI.
+  YAMLLINT_WORKFLOW="$ROOT/.github/workflows/infra-compose-validate-compose.yml"
+  EXPECTED_YAMLLINT_VERSION="$(grep -m1 'YAMLLINT_VERSION:' "$YAMLLINT_WORKFLOW" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)"
+  LOCAL_YAMLLINT_VERSION="$(yamllint --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+  if [[ -n "$EXPECTED_YAMLLINT_VERSION" && "$LOCAL_YAMLLINT_VERSION" != "$EXPECTED_YAMLLINT_VERSION" ]]; then
+    c_blue "  ⚠ local yamllint ${LOCAL_YAMLLINT_VERSION:-unknown} != CI-pinned ${EXPECTED_YAMLLINT_VERSION} — lint results may differ from CI (brew upgrade yamllint)."
+  fi
   # Mirror CI exactly (validate-compose.yml yamllint job): same relaxed
   # config, same targets. Workflows live at the repo root — the old
   # $INFRA_ROOT/.github/workflows glob matched nothing, so workflow YAML

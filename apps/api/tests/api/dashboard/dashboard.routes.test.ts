@@ -6,31 +6,27 @@ import { auditLog, cleanDatabase, db, requireDb } from "../../helpers/db";
 
 const PASSWORD = "Hunter2Strong!";
 
-interface ISummaryEnvelope {
-  readonly success: boolean;
-  readonly data: {
-    readonly totalEvents: number;
-    readonly recentActivity: readonly {
-      readonly id: string;
-      readonly title: string;
-    }[];
-  };
+interface ISummaryBody {
+  readonly totalEvents: number;
+  readonly recentActivity: readonly {
+    readonly id: string;
+    readonly title: string;
+  }[];
 }
 
-const isSummaryEnvelope = (value: unknown): value is ISummaryEnvelope => {
-  if (value === null || typeof value !== "object" || !("data" in value)) {
-    return false;
-  }
-
-  const data = value.data;
-
+/*
+ * The summary endpoint returns the bare DashboardSummarySchema shape
+ * (see dashboard.routes.ts / dashboard.schemas.ts) — there is no
+ * { success, data } envelope on this route.
+ */
+const isSummaryBody = (value: unknown): value is ISummaryBody => {
   return (
-    data !== null &&
-    typeof data === "object" &&
-    "totalEvents" in data &&
-    typeof data.totalEvents === "number" &&
-    "recentActivity" in data &&
-    Array.isArray(data.recentActivity)
+    value !== null &&
+    typeof value === "object" &&
+    "totalEvents" in value &&
+    typeof value.totalEvents === "number" &&
+    "recentActivity" in value &&
+    Array.isArray(value.recentActivity)
   );
 };
 
@@ -109,23 +105,14 @@ describe("dashboard routes — HTTP-level user isolation", () => {
   });
 
   /*
-   * SKIPPED: this HTTP-level test has been flaky in CI through multiple
-   * iterations (rate-limit, cookie-extraction, fire-and-forget audit-log
-   * timing). The isolation property it asserts is already covered by:
-   *   - tests/api/dashboard/dashboard.service.test.ts (service-level,
-   *     directly verifies the userId filter on getSummary/getActivity)
-   *   - the sibling HTTP-level tests in this file (401 unauth, non-admin
-   *     gets 200, cursor rejection)
-   * Bring this test back once it can be reproduced locally against a
-   * real Postgres + the bunfig preload, with a deterministic fixture
-   * strategy that doesn't race with auth audit-log writes.
-   *
-   * TODO(@boringstack-xyz/maintainers): dashboard user-isolation HTTP
-   * test — restore once the audit-log race is eliminated. Coverage for
-   * the same invariant currently lives at the service layer in
-   * dashboard.service.test.ts.
+   * Every assertion below is immune to fire-and-forget audit-log timing
+   * by construction: counts use `>=` against the awaited fixture inserts
+   * (auth flows may add rows, never remove them), and the isolation
+   * property is asserted via per-user action prefixes, which auth-flow
+   * rows can never produce for the *other* user unless the userId scoping
+   * itself is broken — exactly the regression this test exists to catch.
    */
-  test.skip("each authenticated user sees only their own data", async () => {
+  test("each authenticated user sees only their own data", async () => {
     if (!(await requireDb())) {
       return;
     }
@@ -160,8 +147,10 @@ describe("dashboard routes — HTTP-level user isolation", () => {
     expect(aliceRes.status).toBe(200);
     const aliceBody: unknown = await aliceRes.json();
 
-    if (!isSummaryEnvelope(aliceBody)) {
-      throw new Error("alice response was not a summary envelope");
+    if (!isSummaryBody(aliceBody)) {
+      throw new Error(
+        `alice response was not a summary body: ${JSON.stringify(aliceBody)}`
+      );
     }
 
     const bobRes = await app.handle(
@@ -173,30 +162,47 @@ describe("dashboard routes — HTTP-level user isolation", () => {
     expect(bobRes.status).toBe(200);
     const bobBody: unknown = await bobRes.json();
 
-    if (!isSummaryEnvelope(bobBody)) {
-      throw new Error("bob response was not a summary envelope");
+    if (!isSummaryBody(bobBody)) {
+      throw new Error(
+        `bob response was not a summary body: ${JSON.stringify(bobBody)}`
+      );
     }
 
     /*
      * Each user's totalEvents must include their explicit fixtures (alice
      * has 2, bob has 3). The auth flows write extra audit rows
      * fire-and-forget, so the count can drift upward — `>=` not strict
-     * equality. The actual isolation property is checked below via
-     * recentActivity title content: alice must never see a row tagged
-     * with bob's fixture action prefix, and vice versa.
+     * equality. The isolation property is checked via recentActivity
+     * titles, which the feed humanizes through formatActivityTitle:
+     * "alice.event.1" renders as "Alice event 1". Each user must see
+     * their own fixture titles and never the other user's (or the
+     * userId-null system row's) — the fixtures are the newest rows, so
+     * the summary's recent slice always contains them.
      */
-    expect(aliceBody.data.totalEvents).toBeGreaterThanOrEqual(2);
-    expect(bobBody.data.totalEvents).toBeGreaterThanOrEqual(3);
+    expect(aliceBody.totalEvents).toBeGreaterThanOrEqual(2);
+    expect(bobBody.totalEvents).toBeGreaterThanOrEqual(3);
 
-    const aliceTitles = aliceBody.data.recentActivity.map((item) => item.title);
-    const bobTitles = bobBody.data.recentActivity.map((item) => item.title);
+    const aliceTitles = aliceBody.recentActivity.map((item) => item.title);
+    const bobTitles = bobBody.recentActivity.map((item) => item.title);
 
-    expect(aliceTitles.some((title) => title.startsWith("bob."))).toBe(false);
-    expect(bobTitles.some((title) => title.startsWith("alice."))).toBe(false);
-    expect(aliceTitles.some((title) => title.startsWith("system."))).toBe(
+    expect(aliceTitles).toContain("Alice event 1");
+    expect(aliceTitles).toContain("Alice event 2");
+    expect(bobTitles).toContain("Bob event 1");
+    expect(bobTitles).toContain("Bob event 2");
+    expect(bobTitles).toContain("Bob event 3");
+
+    expect(aliceTitles.some((title) => title.startsWith("Bob event"))).toBe(
       false
     );
-    expect(bobTitles.some((title) => title.startsWith("system."))).toBe(false);
+    expect(bobTitles.some((title) => title.startsWith("Alice event"))).toBe(
+      false
+    );
+    expect(aliceTitles.some((title) => title.startsWith("System cron"))).toBe(
+      false
+    );
+    expect(bobTitles.some((title) => title.startsWith("System cron"))).toBe(
+      false
+    );
   });
 
   test("returns 401 without an auth cookie", async () => {
