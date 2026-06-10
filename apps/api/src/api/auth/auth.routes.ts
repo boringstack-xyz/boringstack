@@ -59,7 +59,7 @@ const credentialingRoutes = new Elysia()
   .post(
     "/register",
     async ({ body }) => {
-      if (!emailRateLimiter.check(body.email)) {
+      if (!(await emailRateLimiter.check(body.email))) {
         throw ApiErrors.validation(
           "Too many registration attempts for this email. Please wait a few minutes.",
           "email"
@@ -157,7 +157,7 @@ const credentialingRoutes = new Elysia()
   .post(
     "/resend-verification",
     async ({ body }) => {
-      if (!emailRateLimiter.check(body.email)) {
+      if (!(await emailRateLimiter.check(body.email))) {
         throw ApiErrors.validation(
           "Too many verification emails requested. Please wait a few minutes.",
           "email"
@@ -289,7 +289,7 @@ const credentialingRoutes = new Elysia()
   .post(
     "/forgot-password",
     async ({ body }) => {
-      if (!emailRateLimiter.check(body.email)) {
+      if (!(await emailRateLimiter.check(body.email))) {
         throw ApiErrors.validation(
           "Too many password reset requests. Please wait a few minutes.",
           "email"

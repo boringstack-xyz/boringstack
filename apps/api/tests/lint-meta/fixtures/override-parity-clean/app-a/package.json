@@ -1,5 +1,8 @@
 {
   "name": "fixture-app-a",
+  "//overrides": {
+    "ws": "Pin patched ws (GHSA-58qx-3vcg-4xpx)."
+  },
   "overrides": {
     "ws": "8.21.0"
   }

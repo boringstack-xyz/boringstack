@@ -15,12 +15,18 @@ import type { IMetaRule, IViolation } from "../../types";
  *   2. Missing mirror — a sibling resolves the package at a different
  *      version than the override and declares no override of its own
  *      (e.g. a GHSA patch pinned in one app but not the others).
+ *   3. Undocumented override — an `overrides` key with no matching
+ *      `//overrides` entry explaining why it is pinned. Every override
+ *      encodes a non-obvious decision (a GHSA patch, a single-resolution
+ *      pin); the rationale must travel with it so a future dep bump does
+ *      not silently drop it.
  */
 
 interface IAppOverrides {
   readonly app: string;
   readonly file: string;
   readonly overrides: Record<string, string>;
+  readonly overridesDoc: Record<string, string>;
   readonly lockfileText: string | null;
 }
 
@@ -79,10 +85,15 @@ function readApps(appsDir: string): IAppOverrides[] {
     }
 
     let overridesValue: unknown;
+    let overridesDocValue: unknown;
 
     for (const [k, v] of Object.entries(parsed)) {
       if (k === "overrides") {
         overridesValue = v;
+      }
+
+      if (k === "//overrides") {
+        overridesDocValue = v;
       }
     }
 
@@ -98,6 +109,7 @@ function readApps(appsDir: string): IAppOverrides[] {
       app: entry,
       file,
       overrides: toStringRecord(overridesValue),
+      overridesDoc: toStringRecord(overridesDocValue),
       lockfileText,
     });
   }
@@ -143,6 +155,20 @@ function checkStaleOverrides(app: IAppOverrides, report: Reporter): void {
         app.file,
         `stale:${name}`,
         `Override ${name}@${version} is not what bun.lock resolves (${resolved.join(", ")}) — run \`bun install\` to apply it.`
+      );
+    }
+  }
+}
+
+function checkOverridesDocumented(app: IAppOverrides, report: Reporter): void {
+  for (const name of Object.keys(app.overrides)) {
+    const doc = app.overridesDoc[name];
+
+    if (doc === undefined || doc.trim() === "") {
+      report(
+        app.file,
+        `undocumented:${name}`,
+        `Override ${name} has no \`//overrides\` entry explaining why it is pinned — add a documented rationale (sibling apps document every override).`
       );
     }
   }
@@ -200,6 +226,7 @@ export function checkPackageOverrideParity(appsDir: string): IViolation[] {
 
   for (const app of apps) {
     checkStaleOverrides(app, report);
+    checkOverridesDocumented(app, report);
   }
 
   for (const owner of apps) {
@@ -220,7 +247,7 @@ export const packageOverrideParityRule: IMetaRule = {
   id: "package-override-parity",
   category: "supply-chain",
   description:
-    "package.json overrides must be reflected in the app's own bun.lock and mirrored by sibling apps that resolve the same package.",
+    "package.json overrides must be reflected in the app's own bun.lock, mirrored by sibling apps that resolve the same package, and each carry a `//overrides` entry documenting why it is pinned.",
   run({ root }) {
     return checkPackageOverrideParity(join(root, ".."));
   },

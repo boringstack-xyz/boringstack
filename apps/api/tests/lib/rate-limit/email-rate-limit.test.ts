@@ -6,44 +6,44 @@ const unique = (prefix: string): string =>
   `${prefix}-${String(Date.now())}-${String(Math.random()).slice(2)}@example.com`;
 
 describe("emailRateLimiter.check", () => {
-  test("allows the first three attempts within the window", () => {
+  test("allows the first three attempts within the window", async () => {
     const email = unique("first-three");
 
-    expect(emailRateLimiter.check(email)).toBe(true);
-    expect(emailRateLimiter.check(email)).toBe(true);
-    expect(emailRateLimiter.check(email)).toBe(true);
+    expect(await emailRateLimiter.check(email)).toBe(true);
+    expect(await emailRateLimiter.check(email)).toBe(true);
+    expect(await emailRateLimiter.check(email)).toBe(true);
   });
 
-  test("blocks the fourth attempt", () => {
+  test("blocks the fourth attempt", async () => {
     const email = unique("fourth-blocked");
 
-    emailRateLimiter.check(email);
-    emailRateLimiter.check(email);
-    emailRateLimiter.check(email);
+    await emailRateLimiter.check(email);
+    await emailRateLimiter.check(email);
+    await emailRateLimiter.check(email);
 
-    expect(emailRateLimiter.check(email)).toBe(false);
+    expect(await emailRateLimiter.check(email)).toBe(false);
   });
 
-  test("treats trimming + casing as the same bucket", () => {
+  test("treats trimming + casing as the same bucket", async () => {
     const base = unique("normalize");
 
-    emailRateLimiter.check(base);
-    emailRateLimiter.check(`  ${base.toUpperCase()}  `);
-    emailRateLimiter.check(base);
+    await emailRateLimiter.check(base);
+    await emailRateLimiter.check(`  ${base.toUpperCase()}  `);
+    await emailRateLimiter.check(base);
 
-    expect(emailRateLimiter.check(base)).toBe(false);
+    expect(await emailRateLimiter.check(base)).toBe(false);
   });
 
-  test("isolates buckets across distinct emails", () => {
+  test("isolates buckets across distinct emails", async () => {
     const firstEmail = unique("isolate-a");
     const secondEmail = unique("isolate-b");
 
-    emailRateLimiter.check(firstEmail);
-    emailRateLimiter.check(firstEmail);
-    emailRateLimiter.check(firstEmail);
+    await emailRateLimiter.check(firstEmail);
+    await emailRateLimiter.check(firstEmail);
+    await emailRateLimiter.check(firstEmail);
 
-    expect(emailRateLimiter.check(firstEmail)).toBe(false);
-    expect(emailRateLimiter.check(secondEmail)).toBe(true);
+    expect(await emailRateLimiter.check(firstEmail)).toBe(false);
+    expect(await emailRateLimiter.check(secondEmail)).toBe(true);
   });
 });
 

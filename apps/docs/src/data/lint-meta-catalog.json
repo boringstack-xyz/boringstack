@@ -270,7 +270,7 @@
       "id": "package-override-parity",
       "category": "supply-chain",
       "ciCritical": false,
-      "description": "package.json overrides must be reflected in the app's own bun.lock and mirrored by sibling apps that resolve the same package."
+      "description": "package.json overrides must be reflected in the app's own bun.lock, mirrored by sibling apps that resolve the same package, and each carry a `//overrides` entry documenting why it is pinned."
     },
     {
       "id": "shared-tool-version-parity",
@@ -309,6 +309,12 @@
       "description": "Workflows with a concurrency block must set cancel-in-progress explicitly."
     },
     {
+      "id": "github-actions-security-no-cancel",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Security scan workflows (*-security-{sast,secrets,deps}) must set concurrency cancel-in-progress: false so no pushed ref goes unscanned."
+    },
+    {
       "id": "github-actions-expression-syntax",
       "category": "ci",
       "ciCritical": false,
@@ -325,6 +331,12 @@
       "category": "ci",
       "ciCritical": false,
       "description": "CI workflow must include every command listed in scripts/ci/pre-push.manifest.json."
+    },
+    {
+      "id": "security-scanner-version-parity",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "All security workflows must pin a single gitleaks version and a single semgrep image so every scan runs the same ruleset."
     },
     {
       "id": "tofu-bootstrap-hardening",

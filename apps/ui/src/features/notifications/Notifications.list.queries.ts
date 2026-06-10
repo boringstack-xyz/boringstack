@@ -25,12 +25,13 @@ export function useNotificationsList(
   return useInfiniteQuery({
     queryKey: [...NOTIFICATIONS_QUERY_KEYS.list, status ?? "all"] as const,
     initialPageParam: INITIAL_LIST_CURSOR,
-    queryFn: async () => {
+    queryFn: async ({ pageParam }) => {
       const { data } = await apiClient.GET("/api/v1/notifications/", {
         params: {
           query: {
             status,
-            limit: String(NOTIFICATIONS_LIST_PAGE_SIZE)
+            limit: String(NOTIFICATIONS_LIST_PAGE_SIZE),
+            cursor: pageParam
           }
         }
       });

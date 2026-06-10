@@ -35,10 +35,12 @@ import { checkEnginePinParity } from "./rules/ci/engine-pin-parity";
 import { checkWorkflowBunCache } from "./rules/ci/github-actions-bun-cache";
 import { checkWorkflowConcurrencyExplicit } from "./rules/ci/github-actions-concurrency-explicit";
 import { checkWorkflowExpressionSyntax } from "./rules/ci/github-actions-expression-syntax";
+import { checkWorkflowSecurityNoCancel } from "./rules/ci/github-actions-security-no-cancel";
 import { checkWorkflowServiceImageDigestPin } from "./rules/ci/github-actions-service-image-digest-pin";
 import { checkWorkflowShas } from "./rules/ci/github-actions-permissions";
 import { checkWorkflowTimeouts } from "./rules/ci/github-actions-timeout-required";
 import { checkPrePushParity } from "./rules/ci/pre-push-ci-parity";
+import { checkSecurityScannerVersionParity } from "./rules/ci/security-scanner-version-parity";
 import { checkTofuBootstrapHardening } from "./rules/ci/tofu-bootstrap-hardening";
 import { checkCanonicalHelpersSingleHome } from "./rules/source-text/canonical-helpers-single-home";
 import { checkDocsNoRetiredCredentials } from "./rules/source-text/docs-no-retired-credentials";
@@ -126,6 +128,7 @@ export {
   checkPackageOverrideParity,
   checkPrePushParity,
   checkRouteFilesHaveTests,
+  checkSecurityScannerVersionParity,
   checkSharedToolVersionParity,
   checkSkippedTestsHaveTracking,
   checkTofuBootstrapHardening,
@@ -134,6 +137,7 @@ export {
   checkWorkflowBunCache,
   checkWorkflowConcurrencyExplicit,
   checkWorkflowExpressionSyntax,
+  checkWorkflowSecurityNoCancel,
   checkWorkflowServiceImageDigestPin,
   checkWorkflowShas,
   checkWorkflowTimeouts,
