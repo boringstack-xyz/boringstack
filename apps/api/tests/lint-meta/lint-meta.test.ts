@@ -28,6 +28,7 @@ import {
   checkForbiddenText,
   checkLogicFilesHaveTests,
   checkNoDirectProcessEnv,
+  checkPrePushScannerParity,
   checkRouteFilesHaveTests,
   checkSecurityScannerVersionParity,
   checkTouchedTests,
@@ -57,6 +58,8 @@ import {
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
 const GUARD_TMP_PREFIX = "lint-meta-guard-";
+const SAST_WORKFLOW_NAME = "apps-api-security-sast.yml";
+const GITLEAKS_PIN_ENV = 'env:\n  GITLEAKS_VERSION: "8.30.1"\n';
 const RULE_SELF_COVERED = "lint-meta-rules-self-covered";
 
 function writeNamedWorkflow(
@@ -758,7 +761,7 @@ describe("checkWorkflowSecurityNoCancel", () => {
     try {
       const file = writeNamedWorkflow(
         root,
-        "apps-api-security-sast.yml",
+        SAST_WORKFLOW_NAME,
         "concurrency:\n  group: x-${{ github.ref }}\n  cancel-in-progress: true\n\njobs: {}\n"
       );
 
@@ -811,7 +814,7 @@ describe("checkSecurityScannerVersionParity", () => {
       const a = writeNamedWorkflow(
         root,
         "apps-api-security-secrets.yml",
-        'env:\n  GITLEAKS_VERSION: "8.30.1"\n'
+        GITLEAKS_PIN_ENV
       );
       const b = writeNamedWorkflow(
         root,
@@ -840,16 +843,16 @@ describe("checkSecurityScannerVersionParity", () => {
       const a = writeNamedWorkflow(
         root,
         "apps-api-security-secrets.yml",
-        'env:\n  GITLEAKS_VERSION: "8.30.1"\n'
+        GITLEAKS_PIN_ENV
       );
       const b = writeNamedWorkflow(
         root,
         "apps-ui-security-secrets.yml",
-        'env:\n  GITLEAKS_VERSION: "8.30.1"\n'
+        GITLEAKS_PIN_ENV
       );
       const c = writeNamedWorkflow(
         root,
-        "apps-api-security-sast.yml",
+        SAST_WORKFLOW_NAME,
         `jobs:\n  sast:\n    container: semgrep/semgrep:1.142.0${digest}\n`
       );
       const d = writeNamedWorkflow(
@@ -859,6 +862,110 @@ describe("checkSecurityScannerVersionParity", () => {
       );
 
       expect(checkSecurityScannerVersionParity([a, b, c, d])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkPrePushScannerParity", () => {
+  function writePrePushSecurityScript(root: string, content: string): string {
+    const dir = join(root, "scripts", "ci");
+
+    mkdirSync(dir, { recursive: true });
+
+    const file = join(dir, "pre-push-security.sh");
+
+    writeFileSync(file, content);
+
+    return file;
+  }
+
+  test("flags a CI-pinned scanner the pre-push gate never version-checks", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-prepush-scan-"));
+
+    try {
+      const digest = "@sha256:" + "a".repeat(64);
+      const secrets = writeNamedWorkflow(
+        root,
+        "apps-api-security-secrets.yml",
+        GITLEAKS_PIN_ENV
+      );
+      const sast = writeNamedWorkflow(
+        root,
+        SAST_WORKFLOW_NAME,
+        `jobs:\n  sast:\n    container: semgrep/semgrep:1.142.0${digest}\n`
+      );
+
+      writePrePushSecurityScript(
+        root,
+        'EXPECTED_GITLEAKS_VERSION="$(grep -m1 GITLEAKS_VERSION: wf.yml)"\nLOCAL_GITLEAKS_VERSION="$(gitleaks version)"\n'
+      );
+
+      const violations = checkPrePushScannerParity(root, [secrets, sast]);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "security-scanner-version-parity"
+      );
+      expect(
+        violations.some((row) =>
+          row.message.includes("EXPECTED_SEMGREP_VERSION=")
+        )
+      ).toBe(true);
+      expect(
+        violations.some((row) =>
+          row.message.includes("EXPECTED_GITLEAKS_VERSION=")
+        )
+      ).toBe(false);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes when the gate version-checks every CI-pinned scanner", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-prepush-scan-"));
+
+    try {
+      const digest = "@sha256:" + "b".repeat(64);
+      const secrets = writeNamedWorkflow(
+        root,
+        "apps-api-security-secrets.yml",
+        GITLEAKS_PIN_ENV
+      );
+      const sast = writeNamedWorkflow(
+        root,
+        SAST_WORKFLOW_NAME,
+        `jobs:\n  sast:\n    container: semgrep/semgrep:1.142.0${digest}\n`
+      );
+
+      writePrePushSecurityScript(
+        root,
+        [
+          'EXPECTED_GITLEAKS_VERSION="$(grep -m1 GITLEAKS_VERSION: wf.yml)"',
+          'LOCAL_GITLEAKS_VERSION="$(gitleaks version)"',
+          'EXPECTED_SEMGREP_VERSION="$(grep -m1 semgrep/semgrep: wf.yml)"',
+          'LOCAL_SEMGREP_VERSION="$(semgrep --version)"',
+          "",
+        ].join("\n")
+      );
+
+      expect(checkPrePushScannerParity(root, [secrets, sast])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("opts out when the repo has no pre-push security script", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-prepush-scan-"));
+
+    try {
+      const sast = writeNamedWorkflow(
+        root,
+        SAST_WORKFLOW_NAME,
+        `jobs:\n  sast:\n    container: semgrep/semgrep:1.142.0@sha256:${"c".repeat(64)}\n`
+      );
+
+      expect(checkPrePushScannerParity(root, [sast])).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

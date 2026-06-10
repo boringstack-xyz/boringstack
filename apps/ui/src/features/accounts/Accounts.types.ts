@@ -16,8 +16,6 @@ type CreateInvitationResponse =
 
 export type ICreateInvitationResult = CreateInvitationResponse;
 
-export type IInviteRole = IInviteMemberInput["roleToAssign"];
-
 type ListJoinRequestsResponse =
   operations["getApiV1AccountsByIdJoin-requests"]["responses"][200]["content"]["application/json"];
 

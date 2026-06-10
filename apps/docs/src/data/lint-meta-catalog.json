@@ -354,7 +354,7 @@
       "id": "security-scanner-version-parity",
       "category": "ci",
       "ciCritical": false,
-      "description": "All security workflows must pin a single gitleaks version and a single semgrep image so every scan runs the same ruleset."
+      "description": "All security workflows must pin a single gitleaks version and a single semgrep image, and scripts/ci/pre-push-security.sh must carry a local-vs-CI version-parity check for every scanner the workflows pin."
     },
     {
       "id": "tofu-bootstrap-hardening",

@@ -59,7 +59,5 @@ type MeResponse =
   operations["getApiV1UsersMe"]["responses"][200]["content"]["application/json"];
 
 export type IMe = Extract<MeResponse, { user: object }>;
-export type IMembershipRole = IMe["role"];
-export type IAccountSummary = IMe["account"];
 export type IMembershipSummary = IMe["memberships"][number];
 export type IResolvedFeatures = IMe["features"];
