@@ -309,6 +309,12 @@
       "description": "Workflows with a concurrency block must set cancel-in-progress explicitly."
     },
     {
+      "id": "github-actions-security-no-cancel",
+      "category": "ci",
+      "ciCritical": false,
+      "description": "Security scan workflows (*-security-{sast,secrets,deps}) must set concurrency cancel-in-progress: false so no pushed ref goes unscanned."
+    },
+    {
       "id": "github-actions-expression-syntax",
       "category": "ci",
       "ciCritical": false,

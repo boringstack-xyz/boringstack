@@ -34,6 +34,7 @@ import {
   checkWorkflowBunCache,
   checkWorkflowConcurrencyExplicit,
   checkWorkflowExpressionSyntax,
+  checkWorkflowSecurityNoCancel,
   checkWorkflowServiceImageDigestPin,
   checkWorkflowShas,
   checkWorkflowTimeouts,
@@ -541,6 +542,66 @@ describe("checkWorkflowConcurrencyExplicit", () => {
       const none = writeWorkflow(root, "jobs: {}\n");
 
       expect(checkWorkflowConcurrencyExplicit(none)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowSecurityNoCancel", () => {
+  function writeNamed(root: string, name: string, content: string): string {
+    const file = join(root, name);
+
+    writeFileSync(file, content);
+
+    return file;
+  }
+
+  test("flags a security workflow with cancel-in-progress: true", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-secnocancel-"));
+
+    try {
+      const file = writeNamed(
+        root,
+        "apps-api-security-sast.yml",
+        "concurrency:\n  group: x-${{ github.ref }}\n  cancel-in-progress: true\n\njobs: {}\n"
+      );
+
+      expect(
+        checkWorkflowSecurityNoCancel(file).map((row) => row.rule)
+      ).toEqual(["github-actions-security-no-cancel"]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("passes a security workflow with cancel-in-progress: false", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-secnocancel-"));
+
+    try {
+      const file = writeNamed(
+        root,
+        "infra-compose-security-secrets.yml",
+        "concurrency:\n  group: x-${{ github.ref }}\n  cancel-in-progress: false\n\njobs: {}\n"
+      );
+
+      expect(checkWorkflowSecurityNoCancel(file)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("ignores non-security workflows that cancel in progress", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-secnocancel-"));
+
+    try {
+      const file = writeNamed(
+        root,
+        "apps-api-ci.yml",
+        "concurrency:\n  group: x-${{ github.ref }}\n  cancel-in-progress: true\n\njobs: {}\n"
+      );
+
+      expect(checkWorkflowSecurityNoCancel(file)).toEqual([]);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

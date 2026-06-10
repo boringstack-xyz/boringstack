@@ -5,6 +5,7 @@ import { githubActionsBunCacheRule } from "./rules/ci/github-actions-bun-cache";
 import { githubActionsConcurrencyExplicitRule } from "./rules/ci/github-actions-concurrency-explicit";
 import { githubActionsExpressionSyntaxRule } from "./rules/ci/github-actions-expression-syntax";
 import { githubActionsPermissionsRule } from "./rules/ci/github-actions-permissions";
+import { githubActionsSecurityNoCancelRule } from "./rules/ci/github-actions-security-no-cancel";
 import { githubActionsServiceImageDigestPinRule } from "./rules/ci/github-actions-service-image-digest-pin";
 import { githubActionsTimeoutRequiredRule } from "./rules/ci/github-actions-timeout-required";
 import { prePushCiParityRule } from "./rules/ci/pre-push-ci-parity";
@@ -41,6 +42,7 @@ export const META_RULES: readonly IMetaRule[] = [
   githubActionsTimeoutRequiredRule,
   githubActionsBunCacheRule,
   githubActionsConcurrencyExplicitRule,
+  githubActionsSecurityNoCancelRule,
   githubActionsExpressionSyntaxRule,
   githubActionsServiceImageDigestPinRule,
   prePushCiParityRule,
