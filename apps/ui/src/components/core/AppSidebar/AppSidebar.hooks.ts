@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import {
   Bell,
   CreditCard,
@@ -32,24 +34,26 @@ export function useAppSidebar(props: IAppSidebarProps): IAppSidebarView {
     capabilities.data?.features.billing.enabled === true &&
     me.data?.role === ROLE.owner;
 
-  const icons: Record<IAppSidebarNavId, LucideIcon> = {
-    dashboard: LayoutDashboard,
-    notifications: Bell,
-    team: Users,
-    auditLog: History,
-    settings: Settings,
-    billing: CreditCard,
-    profile: User
-  };
+  const items: IAppSidebarNavItemView[] = useMemo(() => {
+    const icons: Record<IAppSidebarNavId, LucideIcon> = {
+      dashboard: LayoutDashboard,
+      notifications: Bell,
+      team: Users,
+      auditLog: History,
+      settings: Settings,
+      billing: CreditCard,
+      profile: User
+    };
 
-  const items: IAppSidebarNavItemView[] = APP_SIDEBAR_NAV_ITEMS.filter(
-    (item) => item.id !== "billing" || showBilling
-  ).map((item) => ({
-    id: item.id,
-    path: item.path,
-    label: t(item.labelKey),
-    icon: icons[item.id]
-  }));
+    return APP_SIDEBAR_NAV_ITEMS.filter(
+      (item) => item.id !== "billing" || showBilling
+    ).map((item) => ({
+      id: item.id,
+      path: item.path,
+      label: t(item.labelKey),
+      icon: icons[item.id]
+    }));
+  }, [showBilling, t]);
 
   return {
     className: props.className,
