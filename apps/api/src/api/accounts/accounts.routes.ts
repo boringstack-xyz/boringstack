@@ -93,7 +93,7 @@ const accountsRoutes = requireAuth()
         throw ApiErrors.forbidden("Only an account owner or admin can invite");
       }
 
-      if (!emailRateLimiter.check(body.email)) {
+      if (!(await emailRateLimiter.check(body.email))) {
         throw ApiErrors.validation(
           "Too many invitation emails for this address. Please wait a few minutes.",
           "email"
@@ -145,7 +145,7 @@ const accountsRoutes = requireAuth()
         params.invitationId
       );
 
-      if (!emailRateLimiter.check(pending.email)) {
+      if (!(await emailRateLimiter.check(pending.email))) {
         throw ApiErrors.validation(
           "Too many invitation emails for this address. Please wait a few minutes.",
           "email"
