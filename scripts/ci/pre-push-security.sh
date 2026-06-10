@@ -111,6 +111,20 @@ if paths_match '(^apps/ui/(src|scripts)/|^\.github/workflows/apps-ui-security-sa
   UI_TOUCHED=1
 fi
 
+# Parity warning: CI runs semgrep from a pinned container image (its ruleset).
+# A local version that drifts can miss a finding CI would catch (or vice
+# versa). Read the pin straight from the workflow so this never goes stale
+# against a CI bump; warn only — the host binary legitimately differs from
+# the container digest.
+if [[ $API_TOUCHED -eq 1 || $UI_TOUCHED -eq 1 ]] && command -v semgrep >/dev/null 2>&1; then
+  SEMGREP_WORKFLOW=".github/workflows/apps-api-security-sast.yml"
+  EXPECTED_SEMGREP_VERSION="$(grep -m1 'semgrep/semgrep:' "$SEMGREP_WORKFLOW" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+  LOCAL_SEMGREP_VERSION="$(semgrep --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
+  if [[ -n "$EXPECTED_SEMGREP_VERSION" && "$LOCAL_SEMGREP_VERSION" != "$EXPECTED_SEMGREP_VERSION" ]]; then
+    c_red "  ⚠ local semgrep ${LOCAL_SEMGREP_VERSION:-unknown} != CI-pinned ${EXPECTED_SEMGREP_VERSION} — ruleset may differ from CI. Install the pinned version to guarantee parity: pip install semgrep==${EXPECTED_SEMGREP_VERSION}  (or: brew upgrade semgrep)"
+  fi
+fi
+
 if [[ $API_TOUCHED -eq 1 ]]; then
   run_semgrep_for_app api \
     --config=p/owasp-top-ten \
