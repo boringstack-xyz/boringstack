@@ -270,7 +270,7 @@
       "id": "package-override-parity",
       "category": "supply-chain",
       "ciCritical": false,
-      "description": "package.json overrides must be reflected in the app's own bun.lock and mirrored by sibling apps that resolve the same package."
+      "description": "package.json overrides must be reflected in the app's own bun.lock, mirrored by sibling apps that resolve the same package, and each carry a `//overrides` entry documenting why it is pinned."
     },
     {
       "id": "shared-tool-version-parity",

@@ -115,6 +115,20 @@ describe("checkPackageOverrideParity", () => {
     ).toBe(true);
   });
 
+  test("flags an override with no `//overrides` documentation entry", () => {
+    const violations = checkPackageOverrideParity(
+      join(FIXTURES, "override-parity-drift")
+    );
+
+    expect(
+      violations.some(
+        (row) =>
+          row.file.includes("app-a") &&
+          row.message.includes("no `//overrides` entry")
+      )
+    ).toBe(true);
+  });
+
   test("passes when overrides are applied and siblings resolve the same version", () => {
     const violations = checkPackageOverrideParity(
       join(FIXTURES, "override-parity-clean")
