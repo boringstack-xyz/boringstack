@@ -12,19 +12,25 @@ const dashboardRoutes = requireAuth()
   .onError(({ code, error, set }) =>
     errorHandler({ code: String(code), error, set })
   )
-  .get("/summary", async ({ user }) => dashboardService.getSummary(user.id), {
-    response: DashboardSummarySchema,
-    detail: {
-      tags: ["Dashboard"],
-      summary: "Dashboard summary stats (per user)",
-      security: [{ cookieAuth: [] }],
-    },
-  })
+  .get(
+    "/summary",
+    async ({ user, accountId }) =>
+      dashboardService.getSummary(user.id, accountId),
+    {
+      response: DashboardSummarySchema,
+      detail: {
+        tags: ["Dashboard"],
+        summary: "Dashboard summary stats (per user)",
+        security: [{ cookieAuth: [] }],
+      },
+    }
+  )
   .get(
     "/activity",
-    async ({ user, query }) =>
+    async ({ user, accountId, query }) =>
       dashboardService.getActivity(
         user.id,
+        accountId,
         parseDashboardLimit(query.limit),
         query.cursor
       ),

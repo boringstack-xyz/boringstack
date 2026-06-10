@@ -11,6 +11,13 @@ import { dashboardService } from "../../../src/api/dashboard/dashboard.service";
 const LOGIN = "user.login";
 const LOGOUT = "user.logout";
 
+/*
+ * targetAccountId carries no FK, so fixed UUIDs stand in for two
+ * accounts the user belongs to without seeding account rows.
+ */
+const ACCOUNT_A = "00000000-0000-4000-8000-00000000000a";
+const ACCOUNT_B = "00000000-0000-4000-8000-00000000000b";
+
 const insertTestUser = async (suffix: string): Promise<string> => {
   const [created] = await db
     .insert(users)
@@ -32,6 +39,7 @@ const insertAudit = async (input: {
   userId: string | null;
   action: string;
   resource?: string;
+  targetAccountId?: string;
 }): Promise<string> => {
   const [row] = await db
     .insert(auditLog)
@@ -39,6 +47,7 @@ const insertAudit = async (input: {
       userId: input.userId,
       action: input.action,
       resource: input.resource ?? null,
+      targetAccountId: input.targetAccountId ?? null,
     })
     .returning({ id: auditLog.id });
 
@@ -81,8 +90,8 @@ describe("DashboardService.getSummary user isolation", () => {
     await insertAudit({ userId: other, action: LOGOUT });
     await insertAudit({ userId: null, action: "system.cron" });
 
-    const mine = await dashboardService.getSummary(me);
-    const theirs = await dashboardService.getSummary(other);
+    const mine = await dashboardService.getSummary(me, ACCOUNT_A);
+    const theirs = await dashboardService.getSummary(other, ACCOUNT_A);
 
     expect(mine.totalEvents).toBe(2);
     expect(theirs.totalEvents).toBe(3);
@@ -101,10 +110,38 @@ describe("DashboardService.getSummary user isolation", () => {
     await insertAudit({ userId: other, action: LOGIN });
     await insertAudit({ userId: other, action: LOGOUT });
 
-    const summary = await dashboardService.getSummary(me);
+    const summary = await dashboardService.getSummary(me, ACCOUNT_A);
 
     expect(summary.recentActivity).toHaveLength(1);
     expect(summary.recentActivity[0]?.id).toBe(myRowId);
+  });
+
+  test("excludes the user's own events from other accounts, keeps user-level events", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const me = await insertTestUser("me-multi-account");
+
+    const inAccountA = await insertAudit({
+      userId: me,
+      action: "billing.update",
+      targetAccountId: ACCOUNT_A,
+    });
+    const userLevel = await insertAudit({ userId: me, action: LOGIN });
+
+    await insertAudit({
+      userId: me,
+      action: "invitation.create",
+      targetAccountId: ACCOUNT_B,
+    });
+
+    const summary = await dashboardService.getSummary(me, ACCOUNT_A);
+
+    expect(summary.totalEvents).toBe(2);
+    expect(summary.recentActivity.map((row) => row.id).sort()).toEqual(
+      [inAccountA, userLevel].sort()
+    );
   });
 });
 
@@ -144,7 +181,7 @@ describe("DashboardService.getActivity user isolation", () => {
     await insertAudit({ userId: other, action: "user.event.x" });
     await insertAudit({ userId: other, action: "user.event.y" });
 
-    const page = await dashboardService.getActivity(me, 10);
+    const page = await dashboardService.getActivity(me, ACCOUNT_A, 10);
 
     expect(page.items).toHaveLength(3);
     expect(page.items.every((item) => mineIds.includes(item.id))).toBe(true);
@@ -168,7 +205,12 @@ describe("DashboardService.getActivity user isolation", () => {
     let caught: unknown;
 
     try {
-      await dashboardService.getActivity(me, 10, `cursor:${otherId}`);
+      await dashboardService.getActivity(
+        me,
+        ACCOUNT_A,
+        10,
+        `cursor:${otherId}`
+      );
     } catch (error) {
       caught = error;
     }
@@ -180,6 +222,44 @@ describe("DashboardService.getActivity user isolation", () => {
     }
   });
 
+  test("excludes other-account rows from the feed and rejects their cursors", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const me = await insertTestUser("me-multi-list");
+
+    const visible = await insertAudit({
+      userId: me,
+      action: "billing.update",
+      targetAccountId: ACCOUNT_A,
+    });
+    const foreign = await insertAudit({
+      userId: me,
+      action: "invitation.create",
+      targetAccountId: ACCOUNT_B,
+    });
+
+    const page = await dashboardService.getActivity(me, ACCOUNT_A, 10);
+
+    expect(page.items.map((item) => item.id)).toEqual([visible]);
+
+    let caught: unknown;
+
+    try {
+      await dashboardService.getActivity(
+        me,
+        ACCOUNT_A,
+        10,
+        `cursor:${foreign}`
+      );
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(Error);
+  });
+
   test("returns empty items and null nextCursor when no rows exist", async () => {
     if (!(await requireDb())) {
       return;
@@ -187,7 +267,7 @@ describe("DashboardService.getActivity user isolation", () => {
 
     const me = await insertTestUser("empty-list");
 
-    const page = await dashboardService.getActivity(me, 10);
+    const page = await dashboardService.getActivity(me, ACCOUNT_A, 10);
 
     expect(page.items).toEqual([]);
     expect(page.nextCursor).toBeNull();
@@ -204,7 +284,7 @@ describe("DashboardService.getActivity user isolation", () => {
       await insertAudit({ userId: me, action: `user.event.${index}` });
     }
 
-    const page = await dashboardService.getActivity(me, 2);
+    const page = await dashboardService.getActivity(me, ACCOUNT_A, 2);
 
     expect(page.items).toHaveLength(2);
     expect(page.nextCursor).not.toBeNull();
@@ -223,7 +303,7 @@ describe("DashboardService.getActivity user isolation", () => {
 
     const second = await insertAudit({ userId: me, action: "second" });
 
-    const summary = await dashboardService.getSummary(me);
+    const summary = await dashboardService.getSummary(me, ACCOUNT_A);
 
     expect(summary.recentActivity[0]?.id).toBe(second);
     expect(summary.recentActivity[1]?.id).toBe(first);
@@ -254,7 +334,7 @@ describe("DashboardService.getSummary edge cases", () => {
 
     const me = await insertTestUser("fresh");
 
-    const summary = await dashboardService.getSummary(me);
+    const summary = await dashboardService.getSummary(me, ACCOUNT_A);
 
     expect(summary.totalEvents).toBe(0);
     expect(summary.recentActivity).toEqual([]);

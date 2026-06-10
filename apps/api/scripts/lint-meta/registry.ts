@@ -21,6 +21,7 @@ import { eslintOverridePathsExistRule } from "./rules/config/eslint-override-pat
 import { tsconfigIncludePathsExistRule } from "./rules/config/tsconfig-include-paths-exist";
 import { envCascadeDriftRule } from "./rules/env/env-cascade-drift";
 import { noDirectProcessEnvRule } from "./rules/env/no-direct-process-env";
+import { auditLogReadAccountScopedRule } from "./rules/source-text/audit-log-read-account-scoped";
 import { canonicalHelpersSingleHomeRule } from "./rules/source-text/canonical-helpers-single-home";
 import { docsNoRetiredCredentialsRule } from "./rules/source-text/docs-no-retired-credentials";
 import { externalClientTimeoutRule } from "./rules/source-text/external-client-timeout";
@@ -65,6 +66,7 @@ export const META_RULES: readonly IMetaRule[] = [
   docsNoRetiredCredentialsRule,
   externalClientTimeoutRule,
   noRawRoleLiteralsRule,
+  auditLogReadAccountScopedRule,
   routesRequireTestSiblingRule,
   logicFilesRequireTestSiblingRule,
   lintMetaRulesSelfCoveredRule,

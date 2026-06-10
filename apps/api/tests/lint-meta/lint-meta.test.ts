@@ -14,6 +14,7 @@ import { tmpdir } from "node:os";
 
 import { renderRulesMd } from "../../scripts/lint-meta/generate-rules-md";
 import {
+  checkAuditLogReadAccountScoped,
   checkCanonicalHelpersSingleHome,
   checkDependencyPairs,
   checkDockerfileBaseImageShaPin,
@@ -1149,6 +1150,71 @@ describe("checkWorkflowExpressionSyntax", () => {
 
 const CONTRACT_MD = "AGENT_CONTRACT.md";
 const PKG_JSON = "package.json";
+
+describe("checkAuditLogReadAccountScoped", () => {
+  test("flags userId-only auditLog reads; passes account-scoped and write-path files", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-audit-scope-"));
+
+    try {
+      mkdirSync(join(root, "src"), { recursive: true });
+
+      const bad = join(root, "src", "bad.service.ts");
+
+      writeFileSync(
+        bad,
+        "const rows = await db\n  .select()\n  .from(auditLog)\n  .where(eq(auditLog.userId, userId));\n"
+      );
+
+      const violations = checkAuditLogReadAccountScoped(root, [bad]);
+
+      expect(violations.map((row) => row.rule)).toEqual([
+        "audit-log-read-account-scoped",
+      ]);
+
+      const good = join(root, "src", "good.service.ts");
+
+      writeFileSync(
+        good,
+        "const rows = await db\n  .select()\n  .from(auditLog)\n  .where(\n    and(\n      eq(auditLog.userId, userId),\n      or(\n        eq(auditLog.targetAccountId, accountId),\n        isNull(auditLog.targetAccountId)\n      )\n    )\n  );\n"
+      );
+
+      expect(checkAuditLogReadAccountScoped(root, [good])).toEqual([]);
+
+      const writer = join(root, "src", "writer.service.ts");
+
+      writeFileSync(
+        writer,
+        "await db.insert(auditLog).values({ userId, action, resource });\n"
+      );
+
+      expect(checkAuditLogReadAccountScoped(root, [writer])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("ignores test files and files outside src/", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-audit-scope-"));
+
+    try {
+      mkdirSync(join(root, "src"), { recursive: true });
+      mkdirSync(join(root, "scripts"), { recursive: true });
+
+      const testFile = join(root, "src", "feed.service.test.ts");
+      const scriptFile = join(root, "scripts", "report.ts");
+      const body = "where(eq(auditLog.userId, userId));\n";
+
+      writeFileSync(testFile, body);
+      writeFileSync(scriptFile, body);
+
+      expect(
+        checkAuditLogReadAccountScoped(root, [testFile, scriptFile])
+      ).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
 
 describe("checkExternalClientTimeouts", () => {
   test("flags SDK constructors without timeout and bare fetch; passes bounded ones", () => {

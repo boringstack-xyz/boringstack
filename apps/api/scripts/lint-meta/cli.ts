@@ -48,6 +48,7 @@ import {
   checkSecurityScannerVersionParity,
 } from "./rules/ci/security-scanner-version-parity";
 import { checkTofuBootstrapHardening } from "./rules/ci/tofu-bootstrap-hardening";
+import { checkAuditLogReadAccountScoped } from "./rules/source-text/audit-log-read-account-scoped";
 import { checkCanonicalHelpersSingleHome } from "./rules/source-text/canonical-helpers-single-home";
 import { checkDocsNoRetiredCredentials } from "./rules/source-text/docs-no-retired-credentials";
 import { checkExternalClientTimeouts } from "./rules/source-text/external-client-timeout";
@@ -113,6 +114,7 @@ export { collectSourceFiles, findWorkflows } from "./context";
 export { parseDotenvKeys } from "./parsers/dotenv";
 export { parseTypeboxEnvSchemaKeys as parseEnvSchemaKeys } from "./parsers/typebox-env-schema";
 export {
+  checkAuditLogReadAccountScoped,
   checkCanonicalHelpersSingleHome,
   checkDependencyPairs,
   checkDocsNoRetiredCredentials,
