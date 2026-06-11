@@ -43,27 +43,42 @@ On the UI: no raw `fetch` outside `openapi.ts`, no `dangerouslySetInnerHTML`, no
 
 ## Audit skills
 
-Two repo-root skills that pair up for autonomous, agent-to-agent maintenance. The
-audit is machine-readable on purpose: one agent finds the work, another executes it.
+A family of read-only, agent-to-agent audits. Each one runs static analysis and
+writes evidence-backed findings to a single JSON artifact under `.audit/`, which
+`/execute-audit` then works through autonomously. Every finding cites exact files
+and is classified by whether a linter/parser guardrail could enforce it, so fixes
+extend the tooling rather than patch one instance ("lint as a contract").
 
 ### /audit-monorepo
 
-Read-only, full-monorepo audit (apps/api, apps/ui, apps/docs, infra, scripts, CI). Fans
-out parallel read-only subagents per app and concern, then writes a single
-evidence-backed JSON report to `.audit/audit-report.json` — every finding cites exact
-files, ranked for an autonomous agent to execute. Each finding is also classified by
-whether a linter/parser **guardrail** could enforce it, so fixes extend the tooling
-rather than patch one instance ("lint as a contract").
+Read-only, full-monorepo audit (apps/api, apps/ui, apps/docs, infra, scripts, CI,
+root configs). Fans out parallel read-only subagents per app and concern, then
+writes one evidence-backed JSON report to `.audit/audit-report.json`. The broad
+pass when you want everything in one report.
+
+### Scoped audits
+
+Seven focused audits, each staying in its own lane so findings stay precise and
+routable. Reach for one when you want depth in a single area instead of the full
+sweep:
+
+- `/audit-api-security`: apps/api auth, OAuth, and sessions; multi-tenant `accountId` scoping; audit-log coverage on mutations; Stripe webhook verification; cookies; rate limiting; secret/PII leakage.
+- `/audit-drizzle-queries`: the apps/api Drizzle data layer. N+1 patterns, missing indexes, transaction boundaries, query-level `accountId` scoping, raw-SQL safety, pagination correctness.
+- `/audit-react-data`: apps/ui data fetching and forms. TanStack Query keys, caching, and invalidation; mutation and optimistic-update correctness; loading/error states; React Hook Form + Zod validation.
+- `/audit-react-hooks`: apps/ui hooks. Effect dependency arrays, stale closures, memoization and render identity, callback stability, effect cleanup, rules-of-hooks edge cases.
+- `/audit-ci-workflows`: `.github/workflows` and infra pipelines. Action SHA pinning, push/PR path-filter parity, least-privilege permissions, secret handling, concurrency, version-pin drift, local-vs-CI gate parity.
+- `/audit-dependencies`: dependencies across apps. Cross-app version drift, override hygiene, exact-pin policy, lockfile integrity, unused/missing deps (knip), supply-chain and vuln-override posture.
+- `/audit-tests-coverage`: test coverage and quality across apps. Missing sibling tests on logic modules, assertion-light tests, skipped tests without tracking, coverage-ratchet gaps, untested critical paths.
 
 ### /execute-audit
 
 Reads `.audit/audit-report.json` and works every finding to completion on a single
 branch. Guardrail-first: when a finding is a class a rule can catch, it extends the
-relevant `lint:meta` rule so the bug surfaces as a violation, then fixes the code —
-validating each fix with the repo's own `bun run check`, committing per finding, and
-reverting-and-continuing on failure.
+relevant `lint:meta` rule so the bug surfaces as a violation, then fixes the code,
+validating each fix with the repo's own `bun run check`, committing per finding,
+and reverting-and-continuing on failure.
 
 ## Related
 
-- [First feature in 10 minutes](/skills/first-feature-tutorial/)  - end-to-end walkthrough.
-- [Spec loop](/skills/spec-loop/)  - approval gate for risky slices.
+- [First feature in 10 minutes](/skills/first-feature-tutorial/); end-to-end walkthrough.
+- [Spec loop](/skills/spec-loop/); approval gate for risky slices.
