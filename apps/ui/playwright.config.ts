@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PORT = 7331;
+// Default dev/e2e port is 7331; override with PLAYWRIGHT_PORT when the UI
+// dev server is remapped (Docker port mapping, port conflicts on shared hosts).
+const PORT = Number(process.env.PLAYWRIGHT_PORT) || 7331;
 const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
