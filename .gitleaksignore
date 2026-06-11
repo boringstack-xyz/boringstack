@@ -1,0 +1,19 @@
+# gitleaks fingerprint allowlist for specific HISTORICAL findings.
+#
+# Format: <commit>:<file>:<rule>:<line>. Each entry ignores exactly one
+# finding at one commit — rules stay fully active for every other commit and
+# for the current working tree. Used for false positives that live only in old
+# commit diffs (the current files are already clean), where a line/value regex
+# in .gitleaks.toml can't match because the offending value no longer exists
+# in HEAD. The repo-wide allowlist for current placeholders lives in
+# .gitleaks.toml; this file is only for pinned past commits.
+
+# Meilisearch recipe: an intermediate commit had a non-empty MEILI_MASTER_KEY
+# example value before it was changed to the `<set-from-your-secret-manager>`
+# placeholder (now allowlisted in .gitleaks.toml). Docs example, never a real key.
+9262aa98aebe8b93d055b28a98fb44b72097935b:apps/docs/src/content/docs/recipes/add-service-to-compose.mdx:generic-api-key:100
+
+# Auth session test: the fixture token was `abcdef1234567890` at this commit
+# (looks hex-key-ish to generic-api-key) and has since been changed to the
+# clearer `test-challenge-token-stub`. Test stub, never a real secret.
+901fd55367183293112f393dbc4cb99127af3913:apps/ui/src/features/auth/Auth.session.mutations.utils.test.ts:generic-api-key:13
