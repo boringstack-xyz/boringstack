@@ -31,7 +31,12 @@ function findParentPackageJsonDir(root: string): string | null {
   }
 }
 
-export function checkEnginePinParity(root: string): IViolation[] {
+const BUN_VERSION_PIN_REGEX = /bun-version:\s*["']?([\w.+-]+)["']?/gu;
+
+export function checkEnginePinParity(
+  root: string,
+  workflowFiles: readonly string[] = []
+): IViolation[] {
   const violations: IViolation[] = [];
   const pkg = readApiPackageJson(root);
   const bunVersion = pkg?.engines?.bun;
@@ -78,17 +83,30 @@ export function checkEnginePinParity(root: string): IViolation[] {
     }
   }
 
-  const ciWorkflow = join(root, ".github", "workflows", "ci.yml");
+  /*
+   * Every GitHub Actions workflow that pins a Bun version via
+   * `setup-bun` must match engines.bun. The monorepo keeps its workflows
+   * at the repo root, not under apps/api, and a single bump can leave one
+   * of a dozen `bun-version:` literals behind — so check every occurrence
+   * in every workflow, not just the first match.
+   */
+  for (const workflow of workflowFiles) {
+    if (!existsSync(workflow)) {
+      continue;
+    }
 
-  if (existsSync(ciWorkflow)) {
-    const content = readFileSync(ciWorkflow, "utf8");
+    const content = readFileSync(workflow, "utf8");
 
-    if (!content.includes(`bun-version: ${bunVersion}`)) {
-      violations.push({
-        file: ciWorkflow,
-        rule: RULE_ID,
-        message: `CI workflow must pin bun-version: ${bunVersion} to match package.json engines.bun.`,
-      });
+    for (const match of content.matchAll(BUN_VERSION_PIN_REGEX)) {
+      const pinned = match[1];
+
+      if (pinned !== undefined && pinned !== bunVersion) {
+        violations.push({
+          file: workflow,
+          rule: RULE_ID,
+          message: `CI workflow pins bun-version: ${pinned} but must match package.json engines.bun (${bunVersion}).`,
+        });
+      }
     }
   }
 
@@ -101,7 +119,7 @@ export const enginePinParityRule: IMetaRule = {
   category: "ci",
   description:
     "Bun version pin must stay aligned across package.json, Docker, and CI.",
-  run({ root }) {
-    return checkEnginePinParity(root);
+  run({ root, workflowFiles }) {
+    return checkEnginePinParity(root, workflowFiles);
   },
 };

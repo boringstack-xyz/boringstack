@@ -1610,10 +1610,12 @@ describe("checkEnginePinParity", () => {
         workflowBun: "1.2.0",
       });
 
-      const violations = checkEnginePinParity(root);
+      const violations = checkEnginePinParity(root, [
+        join(root, ".github", "workflows", "ci.yml"),
+      ]);
 
       expect(
-        violations.some((row) => row.message.includes("bun-version: 1.3.14"))
+        violations.some((row) => row.message.includes("bun-version: 1.2.0"))
       ).toBe(true);
     } finally {
       rmSync(root, { recursive: true, force: true });
@@ -1630,9 +1632,47 @@ describe("checkEnginePinParity", () => {
         workflowBun: "1.3.14",
       });
 
-      const violations = checkEnginePinParity(root);
+      const violations = checkEnginePinParity(root, [
+        join(root, ".github", "workflows", "ci.yml"),
+      ]);
 
       expect(violations).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags a drifted bun-version in any of several root workflows", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-engine-multi-"));
+
+    try {
+      writeFileSync(
+        join(root, PKG_JSON),
+        JSON.stringify({ engines: { bun: "1.3.14" } })
+      );
+      writeFileSync(
+        join(root, "Dockerfile"),
+        "FROM oven/bun:1.3.14-alpine@sha256:0000000000000000000000000000000000000000000000000000000000000000\n"
+      );
+      mkdirSync(join(root, ".github", "workflows"), { recursive: true });
+
+      const good = join(root, ".github", "workflows", "apps-ui-validate.yml");
+      const drifted = join(root, ".github", "workflows", "apps-api-ci.yml");
+
+      writeFileSync(
+        good,
+        "jobs:\n  a:\n    steps:\n      - uses: oven-sh/setup-bun@abc\n        with:\n          bun-version: 1.3.14\n"
+      );
+      writeFileSync(
+        drifted,
+        "jobs:\n  b:\n    steps:\n      - uses: oven-sh/setup-bun@abc\n        with:\n          bun-version: 1.2.0\n"
+      );
+
+      const violations = checkEnginePinParity(root, [good, drifted]);
+
+      expect(violations).toHaveLength(1);
+      expect(violations[0]?.file).toBe(drifted);
+      expect(violations[0]?.message).toContain("bun-version: 1.2.0");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
