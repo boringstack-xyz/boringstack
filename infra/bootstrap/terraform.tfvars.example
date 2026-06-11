@@ -58,8 +58,11 @@ ssh_allowed_ips = []  # REQUIRED: your admin CIDRs, e.g. ["203.0.113.7/32"].
 # vps_image    = "ubuntu-24.04"
 # vps_name     = "boringstack"
 
-# Guard the VPS against destroy/replace (default true). Set false only for a
-# deliberate rebuild — the box holds all persistent Docker volumes.
+# Guard the VPS against destroy/replace (default true). Drives BOTH the tofu
+# prevent_destroy guard AND Hetzner's API-level delete/rebuild protection, so
+# the box (which holds all persistent Docker volumes) can't be nuked by tofu,
+# the Hetzner console, or the hcloud CLI. Set false + apply only for a
+# deliberate rebuild.
 # prevent_server_destroy = true
 
 # ----------------------------------------------------------------------------
