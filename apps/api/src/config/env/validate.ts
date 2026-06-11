@@ -629,6 +629,33 @@ const checkBilling = (env: Env): string[] => {
     errors.push("STRIPE_PRICE_ID_PRO required when BILLING_ENABLED=true");
   }
 
+  /*
+   * A non-empty but obviously-fake Stripe secret (copy-pasted placeholder)
+   * passes the emptiness checks above and boots, then fails at the first
+   * charge/webhook. PLACEHOLDER_SECRET_FIELDS only covers the always-required
+   * JWT/MFA secrets; the Stripe secrets are conditionally required, so
+   * placeholder-check them here where we already know billing is on.
+   */
+  const stripeSecretFields = [
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+  ] as const;
+
+  for (const field of stripeSecretFields) {
+    const value = env[field];
+
+    if (
+      typeof value === "string" &&
+      value !== "" &&
+      isPlaceholderSecret(value)
+    ) {
+      errors.push(
+        `${field} looks like a placeholder ("${value}"). ` +
+          "Set the real value from the Stripe Dashboard before boot."
+      );
+    }
+  }
+
   return errors;
 };
 
