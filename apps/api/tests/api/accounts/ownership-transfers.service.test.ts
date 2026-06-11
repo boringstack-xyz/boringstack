@@ -139,6 +139,32 @@ describe("OwnershipTransfersService", () => {
         })
       );
     });
+
+    test("rejects a target that is not an active member of the account", async () => {
+      if (!(await requireDb())) {
+        return;
+      }
+
+      const seed = await seedOwnerAndTarget();
+
+      const [outsider] = await db
+        .insert(users)
+        .values({ email: "outsider@acme.test" })
+        .returning();
+
+      if (!outsider) {
+        throw new Error("seed outsider");
+      }
+
+      await expectRejects(
+        ownershipTransfersService.initiate({
+          accountId: seed.accountId,
+          fromUserId: seed.ownerUserId,
+          toUserId: outsider.id,
+          actorUserId: seed.ownerUserId,
+        })
+      );
+    });
   });
 
   describe("accept", () => {

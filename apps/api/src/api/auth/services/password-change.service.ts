@@ -84,7 +84,7 @@ export class PasswordChangeService {
       },
     }).catch((error: unknown) => {
       logger.error("Failed to send password-changed notification", {
-        event: "auth.password_reset.notification_email_failed",
+        event: "auth.password_change.notification_email_failed",
         userId: row.user.id,
         error: getErrorMessage(error),
       });

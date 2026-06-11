@@ -48,6 +48,33 @@ export class OwnershipTransfersService {
       );
     }
 
+    /*
+     * The target must be an active member of this account. Accept later
+     * rejects non-members cleanly, but without this guard an owner can
+     * file transfer offers pointing at non-members / deleted / unknown
+     * users, leaving orphaned pending rows. Validate at the source.
+     */
+    const [targetMembership] = await db
+      .select({ id: accountMemberships.id })
+      .from(accountMemberships)
+      .innerJoin(accounts, eq(accounts.id, accountMemberships.accountId))
+      .where(
+        and(
+          eq(accountMemberships.userId, input.toUserId),
+          eq(accountMemberships.accountId, input.accountId),
+          isNull(accountMemberships.revokedAt),
+          isNull(accounts.deletedAt)
+        )
+      )
+      .limit(1);
+
+    if (targetMembership === undefined) {
+      throw ApiErrors.validation(
+        "Target user is not an active member of this account",
+        "toUserId"
+      );
+    }
+
     const rawToken = generateOpaqueToken();
     const tokenHash = hashOpaqueToken(rawToken);
     const expiresAt = computeOwnershipTransferExpiresAt();

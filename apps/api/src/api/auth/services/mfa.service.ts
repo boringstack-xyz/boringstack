@@ -317,6 +317,15 @@ export class MfaService {
     }
 
     if (matched === null) {
+      /*
+       * Flatten timing on the no-match path the same way the login path
+       * does (auth.service.ts performDummyVerify). The hashes are random
+       * high-entropy codes so enumeration isn't practical, but matching
+       * login's constant-time treatment keeps credential paths consistent
+       * and avoids leaking how many unused codes remain via latency.
+       */
+      await passwordService.performDummyVerify();
+
       return this.recordFailedAttempt(
         challengeKey,
         challenge,

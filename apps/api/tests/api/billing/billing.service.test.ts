@@ -319,6 +319,33 @@ describe("billingService.handleWebhookEvent", () => {
     expect(planRows).toHaveLength(0);
   });
 
+  test("checkout.session.completed is a no-op when the customer does not map to the metadata account", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const accountA = await seedAccountWithStripeCustomer();
+    const accountB = await seedAccountWithStripeCustomer();
+
+    /*
+     * Event is signed for accountA's customer, but metadata names accountB.
+     * The handler must re-derive the account from the customer and bail.
+     */
+    await getBillingService().handleWebhookEvent(
+      await checkoutSessionCompletedEvent("evt_checkout_mismatch", {
+        customer: accountA.customerId,
+        metadata: {
+          accountId: accountB.accountId,
+          planId: String(accountB.proPlanId),
+        },
+      })
+    );
+
+    const planRows = await db.select().from(accountPlans);
+
+    expect(planRows).toHaveLength(0);
+  });
+
   test("customer.subscription.updated maps a known stripe price to the Pro plan", async () => {
     if (!(await requireDb())) {
       return;

@@ -372,6 +372,28 @@ describe("validateEnv", () => {
     expect(() => validateEnv(testEnv)).toThrow(/STRIPE_SECRET_KEY/);
   });
 
+  it("rejects a placeholder Stripe secret when BILLING_ENABLED=true", () => {
+    testEnv.BILLING_ENABLED = "true";
+    testEnv.STRIPE_SECRET_KEY = "your-stripe-secret-key";
+    testEnv.STRIPE_WEBHOOK_SECRET = "test-stripe-webhook-secret";
+    testEnv.STRIPE_PRICE_ID_FREE = "price_free";
+    testEnv.STRIPE_PRICE_ID_PRO = "price_pro";
+    testEnv.RESEND_API_KEY = "rk_test";
+    expect(() => validateEnv(testEnv)).toThrow(
+      /STRIPE_SECRET_KEY looks like a placeholder/
+    );
+  });
+
+  it("accepts real-looking Stripe secrets when BILLING_ENABLED=true", () => {
+    testEnv.BILLING_ENABLED = "true";
+    testEnv.STRIPE_SECRET_KEY = "sk_test_51RealKeyValue";
+    testEnv.STRIPE_WEBHOOK_SECRET = "test-stripe-webhook-secret";
+    testEnv.STRIPE_PRICE_ID_FREE = "price_free";
+    testEnv.STRIPE_PRICE_ID_PRO = "price_pro";
+    testEnv.RESEND_API_KEY = "rk_test";
+    expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
   it("requires VALKEY_PASSWORD in production with QUEUES_ENABLED=true", () => {
     testEnv.NODE_ENV = "production";
     testEnv.ALLOWED_ORIGINS = "https://example.com";
