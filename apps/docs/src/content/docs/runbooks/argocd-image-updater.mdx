@@ -14,7 +14,7 @@ annotations on `infra/k3s/argocd/boringstack-prod.yaml`.
 ```yaml
 argocd-image-updater.argoproj.io/image-list: api=ghcr.io/<owner>/<project>-api, ui=ghcr.io/<owner>/<project>-ui
 argocd-image-updater.argoproj.io/api.update-strategy: newest-build
-argocd-image-updater.argoproj.io/api.allow-tags: regexp:^[a-f0-9]{7,40}$
+argocd-image-updater.argoproj.io/api.allow-tags: regexp:^sha-[0-9a-f]{7,40}$
 argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd/image-updater-git-creds
 argocd-image-updater.argoproj.io/write-back-target: kustomization
 argocd-image-updater.argoproj.io/git-branch: main
@@ -22,9 +22,11 @@ argocd-image-updater.argoproj.io/git-branch: main
 
 `image-list` pairs an alias with each image the updater watches.
 
-`update-strategy` + `allow-tags` of `newest-build` plus a git-SHA regex assumes
-CI tags images with the commit SHA. If your CI publishes semver instead, use
-`update-strategy: semver` and an allow-tags like `regexp:^v?\d+\.\d+\.\d+$`.
+`update-strategy: newest-build` plus the `^sha-` regex tracks the newest
+`sha-<short>` build. BoringStack's release workflows tag every push to main as
+`latest` + `sha-<short>` (and a semver tag on a `v*` release), so this matches
+the `sha-` form and ignores `latest`. To deploy only tagged releases instead,
+use `update-strategy: semver` with `allow-tags: regexp:^v?\d+\.\d+\.\d+$`.
 
 `write-back-method: git` commits the tag bump back to your repo (the GitOps
 source of truth) using the `argocd/image-updater-git-creds` secret.

@@ -17,6 +17,18 @@ About thirty minutes of hands-on time on the first run.
   [Provisioning with k3s](/topics/provisioning-with-k3s/).
 </Aside>
 
+## Choosing a target
+
+BoringStack ships three deploy paths. Pick one; you don't need all three.
+
+| Target | Best for | Guide |
+|---|---|---|
+| docker-compose on a VPS (manual) | First deploy, one box, full hands-on control | This page |
+| OpenTofu → Hetzner | One declarative apply that provisions and boots that same box | [Provisioning with OpenTofu](/topics/provisioning-with-tofu/) |
+| k3s + ArgoCD (GitOps) | You already run a cluster and want push-to-deploy with HA | [Provisioning with k3s](/topics/provisioning-with-k3s/) |
+
+The rest of this page is the manual docker-compose path.
+
 ## 1. Accounts
 
 | Account | Why |

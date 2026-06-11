@@ -74,20 +74,19 @@ Swap by editing the one active line under `# Secrets backend (pick ONE)` in
 
 ### App secret keys (`boringstack-secrets`)
 
-`DATABASE_URL` is injected by CNPG, so don't put it here. Everything else the api
-validates at boot, for example:
+The authoritative key list is the api's env validator, documented on the
+[Environment variables](https://boringstack.xyz/reference/env-vars/) reference.
+Populate from there rather than copying a list that drifts. The k3s-specific
+points:
 
-- Required: `JWT_SECRET`, `MFA_ENCRYPTION_KEY`, `VALKEY_PASSWORD`,
-  `FRONTEND_URL`, `PUBLIC_API_URL`, `QUEUES_ENABLED=true`, `CACHE_PROVIDER=valkey`
-- Email (one provider): `EMAIL_PROVIDER`, `EMAIL_FROM`, plus provider keys
-  (`RESEND_API_KEY` / `SENDGRID_API_KEY` / `SMTP_*` / Cloudflare)
-- GlitchTip: `GLITCHTIP_SECRET_KEY`, `GLITCHTIP_SUPERUSER_EMAIL`,
-  `GLITCHTIP_SUPERUSER_PASSWORD`, optional `GLITCHTIP_EMAIL_URL`
-- Optional: OAuth (`*_OAUTH_CLIENT_ID/SECRET`), Stripe (`STRIPE_*`),
-  Web Push (`WEB_PUSH_VAPID_*`), AI (`AI_*`, `OPENAI_API_KEY`, …)
-
-`VALKEY_PASSWORD` is shared: the api, GlitchTip, and the Valkey StatefulSet's
-`--requirepass` all read it.
+- `DATABASE_URL` is injected by CloudNativePG, so it is NOT a key here.
+- `VALKEY_PASSWORD` is shared: the api, GlitchTip, and the Valkey StatefulSet's
+  `--requirepass` all read it.
+- The GlitchTip overlay needs `GLITCHTIP_SECRET_KEY` plus `GLITCHTIP_SUPERUSER_EMAIL`
+  / `GLITCHTIP_SUPERUSER_PASSWORD` (and optional `GLITCHTIP_EMAIL_URL`).
+- Enough to boot: `JWT_SECRET`, `MFA_ENCRYPTION_KEY`, `VALKEY_PASSWORD`,
+  `FRONTEND_URL`, `PUBLIC_API_URL`, `QUEUES_ENABLED=true`, `CACHE_PROVIDER=valkey`.
+  Email, OAuth, Stripe, Web Push, and AI keys follow the reference.
 
 ## Deploy
 

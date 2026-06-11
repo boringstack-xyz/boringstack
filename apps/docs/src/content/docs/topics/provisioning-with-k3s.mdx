@@ -105,6 +105,18 @@ curl -sI https://<domain>/                        # 200 from the ui (SPA)
 In ArgoCD the Application should be Synced and Healthy, and a new commit's image
 should auto-roll within an image-updater poll interval.
 
+### First-deploy checks
+
+Two things only the first apply confirms on your cluster:
+
+- GlitchTip migrates its schema and seeds the superuser on first boot from the
+  `GLITCHTIP_*` env, rather than from a separate Job. Watch the `glitchtip-web`
+  pod reach Ready, then log in once at `glitchtip.<domain>`.
+- The `glitchtip` database is created by the CloudNativePG cluster's
+  `postInitSQL`, which runs only at initial bootstrap. If you point GlitchTip at
+  an already-initialized cluster, create the database manually
+  (`CREATE DATABASE glitchtip OWNER boringstack;`).
+
 ## What stays manual
 
 Provisioning the cluster itself: bring your own k3s. And in-cluster
