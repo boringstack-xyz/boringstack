@@ -38,6 +38,7 @@ export const LOG_EVENTS = [
   "auth.mfa.recovery_used",
   "auth.mfa.setup_initiated",
   "auth.mfa.totp_replay_rejected",
+  "auth.password_change.notification_email_failed",
   "auth.password_reset_requested.email_failed",
   "auth.password_reset.notification_email_failed",
   "auth.register.success",
