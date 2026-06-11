@@ -13,7 +13,7 @@
 # ============================================================================
 
 terraform {
-  required_version = ">= 1.6.0"
+  required_version = ">= 1.12.0"
 
   required_providers {
     hcloud = {
@@ -104,6 +104,7 @@ module "hetzner" {
   ssh_public_key  = var.ssh_public_key
   ssh_allowed_ips = var.ssh_allowed_ips
   cloud_init      = module.bootstrap.cloud_init
+  prevent_destroy = var.prevent_server_destroy
 }
 
 # ----------------------------------------------------------------------------

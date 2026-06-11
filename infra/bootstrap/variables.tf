@@ -172,6 +172,12 @@ variable "vps_name" {
   }
 }
 
+variable "prevent_server_destroy" {
+  type        = bool
+  description = "When true (default), block tofu from destroying or replacing the VPS — it holds all persistent Docker volumes (Postgres, acme.json, GlitchTip). Flip to false (e.g. -var prevent_server_destroy=false) only when deliberately rebuilding the host."
+  default     = true
+}
+
 # ============================================================================
 # Repo to clone on first boot
 # ============================================================================
