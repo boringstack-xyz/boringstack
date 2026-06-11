@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: boringstack-prod
+  namespace: argocd
+  annotations:
+    # --- argocd-image-updater: auto-deploy new GHCR builds ----------------
+    # alias=full-image-path. The updater watches GHCR and writes the new tag
+    # back into overlays/prod/kustomization.yaml, which triggers a sync.
+    argocd-image-updater.argoproj.io/image-list: api=ghcr.io/boringstack-xyz/boringstack-api, ui=ghcr.io/boringstack-xyz/boringstack-ui
+    # Track newest git-SHA tag (matches a CI that tags images with the commit
+    # SHA). If your CI publishes semver instead, switch to `semver` and set
+    # allow-tags accordingly.
+    argocd-image-updater.argoproj.io/api.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/api.allow-tags: regexp:^[a-f0-9]{7,40}$
+    argocd-image-updater.argoproj.io/ui.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/ui.allow-tags: regexp:^[a-f0-9]{7,40}$
+    # Commit the tag bump back to git (GitOps source of truth).
+    argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd/image-updater-git-creds
+    argocd-image-updater.argoproj.io/write-back-target: kustomization
+    argocd-image-updater.argoproj.io/git-branch: main
+spec:
+  project: default
+  source:
+    # Your fork's repo. Add it to ArgoCD as a repo credential (SSH deploy key
+    # for private repos).
+    repoURL: git@github.com:boringstack-xyz/boringstack.git
+    targetRevision: main
+    path: infra/k3s/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: boringstack-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+  revisionHistoryLimit: 10

@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: glitchtip-web
+  namespace: boringstack-prod
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: glitchtip
+      component: web
+  template:
+    metadata:
+      labels:
+        app: glitchtip
+        component: web
+    spec:
+      imagePullSecrets:
+        - name: ghcr-registry-secret
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: glitchtip-web
+          image: glitchtip/glitchtip:6.1.6
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            # CNPG app-role creds; GlitchTip uses its own `glitchtip` database
+            # (created via postInitSQL) on the read-write primary Service.
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: boringstack-db-app
+                  key: username
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: boringstack-db-app
+                  key: password
+            - name: DATABASE_URL
+              value: postgres://$(DB_USER):$(DB_PASS)@boringstack-db-rw:5432/glitchtip
+            - name: VALKEY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: boringstack-secrets
+                  key: VALKEY_PASSWORD
+            - name: REDIS_URL
+              value: redis://:$(VALKEY_PASSWORD)@valkey:6379/1
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: boringstack-secrets
+                  key: GLITCHTIP_SECRET_KEY
+            - name: PORT
+              value: "8000"
+            - name: GLITCHTIP_DOMAIN
+              value: https://glitchtip.boringstack.example.com
+            - name: DEFAULT_FROM_EMAIL
+              value: noreply@example.com
+            - name: EMAIL_URL
+              valueFrom:
+                secretKeyRef:
+                  name: boringstack-secrets
+                  key: GLITCHTIP_EMAIL_URL
+                  optional: true
+            - name: CELERY_WORKER_AUTOSCALE
+              value: "1,3"
+            - name: CELERY_WORKER_MAX_TASKS_PER_CHILD
+              value: "10000"
+            # First-boot setup (only applied while the DB is empty).
+            - name: GLITCHTIP_SUPERUSER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: boringstack-secrets
+                  key: GLITCHTIP_SUPERUSER_EMAIL
+                  optional: true
+            - name: GLITCHTIP_SUPERUSER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: boringstack-secrets
+                  key: GLITCHTIP_SUPERUSER_PASSWORD
+                  optional: true
+            - name: GLITCHTIP_DEFAULT_ORG_NAME
+              value: BoringStack
+            - name: GLITCHTIP_DEFAULT_PROJECTS
+              value: API,Frontend
+          # The image ships no wget/curl; probe /_health/ with bundled python3.
+          startupProbe:
+            exec:
+              command:
+                ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/_health/', timeout=3)"]
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            exec:
+              command:
+                ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/_health/', timeout=3)"]
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                ["python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/_health/', timeout=3)"]
+            periodSeconds: 15
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "1000m"

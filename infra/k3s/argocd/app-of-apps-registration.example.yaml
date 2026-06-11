@@ -1,0 +1,32 @@
+# OPTIONAL — only if your cluster is managed by an ArgoCD "app-of-apps".
+#
+# Most clusters can skip this: just `kubectl apply -f boringstack-prod.yaml`
+# (the file next to this one) to register the product directly.
+#
+# If you run an app-of-apps whose root Application recurses an `apps/`
+# directory, drop a copy of THIS file into that repo (e.g. as
+# apps/external/boringstack.yaml). It points ArgoCD at your fork's
+# infra/k3s/argocd directory, which contains boringstack-prod.yaml. The
+# product's manifests stay self-contained in the fork; the cluster repo only
+# carries this one pointer.
+#
+# Replace <owner>/<your-fork> with your fork's repo.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: boringstack-apps
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: git@github.com:<owner>/<your-fork>.git
+    targetRevision: main
+    path: infra/k3s/argocd
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      selfHeal: true

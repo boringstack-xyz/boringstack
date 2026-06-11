@@ -533,6 +533,7 @@ export default defineConfig({
             },
             { label: "Resource limits", link: "/infra/resource-limits/" },
             { label: "Secrets", link: "/infra/secrets/" },
+            { label: "Kubernetes (k3s)", link: "/infra/kubernetes/" },
           ],
         },
         {
@@ -547,6 +548,10 @@ export default defineConfig({
             {
               label: "Provisioning with OpenTofu",
               link: "/topics/provisioning-with-tofu/",
+            },
+            {
+              label: "Provisioning with k3s (GitOps)",
+              link: "/topics/provisioning-with-k3s/",
             },
             {
               label: "Supply-chain protection",
@@ -607,6 +612,18 @@ export default defineConfig({
               link: "/runbooks/oauth-provider-setup/",
             },
             { label: "Codecov setup", link: "/runbooks/codecov-setup/" },
+            {
+              label: "ArgoCD image updater (k3s)",
+              link: "/runbooks/argocd-image-updater/",
+            },
+            {
+              label: "Secrets backends (k3s)",
+              link: "/runbooks/vault-secrets-operator/",
+            },
+            {
+              label: "Postgres backups (CNPG)",
+              link: "/runbooks/cnpg-backups/",
+            },
           ],
         },
         { label: "Resources", link: "/resources/" },

@@ -1,0 +1,30 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: boringstack-db
+  namespace: boringstack
+spec:
+  instances: 1
+  storage:
+    size: 10Gi
+    # Storage class is a per-cluster knob — see infra/k3s/README.md. Leave the
+    # line commented to use the cluster default, or set e.g. `longhorn`.
+    # storageClass: longhorn
+  postgresql:
+    parameters:
+      shared_buffers: "256MB"
+      max_connections: "100"
+  bootstrap:
+    initdb:
+      database: boringstack
+      owner: boringstack
+      # GlitchTip (the error-tracking overlay) shares this Postgres in its own
+      # database, owned by the same app role. postInitSQL runs once, as the
+      # superuser on the `postgres` database, at first bootstrap.
+      postInitSQL:
+        - CREATE DATABASE glitchtip OWNER boringstack;
+  # CloudNativePG publishes connection secrets:
+  #   boringstack-db-app  -> app role creds + `uri` for database `boringstack`
+  #   boringstack-db-rw   -> Service for the primary (read-write)
+  # Backups (barman -> S3/R2) are an opt-in overlay add-on; see
+  # overlays/prod/patches/postgres-backup.yaml and the README.

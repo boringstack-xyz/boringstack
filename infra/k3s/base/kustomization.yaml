@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base namespace; the prod overlay flips this to `boringstack-prod`.
+namespace: boringstack
+
+resources:
+  - namespace.yaml
+  - postgres
+  - valkey
+  - api
+  - ui

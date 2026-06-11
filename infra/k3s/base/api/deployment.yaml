@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: boringstack
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      serviceAccountName: api
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          image: ghcr.io/boringstack-xyz/boringstack-api:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 7330
+              protocol: TCP
+          # All app secrets/config arrive as one Secret (`boringstack-secrets`),
+          # produced by the chosen secrets component in overlays/prod/secrets/*.
+          # The manifests never reference Vault directly — only this Secret —
+          # so Vault / Sealed Secrets / plain-env swap with a one-line change.
+          envFrom:
+            - secretRef:
+                name: boringstack-secrets
+          env:
+            # CloudNativePG publishes the app connection string here.
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: boringstack-db-app
+                  key: uri
+            # Infra topology (not secret): the in-namespace Valkey Service.
+            - name: VALKEY_HOST
+              value: valkey
+            - name: VALKEY_PORT
+              value: "6379"
+            - name: API_PORT
+              value: "7330"
+            - name: NODE_ENV
+              value: production
+            # Behind Traefik — read X-Forwarded-* for correct client IPs.
+            - name: TRUST_PROXY
+              value: "true"
+          # /health is a cheap liveness check; /ready aggregates db + valkey +
+          # queue + email and returns 503 until the app can actually serve.
+          startupProbe:
+            httpGet:
+              path: /ready
+              port: 7330
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7330
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 7330
+            initialDelaySeconds: 0
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"

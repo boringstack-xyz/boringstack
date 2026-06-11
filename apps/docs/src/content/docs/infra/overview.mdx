@@ -84,7 +84,7 @@ Every service has `deploy.resources.limits` and `reservations` driven by env var
 
 ## What's not in this template
 
-- Kubernetes manifests. This template is Compose-first; mixing Compose and cluster YAML in the starter would blur the deployment path BoringStack keeps intentionally clear.
+- Kubernetes manifests in *this* (Compose) target. BoringStack is Compose-first, and `infra/compose` deliberately stays cluster-free so the single-host path is clear. If you run a Kubernetes cluster and want GitOps, the opt-in [Kubernetes (k3s) target](/infra/kubernetes/) lives separately under `infra/k3s` — it never mixes into the Compose flow.
 - Application code. The apps/api and apps/ui own that.
 - Cloud-provider provisioning. The [OpenTofu bootstrap](/topics/provisioning-with-tofu/) in `infra/bootstrap` handles that.
 
@@ -95,3 +95,4 @@ Every service has `deploy.resources.limits` and `reservations` driven by env var
 - [Secrets](/infra/secrets/); how env values reach containers without leaking into images.
 - [Deployment](/topics/deployment/); the production runtime path end-to-end.
 - [Provisioning with OpenTofu](/topics/provisioning-with-tofu/); going from zero to a live VPS.
+- [Kubernetes (k3s)](/infra/kubernetes/); the opt-in GitOps target for a cluster you already run.

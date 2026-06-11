@@ -1,0 +1,74 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-network-policy
+  namespace: boringstack
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: boringstack-db
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # From the API and GlitchTip pods.
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api
+        - podSelector:
+            matchLabels:
+              app: glitchtip
+      ports:
+        - protocol: TCP
+          port: 5432
+    # CNPG intra-cluster replication.
+    - from:
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: boringstack-db
+      ports:
+        - protocol: TCP
+          port: 5432
+    # CNPG operator status/metrics probes.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: cnpg-system
+      ports:
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 9187
+  egress:
+    # DNS
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # CNPG replication.
+    - to:
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: boringstack-db
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Kubernetes API server + external HTTPS (WAL archiving to S3/R2).
+    # Intentionally permissive on 443/6443 so CNPG's instance manager can
+    # reach the API server on any cluster topology. Tighten to your cluster's
+    # API/service CIDRs if you want a stricter policy.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 6443
