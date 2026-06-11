@@ -5,6 +5,7 @@ import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
 import tailwindcss from "@tailwindcss/vite";
 import mermaid from "astro-mermaid";
+import remarkGfm from "remark-gfm";
 import starlightLlmsTxt from "starlight-llms-txt";
 
 // Wrap every <table> so wide content stays keyboard-scrollable in Safari/Firefox.
@@ -107,6 +108,11 @@ export default defineConfig({
   },
 
   markdown: {
+    // GFM is normally Astro's default, but Starlight's MDX pipeline was not
+    // emitting <table>/<del> for pipe tables and strikethrough — every table
+    // in the docs rendered as literal `| … |` text. Wiring remark-gfm
+    // explicitly restores GFM table/strikethrough/autolink parsing.
+    remarkPlugins: [remarkGfm],
     rehypePlugins: [rehypeAccessibleTables],
   },
 
