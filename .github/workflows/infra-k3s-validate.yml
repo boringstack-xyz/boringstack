@@ -1,0 +1,61 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-k3s-validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: kustomize build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'infra/k3s/**'
+              - '.github/workflows/infra-k3s-validate.yml'
+
+      - name: Install kubectl (bundles kustomize)
+        if: steps.filter.outputs.code == 'true'
+        uses: azure/setup-kubectl@776406bce94f63e41d621b960d78ee25c8b76ede # v4.0.1
+
+      # `kubectl kustomize` renders base + prod overlay offline. Catches the
+      # realistic breakage: bad resource refs, malformed YAML, broken patches,
+      # and the swappable secrets component wiring. CRDs (CNPG, Traefik,
+      # cert-manager, VSO, ServiceMonitor) need no schema here; render is enough.
+      - name: Build base
+        if: steps.filter.outputs.code == 'true'
+        run: kubectl kustomize infra/k3s/base > /dev/null
+
+      - name: Build prod overlay
+        if: steps.filter.outputs.code == 'true'
+        run: kubectl kustomize infra/k3s/overlays/prod > /dev/null
+
+      # The alternative secrets backends must also stay renderable. `plain`
+      # needs a secret.env (gitignored), so seed a throwaway one for the check.
+      - name: Build sealed secrets component
+        if: steps.filter.outputs.code == 'true'
+        run: kubectl kustomize infra/k3s/overlays/prod/secrets/sealed > /dev/null
+
+      - name: Build plain secrets component
+        if: steps.filter.outputs.code == 'true'
+        run: |
+          set -euo pipefail
+          printf 'JWT_SECRET=x\nVALKEY_PASSWORD=x\n' > infra/k3s/overlays/prod/secrets/plain/secret.env
+          trap 'rm -f infra/k3s/overlays/prod/secrets/plain/secret.env' EXIT
+          kubectl kustomize infra/k3s/overlays/prod/secrets/plain > /dev/null

@@ -8,13 +8,15 @@ metadata:
     # alias=full-image-path. The updater watches GHCR and writes the new tag
     # back into overlays/prod/kustomization.yaml, which triggers a sync.
     argocd-image-updater.argoproj.io/image-list: api=ghcr.io/boringstack-xyz/boringstack-api, ui=ghcr.io/boringstack-xyz/boringstack-ui
-    # Track newest git-SHA tag (matches a CI that tags images with the commit
-    # SHA). If your CI publishes semver instead, switch to `semver` and set
-    # allow-tags accordingly.
+    # Track the newest `sha-<short>` build. BoringStack's release workflows tag
+    # every push to main as `latest` + `sha-<short>` (and a semver tag on a
+    # changesets/`v*` release), so allow-tags matches the sha- form and ignores
+    # `latest`. To pin to releases instead, switch to `update-strategy: semver`
+    # with `allow-tags: regexp:^v?\d+\.\d+\.\d+$`.
     argocd-image-updater.argoproj.io/api.update-strategy: newest-build
-    argocd-image-updater.argoproj.io/api.allow-tags: regexp:^[a-f0-9]{7,40}$
+    argocd-image-updater.argoproj.io/api.allow-tags: regexp:^sha-[0-9a-f]{7,40}$
     argocd-image-updater.argoproj.io/ui.update-strategy: newest-build
-    argocd-image-updater.argoproj.io/ui.allow-tags: regexp:^[a-f0-9]{7,40}$
+    argocd-image-updater.argoproj.io/ui.allow-tags: regexp:^sha-[0-9a-f]{7,40}$
     # Commit the tag bump back to git (GitOps source of truth).
     argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd/image-updater-git-creds
     argocd-image-updater.argoproj.io/write-back-target: kustomization
