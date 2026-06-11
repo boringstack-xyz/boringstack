@@ -68,15 +68,28 @@ Report both at the end. Everything in `findings[]` is otherwise mandatory.
 ## Process
 
 ### 1. Locate the report
-Look for `.audit/audit-report.json`. If absent, also `find . -name 'audit-report.json' -not -path '*/node_modules/*'`.
-- **None found** → stop. Tell the user to run `/audit-monorepo` first. Do nothing else.
-- **Found** → load it. (Ignore any `*.done.json`; those are already executed.)
+Reports live at `.audit/audit-report.json` (the monorepo audit) **or** at
+`.audit/<domain>/audit-report.json` (scoped audits like `audit-api-security`,
+`audit-drizzle-queries`, … — each writes its own per-domain path so several can be produced
+in a row without clobbering). Discover every candidate:
+`ls .audit/audit-report.json .audit/*/audit-report.json 2>/dev/null` (ignore any `*.done.json`
+— those are already executed).
+- **None found** → stop. Tell the user to run an audit skill first (`/audit-monorepo` or a
+  scoped `/audit-<domain>`). Do nothing else.
+- **Exactly one** → load it.
+- **Several** → if the user named a domain (e.g. "execute the api-security audit"), load that
+  one. Otherwise list the candidates by their `domain` field + path and ask which to execute,
+  then process exactly that one report this run (the user can re-invoke for the others).
+
+Each report carries a `domain` field; use it for the branch name and summary below.
 
 ### 2. Preflight (once)
 - Confirm `.audit/` is gitignored; if not, add it (do not commit the report).
-- If on the default branch (`main`), create ONE branch for the whole run:
-  `git checkout -b chore/audit-fixes-$(date +%Y%m%d-%H%M)`. If already on a non-main
-  feature branch, stay on it. All findings land on this single branch.
+- If on the default branch (`main`), create ONE branch for the whole run, naming it after the
+  report's `domain` so parallel scoped runs don't collide:
+  `git checkout -b chore/audit-<domain>-fixes-$(date +%Y%m%d-%H%M)` (use `audit-fixes` when the
+  report has no `domain`, i.e. the monorepo audit). If already on a non-main feature branch,
+  stay on it. All findings land on this single branch.
 - Create a TodoWrite item per finding so progress is visible.
 
 ### 3. Build the work queue
@@ -109,9 +122,13 @@ disjoint in files.
 - Run `bun run check` once more in each touched app to confirm the cumulative state is green.
 - Push the branch: `git push -u origin <branch>` (pre-push runs the full security/smoke
   gate — that is the real validation; if it blocks, fix the cause and re-push).
-- Rename the consumed report to `.audit/audit-report.$(date +%Y%m%d-%H%M).done.json` so a
-  re-run won't reprocess it, and write `.audit/execution-summary.json`:
-  `{ "branch": "...", "done": ["F001", ...], "failed": [{"id":"","why":""}], "skipped": ["..."], "decisions": [{"id":"","chose":"","why":""}] }`.
+- Rename the consumed report to a `*.done.json` IN ITS OWN DIRECTORY so a re-run won't
+  reprocess it and other domains' reports are untouched:
+  `.audit/audit-report.$(date +%Y%m%d-%H%M).done.json` for the monorepo report, or
+  `.audit/<domain>/audit-report.$(date +%Y%m%d-%H%M).done.json` for a scoped report. Write the
+  run summary next to it (`.audit/execution-summary.json` for the monorepo run, or
+  `.audit/<domain>/execution-summary.json` for a scoped run):
+  `{ "domain": "...", "branch": "...", "done": ["F001", ...], "failed": [{"id":"","why":""}], "skipped": ["..."], "decisions": [{"id":"","chose":"","why":""}] }`.
 - Print a one-screen summary: branch name, counts (done/failed/skipped), and any failed
   findings with their reason. Offer to open a PR (`gh pr create`); do not open it unasked.
 
@@ -119,8 +136,8 @@ disjoint in files.
 
 | Step | Command |
 | ---- | ------- |
-| find report | `cat .audit/audit-report.json` |
-| branch | `git checkout -b chore/audit-fixes-$(date +%Y%m%d-%H%M)` |
+| find report(s) | `ls .audit/audit-report.json .audit/*/audit-report.json 2>/dev/null` |
+| branch | `git checkout -b chore/audit-<domain>-fixes-$(date +%Y%m%d-%H%M)` |
 | per-app gate | `cd apps/api && bun run check` · `cd apps/ui && bun run check` · `cd apps/docs && bun run check:docs-data` |
 | revert a finding | `git checkout -- <files>` (uncommitted) |
 | commit | `git commit -m "fix(<scope>): <title>" -m "Audit: <id>"` |
