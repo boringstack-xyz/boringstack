@@ -111,10 +111,15 @@ resource "hcloud_server" "main" {
   # server whenever user_data changes — so a routine tfvars edit (repo
   # URL, superuser credentials, backup settings) would otherwise destroy
   # the VPS and every Docker volume on it (Postgres data, acme.json,
-  # GlitchTip). Ignore post-create drift; rebuild deliberately with
-  #   tofu apply -replace=module.hetzner.hcloud_server.main
-  # when you really want a fresh server.
+  # GlitchTip). Ignore post-create drift to avoid accidental rebuilds.
+  #
+  # prevent_destroy (var-gated; OpenTofu 1.12+) is the second guard: any
+  # plan that would destroy or -replace this server is rejected while the
+  # flag is true. To deliberately rebuild a fresh box, lower the gate:
+  #   tofu apply -var prevent_server_destroy=false \
+  #     -replace=module.hetzner.hcloud_server.main
   lifecycle {
-    ignore_changes = [user_data]
+    ignore_changes  = [user_data]
+    prevent_destroy = var.prevent_destroy
   }
 }

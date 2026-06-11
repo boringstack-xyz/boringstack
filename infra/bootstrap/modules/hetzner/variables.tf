@@ -32,3 +32,8 @@ variable "cloud_init" {
   type        = string
   description = "Rendered cloud-init YAML, injected as the server's user_data."
 }
+
+variable "prevent_destroy" {
+  type        = bool
+  description = "Guard the VPS against destroy/replace. Set false only for a deliberate rebuild."
+}
