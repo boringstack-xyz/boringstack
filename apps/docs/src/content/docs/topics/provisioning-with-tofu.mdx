@@ -17,7 +17,7 @@ You'll need the following before starting:
 - **Cloudflare API token**: Cloudflare, My Profile, API Tokens, Custom Token. Scope: `Zone:DNS:Edit`, `Zone:Zone Settings:Edit`, `Zone:Rulesets:Edit` on the target zone.
 - **Cloudflare zone ID**: Zone overview page in the dashboard, right sidebar.
 - **SSH key**: Run `ssh-keygen -t ed25519` if you don't have one. You'll paste the `.pub` contents.
-- **OpenTofu binary**: `brew install opentofu` on macOS. See [install docs](https://opentofu.org/docs/intro/install/) for other OSes.
+- **OpenTofu binary**: `brew install opentofu` on macOS — version **1.12 or newer** (the stack uses variable-driven `prevent_destroy` and native state locking). See [install docs](https://opentofu.org/docs/intro/install/) for other OSes.
 
 ## Apply
 
@@ -97,6 +97,10 @@ domain               = "boringstack.example"
 vps_type     = "cx32"          # 4 vCPU / 8 GB
 vps_location = "fsn1"
 
+# Protection (default true). Blocks tofu *and* Hetzner from destroying the
+# VPS; set false only for a deliberate rebuild or teardown.
+prevent_server_destroy = true
+
 # Stack secrets
 jwt_secret        = "..."  # 32+ chars
 postgres_password = "..."
@@ -126,19 +130,30 @@ Everything in `terraform.tfvars.example` ships with comments explaining what it'
 
 ## State management
 
-For a single operator: state file is local and gitignored (default config).
+State defaults to a local `terraform.tfstate` — gitignored, and fine for a single operator spinning something up quickly. But local state is a single point of failure: lose the file and you can no longer plan, reconcile, or safely destroy the stack — more so now that the VPS is delete-protected (see [Destroying](#destroying)).
 
-For a team: point the OpenTofu backend at S3 (or any S3-compatible store like Cloudflare R2, Backblaze B2, or Hetzner Object Storage). Add one block to `main.tf`:
+For anything long-lived, move state to **Cloudflare R2** (S3-compatible, no egress fees, an account you already have for DNS). `main.tf` ships a ready-to-uncomment `backend "s3"` block pre-filled with the R2-specific flags (`use_path_style`, the `skip_*` preflight toggles, `skip_s3_checksum`) and `use_lockfile = true` for native locking — no DynamoDB table. Deployment-specific values live in a gitignored `backend.hcl`, copied from `backend.hcl.example`:
 
 ```hcl
-terraform {
-  backend "s3" {
-    bucket = "boringstack-tofu-state"
-    key    = "boringstack/terraform.tfstate"
-    region = "..."
-  }
+# backend.hcl
+bucket = "boringstack-tfstate"
+key    = "bootstrap/terraform.tfstate"
+endpoints = {
+  s3 = "https://<CLOUDFLARE_ACCOUNT_ID>.r2.cloudflarestorage.com"
 }
 ```
+
+Create an R2 bucket and an R2 API token (Object Read & Write), then migrate the existing local state:
+
+```bash
+cp backend.hcl.example backend.hcl   # fill in bucket + account id
+export AWS_ACCESS_KEY_ID=<r2 access key id>
+export AWS_SECRET_ACCESS_KEY=<r2 secret access key>
+# uncomment the backend "s3" block in main.tf, then:
+tofu init -backend-config=backend.hcl -migrate-state
+```
+
+Credentials stay in the `AWS_*` env vars, never on disk. Hetzner Object Storage, Backblaze B2, or AWS S3 work the same way — only `endpoints.s3` (and the `skip_*`/`use_path_style` flags, for true AWS) differ.
 
 The state file contains secrets (cloud-init renders with sensitive values). Encrypt at rest and restrict bucket access. Same security posture as everywhere else in BoringStack.
 
@@ -176,11 +191,17 @@ The `bootstrap` module talks to cloud-init, which every major cloud accepts. Swa
 
 ## Destroying
 
+The VPS is protected by two independent layers (see [Design choices](#design-choices)): OpenTofu's `prevent_destroy` and Hetzner's API-level `delete_protection`/`rebuild_protection`. Both are driven by the `prevent_server_destroy` variable, which defaults to `true`. So a plain `tofu destroy` is **refused** — by design, you can't nuke production in a single command.
+
+To deliberately tear down, lower the gate first, then destroy:
+
 ```bash
-tofu destroy
+# Set prevent_server_destroy = false in terraform.tfvars (or pass -var on each command).
+tofu apply    # lifts the Hetzner delete/rebuild locks in place
+tofu destroy  # now succeeds
 ```
 
-This wipes the Hetzner server, removes Cloudflare records, deletes the firewall and SSH key, and reverts Cloudflare zone settings to defaults. The state file remains. Run `rm terraform.tfstate*` for full cleanup.
+The `apply` step is required: Hetzner won't honour a delete while the API lock is still set, so the lock must be lifted by an apply *before* `destroy` can remove the server. This wipes the Hetzner server, removes Cloudflare records, deletes the firewall and SSH key, and reverts Cloudflare zone settings to defaults. With remote state the state object stays in the bucket; with local state, run `rm terraform.tfstate*` for full cleanup.
 
 ## Troubleshooting
 
@@ -209,7 +230,8 @@ The runtime repos work fine without this one. It's a convenience layer, not a de
 - **Sane Cloudflare zone defaults**: SSL strict, HSTS 6 months, TLS min 1.2, browser integrity on. Matches what `production-labels.yml` expects. Each setting is one override away.
 - **DNS: apex and www only**: one A/AAAA pair on the apex serves both the SPA and `/api/*` via same-origin path routing. `www.` is a CNAME to apex with a redirect rule. No `api.` subdomain. Traefik path-routes `/api/*` on the same host.
 - **Edge bot-blocking, on by default**: a single Cloudflare WAF custom rule (`http_request_firewall_custom`) blocks common scanner probes — `/.env`, `/.git/`, `/wp-admin`, `/xmlrpc`, … — at the edge, so they never reach Traefik or the API. Configurable via `bot_block_paths`; disable with `enable_bot_blocking = false`. Works on the Cloudflare Free plan.
-- **State stays local by default**: single-operator default. An S3 backend block is one paste away for teams.
+- **State stays local by default, R2 one step away**: single-operator default is a local state file. `main.tf` ships a pre-wired, commented Cloudflare R2 backend (S3-compatible, native locking, no DynamoDB); enabling it is `cp backend.hcl.example backend.hcl`, uncomment the block, and `tofu init -migrate-state`. See [State management](#state-management).
+- **Production is hard to nuke, on purpose**: the VPS carries OpenTofu `prevent_destroy` *and* Hetzner API-level `delete_protection`/`rebuild_protection`, both gated behind a single `prevent_server_destroy` variable (default on). Defense in depth — destroying or replacing the box (and the Postgres, ACME, and GlitchTip volumes it holds) takes a deliberate, explicit gate-lowering, not a stray `tofu destroy` or a misclick in the Hetzner console. See [Destroying](#destroying).
 - **Secrets in terraform.tfvars (gitignored)**: same pragmatic floor as `compose/.env`. Upgrade to a secret manager when team size demands it.
 - **Outputs print, never side-effect**: apply prints the IP, ssh command, and site URL. Never auto-opens anything.
 - **Optional bootstrap repo, separate from infra-compose**: same logic as the planned Kubernetes template. Separation lets operators skip the tool entirely.
