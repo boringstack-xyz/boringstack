@@ -29,6 +29,37 @@ terraform {
       version = "~> 3.4"
     }
   }
+
+  # --------------------------------------------------------------------------
+  # Remote state (OPT-IN). Default is local state — a terraform.tfstate file on
+  # the operator's machine. That's fine for a quick spin-up, but it is a single
+  # point of failure for anything long-lived: lose the machine (or the file)
+  # and you lose the ability to plan, reconcile, or safely destroy the stack —
+  # made worse now that the VPS carries delete_protection. Move state to
+  # Cloudflare R2 (S3-compatible, no egress fees, an account you already have):
+  #
+  #   1. Create an R2 bucket and an R2 API token (Object Read & Write).
+  #   2. cp backend.hcl.example backend.hcl   # gitignored; fill in bucket + account id
+  #   3. export AWS_ACCESS_KEY_ID=<r2 access key id>
+  #      export AWS_SECRET_ACCESS_KEY=<r2 secret access key>
+  #   4. Uncomment the block below, then migrate the existing local state:
+  #        tofu init -backend-config=backend.hcl -migrate-state
+  #
+  # R2 speaks the S3 API, so we use the s3 backend with AWS-specific preflight
+  # disabled and native lockfile locking (S3 conditional writes — no DynamoDB;
+  # requires OpenTofu >= 1.10, already guaranteed by required_version above).
+  # --------------------------------------------------------------------------
+  # backend "s3" {
+  #   region                      = "auto" # R2 ignores it, but the s3 backend still requires a value
+  #   use_lockfile                = true   # state locking via S3 conditional writes (no DynamoDB)
+  #   use_path_style              = true
+  #   skip_credentials_validation = true
+  #   skip_region_validation      = true
+  #   skip_requesting_account_id  = true
+  #   skip_metadata_api_check     = true
+  #   skip_s3_checksum            = true # R2 rejects the AWS streaming-checksum trailer
+  #   # bucket, key, endpoints.s3 -> backend.hcl (see backend.hcl.example)
+  # }
 }
 
 provider "hcloud" {

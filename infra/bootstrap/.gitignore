@@ -15,6 +15,10 @@ crash.*.log
 *.tfvars.json
 !terraform.tfvars.example
 
+# Remote-state backend config (bucket + account id). Commit the example only.
+backend.hcl
+!backend.hcl.example
+
 # Editor / OS
 .DS_Store
 *.swp
