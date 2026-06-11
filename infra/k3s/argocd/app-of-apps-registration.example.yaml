@@ -1,4 +1,4 @@
-# OPTIONAL — only if your cluster is managed by an ArgoCD "app-of-apps".
+# OPTIONAL, only if your cluster is managed by an ArgoCD "app-of-apps".
 #
 # Most clusters can skip this: just `kubectl apply -f boringstack-prod.yaml`
 # (the file next to this one) to register the product directly.

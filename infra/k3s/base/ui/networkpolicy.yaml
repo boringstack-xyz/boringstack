@@ -11,7 +11,7 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # From the Traefik ingress controller only — the SPA is served to browsers.
+    # From the Traefik ingress controller only, the SPA is served to browsers.
     - from:
         - namespaceSelector:
             matchLabels:

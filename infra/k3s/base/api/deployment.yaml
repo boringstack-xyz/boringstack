@@ -43,8 +43,8 @@ spec:
               protocol: TCP
           # All app secrets/config arrive as one Secret (`boringstack-secrets`),
           # produced by the chosen secrets component in overlays/prod/secrets/*.
-          # The manifests never reference Vault directly — only this Secret —
-          # so Vault / Sealed Secrets / plain-env swap with a one-line change.
+          # The manifests never reference Vault directly, only this Secret, so
+          # Vault / Sealed Secrets / plain-env swap with a one-line change.
           envFrom:
             - secretRef:
                 name: boringstack-secrets
@@ -64,7 +64,7 @@ spec:
               value: "7330"
             - name: NODE_ENV
               value: production
-            # Behind Traefik — read X-Forwarded-* for correct client IPs.
+            # Behind Traefik, read X-Forwarded-* for correct client IPs.
             - name: TRUST_PROXY
               value: "true"
           # /health is a cheap liveness check; /ready aggregates db + valkey +

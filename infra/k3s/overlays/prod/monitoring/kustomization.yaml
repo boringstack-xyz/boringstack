@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Integrates with the cluster's existing kube-prometheus-stack — it does NOT
+# Integrates with the cluster's existing kube-prometheus-stack, it does NOT
 # deploy Prometheus/Grafana/Loki. The ServiceMonitor gets the api scraped by
 # the cluster Prometheus. See README.md to also surface the BoringStack Grafana
 # dashboards via the Grafana sidecar.

@@ -1,12 +1,12 @@
 ---
 title: ArgoCD image updater
-description: How the k3s target auto-deploys new builds — image-list, tag strategy, git write-back — and how to bootstrap and troubleshoot it.
+description: How the k3s target auto-deploys new builds via image-list, tag strategy, and git write-back, plus how to bootstrap and troubleshoot it.
 ---
 
 The [k3s target](/infra/kubernetes/) closes the deploy loop with
 [argocd-image-updater](https://argocd-image-updater.readthedocs.io/): when CI
 pushes a new GHCR image, the updater rewrites the tag in
-`overlays/prod/kustomization.yaml` and ArgoCD syncs it. All config is
+`overlays/prod/kustomization.yaml` and ArgoCD syncs it. All config lives in
 annotations on `infra/k3s/argocd/boringstack-prod.yaml`.
 
 ## The annotations
@@ -20,14 +20,16 @@ argocd-image-updater.argoproj.io/write-back-target: kustomization
 argocd-image-updater.argoproj.io/git-branch: main
 ```
 
-- **image-list** — `alias=image` pairs the updater watches.
-- **update-strategy / allow-tags** — `newest-build` + a git-SHA regex assumes CI
-  tags images with the commit SHA. If your CI publishes **semver** instead, use
-  `update-strategy: semver` and an allow-tags like `regexp:^v?\d+\.\d+\.\d+$`.
-- **write-back-method: git** — commits the tag bump back to your repo (GitOps
-  source of truth) using the `argocd/image-updater-git-creds` secret.
-- **write-back-target: kustomization** — edits the `images:` block, not the
-  Application spec.
+`image-list` pairs an alias with each image the updater watches.
+
+`update-strategy` + `allow-tags` of `newest-build` plus a git-SHA regex assumes
+CI tags images with the commit SHA. If your CI publishes semver instead, use
+`update-strategy: semver` and an allow-tags like `regexp:^v?\d+\.\d+\.\d+$`.
+
+`write-back-method: git` commits the tag bump back to your repo (the GitOps
+source of truth) using the `argocd/image-updater-git-creds` secret.
+`write-back-target: kustomization` edits the `images:` block rather than the
+Application spec.
 
 ## Bootstrap
 
@@ -39,19 +41,21 @@ argocd-image-updater.argoproj.io/git-branch: main
      --from-literal=password=<git-PAT-or-deploy-token>
    ```
    (Or an `sshPrivateKey` key for SSH write-back.)
-3. Give it pull access to GHCR (a registry pull secret / `--registries-conf`)
+3. Give it pull access to GHCR (a registry pull secret or `--registries-conf`)
    so it can read tags from your private packages.
 
 ## Troubleshooting
 
-- **No updates happen** — check the image-updater pod logs; confirm the
-  `allow-tags` regex matches the tags CI actually publishes.
-- **Updates detected but not committed** — the git creds secret is missing or
-  lacks push rights to `main`.
-- **Tag bumped but app didn't change** — confirm the Application's `images:`
-  block names match `image-list` exactly (registry + repo path).
+No updates happen: check the image-updater pod logs and confirm the `allow-tags`
+regex matches the tags CI actually publishes.
+
+Updates detected but not committed: the git creds secret is missing or lacks
+push rights to `main`.
+
+Tag bumped but the app didn't change: confirm the Application's `images:` block
+names match `image-list` exactly (registry plus repo path).
 
 ## Related
 
 - [Provisioning with k3s](/topics/provisioning-with-k3s/)
-- [Image updates (Compose / WUD)](/runbooks/image-updates/) — the Compose-path equivalent.
+- [Image updates (Compose / WUD)](/runbooks/image-updates/), the Compose-path equivalent.

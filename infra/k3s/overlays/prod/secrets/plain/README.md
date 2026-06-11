@@ -1,9 +1,10 @@
 # Secrets backend: plain Secret from a gitignored .env
 
-The simplest option — no controller, no Vault. Kustomize's `secretGenerator`
-builds the `boringstack-secrets` Secret from a local `secret.env` that is
-**gitignored** (never committed). Good for a private cluster you apply to
-yourself; less ideal for pure GitOps since the secret values live outside git.
+The simplest option, with no controller and no Vault. Kustomize's
+`secretGenerator` builds the `boringstack-secrets` Secret from a local
+`secret.env` that is gitignored (never committed). Good for a private cluster you
+apply to yourself; less ideal for pure GitOps since the secret values live
+outside git.
 
 ## Use it
 
@@ -21,4 +22,4 @@ yourself; less ideal for pure GitOps since the secret values live outside git.
 
 3. Point the overlay at `secrets/plain` instead of `secrets/vault`.
 
-`secret.env` is matched by `.gitignore` in this directory — keep it that way.
+`secret.env` is matched by `.gitignore` in this directory; keep it that way.

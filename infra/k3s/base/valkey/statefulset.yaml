@@ -89,7 +89,7 @@ spec:
         name: data
       spec:
         accessModes: ["ReadWriteOnce"]
-        # Storage class is a per-cluster knob — see infra/k3s/README.md.
+        # Storage class is a per-cluster knob, see infra/k3s/README.md.
         # Leave unset to use the cluster default, or set e.g. `longhorn`.
         # storageClassName: longhorn
         resources:

@@ -29,7 +29,7 @@ spec:
   entryPoints:
     - websecure
   routes:
-    # API — must precede the UI catch-all.
+    # API, must precede the UI catch-all.
     - match: Host(`boringstack.example.com`) && (PathPrefix(`/api`) || Path(`/health`))
       kind: Rule
       priority: 10
@@ -39,7 +39,7 @@ spec:
       services:
         - name: api
           port: 7330
-    # UI — host-wide fallback (SPA shell + assets).
+    # UI, host-wide fallback (SPA shell + assets).
     - match: Host(`boringstack.example.com`)
       kind: Rule
       priority: 1
