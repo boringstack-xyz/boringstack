@@ -1,0 +1,85 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# All prod resources land in their own namespace.
+namespace: boringstack-prod
+
+resources:
+  - ../../base
+
+  # --- Secrets backend (pick ONE) ------------------------------------------
+  # Produces the `boringstack-secrets` + `ghcr-registry-secret` Secrets that
+  # the workloads consume. Vault is the default; swap the line for one of the
+  # alternatives in ./secrets/ (see each dir's README).
+  - secrets/vault
+  # - secrets/sealed
+  # - secrets/plain
+
+  # --- Edge: routing, TLS, Traefik middleware ------------------------------
+  - middlewares.yaml
+  - ingress.yaml
+  - certificate.yaml
+
+  # --- Namespace governance ------------------------------------------------
+  - resource-quota.yaml
+  - limitrange.yaml
+
+  # --- Availability --------------------------------------------------------
+  - hpa.yaml
+  - pdbs.yaml
+
+  # --- Error tracking (per-project GlitchTip) ------------------------------
+  - glitchtip
+
+  # --- Monitoring integration (existing cluster kube-prometheus-stack) -----
+  - monitoring
+
+  # --- Postgres backups (opt-in) -------------------------------------------
+  # Requires: secrets/vault/vault-backup-secret (or equivalent) enabled, and
+  # the barman store configured in patches/postgres-backup.yaml. Then
+  # uncomment this line AND the postgres-backup patch below.
+  # - scheduled-backup.yaml
+
+# Image Updater rewrites these tags on every CI build (write-back-target:
+# kustomization). The initial value is a bootstrap placeholder.
+images:
+  - name: ghcr.io/boringstack-xyz/boringstack-api
+    newTag: latest
+  - name: ghcr.io/boringstack-xyz/boringstack-ui
+    newTag: latest
+
+patches:
+  # Pull private GHCR images on every Deployment in the overlay.
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: not-used
+      spec:
+        template:
+          spec:
+            imagePullSecrets:
+              - name: ghcr-registry-secret
+    target:
+      kind: Deployment
+  - path: patches/api-replicas.yaml
+    target:
+      kind: Deployment
+      name: api
+  - path: patches/api-resources.yaml
+    target:
+      kind: Deployment
+      name: api
+  - path: patches/ui-replicas.yaml
+    target:
+      kind: Deployment
+      name: ui
+  - path: patches/postgres-ha.yaml
+    target:
+      kind: Cluster
+      name: boringstack-db
+  # Opt-in barman backup store (enable with scheduled-backup.yaml above):
+  # - path: patches/postgres-backup.yaml
+  #   target:
+  #     kind: Cluster
+  #     name: boringstack-db

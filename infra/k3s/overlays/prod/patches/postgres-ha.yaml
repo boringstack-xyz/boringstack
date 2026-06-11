@@ -1,0 +1,25 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: boringstack-db
+spec:
+  instances: 3
+  storage:
+    size: 50Gi
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    # `required` needs >= 3 schedulable nodes. Use `preferred` on a smaller
+    # cluster, or scale `instances` down to match.
+    podAntiAffinityType: required
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+  postgresql:
+    parameters:
+      shared_buffers: "256MB"
+      max_connections: "100"

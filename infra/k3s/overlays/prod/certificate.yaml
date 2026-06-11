@@ -1,0 +1,18 @@
+# TLS certificate for the app + GlitchTip subdomain.
+# Prerequisites:
+#   - cert-manager installed in the cluster
+#   - a DNS-01-capable ClusterIssuer (verify name: kubectl get clusterissuer)
+# The issuer name below is a per-cluster knob — see infra/k3s/README.md.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: boringstack-tls
+  namespace: boringstack-prod
+spec:
+  secretName: boringstack-tls
+  issuerRef:
+    name: letsencrypt-dns01
+    kind: ClusterIssuer
+  dnsNames:
+    - boringstack.example.com
+    - glitchtip.boringstack.example.com

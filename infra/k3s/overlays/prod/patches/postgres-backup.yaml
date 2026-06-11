@@ -1,0 +1,26 @@
+# Opt-in: barman backups to an S3-compatible store (e.g. Cloudflare R2).
+# Enable by: (1) provisioning secrets/vault/vault-backup-secret (or an
+# equivalent `boringstack-backup` Secret with ACCESS_KEY_ID/ACCESS_SECRET_KEY),
+# (2) editing the placeholders below, (3) uncommenting this patch AND
+# scheduled-backup.yaml in ../kustomization.yaml.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: boringstack-db
+spec:
+  postgresql:
+    parameters:
+      archive_mode: "on"
+      archive_timeout: "300"
+  backup:
+    barmanObjectStore:
+      destinationPath: s3://REPLACE_ME_BUCKET/boringstack
+      endpointURL: https://REPLACE_ME_ACCOUNT.r2.cloudflarestorage.com
+      s3Credentials:
+        accessKeyId:
+          name: boringstack-backup
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: boringstack-backup
+          key: ACCESS_SECRET_KEY
+    retentionPolicy: "7d"

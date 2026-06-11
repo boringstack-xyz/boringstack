@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: boringstack-api
+  namespace: boringstack-prod
+  labels:
+    app: api
+    # kube-prometheus-stack's Prometheus selects ServiceMonitors by label. Many
+    # installs require the Helm release label (e.g. `release: kube-prometheus-stack`)
+    # OR set serviceMonitorSelectorNilUsesHelmValues=false to pick up all. Add
+    # whatever your cluster's `prometheus.spec.serviceMonitorSelector` matches.
+    # release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: api
+  endpoints:
+    # Point at the api's Prometheus metrics endpoint. Mirrors the scrape target
+    # in infra/compose/compose/prometheus/prometheus.yml — adjust path/port if
+    # your api exposes metrics elsewhere.
+    - port: http
+      path: /metrics
+      interval: 30s
+      scheme: http

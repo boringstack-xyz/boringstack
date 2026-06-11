@@ -1,0 +1,12 @@
+# Opt-in: enable alongside patches/postgres-backup.yaml (see ../kustomization.yaml).
+# CNPG uses 6-field cron (with seconds). This runs every 4 hours.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: boringstack-db-scheduled
+  namespace: boringstack-prod
+spec:
+  schedule: "0 0 */4 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: boringstack-db

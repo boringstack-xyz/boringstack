@@ -1,0 +1,50 @@
+---
+title: Postgres backups (CNPG)
+description: Enable CloudNativePG barman backups to S3/R2 for the k3s target — credentials, store config, schedule — and how to restore.
+---
+
+The [k3s target](/infra/kubernetes/) runs Postgres via the
+[CloudNativePG](https://cloudnative-pg.io/) operator. HA (3 instances) is on by
+default in prod; **off-site backups are opt-in** so the default stack deploys
+without an object store configured.
+
+## Enable backups
+
+1. **Credentials** — provide an S3-compatible access key as a
+   `boringstack-backup` Secret (keys `ACCESS_KEY_ID` / `ACCESS_SECRET_KEY`). With
+   Vault, uncomment `vault-backup-secret.yaml` in
+   `overlays/prod/secrets/vault/kustomization.yaml` and seed:
+   ```bash
+   vault kv put secret/boringstack-backup \
+     AWS_ACCESS_KEY_ID=<key> AWS_SECRET_ACCESS_KEY=<secret>
+   ```
+
+2. **Store** — edit `overlays/prod/patches/postgres-backup.yaml`: set
+   `destinationPath` (e.g. `s3://my-bucket/boringstack`) and `endpointURL` (e.g.
+   your Cloudflare R2 endpoint). Adjust `retentionPolicy`.
+
+3. **Wire it up** — in `overlays/prod/kustomization.yaml`, uncomment:
+   - the `scheduled-backup.yaml` resource (runs every 4h via CNPG's 6-field cron)
+   - the `patches/postgres-backup.yaml` patch (attaches the barman store + enables WAL archiving)
+
+Sync. CNPG starts archiving WAL and taking base backups on schedule.
+
+## Verify
+
+```bash
+kubectl -n boringstack-prod get cluster boringstack-db -o jsonpath='{.status.conditions}'
+kubectl -n boringstack-prod get backups
+```
+
+## Restore
+
+CloudNativePG restores by bootstrapping a **new** Cluster from the object store
+(`bootstrap.recovery`) — you don't restore in place. See the
+[CNPG recovery docs](https://cloudnative-pg.io/documentation/current/recovery/);
+point a recovery `externalCluster` at the same `barmanObjectStore` and the
+`boringstack-backup` credentials.
+
+## Related
+
+- [Provisioning with k3s](/topics/provisioning-with-k3s/)
+- [Backups (Compose path)](/runbooks/backups/) — the single-host equivalent.

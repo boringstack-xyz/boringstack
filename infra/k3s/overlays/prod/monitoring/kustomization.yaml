@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Integrates with the cluster's existing kube-prometheus-stack — it does NOT
+# deploy Prometheus/Grafana/Loki. The ServiceMonitor gets the api scraped by
+# the cluster Prometheus. See README.md to also surface the BoringStack Grafana
+# dashboards via the Grafana sidecar.
+resources:
+  - servicemonitor.yaml
+
+# --- Grafana dashboards (optional) ---------------------------------------
+# The BoringStack dashboards live in infra/compose/compose/grafana/dashboards/.
+# To have the cluster Grafana auto-import them, generate a ConfigMap labelled
+# `grafana_dashboard: "1"`. Cross-tree file refs need ArgoCD/kustomize's
+# load-restrictor relaxed, so the simplest portable path is to copy the JSON
+# into ./dashboards/ here and enable the generator below (see README.md).
+#
+# configMapGenerator:
+#   - name: boringstack-grafana-dashboards
+#     files:
+#       - dashboards/boringstack-api.json
+#       - dashboards/boringstack-postgres.json
+#       - dashboards/boringstack-host.json
+#       - dashboards/boringstack-api-logs.json
+#       - dashboards/boringstack-ui-logs.json
+#     options:
+#       labels:
+#         grafana_dashboard: "1"
+#       disableNameSuffixHash: true
