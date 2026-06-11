@@ -377,6 +377,28 @@ export class BillingService {
       return;
     }
 
+    /*
+     * Re-derive the account from the verified Stripe customer rather than
+     * trusting session.metadata.accountId alone — the same cross-check
+     * handleSubscriptionUpsert already performs. The metadata rides inside
+     * a signature-verified event, so this is defense-in-depth: it catches a
+     * mis-set/reassigned customer→account mapping before we mutate plans.
+     */
+    const account = await tx.query.accounts.findFirst({
+      where: eq(accounts.stripeCustomerId, customerId),
+    });
+
+    if (account?.id !== accountId) {
+      logger.warn("Checkout customer does not map to the metadata account", {
+        event: "billing.webhook.account_mismatch",
+        customerId,
+        metadataAccountId: accountId,
+        resolvedAccountId: account?.id ?? null,
+      });
+
+      return;
+    }
+
     if (await this.shouldSkipStaleStripeEvent(tx, accountId, details)) {
       return;
     }
