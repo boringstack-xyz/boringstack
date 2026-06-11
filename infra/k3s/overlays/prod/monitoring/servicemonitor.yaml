@@ -16,7 +16,7 @@ spec:
       app: api
   endpoints:
     # Point at the api's Prometheus metrics endpoint. Mirrors the scrape target
-    # in infra/compose/compose/prometheus/prometheus.yml — adjust path/port if
+    # in infra/compose/compose/prometheus/prometheus.yml, adjust path/port if
     # your api exposes metrics elsewhere.
     - port: http
       path: /metrics

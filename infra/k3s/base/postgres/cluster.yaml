@@ -7,7 +7,7 @@ spec:
   instances: 1
   storage:
     size: 10Gi
-    # Storage class is a per-cluster knob — see infra/k3s/README.md. Leave the
+    # Storage class is a per-cluster knob, see infra/k3s/README.md. Leave the
     # line commented to use the cluster default, or set e.g. `longhorn`.
     # storageClass: longhorn
   postgresql:

@@ -3,33 +3,32 @@ title: "Infra template: Kubernetes (k3s)"
 description: Optional GitOps deployment target for any ArgoCD-managed k3s/Kubernetes cluster. Kustomize base + prod overlay, CloudNativePG, Traefik + cert-manager, per-project GlitchTip, swappable secrets.
 ---
 
-`infra/k3s` is the **cluster** deployment target — the alternative to the
-single-host [`infra/compose`](/infra/overview/) and
-[OpenTofu/Hetzner](/topics/provisioning-with-tofu/) paths. Pick the one that
-fits your operating model; you don't need all three.
+`infra/k3s` is the cluster deployment target, the alternative to the single-host
+[`infra/compose`](/infra/overview/) and [OpenTofu/Hetzner](/topics/provisioning-with-tofu/)
+paths. Pick the one that fits your operating model; you don't need all three.
 
-It ships BoringStack to any ArgoCD-managed k3s/Kubernetes cluster as GitOps:
-push code → CI builds & pushes GHCR images → argocd-image-updater bumps the tag
-→ ArgoCD syncs. The whole app runs in one namespace with HA, autoscaling, and
-TLS.
+It ships BoringStack to any ArgoCD-managed k3s/Kubernetes cluster as GitOps: push
+code, CI builds and pushes a GHCR image, argocd-image-updater bumps the tag, and
+ArgoCD syncs. The whole app runs in one namespace with HA, autoscaling, and TLS.
 
 BoringStack is Compose-first on purpose, so this target lives in its own
-`infra/k3s/` subtree and is entirely opt-in — it never sits in the default
-deploy path.
+`infra/k3s/` subtree and is entirely opt-in. It never sits in the default deploy
+path.
 
 ## What runs
 
 | Workload | Manifest | Notes |
 |---|---|---|
-| **api** | `base/api/` | Bun/Elysia, port 7330, `/health` (liveness) + `/ready` (readiness) |
-| **ui** | `base/ui/` | nginx static SPA, port 8080 |
-| **Postgres** | `base/postgres/` | CloudNativePG `Cluster` (1 → 3 instances in prod) |
-| **Valkey** | `base/valkey/` | in-namespace cache + BullMQ backend |
-| **GlitchTip** | `overlays/prod/glitchtip/` | per-project error tracking (web + worker) |
-| **migrations** | `base/api/migration-job.yaml` | ArgoCD PreSync Job: `db:migrate && db:seed` |
+| api | `base/api/` | Bun/Elysia, port 7330, `/health` (liveness) and `/ready` (readiness) |
+| ui | `base/ui/` | nginx static SPA, port 8080 |
+| Postgres | `base/postgres/` | CloudNativePG `Cluster`, 1 instance (3 in prod) |
+| Valkey | `base/valkey/` | in-namespace cache and BullMQ backend |
+| GlitchTip | `overlays/prod/glitchtip/` | per-project error tracking (web and worker) |
+| migrations | `base/api/migration-job.yaml` | ArgoCD PreSync Job: `db:migrate && db:seed` |
 
-Routing mirrors Compose prod — one domain, same-origin path routing:
-`Host && (/api or /health)` → api, everything else → ui (the SPA).
+Routing mirrors Compose prod: one domain with same-origin path routing.
+`Host && (/api or /health)` goes to the api; everything else goes to the ui
+(the SPA).
 
 ## Layout
 
@@ -41,38 +40,37 @@ infra/k3s/
     └── secrets/   swappable backend: vault (default) | sealed | plain
 ```
 
-`base/` is generic; `overlays/prod/` adds replicas/anti-affinity (api ×3, ui ×2,
-Postgres ×3), HPAs, PDBs, a ResourceQuota/LimitRange, Traefik middleware, the
-TLS `Certificate`, GlitchTip, and the monitoring integration.
+`base/` is generic. The prod overlay adds replicas and anti-affinity (api ×3,
+ui ×2, Postgres ×3), HPAs, PDBs, a ResourceQuota/LimitRange, Traefik middleware,
+the TLS `Certificate`, GlitchTip, and the monitoring integration.
 
 ## Prerequisites
 
 The cluster must provide ArgoCD + argocd-image-updater, the CloudNativePG
 operator, cert-manager with a DNS-01 `ClusterIssuer`, Traefik (k3s default), and
 a persistent StorageClass. Optionally kube-prometheus-stack (for the
-ServiceMonitor + Grafana dashboards) and your chosen secrets backend.
+ServiceMonitor and Grafana dashboards) and your chosen secrets backend.
 
 ## Secrets are pluggable
 
-Every workload reads two plain k8s Secrets — `boringstack-secrets` (app env) and
-`ghcr-registry-secret` (GHCR pull) — plus the CNPG-generated `boringstack-db-app`
-(`DATABASE_URL`). The manifests never reference Vault directly, so *how* those
-Secrets are produced is a swappable Kustomize component under
+Every workload reads two plain k8s Secrets, `boringstack-secrets` (app env) and
+`ghcr-registry-secret` (GHCR pull), plus the CNPG-generated `boringstack-db-app`
+that carries `DATABASE_URL`. The manifests never reference Vault directly, so how
+those Secrets are produced is a swappable Kustomize component under
 `overlays/prod/secrets/`:
 
-- **`vault`** (default) — HashiCorp Vault via the Vault Secrets Operator.
-- **`sealed`** — Bitnami SealedSecrets (encrypted, commit-safe).
-- **`plain`** — kustomize `secretGenerator` over a gitignored `secret.env`.
+- `vault` (default): HashiCorp Vault via the Vault Secrets Operator.
+- `sealed`: Bitnami SealedSecrets, encrypted and safe to commit.
+- `plain`: a kustomize `secretGenerator` over a gitignored `secret.env`.
 
 Switch by editing one line in `overlays/prod/kustomization.yaml`. See the
 [secrets backends runbook](/runbooks/vault-secrets-operator/).
 
 ## Monitoring
 
-The target does **not** deploy Prometheus/Grafana/Loki. It plugs into the
-cluster's kube-prometheus-stack via a `ServiceMonitor` (scrapes the api) and
-optional Grafana dashboard ConfigMaps. See
-`overlays/prod/monitoring/README.md`.
+The target does not deploy Prometheus/Grafana/Loki. It plugs into the cluster's
+kube-prometheus-stack via a `ServiceMonitor` that scrapes the api, plus optional
+Grafana dashboard ConfigMaps. See `overlays/prod/monitoring/README.md`.
 
 ## Get started
 
@@ -81,8 +79,8 @@ and `infra/k3s/README.md`.
 
 ## Related
 
-- [Provisioning with k3s](/topics/provisioning-with-k3s/) — zero to live on a cluster.
-- [ArgoCD image updater](/runbooks/argocd-image-updater/) — the auto-deploy loop.
+- [Provisioning with k3s](/topics/provisioning-with-k3s/); zero to live on a cluster.
+- [ArgoCD image updater](/runbooks/argocd-image-updater/); the auto-deploy loop.
 - [Secrets backends (VSO / Sealed / plain)](/runbooks/vault-secrets-operator/).
 - [Postgres backups (CNPG)](/runbooks/cnpg-backups/).
-- [Infra overview](/infra/overview/) — the Compose-first single-host target.
+- [Infra overview](/infra/overview/); the Compose-first single-host target.

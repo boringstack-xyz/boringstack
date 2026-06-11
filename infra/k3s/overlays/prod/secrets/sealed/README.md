@@ -35,5 +35,5 @@ decrypts committed `SealedSecret` manifests into real `Secret`s in-cluster.
    `kustomization.yaml`, and point the overlay at `secrets/sealed` instead of
    `secrets/vault`.
 
-SealedSecrets are safe to commit — only the controller's private key can
+SealedSecrets are safe to commit; only the controller's private key can
 decrypt them.

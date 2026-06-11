@@ -7,9 +7,9 @@ import { Aside } from "@astrojs/starlight/components";
 
 The cluster deployment path. Where [OpenTofu](/topics/provisioning-with-tofu/)
 gives you a single VPS running docker-compose, this gives you a GitOps loop on a
-Kubernetes cluster you already run: push code → CI publishes GHCR images →
-argocd-image-updater bumps the tag → ArgoCD syncs. HA, autoscaling, and TLS come
-with it.
+Kubernetes cluster you already run: push code, CI publishes GHCR images,
+argocd-image-updater bumps the tag, and ArgoCD syncs. HA, autoscaling, and TLS
+come with it.
 
 Source lives in [`infra/k3s`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/k3s).
 
@@ -24,18 +24,18 @@ Source lives in [`infra/k3s`](https://github.com/boringstack-xyz/boringstack/tre
 
 A k3s/Kubernetes cluster with these operators installed:
 
-- **ArgoCD** + **argocd-image-updater** (with its `argocd/image-updater-git-creds` write-back secret)
-- **CloudNativePG** operator
-- **cert-manager** + a DNS-01-capable `ClusterIssuer`
-- **Traefik** (ships with k3s) exposing `web` + `websecure` entrypoints
-- a default/persistent **StorageClass**
-- *optional:* **kube-prometheus-stack** (metrics + dashboards), and a secrets
-  backend — **Vault + VSO** (default), or the **SealedSecrets** controller
+- ArgoCD + argocd-image-updater (with its `argocd/image-updater-git-creds` write-back secret)
+- the CloudNativePG operator
+- cert-manager + a DNS-01-capable `ClusterIssuer`
+- Traefik (ships with k3s) exposing `web` + `websecure` entrypoints
+- a default/persistent StorageClass
+- optional: kube-prometheus-stack (metrics and dashboards), and a secrets
+  backend (Vault + VSO by default, or the SealedSecrets controller)
 
 You'll also need CI that builds and pushes `ghcr.io/<owner>/<project>-api` and
-`-ui` images — the same pipeline the Compose/WUD path uses.
+`-ui` images, the same pipeline the Compose/WUD path uses.
 
-## 1. Rebrand & set the knobs
+## 1. Rebrand and set the knobs
 
 From your fork's root:
 
@@ -49,16 +49,16 @@ manifests. Then edit the handful of cluster-specific values (all listed in
 
 - the domain in `overlays/prod/ingress.yaml`, `certificate.yaml`, `glitchtip/`
 - the `ClusterIssuer` name in `overlays/prod/certificate.yaml`
-- the `StorageClass` in `base/postgres/cluster.yaml` + `base/valkey/statefulset.yaml` (optional; defaults to the cluster default)
+- the `StorageClass` in `base/postgres/cluster.yaml` and `base/valkey/statefulset.yaml` (optional; defaults to the cluster default)
 - `source.repoURL` in `argocd/boringstack-prod.yaml`
 
 ## 2. Seed secrets
 
 Pick a backend in `overlays/prod/secrets/` (default Vault). For Vault, populate
-the KV-v2 paths and bind a role — see
+the KV-v2 paths and bind a role, as described in
 [Secrets backends](/runbooks/vault-secrets-operator/). The app's secret keys are
-listed in `infra/k3s/README.md` (`DATABASE_URL` is injected by CloudNativePG, so
-it's not among them).
+listed in `infra/k3s/README.md`. `DATABASE_URL` is injected by CloudNativePG, so
+it isn't among them.
 
 Add your fork to ArgoCD as a repo credential (an SSH deploy key for a private
 repo).
@@ -71,9 +71,9 @@ Either apply the Application directly:
 kubectl apply -f infra/k3s/argocd/boringstack-prod.yaml
 ```
 
-…or, if your cluster is an [app-of-apps](https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/),
+Or, if your cluster is an [app-of-apps](https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/),
 drop `infra/k3s/argocd/app-of-apps-registration.example.yaml` into your
-app-of-apps repo (it points ArgoCD at your fork's `infra/k3s/argocd` directory).
+app-of-apps repo. It points ArgoCD at your fork's `infra/k3s/argocd` directory.
 
 ## How it works
 
@@ -91,8 +91,8 @@ flowchart LR
 
 ArgoCD renders the prod overlay (base + secrets component + HA patches), runs the
 PreSync migration Job, then rolls out the Deployments. CloudNativePG manages
-Postgres; cert-manager issues the TLS cert; the Vault Secrets Operator (or your
-chosen backend) materializes the app secrets.
+Postgres, cert-manager issues the TLS cert, and the Vault Secrets Operator (or
+your chosen backend) materializes the app secrets.
 
 ## 4. Verify
 
@@ -102,13 +102,14 @@ curl -sI https://<domain>/health                 # 200 from the api
 curl -sI https://<domain>/                        # 200 from the ui (SPA)
 ```
 
-In ArgoCD the Application should be **Synced / Healthy**, and a new commit's
-image should auto-roll within an image-updater poll interval.
+In ArgoCD the Application should be Synced and Healthy, and a new commit's image
+should auto-roll within an image-updater poll interval.
 
-## What stays manual / out of scope
+## What stays manual
 
-- Provisioning the cluster itself — bring your own k3s.
-- In-cluster Prometheus/Grafana/Loki — you integrate with the existing stack.
+Provisioning the cluster itself: bring your own k3s. And in-cluster
+Prometheus/Grafana/Loki, since you integrate with the existing stack rather than
+deploy a second one.
 
 ## Related
 
