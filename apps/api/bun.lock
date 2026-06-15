@@ -47,7 +47,7 @@
         "@boring-stack-pkg/eslint-plugin-comment-hygiene": "0.2.0",
         "@boring-stack-pkg/eslint-plugin-db-transactions": "0.1.1",
         "@boring-stack-pkg/eslint-plugin-drizzle-conventions": "0.1.1",
-        "@boring-stack-pkg/eslint-plugin-elysia": "0.1.1",
+        "@boring-stack-pkg/eslint-plugin-elysia": "0.1.2",
         "@boring-stack-pkg/eslint-plugin-env-access": "0.1.3",
         "@boring-stack-pkg/eslint-plugin-jwt-cookies": "0.1.2",
         "@boring-stack-pkg/eslint-plugin-module-boundaries": "0.1.2",
@@ -109,7 +109,7 @@
 
     "@boring-stack-pkg/eslint-plugin-drizzle-conventions": ["@boring-stack-pkg/eslint-plugin-drizzle-conventions@0.1.1", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-gat55bsUXhmVxnW+fqmcF/dEOP2/4aYs57lb15GvScVcxaHMrQcfc1fwxz3l4/TgXuT5xjWLGdoN9E1Oo71hXg=="],
 
-    "@boring-stack-pkg/eslint-plugin-elysia": ["@boring-stack-pkg/eslint-plugin-elysia@0.1.1", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-P6A8s5HGN7E5zHTmUIgATk8gY5N4HZFwktO52tvGHYBR7S6HO+83tVAqCXkQu/AwEiE3KbtPCnyI+5D77kYAyw=="],
+    "@boring-stack-pkg/eslint-plugin-elysia": ["@boring-stack-pkg/eslint-plugin-elysia@0.1.2", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-wbPoYC1E5gGnNRKplE6totDtNJxUElaDfCpfmS7ZHhqAPlDohKWHKmrnC2u2L7zgo1ILXPwrD+V5ss8uLc6poQ=="],
 
     "@boring-stack-pkg/eslint-plugin-env-access": ["@boring-stack-pkg/eslint-plugin-env-access@0.1.3", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0", "micromatch": "4.0.5" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-/951c0LKgfKIJ/sysxn57JTrCGyj1pkWkcm0P7kSiAfq7LAwTgXPb99aSfitsRFeqH0Tk9JAcveucwMpw0Kt3A=="],
 
