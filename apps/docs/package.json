@@ -32,7 +32,7 @@
     "a11y": "bash scripts/a11y.sh"
   },
   "dependencies": {
-    "@astrojs/react": "5.0.6",
+    "@astrojs/react": "5.0.7",
     "@astrojs/sitemap": "3.7.3",
     "@astrojs/starlight": "0.39.2",
     "@tailwindcss/vite": "4.3.0",
