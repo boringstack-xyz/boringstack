@@ -101,7 +101,7 @@
     "@boring-stack-pkg/eslint-plugin-stripe-webhooks": "0.1.1",
     "@boring-stack-pkg/eslint-plugin-structured-logging": "0.1.2",
     "@boring-stack-pkg/eslint-plugin-test-conventions": "0.1.2",
-    "@eslint-community/eslint-plugin-eslint-comments": "4.7.1",
+    "@eslint-community/eslint-plugin-eslint-comments": "4.7.2",
     "@eslint/js": "10.0.1",
     "@types/fs-extra": "11.0.4",
     "@types/nodemailer": "8.0.0",
