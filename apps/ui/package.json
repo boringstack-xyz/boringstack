@@ -140,7 +140,7 @@
     "tsx": "4.22.4",
     "typescript": "6.0.3",
     "typescript-eslint": "8.60.1",
-    "vite": "8.0.14",
+    "vite": "8.0.16",
     "vite-plugin-svgr": "5.2.0",
     "vitest": "4.1.7",
     "yaml": "2.9.0"
