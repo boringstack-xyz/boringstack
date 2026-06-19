@@ -36,7 +36,7 @@
     "@astrojs/sitemap": "3.7.3",
     "@astrojs/starlight": "0.39.3",
     "@tailwindcss/vite": "4.3.0",
-    "astro": "6.4.4",
+    "astro": "6.4.6",
     "astro-mermaid": "2.0.1",
     "clsx": "2.1.1",
     "mermaid": "11.15.0",
@@ -64,7 +64,7 @@
     "undici": "Pin patched undici (GHSA-vmh5-mc38-953g TLS cert-validation bypass, GHSA-pr7r-676h-xcf6); 7.28.0 patches it. Build-time tooling only (wrangler/astro fetches). Mirrors the UI app pin. Excluded from the install quarantine while <7 days old.",
     "@types/react": "Match the UI app's @types/react pin so React types resolve identically across apps (@astrojs/react pulls them transitively here).",
     "@types/react-dom": "Match the UI app's @types/react-dom pin for the same cross-app type parity.",
-    "@astrojs/markdown-remark": "Pin to astro 6.4.4's exact dependency. Starlight depends on the 7.1.x range transitively, but only 7.2.0 exposes the `unified` subpath export that astro 6.4.4's prerender runtime imports; without this the hoisted 7.1.x copy shadows astro's nested 7.2.0 and `astro build` fails. Re-evaluate when Starlight requires >=7.2.0."
+    "@astrojs/markdown-remark": "Pin to astro 6.4.6's exact dependency. Starlight depends on the 7.1.x range transitively, but only 7.2.0 exposes the `unified` subpath export that astro 6.4.6's prerender runtime imports; without this the hoisted 7.1.x copy shadows astro's nested 7.2.0 and `astro build` fails. Re-evaluate when Starlight requires >=7.2.0."
   },
   "overrides": {
     "@astrojs/markdown-remark": "7.2.0",
