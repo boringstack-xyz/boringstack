@@ -5,7 +5,7 @@
     "": {
       "name": "boringstack-api",
       "dependencies": {
-        "@anthropic-ai/sdk": "0.102.0",
+        "@anthropic-ai/sdk": "0.104.1",
         "@casl/ability": "7.0.0",
         "@elysiajs/cors": "1.4.2",
         "@elysiajs/jwt": "1.4.2",
@@ -88,7 +88,7 @@
   "packages": {
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
 
-    "@anthropic-ai/sdk": ["@anthropic-ai/sdk@0.102.0", "", { "dependencies": { "json-schema-to-ts": "^3.1.1", "standardwebhooks": "^1.0.0" }, "peerDependencies": { "zod": "^3.25.0 || ^4.0.0" }, "optionalPeers": ["zod"], "bin": { "anthropic-ai-sdk": "bin/cli" } }, "sha512-cThh3KcPW3lzkFyTz1cjyhJvOVw45NkLMoowO2ZJ/76CBz44ADUon+NsjEc/PypAkARs72Xu8qxTnx6PAOTQUQ=="],
+    "@anthropic-ai/sdk": ["@anthropic-ai/sdk@0.104.1", "", { "dependencies": { "json-schema-to-ts": "^3.1.1", "standardwebhooks": "^1.0.0" }, "peerDependencies": { "zod": "^3.25.0 || ^4.0.0" }, "optionalPeers": ["zod"], "bin": { "anthropic-ai-sdk": "bin/cli" } }, "sha512-gGACa/+IaiXzRRmF96aOhamoBgapKRBiFWbmmTFP8aMkpaEcuStF+Q61bjo4vPxBM7gqWJNZqsngslRdnLHv0Q=="],
 
     "@babel/helper-validator-identifier": ["@babel/helper-validator-identifier@7.28.5", "", {}, "sha512-qSs4ifwzKJSV39ucNjsvc6WVHs6b7S03sOh2OcHF9UHfVPqWWALUsNUVzhSBiItjRZoLHx7nIarVjqKVusUZ1Q=="],
 
