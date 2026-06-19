@@ -59,7 +59,9 @@
     "ws": "Pin patched ws (GHSA-58qx-3vcg-4xpx) pulled via miniflare/wrangler dev tooling.",
     "devalue": "Pin patched devalue build-time serialization XSS (GHSA-77vg-94rm-hx3p).",
     "qs": "Pin patched qs (GHSA-q8mj-m7cp-5q26) pulled via the http-server dev preview tool.",
-    "tmp": "Pin patched tmp symlink arbitrary-write advisory; transitive dev-tooling dep.",
+    "tmp": "Pin patched tmp (GHSA-7c78-jf6q-g5cm type-confusion path traversal); 0.2.6 is now vulnerable, 0.2.7 patches it. Transitive dev-tooling dep. Mirrors the UI app pin.",
+    "form-data": "Pin patched form-data (GHSA-hmw2-7cc7-3qxx CRLF injection); 4.0.5 is vulnerable, 4.0.6 patches it. Build-time tooling only (wrangler/astro fetches). Mirrors the API app pin. Excluded from the install quarantine while <7 days old.",
+    "undici": "Pin patched undici (GHSA-vmh5-mc38-953g TLS cert-validation bypass, GHSA-pr7r-676h-xcf6); 7.28.0 patches it. Build-time tooling only (wrangler/astro fetches). Mirrors the UI app pin. Excluded from the install quarantine while <7 days old.",
     "@types/react": "Match the UI app's @types/react pin so React types resolve identically across apps (@astrojs/react pulls them transitively here).",
     "@types/react-dom": "Match the UI app's @types/react-dom pin for the same cross-app type parity.",
     "@astrojs/markdown-remark": "Pin to astro 6.4.4's exact dependency. Starlight depends on the 7.1.x range transitively, but only 7.2.0 exposes the `unified` subpath export that astro 6.4.4's prerender runtime imports; without this the hoisted 7.1.x copy shadows astro's nested 7.2.0 and `astro build` fails. Re-evaluate when Starlight requires >=7.2.0."
@@ -68,8 +70,10 @@
     "@astrojs/markdown-remark": "7.2.0",
     "ws": "8.21.0",
     "devalue": "5.8.1",
+    "form-data": "4.0.6",
     "qs": "6.15.2",
-    "tmp": "0.2.6",
+    "tmp": "0.2.7",
+    "undici": "7.28.0",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3"
   }

@@ -149,7 +149,8 @@
     "_": "Why these transitive deps are pinned. Dev tooling only — lighthouse/lhci and http-server pull the vulnerable ranges; production output is a static bundle. Astro-only build deps (e.g. devalue, GHSA-77vg-94rm-hx3p) are pinned in apps/docs, not here — the Vite toolchain does not pull them.",
     "ws": "Pin patched ws (GHSA-58qx-3vcg-4xpx) pulled via lighthouse dev tooling; mirrors the docs app pin.",
     "qs": "Pin patched qs (GHSA-q8mj-m7cp-5q26) pulled via dev tooling; mirrors the docs app pin.",
-    "tmp": "Pin patched tmp symlink arbitrary-write advisory; transitive dev-tooling dep.",
+    "tmp": "Pin patched tmp (GHSA-7c78-jf6q-g5cm type-confusion path traversal); 0.2.6 is now vulnerable, 0.2.7 patches it. Transitive dev-tooling dep via @lhci/cli. Mirrors the docs app pin.",
+    "undici": "Pin patched undici (GHSA-vmh5-mc38-953g TLS cert-validation bypass, GHSA-pr7r-676h-xcf6); pulled in transitively by jsdom (test environment only). 7.28.0 is the patched release. Excluded from the install quarantine while <7 days old.",
     "@types/react": "Single React types resolution across the workspace.",
     "@types/react-dom": "Single React DOM types resolution across the workspace.",
     "@typescript-eslint/utils": "Match the API app's pin so the shared ESLint plugins resolve one utils version.",
@@ -163,7 +164,8 @@
     "qs": "6.15.2",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "tmp": "0.2.6",
+    "tmp": "0.2.7",
+    "undici": "7.28.0",
     "ws": "8.21.0"
   }
 }

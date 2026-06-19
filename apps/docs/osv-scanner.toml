@@ -89,3 +89,33 @@ reason = "qs@6.15.1 pulled in transitively via http-server → union → qs. htt
 id = "GHSA-58qx-3vcg-4xpx"
 ignoreUntil = "2026-11-22T00:00:00Z"
 reason = "ws@8.18.0 via miniflare/wrangler dev tooling only. Static Cloudflare Pages output has no WebSocket server runtime. Override pending upstream miniflare bump."
+
+[[IgnoredVulns]]
+id = "GHSA-2pvr-wf23-7pc7"
+ignoreUntil = "2026-09-19T00:00:00Z"
+reason = "astro advisory; fixed in 6.4.6. Static-site build only — no Astro SSR/dev runtime ships to Cloudflare Pages. Awaiting an in-semver bump that keeps the @astrojs/markdown-remark pin valid."
+
+[[IgnoredVulns]]
+id = "GHSA-jrpj-wcv7-9fh9"
+ignoreUntil = "2026-09-19T00:00:00Z"
+reason = "astro advisory; fixed in 6.4.6. Same scope as above — static output has no runtime Astro surface."
+
+[[IgnoredVulns]]
+id = "GHSA-cmwh-pvxp-8882"
+ignoreUntil = "2026-09-19T00:00:00Z"
+reason = "dompurify advisory; fixed in 3.4.11. Pulled in via mermaid diagram rendering; diagram source is author-controlled markdown, not user input."
+
+[[IgnoredVulns]]
+id = "GHSA-gvmj-g25r-r7wr"
+ignoreUntil = "2026-09-19T00:00:00Z"
+reason = "dompurify; same scope as above (mermaid, author-controlled diagrams)."
+
+[[IgnoredVulns]]
+id = "GHSA-vxr8-fq34-vvx9"
+ignoreUntil = "2026-09-19T00:00:00Z"
+reason = "dompurify; same scope as above (mermaid, author-controlled diagrams)."
+
+[[IgnoredVulns]]
+id = "GHSA-g7r4-m6w7-qqqr"
+ignoreUntil = "2026-09-19T00:00:00Z"
+reason = "esbuild advisory; fixed in 0.28.1. Build-time bundler only; static Cloudflare Pages output ships no esbuild. Awaiting transitive bump via astro/vite."

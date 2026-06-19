@@ -126,9 +126,11 @@
   },
   "//overrides": {
     "_": "Why these transitive deps are pinned. Keep each entry in sync with the matching `overrides` key — enforced by the package-override-parity lint-meta rule.",
-    "@typescript-eslint/utils": "Single @typescript-eslint/utils resolution across the workspace so the shared @boring-stack-pkg ESLint plugins all load the same utils version. The UI and docs apps mirror this exact pin; a mismatch makes the custom plugins resolve divergent utils copies and fail to load."
+    "@typescript-eslint/utils": "Single @typescript-eslint/utils resolution across the workspace so the shared @boring-stack-pkg ESLint plugins all load the same utils version. The UI and docs apps mirror this exact pin; a mismatch makes the custom plugins resolve divergent utils copies and fail to load.",
+    "form-data": "Pin patched form-data (GHSA-hmw2-7cc7-3qxx CRLF injection via unescaped multipart field names); 4.0.5 is vulnerable, 4.0.6 patches it. Pulled in transitively via @sendgrid/mail -> @sendgrid/client -> axios. Excluded from the install quarantine while <7 days old."
   },
   "overrides": {
-    "@typescript-eslint/utils": "8.60.1"
+    "@typescript-eslint/utils": "8.60.1",
+    "form-data": "4.0.6"
   }
 }

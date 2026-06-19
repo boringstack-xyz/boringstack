@@ -5,4 +5,9 @@ minimumReleaseAgeExcludes = [
   "@tailwindcss/oxide",
   "@tailwindcss/oxide*",
   "tmp",
+  # form-data 4.0.6 / undici 7.28.0 patch GHSA-hmw2-7cc7-3qxx and
+  # GHSA-vmh5-mc38-953g respectively; both patched releases are <7 days old,
+  # so exempt them from the quarantine window. Build-time tooling only.
+  "form-data",
+  "undici",
 ]
