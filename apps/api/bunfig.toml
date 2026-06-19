@@ -42,6 +42,11 @@ minimumReleaseAgeExcludes = [
   "@typescript-eslint/visitor-keys",
   "@typescript-eslint/project-service",
   "@typescript-eslint/tsconfig-utils",
+  # form-data 4.0.6 patches GHSA-hmw2-7cc7-3qxx (CRLF injection via unescaped
+  # multipart field names). Pulled in transitively via @sendgrid/mail -> axios;
+  # we override `form-data` directly to clear `bun audit`. The patched release
+  # is <7 days old, so exempt it from the quarantine window.
+  "form-data",
 ]
 
 [test]

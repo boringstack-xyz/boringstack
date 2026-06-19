@@ -24,3 +24,43 @@ micromatch; our usage is internal build-time tooling (vite, tsconfig
 resolution). No path from user input to micromatch in api source. Awaiting
 upstream patch via vite/jest transitive deps.
 """
+
+[[IgnoredVulns]]
+id = "GHSA-p6gq-j5cr-w38f"
+ignoreUntil = "2026-09-19T00:00:00Z"
+reason = """
+nodemailer raw-option file-read/SSRF. The advisory affects nodemailer's
+message-level `raw` option, which bypasses disableFileAccess/disableUrlAccess.
+Our only nodemailer usage is src/lib/email/providers/smtp.ts, which builds a
+standard SMTP transport via createTransport and never passes the `raw` option,
+so the vulnerable code path is unreachable. Upstream fix is in 9.0.1 (a major
+bump, currently inside our 7-day install quarantine). Re-evaluate when bumping
+nodemailer to 9.x.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-8988-4f7v-96qf"
+ignoreUntil = "2026-09-19T00:00:00Z"
+reason = """
+@opentelemetry/core 2.7.1 advisory; fixed in 2.8.0. Transitive via the
+OpenTelemetry SDK (telemetry only, server-side). Low severity; re-evaluate when
+the auto-instrumentations pull 2.8.0 transitively.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-g7r4-m6w7-qqqr"
+ignoreUntil = "2026-09-19T00:00:00Z"
+reason = """
+esbuild advisory; fixed in 0.28.1. Build-time bundler only — production runs the
+bundled artifact, not esbuild. Multiple esbuild versions live in the transitive
+tree (vite/tsx); awaiting upstream bumps rather than force-pinning one copy.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-f38q-mgvj-vph7"
+ignoreUntil = "2026-09-19T00:00:00Z"
+reason = """
+protobufjs 7.6.1 advisory; fixed in 7.6.3. Transitive via the OpenTelemetry OTLP
+exporter (build/telemetry path); no user-controlled input reaches protobuf
+decoding in api source. Re-evaluate when the exporter pulls 7.6.3.
+"""

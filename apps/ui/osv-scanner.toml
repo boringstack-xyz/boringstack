@@ -51,3 +51,30 @@ uuid@8.3.2 pulled in transitively via @lhci/cli (Lighthouse CI). The
 vulnerable code path is never reached from shipped UI code; @lhci/cli
 is build/CI-only tooling. Re-evaluate when @lhci/cli bumps uuid.
 """
+
+[[IgnoredVulns]]
+id = "GHSA-4x5r-pxfx-6jf8"
+ignoreUntil = "2026-09-19T00:00:00Z"
+reason = """
+@babel/core advisory; fixed in 7.29.6. Build-time transpilation tooling only
+(vite/storybook); the shipped UI bundle ships no Babel runtime. Awaiting the
+transitive bump.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-g7r4-m6w7-qqqr"
+ignoreUntil = "2026-09-19T00:00:00Z"
+reason = """
+esbuild advisory; fixed in 0.28.1. Build-time bundler only — production output is
+a static bundle, not esbuild. Multiple esbuild versions live in the transitive
+tree (vite/storybook); awaiting upstream bumps rather than force-pinning one copy.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-h67p-54hq-rp68"
+ignoreUntil = "2026-09-19T00:00:00Z"
+reason = """
+js-yaml advisory; fixed in 4.2.0. Build-time config loading only (vite plugins,
+lhci); the production bundle ships no YAML parser to the client. Multiple
+versions in the transitive tree; awaiting upstream bumps.
+"""

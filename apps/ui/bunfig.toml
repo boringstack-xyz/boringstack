@@ -28,8 +28,13 @@ minimumReleaseAgeExcludes = [
   "@typescript-eslint/visitor-keys",
   "@typescript-eslint/project-service",
   "@typescript-eslint/tsconfig-utils",
-  # tmp 0.2.6 patches GHSA-ph9p-34f9-6g65 (path-traversal via unsanitized
-  # prefix/postfix). Pulled in transitively by @lhci/cli; 0.15.1 is the
-  # latest @lhci/cli so we override `tmp` directly to clear `bun audit`.
+  # tmp 0.2.7 patches GHSA-7c78-jf6q-g5cm (type-confusion path traversal);
+  # 0.2.6 also patched the earlier GHSA-ph9p-34f9-6g65. Pulled in transitively
+  # by @lhci/cli; 0.15.1 is the latest @lhci/cli so we override `tmp` directly
+  # to clear `bun audit`.
   "tmp",
+  # undici 7.28.0 patches GHSA-vmh5-mc38-953g (TLS cert-validation bypass) and
+  # GHSA-pr7r-676h-xcf6. Pulled in transitively by jsdom (test env only); the
+  # patched release is <7 days old, so exempt it from the quarantine window.
+  "undici",
 ]
