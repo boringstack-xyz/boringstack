@@ -91,16 +91,6 @@ ignoreUntil = "2026-11-22T00:00:00Z"
 reason = "ws@8.18.0 via miniflare/wrangler dev tooling only. Static Cloudflare Pages output has no WebSocket server runtime. Override pending upstream miniflare bump."
 
 [[IgnoredVulns]]
-id = "GHSA-2pvr-wf23-7pc7"
-ignoreUntil = "2026-09-19T00:00:00Z"
-reason = "astro advisory; fixed in 6.4.6. Static-site build only — no Astro SSR/dev runtime ships to Cloudflare Pages. Awaiting an in-semver bump that keeps the @astrojs/markdown-remark pin valid."
-
-[[IgnoredVulns]]
-id = "GHSA-jrpj-wcv7-9fh9"
-ignoreUntil = "2026-09-19T00:00:00Z"
-reason = "astro advisory; fixed in 6.4.6. Same scope as above — static output has no runtime Astro surface."
-
-[[IgnoredVulns]]
 id = "GHSA-cmwh-pvxp-8882"
 ignoreUntil = "2026-09-19T00:00:00Z"
 reason = "dompurify advisory; fixed in 3.4.11. Pulled in via mermaid diagram rendering; diagram source is author-controlled markdown, not user input."

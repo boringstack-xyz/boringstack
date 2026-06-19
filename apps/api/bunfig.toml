@@ -47,6 +47,10 @@ minimumReleaseAgeExcludes = [
   # we override `form-data` directly to clear `bun audit`. The patched release
   # is <7 days old, so exempt it from the quarantine window.
   "form-data",
+  # nodemailer 9.0.1 patches GHSA-p6gq-j5cr-w38f (raw-option file-read/SSRF).
+  # Direct dep; the patched release is <7 days old, so exempt it from the
+  # quarantine window for this security upgrade.
+  "nodemailer",
 ]
 
 [test]
