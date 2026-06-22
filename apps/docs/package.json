@@ -35,7 +35,7 @@
     "@astrojs/react": "5.0.7",
     "@astrojs/sitemap": "3.7.3",
     "@astrojs/starlight": "0.39.3",
-    "@tailwindcss/vite": "4.3.0",
+    "@tailwindcss/vite": "4.3.1",
     "astro": "6.4.6",
     "astro-mermaid": "2.0.1",
     "clsx": "2.1.1",
