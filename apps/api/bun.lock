@@ -53,7 +53,7 @@
         "@boring-stack-pkg/eslint-plugin-module-boundaries": "0.1.2",
         "@boring-stack-pkg/eslint-plugin-oauth-security": "0.1.2",
         "@boring-stack-pkg/eslint-plugin-resource-architecture": "0.2.0",
-        "@boring-stack-pkg/eslint-plugin-stripe-webhooks": "0.1.1",
+        "@boring-stack-pkg/eslint-plugin-stripe-webhooks": "0.1.2",
         "@boring-stack-pkg/eslint-plugin-structured-logging": "0.1.2",
         "@boring-stack-pkg/eslint-plugin-test-conventions": "0.1.2",
         "@eslint-community/eslint-plugin-eslint-comments": "4.7.2",
@@ -123,7 +123,7 @@
 
     "@boring-stack-pkg/eslint-plugin-resource-architecture": ["@boring-stack-pkg/eslint-plugin-resource-architecture@0.2.0", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0", "micromatch": "4.0.5" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0", "typescript": ">=5.0.0" } }, "sha512-v7EmVtIaiJwk06H+SwlbtlzLkUPHoFpCtw+LBEFVddFtGimkB0YGkQqgnCJaEKFuGviAI8WQ0TCgxx2z9seYEg=="],
 
-    "@boring-stack-pkg/eslint-plugin-stripe-webhooks": ["@boring-stack-pkg/eslint-plugin-stripe-webhooks@0.1.1", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-OAdyysgXMcPDQJdlfq5q7Mp+B5mOP8/1Z0277E6ZMz93jjpamJIu2dBD0vtwEtLWGPnNI4MLvh1ARNW0/d55AA=="],
+    "@boring-stack-pkg/eslint-plugin-stripe-webhooks": ["@boring-stack-pkg/eslint-plugin-stripe-webhooks@0.1.2", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-C+/ro87xxLy9qhEgnZt4L0A8jZH5NSIIxrnYu0OlZMGgfQMOWBaMi8M/D3KVsrJ9GAASufWOnIP4iVFobYyrhQ=="],
 
     "@boring-stack-pkg/eslint-plugin-structured-logging": ["@boring-stack-pkg/eslint-plugin-structured-logging@0.1.2", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-P9MuL88AUsHzqLWJ1bmiyJojv8kejXn8GlkDE79cwY8nN/fODU6/ZwrIWsH4kRw2LH2E+4p1NBhat/OJO8mkzw=="],
 
