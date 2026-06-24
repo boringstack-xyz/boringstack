@@ -175,11 +175,9 @@ const generatePreview = (templatePath: string): ITemplateMetadata => {
   const contentPath = path.join(dir, "content.hbs");
   const variablesPath = path.join(dir, "variables.json");
 
-  let dummyData: Record<string, unknown> = {};
-
-  if (fs.existsSync(variablesPath)) {
-    dummyData = generateDummyData(variablesPath);
-  }
+  const dummyData: Record<string, unknown> = fs.existsSync(variablesPath)
+    ? generateDummyData(variablesPath)
+    : {};
 
   let content = "";
 

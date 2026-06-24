@@ -17,10 +17,7 @@ export class MemoryCacheService implements ICacheService {
     { value: unknown; expiresAt: number | null }
   >();
 
-  private isExpired(entry: {
-    value: unknown;
-    expiresAt: number | null;
-  }): boolean {
+  private isExpired(entry: { expiresAt: number | null }): boolean {
     return entry.expiresAt !== null && entry.expiresAt <= nowMs();
   }
 
