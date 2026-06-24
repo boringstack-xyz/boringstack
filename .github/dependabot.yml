@@ -1,13 +1,26 @@
 version: 2
 updates:
+  # apps/api + apps/ui share a class of dev tooling (ESLint, TypeScript,
+  # Prettier, knip, husky, the typescript-eslint family, and the first-party
+  # @boring-stack-pkg/* plugins) that the `shared-tool-version-parity`
+  # lint-meta rule REQUIRES to be pinned to one identical version in every app
+  # that declares it. A per-app bump (e.g. unicorn in apps/ui only) drifts the
+  # two apps apart and can never pass CI on its own.
+  #
+  # Both apps therefore live in a single multi-directory update config so the
+  # `dev-tooling` group below proposes ONE cross-directory PR that moves the
+  # shared toolchain in lockstep across api and ui. App-specific groups still
+  # scope to whichever directory actually declares the package.
   - package-ecosystem: bun
-    directory: /apps/api
+    directories:
+      - /apps/api
+      - /apps/ui
     schedule:
       interval: weekly
       day: monday
       time: "09:00"
       timezone: Europe/Berlin
-    open-pull-requests-limit: 8
+    open-pull-requests-limit: 12
     labels: ["dependencies"]
     commit-message:
       prefix: "chore(deps)"
@@ -15,6 +28,25 @@ updates:
     cooldown:
       default-days: 7
     groups:
+      # Parity-controlled shared dev tooling — keep in sync with the
+      # SHARED_TOOLS list in
+      # apps/api/scripts/lint-meta/rules/supply-chain/shared-tool-version-parity.ts.
+      # Spans both directories so a bump lands as a single lockstep PR.
+      dev-tooling:
+        patterns:
+          - "eslint"
+          - "eslint-*"
+          - "@eslint/*"
+          - "@eslint-community/*"
+          - "typescript-eslint"
+          - "typescript"
+          - "prettier"
+          - "prettier-plugin-*"
+          - "@trivago/*"
+          - "knip"
+          - "husky"
+          - "@boring-stack-pkg/*"
+      # apps/api-specific groups
       elysia:
         patterns: ["elysia", "@elysiajs/*"]
       drizzle:
@@ -32,43 +64,9 @@ updates:
           - "nodemailer"
           - "@types/nodemailer"
           - "handlebars"
-      lint:
-        patterns: ["eslint", "eslint-*", "@eslint/*", "typescript-eslint", "prettier"]
-      observability:
-        patterns: ["@sentry/*", "pino", "pino-pretty"]
       ai:
         patterns: ["@anthropic-ai/sdk", "openai"]
-    ignore:
-      - dependency-name: "elysia"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "drizzle-orm"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "drizzle-kit"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "bullmq"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "ioredis"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "typescript"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "stripe"
-        update-types: ["version-update:semver-major"]
-
-  - package-ecosystem: bun
-    directory: /apps/ui
-    schedule:
-      interval: weekly
-      day: monday
-      time: "09:00"
-      timezone: Europe/Berlin
-    open-pull-requests-limit: 8
-    labels: ["dependencies"]
-    commit-message:
-      prefix: "chore(deps)"
-      include: scope
-    cooldown:
-      default-days: 7
-    groups:
+      # apps/ui-specific groups
       react:
         patterns:
           - "react"
@@ -95,22 +93,43 @@ updates:
           - "lucide-react"
           - "sonner"
           - "next-themes"
-      lint:
-        patterns: ["eslint", "eslint-*", "@eslint/*", "typescript-eslint", "prettier", "@trivago/*"]
+      # @sentry/* is declared in both apps; the shared group keeps the two
+      # Sentry SDKs aligned in a single PR (not parity-enforced, but tidy).
       observability:
-        patterns: ["@sentry/*", "size-limit", "@size-limit/*", "@lhci/*"]
+        patterns:
+          - "@sentry/*"
+          - "pino"
+          - "pino-pretty"
+          - "size-limit"
+          - "@size-limit/*"
+          - "@lhci/*"
     ignore:
+      # apps/api majors held back
+      - dependency-name: "elysia"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "drizzle-orm"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "drizzle-kit"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "bullmq"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "ioredis"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "stripe"
+        update-types: ["version-update:semver-major"]
+      # apps/ui majors held back
       - dependency-name: "react"
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-dom"
         update-types: ["version-update:semver-major"]
       - dependency-name: "vite"
         update-types: ["version-update:semver-major"]
-      - dependency-name: "typescript"
-        update-types: ["version-update:semver-major"]
       - dependency-name: "tailwindcss"
         update-types: ["version-update:semver-major"]
       - dependency-name: "zod"
+        update-types: ["version-update:semver-major"]
+      # shared
+      - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: bun
