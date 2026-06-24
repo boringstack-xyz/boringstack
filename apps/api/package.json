@@ -116,13 +116,13 @@
     "eslint-plugin-prettier": "5.5.6",
     "eslint-plugin-promise": "7.3.0",
     "eslint-plugin-sonarjs": "4.0.3",
-    "eslint-plugin-unicorn": "66.0.0",
+    "eslint-plugin-unicorn": "67.0.0",
     "globals": "17.6.0",
     "husky": "9.1.7",
     "knip": "6.16.1",
     "prettier": "3.8.4",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.61.0"
+    "typescript-eslint": "8.61.1"
   },
   "//overrides": {
     "_": "Why these transitive deps are pinned. Keep each entry in sync with the matching `overrides` key — enforced by the package-override-parity lint-meta rule.",
@@ -131,7 +131,7 @@
     "ioredis": "Force a single ioredis resolution across the tree. bullmq 5.78.0 exact-pins ioredis@5.10.1, so bumping the top-level dep to 5.11.1 otherwise leaves bullmq on its own nested 5.10.1 copy — two ioredis instances whose RedisOptions types are structurally incompatible (tsc fails on new Redis(options) calls). This override collapses bullmq's nested copy onto 5.11.1 too; 5.10.1 -> 5.11.1 is a semver patch and the Redis/BullMQ integration tests verify runtime compatibility. Drop this once bullmq advances its own ioredis pin."
   },
   "overrides": {
-    "@typescript-eslint/utils": "8.61.0",
+    "@typescript-eslint/utils": "8.61.1",
     "form-data": "4.0.6",
     "ioredis": "5.11.1"
   }
