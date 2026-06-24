@@ -219,13 +219,14 @@ export class EmailTemplateService {
     );
     const base = EmailTemplateService.wrapDelegate(baseSpec);
 
-    let content: TemplateDelegate | null = null;
-
-    if (data.contentTemplate !== null) {
-      content = EmailTemplateService.wrapDelegate(
-        EmailTemplateService.evaluatePrecompiledTemplate(data.contentTemplate)
-      );
-    }
+    const content: TemplateDelegate | null =
+      data.contentTemplate !== null
+        ? EmailTemplateService.wrapDelegate(
+            EmailTemplateService.evaluatePrecompiledTemplate(
+              data.contentTemplate
+            )
+          )
+        : null;
 
     this.baseCache.set(templatePath, base);
     this.contentCache.set(templatePath, content);
