@@ -1,0 +1,265 @@
+{
+  "_about": "Single source of truth for the tsforge scaffolding wizard's view of BoringStack's config surface. tsforge clones this repo and reads THIS file to generate its setup wizard: the questions it asks, the container-topology preview, the required-secrets checklist, and the .env it writes. KEEP IT IN SYNC: when you add/rename/remove an env toggle, provider choice, secret, or a service a toggle spawns, update this file in the SAME change. tsforge's scaffold suite runs a completeness alarm that FAILS if any WITH_*/*_ENABLED toggle in the .env.example files is not modelled here (or waived via watchIgnore). See AGENTS.md › Scaffold manifest.",
+  "manifestVersion": 1,
+  "defaultRef": "main",
+  "repo": "https://github.com/boringstack-xyz/boringstack",
+  "renameParams": ["project", "ghcrOwner", "domain"],
+  "alwaysOnServices": ["postgres", "valkey", "api", "ui", "api-migrate"],
+  "envFileDefault": "apps/api/.env",
+  "envFileByGroup": {
+    "infra": "infra/compose/compose/.env",
+    "identity": "infra/compose/compose/.env"
+  },
+  "watchPatterns": ["^WITH_", "_ENABLED$"],
+  "watchIgnore": ["E2E_TEST_ENDPOINTS_ENABLED$"],
+  "fields": [
+    {
+      "key": "STACK",
+      "kind": "one-of",
+      "group": "infra",
+      "label": "Stack mode",
+      "options": ["dev", "prod", "smoke"],
+      "devDefault": "dev"
+    },
+    {
+      "key": "WITH_OBSERVABILITY",
+      "kind": "toggle",
+      "group": "infra",
+      "label": "Observability (Grafana + Prometheus + Loki + Tempo + Alertmanager)",
+      "devDefault": "1",
+      "prodDefault": "1",
+      "addsServices": {
+        "1": ["prometheus", "alertmanager", "grafana", "loki", "tempo"]
+      },
+      "requiresSecrets": { "1": ["GRAFANA_ADMIN_PASSWORD"] },
+      "requiresSecretsProdOnly": true
+    },
+    {
+      "key": "WITH_GLITCHTIP",
+      "kind": "toggle",
+      "group": "infra",
+      "label": "GlitchTip self-hosted error tracking",
+      "devDefault": "1",
+      "prodDefault": "1",
+      "addsServices": { "1": ["glitchtip-web", "glitchtip-worker"] },
+      "requiresSecrets": {
+        "1": [
+          "GLITCHTIP_SECRET_KEY",
+          "GLITCHTIP_PUBLIC_HOST",
+          "GLITCHTIP_BASIC_AUTH_USERS",
+          "GLITCHTIP_SUPERUSER_PASSWORD"
+        ]
+      },
+      "requiresSecretsProdOnly": true
+    },
+    {
+      "key": "WITH_MAILPIT",
+      "kind": "toggle",
+      "group": "infra",
+      "label": "Mailpit local SMTP catcher (dev only)",
+      "devDefault": "1",
+      "addsServices": { "1": ["mailpit"] }
+    },
+    {
+      "key": "WITH_BULLMQ",
+      "kind": "toggle",
+      "group": "infra",
+      "label": "BullMQ dashboard (dev only)",
+      "devDefault": "1",
+      "addsServices": { "1": ["bullmq-dashboard"] }
+    },
+    {
+      "key": "WUD",
+      "kind": "toggle",
+      "group": "infra",
+      "label": "What's Up Docker image watcher (prod only)",
+      "prodDefault": "1",
+      "addsServices": { "1": ["wud"] }
+    },
+    {
+      "key": "BILLING_ENABLED",
+      "kind": "toggle",
+      "group": "features",
+      "label": "Stripe billing",
+      "devDefault": "false",
+      "requiresSecrets": { "true": ["STRIPE_SECRET_KEY"] }
+    },
+    {
+      "key": "EMAIL_PROVIDER",
+      "kind": "one-of",
+      "group": "providers",
+      "label": "Email provider",
+      "options": ["cloudflare", "resend", "sendgrid", "smtp"],
+      "devDefault": "cloudflare",
+      "requiresSecrets": {
+        "cloudflare": ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_EMAIL_API_TOKEN"],
+        "resend": ["RESEND_API_KEY"],
+        "sendgrid": ["SENDGRID_API_KEY"]
+      }
+    },
+    {
+      "key": "OAUTH_PROVIDERS",
+      "kind": "multi",
+      "group": "providers",
+      "label": "OAuth providers",
+      "options": ["google", "github", "linkedin"],
+      "devDefault": [],
+      "requiresSecrets": {
+        "google": ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_SECRET"],
+        "github": ["GITHUB_OAUTH_CLIENT_ID", "GITHUB_OAUTH_CLIENT_SECRET"],
+        "linkedin": ["LINKEDIN_OAUTH_CLIENT_ID", "LINKEDIN_OAUTH_CLIENT_SECRET"]
+      }
+    },
+    {
+      "key": "TRACING_BACKEND",
+      "kind": "one-of",
+      "group": "features",
+      "label": "Tracing backend",
+      "help": "otel → OTLP spans to Tempo (OTEL_EXPORTER_OTLP_ENDPOINT). sentry → transactions to Sentry/GlitchTip (SENTRY_TRACES_SAMPLE_RATE). Running both double-instruments.",
+      "options": ["otel", "sentry", "none"],
+      "devDefault": "otel"
+    },
+    {
+      "key": "ACCOUNT_DOMAIN_CLAIMING",
+      "kind": "toggle",
+      "group": "features",
+      "label": "B2B domain claiming (multi-tenancy)",
+      "help": "First verified signup on a non-public email domain claims it; later signups from that domain must be invited.",
+      "devDefault": "false"
+    },
+    {
+      "key": "QUEUES_ENABLED",
+      "kind": "toggle",
+      "group": "features",
+      "label": "BullMQ background queues",
+      "help": "Required in prod so transactional email retries on transient provider failures.",
+      "devDefault": "true",
+      "prodDefault": "true"
+    },
+    {
+      "key": "CACHE_ENABLED",
+      "kind": "toggle",
+      "group": "features",
+      "label": "Response/data cache",
+      "devDefault": "true",
+      "prodDefault": "true"
+    },
+    {
+      "key": "CACHE_PROVIDER",
+      "kind": "one-of",
+      "group": "features",
+      "label": "Cache provider",
+      "options": ["memory", "valkey"],
+      "devDefault": "valkey"
+    },
+    {
+      "key": "NOTIFICATIONS_SSE_ENABLED",
+      "kind": "toggle",
+      "group": "features",
+      "label": "Server-sent notification stream",
+      "help": "Requires Valkey.",
+      "devDefault": "true",
+      "prodDefault": "true"
+    },
+    {
+      "key": "AI_ENABLED",
+      "kind": "toggle",
+      "group": "features",
+      "label": "AI features",
+      "devDefault": "false"
+    },
+    {
+      "key": "AI_PROVIDER",
+      "kind": "one-of",
+      "group": "providers",
+      "label": "AI provider",
+      "options": ["openai", "anthropic", "noop"],
+      "devDefault": "openai",
+      "requiresSecretsWhen": "AI_ENABLED=true",
+      "requiresSecrets": {
+        "openai": ["OPENAI_API_KEY"],
+        "anthropic": ["ANTHROPIC_API_KEY"]
+      }
+    },
+    {
+      "key": "JWT_SECRET",
+      "kind": "secret",
+      "group": "identity",
+      "label": "JWT signing secret",
+      "prodOnly": true,
+      "generate": "base64:48"
+    },
+    {
+      "key": "MFA_ENCRYPTION_KEY",
+      "kind": "secret",
+      "group": "identity",
+      "label": "MFA TOTP encryption key",
+      "prodOnly": true,
+      "generate": "base64:32"
+    },
+    {
+      "key": "VALKEY_PASSWORD",
+      "kind": "secret",
+      "group": "identity",
+      "label": "Valkey password",
+      "prodOnly": true,
+      "generate": "base64:32"
+    }
+  ],
+  "crossRules": [
+    {
+      "kind": "excludes",
+      "when": "TRACING_BACKEND=otel",
+      "then": ["TRACING_BACKEND=sentry"],
+      "reason": "OTel→Tempo and Sentry/GlitchTip both instrument traces — running both double-instruments. Pick one."
+    },
+    {
+      "kind": "implies",
+      "when": "OAUTH_PROVIDERS:*",
+      "then": ["service:valkey"],
+      "reason": "OAuth stores state + PKCE in Valkey; it must be running."
+    },
+    {
+      "kind": "implies",
+      "when": "EMAIL_PROVIDER=smtp",
+      "then": ["WITH_MAILPIT=1"],
+      "reason": "Local SMTP email is caught by Mailpit; enable it for dev."
+    },
+    {
+      "kind": "implies",
+      "when": "QUEUES_ENABLED=true",
+      "then": ["service:valkey"],
+      "reason": "BullMQ stores jobs in Valkey; it must be running."
+    },
+    {
+      "kind": "implies",
+      "when": "NOTIFICATIONS_SSE_ENABLED=true",
+      "then": ["service:valkey"],
+      "reason": "The SSE notification stream fans out through Valkey pub/sub; it must be running."
+    },
+    {
+      "kind": "implies",
+      "when": "CACHE_PROVIDER=valkey",
+      "then": ["service:valkey"],
+      "reason": "The Valkey cache provider needs the Valkey service."
+    }
+  ],
+  "archetypes": {
+    "boringstack": {
+      "gates": [
+        { "cwd": "apps/api", "command": "bun run validate" },
+        { "cwd": "apps/ui", "command": "bun run validate" },
+        { "cwd": ".", "command": "bun run check" }
+      ],
+      "boot": "bash setup.sh --up",
+      "healthUrls": [
+        "http://localhost:7331/",
+        "http://localhost:7330/swagger/json"
+      ]
+    },
+    "astro": {
+      "subPath": "apps/docs",
+      "gates": [{ "cwd": ".", "command": "bun run build" }]
+    }
+  }
+}
