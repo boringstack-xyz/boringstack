@@ -68,7 +68,7 @@
     "bullmq": "5.78.1",
     "dotenv": "17.4.2",
     "drizzle-orm": "0.45.2",
-    "elysia": "1.4.28",
+    "elysia": "1.4.29",
     "elysia-rate-limit": "4.6.2",
     "fs-extra": "11.3.5",
     "handlebars": "4.7.9",
