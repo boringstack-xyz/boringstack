@@ -71,8 +71,8 @@
         "eslint-plugin-react": "7.37.5",
         "eslint-plugin-react-hooks": "7.1.1",
         "eslint-plugin-react-refresh": "0.5.3",
-        "eslint-plugin-sonarjs": "4.0.3",
-        "eslint-plugin-unicorn": "67.0.0",
+        "eslint-plugin-sonarjs": "4.1.0",
+        "eslint-plugin-unicorn": "68.0.0",
         "husky": "9.1.7",
         "jsdom": "29.1.1",
         "knip": "6.16.1",
@@ -1214,9 +1214,9 @@
 
     "eslint-plugin-react-refresh": ["eslint-plugin-react-refresh@0.5.3", "", { "peerDependencies": { "eslint": "^9 || ^10" } }, "sha512-5EMmLCV98Pi4o/f/3DP/v/tNqLHMIc9I8LKClNDWhZ9JTho89/kQcitCXQBMG7sAfVRK0Ie3T2EDOzp1YXYiVA=="],
 
-    "eslint-plugin-sonarjs": ["eslint-plugin-sonarjs@4.0.3", "", { "dependencies": { "@eslint-community/regexpp": "4.12.2", "builtin-modules": "3.3.0", "bytes": "3.1.2", "functional-red-black-tree": "1.0.1", "globals": "17.6.0", "jsx-ast-utils-x": "0.1.0", "lodash.merge": "4.6.2", "minimatch": "10.2.5", "scslre": "0.3.0", "semver": "7.8.0", "ts-api-utils": "2.5.0", "typescript": "6.0.3" }, "peerDependencies": { "eslint": "9.39.4" } }, "sha512-5drkJKLC9qQddIiaATV0e8+ygbUc7b0Ti6VB7M2d3jmKNh3X0RaiIJYTs3dr9xnlhlrxo+/s1FoO3Jgv6O/c7g=="],
+    "eslint-plugin-sonarjs": ["eslint-plugin-sonarjs@4.1.0", "", { "dependencies": { "@eslint-community/regexpp": "^4.12.2", "builtin-modules": "^3.3.0", "bytes": "^3.1.2", "functional-red-black-tree": "^1.0.1", "globals": "^17.6.0", "jsx-ast-utils-x": "^0.1.0", "lodash.merge": "^4.6.2", "minimatch": "^10.2.5", "scslre": "^0.3.0", "semver": "^7.8.4", "ts-api-utils": "^2.5.0", "typescript": ">=5", "yaml": "^2.9.0" }, "peerDependencies": { "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0" } }, "sha512-rh+FlVz0yfd2RNIb6WqSkuGh0addX/Qi5scwQ5FphXDFrM6fZKcxP1+attJ78yUKcyYfiu6MTaISPpAFPzqRJw=="],
 
-    "eslint-plugin-unicorn": ["eslint-plugin-unicorn@67.0.0", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.29.7", "@eslint-community/eslint-utils": "^4.9.1", "browserslist": "^4.28.2", "change-case": "^5.4.4", "ci-info": "^4.4.0", "core-js-compat": "^3.49.0", "detect-indent": "^7.0.2", "find-up-simple": "^1.0.1", "globals": "^17.6.0", "indent-string": "^5.0.0", "is-builtin-module": "^5.0.0", "jsesc": "^3.1.0", "pluralize": "^8.0.0", "regjsparser": "^0.13.1", "semver": "^7.8.4", "strip-indent": "^4.1.1" }, "peerDependencies": { "eslint": ">=10.4" } }, "sha512-XEYhNfAFFFYQLq++53iqpgIPFqvjasf5lsUJuCdmd/QvbRfcLbmPTjcTyVEXc5yBudWIg08SSEGgqJtEojk1ug=="],
+    "eslint-plugin-unicorn": ["eslint-plugin-unicorn@68.0.0", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.29.7", "@eslint-community/eslint-utils": "^4.9.1", "browserslist": "^4.28.2", "change-case": "^5.4.4", "ci-info": "^4.4.0", "core-js-compat": "^3.49.0", "detect-indent": "^7.0.2", "find-up-simple": "^1.0.1", "globals": "^17.6.0", "indent-string": "^5.0.0", "is-builtin-module": "^5.0.0", "jsesc": "^3.1.0", "pluralize": "^8.0.0", "regjsparser": "^0.13.1", "semver": "^7.8.4", "strip-indent": "^4.1.1" }, "peerDependencies": { "eslint": ">=10.4" } }, "sha512-mHYWvX948Q4H3bGc39bsNMxD/leOuNI+Iws9NVsoSz5VA7EGP86wnz7mZ/SPSvRhefT8L4hd8DHfDuGC+lIoCQ=="],
 
     "eslint-scope": ["eslint-scope@9.1.2", "", { "dependencies": { "@types/esrecurse": "^4.3.1", "@types/estree": "^1.0.8", "esrecurse": "^4.3.0", "estraverse": "^5.2.0" } }, "sha512-xS90H51cKw0jltxmvmHy2Iai1LIqrfbw57b79w/J7MfvDfkIkFZ+kj6zC3BjtUwh150HsSSdxXZcsuv72miDFQ=="],
 
@@ -2451,6 +2451,8 @@
     "eslint-plugin-react/semver": ["semver@6.3.1", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
 
     "eslint-plugin-sonarjs/minimatch": ["minimatch@10.2.5", "", { "dependencies": { "brace-expansion": "5.0.6" } }, "sha512-MULkVLfKGYDFYejP07QOurDLLQpcjk7Fw+7jXS2R2czRQzR56yHRveU5NDJEOviH+hETZKSkIk5c+T23GjFUMg=="],
+
+    "eslint-plugin-sonarjs/semver": ["semver@7.8.4", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-rUCObTnP32Q08R2uuIrt7r9PlEonuTmtuXYcW6s5kjdlj3xbnwe+21yXptAUYcMAABLkYYTtnmzb3w3EDZfueA=="],
 
     "eslint-plugin-unicorn/semver": ["semver@7.8.4", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-rUCObTnP32Q08R2uuIrt7r9PlEonuTmtuXYcW6s5kjdlj3xbnwe+21yXptAUYcMAABLkYYTtnmzb3w3EDZfueA=="],
 
