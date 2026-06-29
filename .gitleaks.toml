@@ -38,6 +38,12 @@ paths = [
   # valid 32-byte base64 fixture and rejects too-short / too-long
   # values. The fixture is generated for the test, not a live key.
   '''apps/api/tests/boot/invariants\.test\.ts''',
+  # The tsforge scaffold manifest is the config-surface source of truth:
+  # it declares which env-var *names* each AI provider requires (e.g.
+  # OPENAI_API_KEY, ANTHROPIC_API_KEY) and their non-secret defaults. The
+  # `generic-api-key` rule flags the provider/secret-keyword proximity,
+  # but the file holds only key names and placeholder config — no values.
+  '''\.tsforge/scaffold-manifest\.json''',
 ]
 # Docs setup recipes use the literal placeholder
 # `<set-from-your-secret-manager>` as the example value for secret-valued
