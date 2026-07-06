@@ -52,7 +52,7 @@
     "@axe-core/cli": "4.11.3",
     "http-server": "14.1.1",
     "starlight-llms-txt": "0.10.0",
-    "wrangler": "4.103.0"
+    "wrangler": "4.105.0"
   },
   "//overrides": {
     "_": "Why these transitive deps are pinned. Build-time/dev tooling only — the deployed site is static Cloudflare Pages. Re-evaluate quarterly (see osv-scanner.toml).",
