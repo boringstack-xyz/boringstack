@@ -22,7 +22,7 @@
         "ws": "8.21.0",
       },
       "devDependencies": {
-        "@axe-core/cli": "4.11.3",
+        "@axe-core/cli": "4.12.1",
         "http-server": "14.1.1",
         "starlight-llms-txt": "0.10.0",
         "wrangler": "4.103.0",
@@ -61,9 +61,9 @@
 
     "@astrojs/telemetry": ["@astrojs/telemetry@3.3.2", "", { "dependencies": { "ci-info": "^4.4.0", "dset": "^3.1.4", "is-docker": "^4.0.0", "is-wsl": "^3.1.1", "which-pm-runs": "^1.1.0" } }, "sha512-j8DNruA8ors99Al39RYZPJK4DC1bKkoNm93mAMuBhY9TCNC4R8n1q7ovFnJ5qhGh5Lsh7pa1gpQVpYpsJPeTHQ=="],
 
-    "@axe-core/cli": ["@axe-core/cli@4.11.3", "", { "dependencies": { "@axe-core/webdriverjs": "^4.11.3", "axe-core": "~4.11.4", "chromedriver": "latest", "colors": "^1.4.0", "commander": "^9.4.1", "dotenv": "^17.2.2", "selenium-webdriver": "~4.41.0" }, "bin": { "axe": "dist/src/bin/cli.js" } }, "sha512-l6cbHsawKr8G0taTfFNKHghZr703cVGQ5+o53CmCoAW53x4KIuQ6T6bXFwW/8odh92JVMqHzBJi84QH0ne+paw=="],
+    "@axe-core/cli": ["@axe-core/cli@4.12.1", "", { "dependencies": { "@axe-core/webdriverjs": "^4.12.1", "axe-core": "~4.12.1", "chromedriver": "latest", "colors": "^1.4.0", "commander": "^9.4.1", "dotenv": "^17.2.2", "selenium-webdriver": "~4.44.0" }, "bin": { "axe": "dist/src/bin/cli.js" } }, "sha512-S3wF1AsX3wbJ9IAbk7eHLPpK+7elprXggNWCTPPiMVL+1HE+d3zuoI/KJP4470GUObggCYwfuAK/3Z23Jhjq5A=="],
 
-    "@axe-core/webdriverjs": ["@axe-core/webdriverjs@4.11.3", "", { "dependencies": { "axe-core": "~4.11.4" }, "peerDependencies": { "selenium-webdriver": ">3.0.0-beta  || >=2.53.1 || >4.0.0-alpha" } }, "sha512-JGaYFUQq2Jebo7JOve/HZFnoxlNKKCfLSUuZKaZro+TKy2Fh1uPFeNBdCt+zzxa8+7YMkIKmDieGPIQLLuWJRg=="],
+    "@axe-core/webdriverjs": ["@axe-core/webdriverjs@4.12.1", "", { "dependencies": { "axe-core": "~4.12.1" }, "peerDependencies": { "selenium-webdriver": ">3.0.0-beta  || >=2.53.1 || >4.0.0-alpha" } }, "sha512-upuzHjOk3/oJBDpyOdlkYNwFHd90XzuuseY0WmaxMTzLE4De+ntXxSksb9Xmf0dEDPnajkiJGsMSlGuPo8P7og=="],
 
     "@babel/code-frame": ["@babel/code-frame@7.29.7", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.29.7", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw=="],
 
@@ -543,7 +543,7 @@
 
     "asynckit": ["asynckit@0.4.0", "", {}, "sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q=="],
 
-    "axe-core": ["axe-core@4.11.4", "", {}, "sha512-KunSNx+TVpkAw/6ULfhnx+HWRecjqZGTOyquAoWHYLRSdK1tB5Ihce1ZW+UY3fj33bYAFWPu7W/GRSmmrCGuxA=="],
+    "axe-core": ["axe-core@4.12.1", "", {}, "sha512-s7iGf5GaVMxEG0ENN9x+xTr7GFZCb1ZP/1uATUpCEK2X78nDB3RwbtFCo9pGAf9ru+VwoQ464DkaLEeRM08wJA=="],
 
     "axios": ["axios@1.16.1", "", { "dependencies": { "follow-redirects": "^1.16.0", "form-data": "^4.0.5", "https-proxy-agent": "^5.0.1", "proxy-from-env": "^2.1.0" } }, "sha512-caYkukvroVPO8KrzuJEb50Hm07KwfBZPEC3VeFHTsqWHvKTsy54hjJz9BS/cdaypROE2rH6xvm9mHX4fgWkr3A=="],
 
@@ -589,7 +589,7 @@
 
     "chokidar": ["chokidar@5.0.0", "", { "dependencies": { "readdirp": "^5.0.0" } }, "sha512-TQMmc3w+5AxjpL8iIiwebF73dRDF4fBIieAqGn9RGCWaEVwQ6Fb2cGe31Yns0RRIzii5goJ1Y7xbMwo1TxMplw=="],
 
-    "chromedriver": ["chromedriver@149.0.1", "", { "dependencies": { "@testim/chrome-version": "^1.1.4", "adm-zip": "^0.5.17", "axios": "^1.16.0", "compare-versions": "^6.1.0", "proxy-agent": "^8.0.1", "proxy-from-env": "^2.0.0", "tcp-port-used": "^1.0.2" }, "bin": { "chromedriver": "bin/chromedriver" } }, "sha512-mAIzz2KZzl/zwgWklkFzYCGK3Ub3yU25JAM1qOcT1aB4p0dMXJxqu8naI/NwI8eGKqX/2OFN87KXmFqmcvmPvA=="],
+    "chromedriver": ["chromedriver@150.0.0", "", { "dependencies": { "@testim/chrome-version": "^1.1.4", "adm-zip": "^0.5.17", "axios": "^1.16.0", "compare-versions": "^6.1.0", "proxy-agent": "^8.0.1", "proxy-from-env": "^2.0.0", "tcp-port-used": "^1.0.2" }, "bin": { "chromedriver": "bin/chromedriver" } }, "sha512-MhHObBXNUOxJFzHuwRC+BXRFJNJgbgIr+y7B/MB++QioxbHz2R3Zj4WyJJVGqkjZyoVAF4zc46egxJ1GSFG7+w=="],
 
     "ci-info": ["ci-info@4.4.0", "", {}, "sha512-77PSwercCZU2Fc4sX94eF8k8Pxte6JAwL4/ICZLFjJLqegs7kCuAsqqj/70NQF6TvDpgFjkubQB2FW2ZZddvQg=="],
 
@@ -1355,7 +1355,7 @@
 
     "secure-compare": ["secure-compare@3.0.1", "", {}, "sha512-AckIIV90rPDcBcglUwXPF3kg0P0qmPsPXAj6BBEENQE1p5yA1xfmDJzfi1Tappj37Pv2mVbKpL3Z1T+Nn7k1Qw=="],
 
-    "selenium-webdriver": ["selenium-webdriver@4.41.0", "", { "dependencies": { "@bazel/runfiles": "^6.5.0", "jszip": "^3.10.1", "tmp": "^0.2.5", "ws": "^8.19.0" } }, "sha512-1XxuKVhr9az24xwixPBEDGSZP+P0z3ZOnCmr9Oiep0MlJN2Mk+flIjD3iBS9BgyjS4g14dikMqnrYUPIjhQBhA=="],
+    "selenium-webdriver": ["selenium-webdriver@4.44.0", "", { "dependencies": { "@bazel/runfiles": "^6.5.0", "jszip": "^3.10.1", "tmp": "^0.2.5", "ws": "^8.20.1" } }, "sha512-7RbYoKK0zET+KMVak11UDCtKvNulOU6gFZp8HI5GN9K8+BhqrliIJU/FP6QADrvRAXFMr3wHxfE3JHOcAxO3GQ=="],
 
     "semver": ["semver@7.8.4", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-rUCObTnP32Q08R2uuIrt7r9PlEonuTmtuXYcW6s5kjdlj3xbnwe+21yXptAUYcMAABLkYYTtnmzb3w3EDZfueA=="],
 

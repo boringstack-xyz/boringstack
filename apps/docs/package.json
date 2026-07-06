@@ -49,7 +49,7 @@
     "ws": "8.21.0"
   },
   "devDependencies": {
-    "@axe-core/cli": "4.11.3",
+    "@axe-core/cli": "4.12.1",
     "http-server": "14.1.1",
     "starlight-llms-txt": "0.10.0",
     "wrangler": "4.103.0"
