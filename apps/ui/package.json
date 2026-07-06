@@ -94,7 +94,7 @@
     "@boring-stack-pkg/eslint-plugin-tanstack-query-cache": "0.2.0",
     "@boring-stack-pkg/eslint-plugin-test-conventions": "0.1.2",
     "@changesets/cli": "2.31.0",
-    "@eslint-community/eslint-plugin-eslint-comments": "4.7.1",
+    "@eslint-community/eslint-plugin-eslint-comments": "4.7.2",
     "@eslint/js": "10.0.1",
     "@eslint/json": "2.0.0",
     "@lhci/cli": "0.15.1",
