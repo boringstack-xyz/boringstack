@@ -38,9 +38,7 @@ export interface IMfaVerifyLockedOut {
  * leaks a Valkey state shape into its response.
  */
 export type IMfaVerifyOutcome =
-  | IMfaVerifyOk
-  | IMfaVerifyFailed
-  | IMfaVerifyLockedOut;
+  IMfaVerifyOk | IMfaVerifyFailed | IMfaVerifyLockedOut;
 
 export interface IMfaChallenge {
   /** Opaque token returned to the SPA. Hex-encoded. */

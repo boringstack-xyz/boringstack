@@ -21,9 +21,7 @@ export interface IAccountSubject extends ForcedSubject<"Account"> {
 }
 
 export type SubjectInstance =
-  | ITeamMemberSubject
-  | ISiteSubject
-  | IAccountSubject;
+  ITeamMemberSubject | ISiteSubject | IAccountSubject;
 
 export type AppSubject = Subject | SubjectInstance;
 

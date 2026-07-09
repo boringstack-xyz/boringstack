@@ -5,6 +5,4 @@ export interface ITemplateMetadata {
 }
 
 export type ProcessedValue =
-  | string
-  | ProcessedValue[]
-  | { [key: string]: ProcessedValue };
+  string | ProcessedValue[] | { [key: string]: ProcessedValue };
