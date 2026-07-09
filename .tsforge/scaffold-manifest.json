@@ -5,7 +5,7 @@
   "repo": "https://github.com/boringstack-xyz/boringstack",
   "renameParams": ["project", "ghcrOwner", "domain"],
   "alwaysOnServices": ["postgres", "valkey", "api", "ui", "api-migrate"],
-  "envFileDefault": "apps/api/.env",
+  "envFileDefault": "infra/compose/compose/api.${STACK}.env",
   "envFileByGroup": {
     "infra": "infra/compose/compose/.env",
     "identity": "infra/compose/compose/.env"
