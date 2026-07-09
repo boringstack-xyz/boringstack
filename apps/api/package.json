@@ -73,7 +73,7 @@
     "fs-extra": "11.3.5",
     "handlebars": "4.7.9",
     "ioredis": "5.11.1",
-    "nodemailer": "9.0.1",
+    "nodemailer": "9.0.3",
     "openai": "6.45.0",
     "otpauth": "9.5.1",
     "pg": "8.22.0",
