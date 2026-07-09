@@ -11,10 +11,7 @@ export interface IResetPasswordFormInput {
 }
 
 export type IResetPasswordState =
-  | "missingToken"
-  | "form"
-  | "success"
-  | "invalidToken";
+  "missingToken" | "form" | "success" | "invalidToken";
 
 export interface IResetPasswordPageView {
   readonly state: IResetPasswordState;

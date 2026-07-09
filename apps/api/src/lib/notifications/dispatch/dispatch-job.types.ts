@@ -17,10 +17,7 @@ export interface IDispatchJob {
 }
 
 export type DispatchOutcome =
-  | "dispatched"
-  | "deduplicated"
-  | "self_action_skipped"
-  | "unknown_event";
+  "dispatched" | "deduplicated" | "self_action_skipped" | "unknown_event";
 
 export interface IDispatchResult {
   outcome: DispatchOutcome;

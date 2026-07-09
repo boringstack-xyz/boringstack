@@ -16,8 +16,7 @@ export type ActiveMembership = Omit<IAccountMembership, "role"> & {
 };
 
 export type DbOrTx =
-  | typeof db
-  | Parameters<Parameters<typeof db.transaction>[0]>[0];
+  typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export interface IProvisionAfterVerificationInput {
   readonly userId: string;

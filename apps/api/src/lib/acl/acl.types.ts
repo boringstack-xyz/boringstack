@@ -46,9 +46,7 @@ export interface IAccountSubject extends ForcedSubject<"Account"> {
 }
 
 export type SubjectInstance =
-  | ITeamMemberSubject
-  | ISiteSubject
-  | IAccountSubject;
+  ITeamMemberSubject | ISiteSubject | IAccountSubject;
 
 /*
  * CASL's `subject(name, obj)` helper returns `obj & ForcedSubject<name>`

@@ -1,13 +1,16 @@
-# Bun config. The `[install]` section is the install-time settings;
+# Bun config. The install table below holds install-time settings;
 # everything else (test, runtime) lives in package.json scripts.
+# NB: keep the literal "[" + "install" + "]" token out of comments — semgrep's
+# generic-mode bun-missing-minimum-release-age rule reads it as a second, empty
+# install table and false-positives despite the real minimumReleaseAge below.
 
 [install]
+minimumReleaseAge = 604800
 # Supply-chain protection. Refuses to install package versions younger than
-# the threshold below, on the theory that a compromised publish gets caught
-# Matches the Bun supply-chain settings on apps/ui
+# the threshold above, on the theory that a compromised publish gets caught
+# before the window elapses. Matches the Bun supply-chain settings on apps/ui
 # and the docs site. Value is in seconds: 604800 = 7 days.
 # https://bun.com/docs/install/lockfile#minimumreleaseage
-minimumReleaseAge = 604800
 # First-party packages we publish ourselves are exempt from the quarantine —
 # we control the release and don't need a 7-day window to catch a compromised
 # upstream.

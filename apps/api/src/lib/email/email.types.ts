@@ -9,11 +9,7 @@ import type { EmailSuppressionReason } from "./suppression.constants";
  */
 
 export type EmailProviderName =
-  | "resend"
-  | "sendgrid"
-  | "cloudflare"
-  | "smtp"
-  | "noop";
+  "resend" | "sendgrid" | "cloudflare" | "smtp" | "noop";
 
 export interface IEmailMessage {
   to: string;
