@@ -1,8 +1,7 @@
 import type { AUDIT_ACTIONS } from "./audit-log.constants";
 
 export type AuditAction =
-  | (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
-  | (string & {});
+  (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS] | (string & {});
 
 export interface IAuditWriteResult {
   success: boolean;

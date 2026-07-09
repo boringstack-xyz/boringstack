@@ -5,11 +5,7 @@ export interface IBillingPageProps {
 }
 
 export type IBillingPageState =
-  | "disabled"
-  | "not_owner"
-  | "loading"
-  | "error"
-  | "ready";
+  "disabled" | "not_owner" | "loading" | "error" | "ready";
 
 export interface IBillingPageView {
   readonly pageTitle: string;

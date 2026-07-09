@@ -5,8 +5,7 @@ import { logger } from "../../config/logger";
 import * as schema from "./schema";
 
 const buildSslConfig = ():
-  | false
-  | { rejectUnauthorized: boolean; ca?: string } => {
+  false | { rejectUnauthorized: boolean; ca?: string } => {
   if (!env.isProduction) {
     return false;
   }

@@ -1,9 +1,5 @@
 export type InvitationAcceptStatus =
-  | "accepting"
-  | "success"
-  | "missing-token"
-  | "invalid-token"
-  | "error";
+  "accepting" | "success" | "missing-token" | "invalid-token" | "error";
 
 export interface IInvitationAcceptPageView {
   status: InvitationAcceptStatus;

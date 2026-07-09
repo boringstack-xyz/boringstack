@@ -62,8 +62,7 @@ describe("useLogin", () => {
     const { result } = renderHook(() => useLogin(), { wrapper: Wrapper });
 
     let response:
-      | Awaited<ReturnType<typeof result.current.mutateAsync>>
-      | undefined;
+      Awaited<ReturnType<typeof result.current.mutateAsync>> | undefined;
 
     await act(async () => {
       response = await result.current.mutateAsync({
@@ -139,8 +138,7 @@ describe("useLogin", () => {
     const { result } = renderHook(() => useLogin(), { wrapper: Wrapper });
 
     let response:
-      | Awaited<ReturnType<typeof result.current.mutateAsync>>
-      | undefined;
+      Awaited<ReturnType<typeof result.current.mutateAsync>> | undefined;
 
     await act(async () => {
       response = await result.current.mutateAsync({
