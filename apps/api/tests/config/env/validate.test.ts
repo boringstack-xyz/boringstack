@@ -427,12 +427,21 @@ describe("validateEnv", () => {
     expect(env.QUEUES_ENABLED).toBe(true);
   });
 
+  /*
+   * `example.com` is the canonical placeholder sender domain. Build the address by
+   * interpolation so the scaffold's rebranding step (rename-project.sh rewrites the
+   * literal `noreply@example.com` → the real project domain) can't turn this fixture
+   * into a genuine domain and silently defeat the assertion. The bare `example.com`
+   * token is not a rename target, so the fixture survives scaffolding intact.
+   */
+  const PLACEHOLDER_DOMAIN = "example.com";
+
   it("rejects production EMAIL_FROM on a placeholder domain", () => {
     testEnv.NODE_ENV = "production";
     testEnv.ALLOWED_ORIGINS = "";
     testEnv.EMAIL_PROVIDER = "resend";
     testEnv.RESEND_API_KEY = "rk_test";
-    testEnv.EMAIL_FROM = "noreply@example.com";
+    testEnv.EMAIL_FROM = `noreply@${PLACEHOLDER_DOMAIN}`;
     testEnv.VALKEY_PASSWORD = "secret";
     applyProdDefaults(testEnv);
     expect(() => validateEnv(testEnv)).toThrow(/placeholder domain/);
@@ -443,7 +452,7 @@ describe("validateEnv", () => {
     testEnv.ALLOWED_ORIGINS = "";
     testEnv.EMAIL_PROVIDER = "resend";
     testEnv.RESEND_API_KEY = "rk_test";
-    testEnv.EMAIL_FROM = "noreply@mail.example.com";
+    testEnv.EMAIL_FROM = `noreply@mail.${PLACEHOLDER_DOMAIN}`;
     testEnv.VALKEY_PASSWORD = "secret";
     applyProdDefaults(testEnv);
     expect(() => validateEnv(testEnv)).toThrow(/placeholder domain/);
