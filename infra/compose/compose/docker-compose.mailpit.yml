@@ -28,8 +28,8 @@ services:
     volumes:
       - mailpit_data:/data
     ports:
-      - "8025:8025"   # web UI
-      - "1025:1025"   # SMTP
+      - "${MAILPIT_UI_HOST_PORT:-8025}:8025"   # web UI
+      - "${MAILPIT_SMTP_HOST_PORT:-1025}:1025"   # SMTP
     networks:
       - backend
     healthcheck:

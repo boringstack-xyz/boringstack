@@ -13,4 +13,4 @@
 services:
   glitchtip-web:
     ports:
-      - "8055:8000"
+      - "${GLITCHTIP_HOST_PORT:-8055}:8000"

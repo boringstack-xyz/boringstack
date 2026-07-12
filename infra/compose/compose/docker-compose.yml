@@ -107,8 +107,8 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
-      - "80:80"
-      - "443:443"
+      - "${HTTP_HOST_PORT:-80}:80"
+      - "${HTTPS_HOST_PORT:-443}:443"
     command:
       - "--api.dashboard=true"
       - "--providers.docker=true"
@@ -337,7 +337,7 @@ services:
       - backend
       - frontend
     ports:
-      - "7330:7330"
+      - "${API_HOST_PORT:-7330}:7330"
     deploy:
       resources:
         limits:
@@ -377,7 +377,7 @@ services:
     networks:
       - frontend
     ports:
-      - "7331:7331"
+      - "${UI_HOST_PORT:-7331}:7331"
     deploy:
       resources:
         limits:
@@ -419,7 +419,7 @@ services:
     networks:
       - frontend
     ports:
-      - "7331:8080"
+      - "${UI_PREVIEW_HOST_PORT:-7331}:8080"
     deploy:
       resources:
         limits:

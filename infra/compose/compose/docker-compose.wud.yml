@@ -50,7 +50,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - wud_data:/store
     ports:
-      - "3033:3000"
+      - "${WUD_HOST_PORT:-3033}:3000"
     networks:
       - backend
     # WUD serves an Express app on :3000 with a dedicated /health endpoint
