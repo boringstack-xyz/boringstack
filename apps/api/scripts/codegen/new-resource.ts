@@ -297,12 +297,12 @@ export const ${filePrefix}Service = new ${pascal}Service();
   await Bun.write(
     `${dirPath}/${filePrefix}.routes.ts`,
     `import { t } from "elysia";
-import { createAuthMiddleware } from "../auth/auth.plugin";
+import { requireAuth } from "../auth/auth.plugin";
 import { errorHandler } from "../../middleware/error-handler";
 import { ${createSchemaName}, ${responseName} } from "./${filePrefix}.schemas";
 import { ${filePrefix}Service } from "./${filePrefix}.service";
 
-const ${filePrefix}Routes = createAuthMiddleware()
+const ${filePrefix}Routes = requireAuth()
   .onError(({ code, error, set }) =>
     errorHandler({ code: String(code), error, set })
   )
