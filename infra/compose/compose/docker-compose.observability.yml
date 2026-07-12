@@ -32,7 +32,7 @@ services:
       - ./prometheus/rules.yml:/etc/prometheus/rules.yml:ro
       - prometheus_data:/prometheus
     ports:
-      - "9090:9090"
+      - "${PROMETHEUS_HOST_PORT:-9090}:9090"
     networks:
       - backend
       - frontend
@@ -71,7 +71,7 @@ services:
     volumes:
       - ./alertmanager/entrypoint.sh:/etc/alertmanager/entrypoint.sh:ro
     ports:
-      - "9093:9093"
+      - "${ALERTMANAGER_HOST_PORT:-9093}:9093"
     networks:
       - backend
     healthcheck:
@@ -109,7 +109,7 @@ services:
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     ports:
-      - "3010:3000"
+      - "${GRAFANA_HOST_PORT:-3010}:3000"
     networks:
       - backend
       - frontend
