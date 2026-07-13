@@ -34,7 +34,7 @@
   "dependencies": {
     "@astrojs/react": "6.0.0",
     "@astrojs/sitemap": "3.7.3",
-    "@astrojs/starlight": "0.40.0",
+    "@astrojs/starlight": "0.41.3",
     "@tailwindcss/vite": "4.3.1",
     "astro": "7.0.3",
     "astro-mermaid": "2.0.4",
