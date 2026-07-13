@@ -116,7 +116,7 @@
     "eslint-plugin-prettier": "5.5.6",
     "eslint-plugin-promise": "7.3.0",
     "eslint-plugin-sonarjs": "4.1.0",
-    "eslint-plugin-unicorn": "70.0.0",
+    "eslint-plugin-unicorn": "71.0.0",
     "globals": "17.6.0",
     "husky": "9.1.7",
     "knip": "6.23.0",
