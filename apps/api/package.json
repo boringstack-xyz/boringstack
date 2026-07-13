@@ -50,7 +50,7 @@
     "prepare": "husky 2>/dev/null || true"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.106.0",
+    "@anthropic-ai/sdk": "0.110.0",
     "@casl/ability": "7.0.0",
     "@elysiajs/cors": "1.4.2",
     "@elysiajs/jwt": "1.4.2",
