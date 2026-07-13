@@ -62,7 +62,7 @@
     "@opentelemetry/sdk-node": "0.219.0",
     "@opentelemetry/semantic-conventions": "1.41.1",
     "@sendgrid/mail": "8.1.6",
-    "@sentry/bun": "10.62.0",
+    "@sentry/bun": "10.63.0",
     "@sinclair/typebox": "0.34.49",
     "arctic": "3.7.0",
     "bullmq": "5.79.2",
