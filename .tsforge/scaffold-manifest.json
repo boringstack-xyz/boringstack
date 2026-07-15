@@ -255,7 +255,8 @@
       "healthUrls": [
         "http://localhost:7331/",
         "http://localhost:7330/swagger/json"
-      ]
+      ],
+      "strip": ["apps/docs"]
     },
     "astro": {
       "subPath": "apps/docs",
