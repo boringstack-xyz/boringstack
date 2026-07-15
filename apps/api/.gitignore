@@ -10,6 +10,13 @@
 /dist
 /build
 
+# ESLint persistent cache — warm lint goes ~23s → ~2s (content-based
+# invalidation, zero rule loss). Mirrors apps/ui.
+.eslintcache
+
+# Incremental TypeScript build info (fast typecheck cache).
+*.tsbuildinfo
+
 # misc
 .DS_Store
 *.pem
