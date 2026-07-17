@@ -27,6 +27,7 @@ import { docsNoRetiredCredentialsRule } from "./rules/source-text/docs-no-retire
 import { externalClientTimeoutRule } from "./rules/source-text/external-client-timeout";
 import { forbiddenTextRule } from "./rules/source-text/forbidden-text";
 import { noRawRoleLiteralsRule } from "./rules/source-text/no-raw-role-literals";
+import { schemaEnumFieldConsistencyRule } from "./rules/source-text/schema-enum-field-consistency";
 import { noOverlappingLibsRule } from "./rules/supply-chain/no-overlapping-libs";
 import { packageJsonExactDepsRule } from "./rules/supply-chain/package-json-exact-deps";
 import { packageOverrideParityRule } from "./rules/supply-chain/package-override-parity";
@@ -66,6 +67,7 @@ export const META_RULES: readonly IMetaRule[] = [
   docsNoRetiredCredentialsRule,
   externalClientTimeoutRule,
   noRawRoleLiteralsRule,
+  schemaEnumFieldConsistencyRule,
   auditLogReadAccountScopedRule,
   routesRequireTestSiblingRule,
   logicFilesRequireTestSiblingRule,

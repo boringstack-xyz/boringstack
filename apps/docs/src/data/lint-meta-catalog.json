@@ -435,6 +435,12 @@
       "description": "Use ROLE.* from acl.constants.ts instead of raw owner/admin/member/viewer string literals."
     },
     {
+      "id": "schema-enum-field-consistency",
+      "category": "source-text",
+      "ciCritical": false,
+      "description": "A fixed-value field typed as t.Union([t.Literal(...)]) in one schema must not be t.String() in another schema in the same file — keep the generated API client precise."
+    },
+    {
       "id": "audit-log-read-account-scoped",
       "category": "source-text",
       "ciCritical": false,

@@ -48,6 +48,8 @@ import {
   findWorkflows,
   checkGeneratedArtifactContracts,
   checkNoRawRoleLiterals,
+  checkSchemaEnumFieldConsistency,
+  inconsistentEnumFields,
   checkPackageOverrideParity,
   checkPrePushParity,
   checkSharedToolVersionParity,
@@ -1150,6 +1152,78 @@ describe("checkWorkflowExpressionSyntax", () => {
 
 const CONTRACT_MD = "AGENT_CONTRACT.md";
 const PKG_JSON = "package.json";
+
+describe("schema-enum-field-consistency", () => {
+  /*
+   * The exact shape of the real regression: status/priority are literal-union enums on
+   * input but t.String() on the response — the generated client widens them to `string`
+   * and the UI enum can't reconcile.
+   */
+  const DRIFT = `import { t } from "elysia";
+export const CreateTaskSchema = t.Object({
+  status: t.Optional(
+    t.Union([t.Literal("todo"), t.Literal("doing"), t.Literal("done")])
+  ),
+  priority: t.Optional(t.Union([t.Literal("low"), t.Literal("high")])),
+});
+export const TaskResponse = t.Object({
+  id: t.String(),
+  description: t.Optional(t.Union([t.String(), t.Null()])),
+  status: t.String(),
+  priority: t.String(),
+});`;
+
+  const CLEAN = `import { t } from "elysia";
+const TaskStatus = t.Union([t.Literal("todo"), t.Literal("doing"), t.Literal("done")]);
+export const CreateTaskSchema = t.Object({
+  status: t.Optional(TaskStatus),
+});
+export const TaskResponse = t.Object({
+  id: t.String(),
+  description: t.Optional(t.Union([t.String(), t.Null()])),
+  status: TaskStatus,
+});`;
+
+  test("flags every enum field widened to t.String() elsewhere in the file", () => {
+    expect(inconsistentEnumFields(DRIFT)).toEqual(["priority", "status"]);
+  });
+
+  test("passes when the enum is defined once and reused (never t.String())", () => {
+    expect(inconsistentEnumFields(CLEAN)).toEqual([]);
+  });
+
+  test("a nullable string (t.Union([t.String(), t.Null()])) is not treated as an enum", () => {
+    expect(inconsistentEnumFields(DRIFT)).not.toContain("description");
+  });
+
+  test("checkSchemaEnumFieldConsistency reports drift only for src/*.schemas.ts", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-schema-enum-"));
+
+    try {
+      mkdirSync(join(root, "src", "api", "task"), { recursive: true });
+      const schema = join(root, "src", "api", "task", "task.schemas.ts");
+
+      writeFileSync(schema, DRIFT);
+
+      const rules = checkSchemaEnumFieldConsistency(root, [schema]).map(
+        (row) => row.rule
+      );
+
+      expect(rules).toEqual([
+        "schema-enum-field-consistency",
+        "schema-enum-field-consistency",
+      ]);
+
+      // A non-schema file with the same content is ignored (path filter).
+      const other = join(root, "src", "api", "task", "task.ts");
+
+      writeFileSync(other, DRIFT);
+      expect(checkSchemaEnumFieldConsistency(root, [other])).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
 
 describe("checkAuditLogReadAccountScoped", () => {
   test("flags userId-only auditLog reads; passes account-scoped and write-path files", () => {

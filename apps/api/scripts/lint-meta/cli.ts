@@ -54,6 +54,10 @@ import { checkDocsNoRetiredCredentials } from "./rules/source-text/docs-no-retir
 import { checkExternalClientTimeouts } from "./rules/source-text/external-client-timeout";
 import { checkForbiddenText } from "./rules/source-text/forbidden-text";
 import { checkNoRawRoleLiterals } from "./rules/source-text/no-raw-role-literals";
+import {
+  checkSchemaEnumFieldConsistency,
+  inconsistentEnumFields,
+} from "./rules/source-text/schema-enum-field-consistency";
 import { checkLintMetaRulesSelfCovered } from "./rules/testing/lint-meta-rules-self-covered";
 import { checkLogicFilesHaveTests } from "./rules/testing/logic-files-require-test-sibling";
 import { checkRouteFilesHaveTests } from "./rules/testing/routes-require-test-sibling";
@@ -133,6 +137,8 @@ export {
   checkLogicFilesHaveTests,
   checkNoDirectProcessEnv,
   checkNoRawRoleLiterals,
+  checkSchemaEnumFieldConsistency,
+  inconsistentEnumFields,
   checkPackageOverrideParity,
   checkPrePushParity,
   checkPrePushScannerParity,
