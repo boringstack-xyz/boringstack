@@ -119,7 +119,7 @@
     "eslint-plugin-unicorn": "71.1.0",
     "globals": "17.7.0",
     "husky": "9.1.7",
-    "knip": "6.25.0",
+    "knip": "6.26.0",
     "prettier": "3.9.4",
     "typescript": "6.0.3",
     "typescript-eslint": "8.64.0"
