@@ -63,7 +63,7 @@
     "@opentelemetry/semantic-conventions": "1.42.0",
     "@sendgrid/mail": "8.1.6",
     "@sentry/bun": "10.63.0",
-    "@sinclair/typebox": "0.34.49",
+    "@sinclair/typebox": "0.34.52",
     "arctic": "3.7.0",
     "bullmq": "5.79.3",
     "dotenv": "17.4.2",
