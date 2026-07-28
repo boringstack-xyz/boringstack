@@ -98,8 +98,7 @@ jobs:
           fi
 
       # No bun audit step here: osv-scanner above with osv-scanner.toml is
-      # the canonical "what we accept" allowlist for this docs repo. bun
-      # audit can't reference the same allowlist (CVE IDs only, no GHSA
-      # support), so it would always reintroduce noise. The docs site is a
-      # static-site build with no runtime auth or user input. osv is
-      # sufficient coverage.
+      # the canonical "what we accept" allowlist for this docs repo. The
+      # docs site is a static-site build with no runtime auth or user input;
+      # osv is sufficient coverage. (api/ui run bun audit via
+      # scripts/ci/bun-audit.sh which applies the same GHSA ignores.)

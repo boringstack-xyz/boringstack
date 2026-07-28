@@ -56,7 +56,7 @@ jobs:
 
       - name: Dependency audit
         if: steps.filter.outputs.code == 'true'
-        run: bun audit --audit-level high
+        run: bash scripts/ci/bun-audit.sh
 
       - name: Lint + format + typecheck
         if: steps.filter.outputs.code == 'true'
