@@ -127,12 +127,18 @@
   "//overrides": {
     "_": "Why these transitive deps are pinned. Keep each entry in sync with the matching `overrides` key — enforced by the package-override-parity lint-meta rule.",
     "@typescript-eslint/utils": "Single @typescript-eslint/utils resolution across the workspace so the shared @boring-stack-pkg ESLint plugins all load the same utils version. The UI and docs apps mirror this exact pin; a mismatch makes the custom plugins resolve divergent utils copies and fail to load.",
+    "axios": "Pin patched axios (GHSA-gcfj-64vw-6mp9 and related SSRF/credential-leak advisories). 1.16.0 is vulnerable; 1.18.0 patches it. Pulled in transitively via @sendgrid/mail -> @sendgrid/client.",
+    "brace-expansion": "Pin patched brace-expansion (GHSA-3jxr-9vmj-r5cp / GHSA-mh99-v99m-4gvg). 5.0.6 / 1.1.14 are vulnerable; 5.0.8 patches the tree (Bun has no nested overrides).",
     "form-data": "Pin patched form-data (GHSA-hmw2-7cc7-3qxx CRLF injection via unescaped multipart field names); 4.0.5 is vulnerable, 4.0.6 patches it. Pulled in transitively via @sendgrid/mail -> @sendgrid/client -> axios. Excluded from the install quarantine while <7 days old.",
-    "ioredis": "Force a single ioredis resolution across the tree. bullmq 5.78.0 exact-pins ioredis@5.10.1, so bumping the top-level dep to 5.11.1 otherwise leaves bullmq on its own nested 5.10.1 copy — two ioredis instances whose RedisOptions types are structurally incompatible (tsc fails on new Redis(options) calls). This override collapses bullmq's nested copy onto 5.11.1 too; 5.10.1 -> 5.11.1 is a semver patch and the Redis/BullMQ integration tests verify runtime compatibility. Drop this once bullmq advances its own ioredis pin."
+    "ioredis": "Force a single ioredis resolution across the tree. bullmq 5.78.0 exact-pins ioredis@5.10.1, so bumping the top-level dep to 5.11.1 otherwise leaves bullmq on its own nested 5.10.1 copy — two ioredis instances whose RedisOptions types are structurally incompatible (tsc fails on new Redis(options) calls). This override collapses bullmq's nested copy onto 5.11.1 too; 5.10.1 -> 5.11.1 is a semver patch and the Redis/BullMQ integration tests verify runtime compatibility. Drop this once bullmq advances its own ioredis pin.",
+    "protobufjs": "Pin patched protobufjs (GHSA-j3f2-48v5-ccww). 7.6.1 is vulnerable; 7.6.5 patches it. Transitive via the OpenTelemetry OTLP exporter (build/telemetry path)."
   },
   "overrides": {
     "@typescript-eslint/utils": "8.61.1",
+    "axios": "1.18.0",
+    "brace-expansion": "5.0.8",
     "form-data": "4.0.6",
-    "ioredis": "5.11.1"
+    "ioredis": "5.11.1",
+    "protobufjs": "7.6.5"
   }
 }
