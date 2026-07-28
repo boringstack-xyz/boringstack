@@ -35,8 +35,8 @@
     "@astrojs/react": "6.0.1",
     "@astrojs/sitemap": "3.7.3",
     "@astrojs/starlight": "0.41.3",
-    "@tailwindcss/vite": "4.3.2",
-    "astro": "7.0.6",
+    "@tailwindcss/vite": "4.3.3",
+    "astro": "7.1.1",
     "astro-mermaid": "2.1.0",
     "clsx": "2.1.1",
     "mermaid": "11.16.0",
@@ -45,14 +45,14 @@
     "reading-time": "1.5.0",
     "remark-gfm": "4.0.1",
     "sharp": "0.35.3",
-    "tailwindcss": "4.3.2",
+    "tailwindcss": "4.3.3",
     "ws": "8.21.0"
   },
   "devDependencies": {
     "@axe-core/cli": "4.12.1",
     "http-server": "14.1.1",
     "starlight-llms-txt": "0.11.0",
-    "wrangler": "4.107.0"
+    "wrangler": "4.112.0"
   },
   "//overrides": {
     "_": "Why these transitive deps are pinned. Build-time/dev tooling only — the deployed site is static Cloudflare Pages. Re-evaluate quarterly (see osv-scanner.toml).",
