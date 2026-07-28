@@ -33,7 +33,7 @@ jobs:
       OSV_SCANNER_SHA256: "bc98e15319ed0d515e3f9235287ba53cdc5535d576d24fd573978ecfe9ab92dc"
 
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Detect relevant changes
         uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
@@ -98,8 +98,7 @@ jobs:
           fi
 
       # No bun audit step here: osv-scanner above with osv-scanner.toml is
-      # the canonical "what we accept" allowlist for this docs repo. bun
-      # audit can't reference the same allowlist (CVE IDs only, no GHSA
-      # support), so it would always reintroduce noise. The docs site is a
-      # static-site build with no runtime auth or user input. osv is
-      # sufficient coverage.
+      # the canonical "what we accept" allowlist for this docs repo. The
+      # docs site is a static-site build with no runtime auth or user input;
+      # osv is sufficient coverage. (api/ui run bun audit via
+      # scripts/ci/bun-audit.sh which applies the same GHSA ignores.)

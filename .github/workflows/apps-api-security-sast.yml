@@ -32,7 +32,7 @@ jobs:
       image: semgrep/semgrep:1.142.0@sha256:03402a5040a88a570dec58375ef1a19fa777dd61575afdc7d5527ddf308dd765
 
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Need full history for differential scans on PRs.
           fetch-depth: 0
