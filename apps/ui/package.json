@@ -148,7 +148,6 @@
   "//overrides": {
     "_": "Why these transitive deps are pinned. Dev tooling only — lighthouse/lhci and http-server pull the vulnerable ranges; production output is a static bundle. Astro-only build deps (e.g. devalue, GHSA-77vg-94rm-hx3p) are pinned in apps/docs, not here — the Vite toolchain does not pull them.",
     "body-parser": "Pin patched body-parser (GHSA-v422-hmwv-36x6). 1.20.5 is vulnerable; 1.20.6 patches it. Transitive via @lhci/cli (CI-only).",
-    "brace-expansion": "Pin patched brace-expansion (GHSA-3jxr-9vmj-r5cp / GHSA-mh99-v99m-4gvg). Vulnerable 1.x/2.x/5.0.6 copies collapse onto 5.0.8 (Bun has no nested overrides).",
     "js-yaml": "Pin patched js-yaml (GHSA-52cp-r559-cp3m). 4.1.1 / 3.14.2 are vulnerable; 4.3.0 patches the primary tree. Build-time config loading only.",
     "postcss": "Pin patched postcss (GHSA-r28c-9q8g-f849). 8.5.16 is vulnerable; 8.5.18 patches it. Build-time CSS tooling via vite/tailwind.",
     "ws": "Pin patched ws (GHSA-58qx-3vcg-4xpx) pulled via lighthouse dev tooling; mirrors the docs app pin.",
@@ -166,7 +165,6 @@
     "@types/react-dom": "19.2.3",
     "@typescript-eslint/utils": "8.61.1",
     "body-parser": "1.20.6",
-    "brace-expansion": "5.0.8",
     "js-yaml": "4.3.0",
     "postcss": "8.5.18",
     "qs": "6.15.2",

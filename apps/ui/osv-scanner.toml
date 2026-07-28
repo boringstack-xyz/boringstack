@@ -59,3 +59,20 @@ react-router advisory; fixed only in 8.3.0 (semver major). We pin
 react-router-dom 7.x and Dependabot ignores React ecosystem majors.
 No 7.x patch available; defer until a deliberate react-router v8 upgrade.
 """
+
+[[IgnoredVulns]]
+id = "GHSA-3jxr-9vmj-r5cp"
+ignoreUntil = "2026-10-28T00:00:00Z"
+reason = """
+brace-expansion ReDoS across 1.x/2.x/5.0.6 copies under eslint/minimatch.
+A flat override to 5.0.8 breaks prettier (expects brace-expansion 1.x default
+export). Lint/format tooling only; no user-controlled globs. Awaiting
+upstream minimatch bumps.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-mh99-v99m-4gvg"
+ignoreUntil = "2026-10-28T00:00:00Z"
+reason = """
+brace-expansion; same scope as GHSA-3jxr-9vmj-r5cp (eslint/minimatch tooling).
+"""
