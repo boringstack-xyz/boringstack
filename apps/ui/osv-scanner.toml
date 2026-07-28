@@ -16,31 +16,12 @@ transitive tree.
 """
 
 [[IgnoredVulns]]
-id = "GHSA-52f5-9888-hmc6"
-ignoreUntil = "2026-11-18T00:00:00Z"
-reason = """
-tmp symlink-following. Build-time tooling dependency (storybook /
-vitest helpers). No path from user input to tmp usage in shipped UI
-code. Awaiting upstream patch.
-"""
-
-[[IgnoredVulns]]
 id = "GHSA-48c2-rrv3-qjmp"
 ignoreUntil = "2026-11-18T00:00:00Z"
 reason = """
 yaml prototype-pollution. Used only at build time via configuration
 loaders (vite plugins). Production bundle ships no yaml parser to the
 client. Awaiting upstream patch.
-"""
-
-[[IgnoredVulns]]
-id = "GHSA-q8mj-m7cp-5q26"
-ignoreUntil = "2026-11-22T00:00:00Z"
-reason = """
-qs@6.15.1 pulled in transitively via express + body-parser, themselves
-deps of @lhci/cli (Lighthouse CI). Express never runs in the shipped
-UI bundle — it is a CI-only audit tool. Re-evaluate when @lhci/cli
-bumps its express/body-parser pins.
 """
 
 [[IgnoredVulns]]
@@ -71,10 +52,10 @@ tree (vite/storybook); awaiting upstream bumps rather than force-pinning one cop
 """
 
 [[IgnoredVulns]]
-id = "GHSA-h67p-54hq-rp68"
-ignoreUntil = "2026-09-19T00:00:00Z"
+id = "GHSA-qwww-vcr4-c8h2"
+ignoreUntil = "2026-10-28T00:00:00Z"
 reason = """
-js-yaml advisory; fixed in 4.2.0. Build-time config loading only (vite plugins,
-lhci); the production bundle ships no YAML parser to the client. Multiple
-versions in the transitive tree; awaiting upstream bumps.
+react-router advisory; fixed only in 8.3.0 (semver major). We pin
+react-router-dom 7.x and Dependabot ignores React ecosystem majors.
+No 7.x patch available; defer until a deliberate react-router v8 upgrade.
 """
