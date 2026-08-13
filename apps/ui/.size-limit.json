@@ -27,6 +27,17 @@
     "gzip": true
   },
   {
+    "name": "Preloaded feature constants + shared query utils",
+    "path": [
+      "dist/assets/Auth.constants-*.js",
+      "dist/assets/Auth.queries.utils-*.js",
+      "dist/assets/Notifications.constants-*.js",
+      "dist/assets/capabilities.constants-*.js"
+    ],
+    "limit": "5 KB",
+    "gzip": true
+  },
+  {
     "name": "CSS (Tailwind compiled)",
     "path": "dist/assets/*.css",
     "limit": "12 KB",

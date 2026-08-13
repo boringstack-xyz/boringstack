@@ -10,4 +10,8 @@ minimumReleaseAgeExcludes = [
   # so exempt them from the quarantine window. Build-time tooling only.
   "form-data",
   "undici",
+  # nanoid 3.3.18 patches GHSA-2v37-7h3g-55p8. Pulled in transitively by
+  # postcss (build-time CSS tooling); the patched release is <7 days old, so
+  # exempt it from the quarantine window.
+  "nanoid",
 ]

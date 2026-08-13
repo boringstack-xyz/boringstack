@@ -24,21 +24,3 @@ micromatch; our usage is internal build-time tooling (vite, tsconfig
 resolution). No path from user input to micromatch in api source. Awaiting
 upstream patch via vite/jest transitive deps.
 """
-
-[[IgnoredVulns]]
-id = "GHSA-g7r4-m6w7-qqqr"
-ignoreUntil = "2026-09-19T00:00:00Z"
-reason = """
-esbuild advisory; fixed in 0.28.1. Build-time bundler only — production runs the
-bundled artifact, not esbuild. Multiple esbuild versions live in the transitive
-tree (vite/tsx); awaiting upstream bumps rather than force-pinning one copy.
-"""
-
-[[IgnoredVulns]]
-id = "GHSA-mh99-v99m-4gvg"
-ignoreUntil = "2026-10-28T00:00:00Z"
-reason = """
-brace-expansion ReDoS under eslint/minimatch. Flat override to 5.0.8 breaks
-prettier on the UI app (1.x default export) and package-override-parity
-requires matching pins across apps. Lint tooling only; awaiting upstream.
-"""

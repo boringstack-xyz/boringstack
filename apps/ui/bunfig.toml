@@ -33,8 +33,14 @@ minimumReleaseAgeExcludes = [
   # by @lhci/cli; 0.15.1 is the latest @lhci/cli so we override `tmp` directly
   # to clear `bun audit`.
   "tmp",
-  # undici 7.28.0 patches GHSA-vmh5-mc38-953g (TLS cert-validation bypass) and
-  # GHSA-pr7r-676h-xcf6. Pulled in transitively by jsdom (test env only); the
-  # patched release is <7 days old, so exempt it from the quarantine window.
+  # undici 7.29.0 patches GHSA-vmh5-mc38-953g (TLS cert-validation bypass) and
+  # GHSA-pr7r-676h-xcf6, plus the GHSA-4cwx-7wf7-3272 / GHSA-8xcm-r25x-g524 /
+  # GHSA-jr45-8vmc-qm54 / GHSA-m8rv-5g2x-5cg5 / GHSA-v3r7-h72x-cjcm batch.
+  # Pulled in transitively by jsdom (test env only); the patched release is
+  # <7 days old, so exempt it from the quarantine window.
   "undici",
+  # nanoid 3.3.18 patches GHSA-2v37-7h3g-55p8. Pulled in transitively by
+  # postcss (build-time CSS tooling); the patched release is <7 days old, so
+  # exempt it from the quarantine window.
+  "nanoid",
 ]

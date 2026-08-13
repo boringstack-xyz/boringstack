@@ -49,42 +49,38 @@ describe("readStoredTheme", () => {
 });
 
 describe("readSystemPreference", () => {
-  const originalMatchMedia = window.matchMedia;
-
   afterEach(() => {
-    window.matchMedia = originalMatchMedia;
+    vi.unstubAllGlobals();
   });
 
   it("returns 'dark' when prefers-color-scheme: dark matches", () => {
-    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+    vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true }));
 
     expect(readSystemPreference()).toBe("dark");
   });
 
   it("returns 'light' when prefers-color-scheme: dark does not match", () => {
-    window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+    vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: false }));
 
     expect(readSystemPreference()).toBe("light");
   });
 });
 
 describe("resolveInitialTheme", () => {
-  const originalMatchMedia = window.matchMedia;
-
   afterEach(() => {
     localStore.remove(THEME_STORAGE_KEY);
-    window.matchMedia = originalMatchMedia;
+    vi.unstubAllGlobals();
   });
 
   it("prefers the stored value over the system preference", () => {
-    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+    vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true }));
     localStore.set(THEME_STORAGE_KEY, "light");
 
     expect(resolveInitialTheme()).toBe("light");
   });
 
   it("falls back to the system preference when nothing is stored", () => {
-    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+    vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true }));
 
     expect(resolveInitialTheme()).toBe("dark");
   });
