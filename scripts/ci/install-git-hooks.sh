@@ -33,6 +33,14 @@ HOOK_FILE="$HOOKS_DIR/pre-push"
 cat > "$HOOK_FILE" <<'EOF'
 #!/usr/bin/env bash
 # Auto-installed by scripts/ci/install-git-hooks.sh — fans out to per-app gates.
+
+# Drain the "<local ref> <local sha> <remote ref> <remote sha>" lines git
+# streams on our stdin. The gate below resolves its own range from
+# origin/main and never reads them, and a hook that exits with stdin
+# unread can leave git writing into a closed pipe — the push then aborts
+# on SIGPIPE (141) with every gate reporting success.
+cat >/dev/null
+
 exec "$(git rev-parse --show-toplevel)/scripts/ci/pre-push.sh"
 EOF
 

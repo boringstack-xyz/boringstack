@@ -139,3 +139,8 @@ if [[ "$RAN_ANY" -eq 0 ]]; then
 fi
 
 ok "Root pre-push fan-out finished"
+
+# Exit 0 explicitly rather than inheriting the status of the last write.
+# Every real failure leaves through `fail` (exit 1) or is aborted by
+# `set -e` well before this line, so this cannot mask a broken gate.
+exit 0
