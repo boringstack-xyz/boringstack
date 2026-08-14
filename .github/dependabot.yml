@@ -151,6 +151,15 @@ updates:
     labels: ["dependencies", "ci"]
     commit-message:
       prefix: "chore(ci)"
+    ignore:
+      # changesets/action 2.x requires Changesets CLI v3 and validates it at
+      # runtime, directing CLI v2 users back to @v1. apps/ui is on
+      # @changesets/cli 2.31.0. v2 also renames every input and removes
+      # `cwd`, which the monorepo layout relies on (.changeset lives in
+      # apps/ui, not the repo root). Revisit together with the CLI v3
+      # upgrade, not as a dependency bump.
+      - dependency-name: "changesets/action"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directory: /apps/api
