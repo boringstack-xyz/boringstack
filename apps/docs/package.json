@@ -32,11 +32,11 @@
     "a11y": "bash scripts/a11y.sh"
   },
   "dependencies": {
-    "@astrojs/react": "6.0.1",
+    "@astrojs/react": "6.0.2",
     "@astrojs/sitemap": "3.7.3",
-    "@astrojs/starlight": "0.41.4",
+    "@astrojs/starlight": "0.41.7",
     "@tailwindcss/vite": "4.3.3",
-    "astro": "7.1.3",
+    "astro": "7.2.0",
     "astro-mermaid": "2.1.0",
     "clsx": "2.1.1",
     "mermaid": "11.16.1",
@@ -46,7 +46,7 @@
     "remark-gfm": "4.0.1",
     "sharp": "0.35.3",
     "tailwindcss": "4.3.3",
-    "ws": "8.21.1"
+    "ws": "8.21.2"
   },
   "devDependencies": {
     "@axe-core/cli": "4.12.1",
@@ -70,11 +70,9 @@
     "form-data": "Pin patched form-data (GHSA-hmw2-7cc7-3qxx CRLF injection); 4.0.5 is vulnerable, 4.0.6 patches it. Build-time tooling only (wrangler/astro fetches). Mirrors the API app pin. Excluded from the install quarantine while <7 days old.",
     "undici": "Pin patched undici (GHSA-vmh5-mc38-953g TLS cert-validation bypass, GHSA-pr7r-676h-xcf6); 7.29.0 patches it (adds the GHSA-4cwx-7wf7-3272 batch). Build-time tooling only (wrangler/astro fetches). Mirrors the UI app pin. Excluded from the install quarantine while <7 days old.",
     "@types/react": "Match the UI app's @types/react pin so React types resolve identically across apps (@astrojs/react pulls them transitively here).",
-    "@types/react-dom": "Match the UI app's @types/react-dom pin for the same cross-app type parity.",
-    "@astrojs/markdown-remark": "Pin to astro 6.4.8's exact dependency. Starlight depends on the 7.1.x range transitively, but only 7.2.0 exposes the `unified` subpath export that astro 6.4.8's prerender runtime imports; without this the hoisted 7.1.x copy shadows astro's nested 7.2.0 and `astro build` fails. Re-evaluate when Starlight requires >=7.2.0."
+    "@types/react-dom": "Match the UI app's @types/react-dom pin for the same cross-app type parity."
   },
   "overrides": {
-    "@astrojs/markdown-remark": "7.2.0",
     "adm-zip": "0.6.0",
     "axios": "1.18.0",
     "devalue": "5.8.1",
@@ -87,7 +85,7 @@
     "svgo": "4.0.2",
     "tmp": "0.2.7",
     "undici": "7.29.0",
-    "ws": "8.21.1",
+    "ws": "8.21.2",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4"
   }
