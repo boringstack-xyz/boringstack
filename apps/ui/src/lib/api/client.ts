@@ -9,4 +9,9 @@
  * Lint forbids any other module from calling `fetch` / `axios` directly.
  */
 export { openapi as apiClient } from "./openapi";
-export type { paths, components, operations } from "./schema";
+/*
+ * Only `operations` is consumed through this barrel. `paths` and `components`
+ * are imported straight from "./schema" where needed, so re-exporting them
+ * here just creates dead surface (knip flags it).
+ */
+export type { operations } from "./schema";

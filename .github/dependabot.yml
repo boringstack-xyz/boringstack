@@ -14,30 +14,20 @@ updates:
       include: scope
     cooldown:
       default-days: 7
+    # Catch-all grouping. The previous per-family groups (elysia, drizzle,
+    # bullmq, email, lint, observability, ai, …) were an allowlist: anything
+    # not named fell through as its own PR, so a normal week produced ~20
+    # single-package PRs (four separate @opentelemetry/* ones, `knip` once per
+    # app, and so on) and the named list needed extending for every new dep.
+    # Matching "*" by dependency-type caps this at two PRs per app — runtime
+    # deps kept separate from tooling so review risk stays distinguishable.
     groups:
-      elysia:
-        patterns: ["elysia", "@elysiajs/*"]
-      drizzle:
-        patterns: ["drizzle-orm", "drizzle-kit"]
-      typebox:
-        patterns: ["@sinclair/typebox"]
-      bullmq:
-        patterns: ["bullmq", "ioredis"]
-      stripe:
-        patterns: ["stripe"]
-      email:
-        patterns:
-          - "resend"
-          - "@sendgrid/mail"
-          - "nodemailer"
-          - "@types/nodemailer"
-          - "handlebars"
-      lint:
-        patterns: ["eslint", "eslint-*", "@eslint/*", "typescript-eslint", "prettier"]
-      observability:
-        patterns: ["@sentry/*", "pino", "pino-pretty"]
-      ai:
-        patterns: ["@anthropic-ai/sdk", "openai"]
+      production-dependencies:
+        dependency-type: "production"
+        patterns: ["*"]
+      development-dependencies:
+        dependency-type: "development"
+        patterns: ["*"]
     ignore:
       - dependency-name: "elysia"
         update-types: ["version-update:semver-major"]
@@ -75,37 +65,19 @@ updates:
       include: scope
     cooldown:
       default-days: 7
+    # Catch-all grouping — see the rationale on the apps/api block above.
+    # Note this keeps React's own pins together: react, react-dom and
+    # react-router-dom are production, while @types/react and
+    # @types/react-dom are development, so they land in sibling PRs. The
+    # `overrides` entries mirroring them still have to move in lockstep;
+    # the package-override-parity lint-meta rule catches it if they drift.
     groups:
-      react:
-        patterns:
-          - "react"
-          - "react-dom"
-          - "@types/react"
-          - "@types/react-dom"
-          - "react-router-dom"
-      tanstack:
-        patterns: ["@tanstack/*"]
-      testing:
-        patterns: ["vitest", "@vitest/*", "@testing-library/*", "jsdom", "@playwright/test"]
-      storybook:
-        patterns: ["storybook", "@storybook/*"]
-      tailwind-shadcn:
-        patterns:
-          - "tailwindcss"
-          - "@tailwindcss/*"
-          - "prettier-plugin-tailwindcss"
-          - "class-variance-authority"
-          - "tailwind-merge"
-          - "clsx"
-          - "radix-ui"
-          - "@radix-ui/*"
-          - "lucide-react"
-          - "sonner"
-          - "next-themes"
-      lint:
-        patterns: ["eslint", "eslint-*", "@eslint/*", "typescript-eslint", "prettier", "@trivago/*"]
-      observability:
-        patterns: ["@sentry/*", "size-limit", "@size-limit/*", "@lhci/*"]
+      production-dependencies:
+        dependency-type: "production"
+        patterns: ["*"]
+      development-dependencies:
+        dependency-type: "development"
+        patterns: ["*"]
     ignore:
       - dependency-name: "react"
         update-types: ["version-update:semver-major"]
@@ -134,6 +106,15 @@ updates:
       include: scope
     cooldown:
       default-days: 7
+    # This block had no groups at all, so every docs dep (astro, starlight,
+    # wrangler, ws, mermaid …) arrived as its own PR.
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+        patterns: ["*"]
+      development-dependencies:
+        dependency-type: "development"
+        patterns: ["*"]
     ignore:
       # @astrojs/cloudflare 13.x requires Astro 6 (uses astro/app/manifest
       # which is not exported by Astro 5). Stay on 12.x until we bump Astro.
@@ -151,6 +132,11 @@ updates:
     labels: ["dependencies", "ci"]
     commit-message:
       prefix: "chore(ci)"
+    # One PR for all action bumps. dependency-type doesn't apply to this
+    # ecosystem, so a single "*" group is the equivalent.
+    groups:
+      github-actions:
+        patterns: ["*"]
     ignore:
       # changesets/action 2.x requires Changesets CLI v3 and validates it at
       # runtime, directing CLI v2 users back to @v1. apps/ui is on
@@ -172,6 +158,9 @@ updates:
     labels: ["dependencies", "docker"]
     commit-message:
       prefix: "chore(docker)"
+    groups:
+      docker-images:
+        patterns: ["*"]
     ignore:
       - dependency-name: "oven/bun"
         update-types: ["version-update:semver-major"]
@@ -187,6 +176,9 @@ updates:
     labels: ["dependencies", "docker"]
     commit-message:
       prefix: "chore(docker)"
+    groups:
+      docker-images:
+        patterns: ["*"]
     ignore:
       - dependency-name: "oven/bun"
         update-types: ["version-update:semver-major"]
@@ -204,6 +196,9 @@ updates:
     labels: ["dependencies", "docker"]
     commit-message:
       prefix: "chore(docker)"
+    groups:
+      docker-images:
+        patterns: ["*"]
     ignore:
       - dependency-name: "postgres"
         update-types: ["version-update:semver-major"]
@@ -223,3 +218,6 @@ updates:
     labels: ["dependencies", "terraform"]
     commit-message:
       prefix: "chore(tofu)"
+    groups:
+      terraform-providers:
+        patterns: ["*"]
