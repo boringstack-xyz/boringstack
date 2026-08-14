@@ -59,7 +59,7 @@
     "@opentelemetry/auto-instrumentations-node": "0.78.0",
     "@opentelemetry/exporter-trace-otlp-http": "0.220.0",
     "@opentelemetry/resources": "2.10.0",
-    "@opentelemetry/sdk-node": "0.220.0",
+    "@opentelemetry/sdk-node": "0.221.0",
     "@opentelemetry/semantic-conventions": "1.42.0",
     "@sendgrid/mail": "8.1.6",
     "@sentry/bun": "10.69.0",
