@@ -76,7 +76,7 @@
     "react-dom": "19.2.8",
     "react-helmet-async": "3.0.0",
     "react-hook-form": "7.84.0",
-    "react-i18next": "17.0.8",
+    "react-i18next": "17.0.11",
     "react-router-dom": "7.18.2",
     "sonner": "2.0.7",
     "tailwind-merge": "3.6.0",
