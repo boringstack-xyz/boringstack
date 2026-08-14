@@ -41,6 +41,13 @@ updates:
     ignore:
       - dependency-name: "elysia"
         update-types: ["version-update:semver-major"]
+      # elysia-rate-limit 5.x requires `elysia >= 2.0.0`, but Elysia has no
+      # stable 2.0.0 — the 2.x line exists only under the `next`/`experimental`
+      # dist-tags, and `elysia` itself is major-ignored just above. Stay on
+      # 4.6.2 (peer `elysia >= 1.0.0`) until Elysia 2 ships stable and we do
+      # that upgrade deliberately.
+      - dependency-name: "elysia-rate-limit"
+        update-types: ["version-update:semver-major"]
       - dependency-name: "drizzle-orm"
         update-types: ["version-update:semver-major"]
       - dependency-name: "drizzle-kit"
