@@ -34,45 +34,32 @@ is build/CI-only tooling. Re-evaluate when @lhci/cli bumps uuid.
 """
 
 [[IgnoredVulns]]
-id = "GHSA-4x5r-pxfx-6jf8"
-ignoreUntil = "2026-09-19T00:00:00Z"
+id = "GHSA-28wg-ghj8-5hjv"
+ignoreUntil = "2026-11-13T00:00:00Z"
 reason = """
-@babel/core advisory; fixed in 7.29.6. Build-time transpilation tooling only
-(vite/storybook); the shipped UI bundle ships no Babel runtime. Awaiting the
-transitive bump.
+nanoid@5.1.5 exact-pinned by estimo@3.0.5, which reaches us only through
+@size-limit/time. Bun does not support scoped overrides, and a flat nanoid
+override would drag postcss onto the ESM-only 5.x line and break the build.
+size-limit runtime estimation is CI/dev tooling; no nanoid 5.x copy ships in
+the UI bundle. Re-evaluate when estimo advances its nanoid pin.
 """
 
 [[IgnoredVulns]]
-id = "GHSA-g7r4-m6w7-qqqr"
-ignoreUntil = "2026-09-19T00:00:00Z"
+id = "GHSA-2v37-7h3g-55p8"
+ignoreUntil = "2026-11-13T00:00:00Z"
 reason = """
-esbuild advisory; fixed in 0.28.1. Build-time bundler only — production output is
-a static bundle, not esbuild. Multiple esbuild versions live in the transitive
-tree (vite/storybook); awaiting upstream bumps rather than force-pinning one copy.
+Same estimo@3.0.5 -> nanoid@5.1.5 pin as GHSA-28wg-ghj8-5hjv. The postcss-side
+3.x copy is patched via the 3.3.18 resolution; only the CI-only size-limit
+timing path remains. Re-evaluate when estimo advances its nanoid pin.
 """
 
 [[IgnoredVulns]]
-id = "GHSA-qwww-vcr4-c8h2"
-ignoreUntil = "2026-10-28T00:00:00Z"
+id = "GHSA-jmr9-qjv8-65gv"
+ignoreUntil = "2026-11-13T00:00:00Z"
 reason = """
-react-router advisory; fixed only in 8.3.0 (semver major). We pin
-react-router-dom 7.x and Dependabot ignores React ecosystem majors.
-No 7.x patch available; defer until a deliberate react-router v8 upgrade.
-"""
-
-[[IgnoredVulns]]
-id = "GHSA-3jxr-9vmj-r5cp"
-ignoreUntil = "2026-10-28T00:00:00Z"
-reason = """
-brace-expansion ReDoS across 1.x/2.x/5.0.6 copies under eslint/minimatch.
-A flat override to 5.0.8 breaks prettier (expects brace-expansion 1.x default
-export). Lint/format tooling only; no user-controlled globs. Awaiting
-upstream minimatch bumps.
-"""
-
-[[IgnoredVulns]]
-id = "GHSA-mh99-v99m-4gvg"
-ignoreUntil = "2026-10-28T00:00:00Z"
-reason = """
-brace-expansion; same scope as GHSA-3jxr-9vmj-r5cp (eslint/minimatch tooling).
+extract-zip@2.0.1 has no patched release published. Pulled in transitively via
+@puppeteer/browsers under estimo/find-chrome-bin, i.e. the size-limit and
+Lighthouse CI toolchain that downloads a Chrome binary. Build/CI-only; the
+archives extracted are release artifacts fetched from Google's CDN, not
+user-supplied input. Re-evaluate when extract-zip ships a fix.
 """
