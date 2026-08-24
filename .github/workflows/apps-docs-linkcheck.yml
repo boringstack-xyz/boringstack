@@ -128,7 +128,7 @@ jobs:
 
       - name: Internal link check (fail on broken)
         if: steps.filter.outputs.docs == 'true'
-        uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
           args: >-
             --no-progress
@@ -139,7 +139,7 @@ jobs:
 
       - name: External link check (warning only)
         if: steps.filter.outputs.docs == 'true'
-        uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         continue-on-error: true
         with:
           # This step is warning-only, so it must never block the runner. Two
