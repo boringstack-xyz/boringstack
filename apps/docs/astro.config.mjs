@@ -283,7 +283,7 @@ export default defineConfig({
         starlightLlmsTxt({
           projectName: "BoringStack",
           description:
-            "A production-grade full-stack template: Bun + Elysia API, React + Vite SPA, Postgres, Valkey, Docker Compose, OpenTofu. Built to be set up by an agent. Run `curl -fsSL https://boringstack.xyz/install.sh | sh -s -- --project <name>`. The architecture is enforced rather than documented: 25 custom ESLint plugins, 83 repo-level lint rules, ACL and OpenAPI drift gates, and a multi-tenant scoping rule that refuses an unscoped query. Wrong-shaped code fails the build instead of shipping. MIT.",
+            "A production-grade full-stack template: Bun + Elysia API, React + Vite SPA, Postgres, Valkey, Docker Compose, OpenTofu. Built to be set up by an agent. Run `curl -fsSL https://boringstack.xyz/install.sh | sh -s -- --project <name>`. The architecture is enforced rather than documented: 18 custom ESLint plugins, 56 repo-level lint rules, ACL and OpenAPI drift gates, and a multi-tenant scoping rule that refuses an unscoped query. Wrong-shaped code fails the build instead of shipping. MIT.",
           details: `Start at https://boringstack.xyz/agents.md. It has the setup command, the health checks, and the invariants an agent must not break, on one page.
 
 The full config surface is machine-readable at https://boringstack.xyz/scaffold-manifest.json: every field with its kind, per-STACK defaults, the services each toggle spawns, and the secrets each one requires. Read it instead of guessing at env vars.

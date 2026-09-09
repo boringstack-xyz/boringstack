@@ -159,23 +159,68 @@ if [ -z "$project" ]; then
     "pass a name, e.g. --project acme"
 fi
 
-# rename-project.sh writes these into package names, compose project names,
-# container names and image tags. Anything outside this class breaks at least
-# one of them, so reject it here rather than halfway through phase 3.
+# These mirror scripts/rename-project.sh exactly. Validating loosely here meant
+# a name like "a", "1acme" or a 40-character string passed preflight, created a
+# real GitHub repository, and only then failed in phase 3.
+#
+#   project     ^[a-z][a-z0-9-]{1,30}$
+#   ghcr owner  ^[A-Za-z0-9-]+$
+#   domain      a dotted lowercase hostname
+#
+# Keep them in step: a mismatch is a failure after a remote side effect.
+suggest_name() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9-' '-' \
+    | tr -s '-' | sed 's/^[^a-z]*//; s/-$//' | cut -c1-31
+}
+
 case "$project" in
   *[!a-z0-9-]*)
-    die 2 "project name '$project' has characters that are not lowercase letters, digits or dashes" \
-      "these become npm package names, Docker container names and GHCR image tags" \
-      "try: --project $(printf '%s' "$project" | tr '[:upper:]' '[:lower:]' \
-           | tr -c 'a-z0-9-' '-' | tr -s '-' | sed 's/^-//; s/-$//')" ;;
+    die 2 "project name '$project' may contain only lowercase letters, digits and dashes" \
+      "it becomes npm package names, Docker container names and GHCR image tags" \
+      "try: --project $(suggest_name "$project")" ;;
 esac
 case "$project" in
-  -*|*-) die 2 "project name '$project' cannot start or end with a dash" ;;
+  [!a-z]*)
+    die 2 "project name '$project' must start with a lowercase letter" \
+      "npm package names and Docker container names cannot start with a digit or dash" \
+      "try: --project $(suggest_name "$project")" ;;
 esac
+case "$project" in
+  *-) die 2 "project name '$project' cannot end with a dash" ;;
+esac
+project_len=${#project}
+if [ "$project_len" -lt 2 ] || [ "$project_len" -gt 31 ]; then
+  die 2 "project name '$project' is $project_len characters; it must be 2 to 31" \
+    "scripts/rename-project.sh enforces the same bound and would fail after the repo exists"
+fi
 
 [ -n "$ghcr_owner" ] || ghcr_owner="$project"
 [ -n "$domain" ] || domain="${project}.com"
 [ -n "$target_dir" ] || target_dir="./${project}"
+
+case "$ghcr_owner" in
+  *[!A-Za-z0-9-]*)
+    die 2 "ghcr owner '$ghcr_owner' may contain only letters, digits and dashes" \
+      "this is the GitHub account or org that owns the container images" ;;
+esac
+
+# Reject anything that would need escaping in the --json output, and anything
+# a shell would reinterpret. Cheaper than quoting correctly everywhere.
+case "$target_dir" in
+  *[!A-Za-z0-9._/-]*)
+    die 2 "--dir '$target_dir' may contain only letters, digits, dot, underscore, dash and slash" \
+      "paths outside that set break the --json output and need shell quoting" ;;
+esac
+
+# A domain is only cosmetic here (seeded mailboxes), but the renamer rejects a
+# malformed one, so catch it before the repo exists.
+case "$domain" in
+  *[!a-z0-9.-]* | .* | *. | *..*)
+    die 2 "domain '$domain' is not a lowercase hostname" \
+      "example: --domain acme.com" ;;
+  *.*) : ;;
+  *) die 2 "domain '$domain' needs at least one dot" "example: --domain acme.com" ;;
+esac
 
 # ------------------------------------------------------------------ plan
 
@@ -210,8 +255,14 @@ have git || die 3 "git is not installed" \
 
 # gh is optional. With it the template relationship is created server-side
 # and the new repo is owned by the caller; without it we clone and re-init.
+# `gh repo create --template` always copies the template's default branch;
+# there is no way to ask it for another ref. Rather than accept --ref and
+# silently ignore it, fall back to the clone path, which honours it.
 use_gh=0
-if have gh && gh auth status >/dev/null 2>&1; then
+if [ "$ref" != "$DEFAULT_REF" ]; then
+  say "  gh          skipped: --ref $ref cannot be used with a template create"
+  say "              cloning instead so the ref is honoured"
+elif have gh && gh auth status >/dev/null 2>&1; then
   use_gh=1
   say "  gh          authenticated, will create a repo from the template"
 else
@@ -322,23 +373,51 @@ phase_ok
 
 phase 2 scaffold
 
+# Clone straight into --dir. git accepts an existing empty directory, and
+# preflight has already established that --dir is empty or that --force was
+# passed, so there is nothing to move afterwards.
+#
+# An earlier version cloned to a scratch directory and copied the tree across
+# with tar. That raced with git writing .git (the clone path runs git init and
+# an initial commit immediately after), producing "Couldn't visit directory
+# .git/objects/..". Cloning in place removes both the race and the copy.
+mkdir -p "$target_dir" || die 4 "could not create $target_dir"
+
+# Empty the destination between attempts. Only reached for a directory
+# preflight accepted, and a failed clone leaves a partial .git that makes the
+# next attempt fail on "already exists and is not an empty directory".
+clear_target() {
+  find "$target_dir" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
+}
+
 if [ "$use_gh" -eq 1 ]; then
-  # `gh repo create --clone` takes no directory argument: it always clones into
-  # ./<name>. Let it, then move the result if --dir asked for somewhere else.
-  say "  gh repo create $project --template $REPO_SLUG --private --clone"
-  gh repo create "$project" --template "$REPO_SLUG" --private --clone >&2 \
+  # `gh repo create --clone` always lands in ./<name> with no way to redirect
+  # it, so create and clone are separate steps and the clone gets the path.
+  say "  gh repo create $project --template $REPO_SLUG --private"
+  gh repo create "$project" --template "$REPO_SLUG" --private >&2 \
   || die 4 "gh repo create failed" \
        "check 'gh auth status' and that the name '$project' is free in your account" \
-       "or take the clone path instead: unset GH_TOKEN, or run 'gh auth logout'"
+       "or take the clone path instead: run 'gh auth logout', or unset GH_TOKEN"
 
-  if [ ! -d "$target_dir" ]; then
-    [ -d "./$project" ] || die 4 "gh reported success but ./$project does not exist" \
-      "clone it manually: gh repo clone $project $target_dir"
-    mkdir -p "$(dirname "$target_dir")"
-    mv "./$project" "$target_dir"
-  fi
+  # A template copy is not instant server-side, so the first clone can 404.
+  attempt=0
+  while : ; do
+    clear_target
+    if gh repo clone "$project" "$target_dir" >&2; then
+      break
+    fi
+    attempt=$((attempt + 1))
+    if [ "$attempt" -ge 6 ]; then
+      die 4 "created $project but could not clone it after 6 attempts" \
+        "the repository exists, so do not rerun this installer" \
+        "clone it by hand: gh repo clone $project $target_dir"
+    fi
+    say "  clone not ready yet, retrying ($attempt/6)"
+    sleep 2
+  done
 else
   say "  git clone --depth 1 --branch $ref $REPO_URL"
+  clear_target
   git clone --depth 1 --branch "$ref" "$REPO_URL" "$target_dir" >&2 \
   || die 4 "git clone failed" \
        "check network access to github.com, and that the ref '$ref' exists" \
@@ -347,9 +426,11 @@ else
   # Detach from upstream so this is the caller's project, not a fork. The
   # template path via gh does the same thing server-side.
   rm -rf "$target_dir/.git"
-  ( cd "$target_dir" && git init -q && git add -A \
+  ( cd "$target_dir" \
+      && git init -q \
+      && git add -A \
       && git -c user.email=installer@localhost -c user.name=installer \
-           commit -qm "Initial commit from BoringStack ${ref}" ) >&2 2>/dev/null \
+           commit -qm "Initial commit from BoringStack ${ref}" ) >&2 \
     || warn "could not create the initial commit; the tree is fine, just not committed"
   say "  detached from upstream; no fork relationship"
 fi
@@ -450,12 +531,14 @@ if [ "$health_failed" -eq 1 ]; then
   say ""
   say "  container status:"
   ( cd "$project_dir/infra/compose/compose" && docker compose ps ) >&2 2>/dev/null || true
-  say ""
-  say "  recent logs:"
-  ( cd "$project_dir/infra/compose/compose" && docker compose logs --tail=40 ) >&2 2>/dev/null || true
+  # Deliberately NOT dumping `docker compose logs`: container logs echo the
+  # environment on boot, so printing them into a terminal, a CI log or an
+  # agent transcript leaks whatever is in compose/.env. Name the command and
+  # let the reader run it where they can see it.
   die 7 "the stack booted but did not answer on HTTP" \
     "the containers may still be starting; retry: curl -i $HEALTH_UI" \
-    "check logs: cd $project_dir/infra/compose/compose && docker compose logs -f"
+    "read the logs yourself: cd $project_dir/infra/compose/compose && docker compose logs -f" \
+    "logs are not printed here because they echo the environment on boot"
 fi
 
 phase_ok

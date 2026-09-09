@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import type React from "react";
 import { useId, useState } from "react";
 
 import { codeTabs, type CodeLine } from "./landingContent";
@@ -40,6 +41,35 @@ export function CodePreview() {
   const idPrefix = useId();
   const activeTab = codeTabs.find((tab) => tab.id === activeTabId) ?? codeTabs[0];
 
+  /*
+   * role="tablist" with a roving tabIndex is only half the WAI-ARIA pattern:
+   * once focus is on the strip, Left/Right (plus Home/End) have to move
+   * between tabs, because only one of them is reachable by Tab. Without this
+   * a keyboard user could reach the first tab and no other.
+   *
+   * Selection follows focus, which is the recommended behaviour when
+   * switching panels is cheap; these panels are static text.
+   */
+  const onTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    const deltas: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1 };
+    const index = codeTabs.findIndex((tab) => tab.id === activeTabId);
+
+    let next: number | undefined;
+    if (event.key in deltas) {
+      next = (index + deltas[event.key] + codeTabs.length) % codeTabs.length;
+    } else if (event.key === "Home") {
+      next = 0;
+    } else if (event.key === "End") {
+      next = codeTabs.length - 1;
+    }
+    if (next === undefined) return;
+
+    event.preventDefault();
+    const target = codeTabs[next];
+    setActiveTabId(target.id);
+    document.getElementById(`${idPrefix}-tab-${target.id}`)?.focus();
+  };
+
   return (
     <div className="bs-hero-code relative z-[1] mt-[0.4rem] w-full min-w-0 max-w-full lg:mt-0">
       <div
@@ -60,6 +90,7 @@ export function CodePreview() {
               id={`${idPrefix}-tab-${tab.id}`}
               key={tab.id}
               onClick={() => setActiveTabId(tab.id)}
+              onKeyDown={onTabKeyDown}
               role="tab"
               tabIndex={activeTabId === tab.id ? 0 : -1}
               type="button"

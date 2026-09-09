@@ -19,11 +19,10 @@ import { Icon } from "@astrojs/starlight/components";
   <Pagination />
 
   {/*
-    The agent surface is otherwise reachable only by guessing at the URLs:
-    llms.txt and friends are generated into dist/ with nothing linking to them,
-    and install.sh, agents.md and scaffold-manifest.json are static files in
-    public/ with no sidebar entry. This is the one place on the site that names
-    them.
+    The llms*.txt files are generated into dist/ with nothing else linking to
+    them, and install.sh and scaffold-manifest.json are static files in public/
+    with no route of their own. /agents.md is also in the header nav and the
+    sidebar; the rest are reachable only from here.
   */}
   <nav
     aria-label="Agent entrypoints"

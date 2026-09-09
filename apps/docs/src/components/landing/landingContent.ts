@@ -35,7 +35,7 @@ export const codeTabs: CodeTab[] = [
       { kind: "command", text: "Set up boringstack.xyz for me" },
       { kind: "spacer" },
       { kind: "muted", text: "# the agent reads /agents.md and runs" },
-      { kind: "command", text: "curl -fsSL boringstack.xyz/install.sh | sh -s -- --project acme" },
+      { kind: "command", text: "curl -fsSL https://boringstack.xyz/install.sh | sh -s -- --project acme" },
       { kind: "spacer" },
       { kind: "ok", text: "[1/5] preflight  compose v2, ports free, 12GB" },
       { kind: "ok", text: "[2/5] scaffold   gh repo create --template" },
@@ -58,7 +58,7 @@ export const codeTabs: CodeTab[] = [
       { kind: "spacer" },
       { kind: "ok", text: "postgres ready on 5432" },
       { kind: "ok", text: "valkey ready on 6379" },
-      { kind: "ok", text: "api-dev migrated and serving /openapi.json" },
+      { kind: "ok", text: "api-dev migrated and serving /swagger/json" },
       { kind: "ok", text: "ui-dev generated client and started Vite" },
       { kind: "ok", text: "observability + GlitchTip on by default; opt out with WITH_*=0" },
       { kind: "spacer" },
@@ -250,7 +250,7 @@ export const guardrailRows = [
   {
     bespoke: "Looks right",
     boringstack:
-      "25 custom ESLint plugins block the wrong shape at commit time, not at review time.",
+      "18 custom ESLint plugins block the wrong shape at commit time, not at review time.",
   },
   {
     bespoke: "A quiet tenant leak",
@@ -275,6 +275,6 @@ export const guardrailRows = [
   {
     bespoke: "No CI worth the name",
     boringstack:
-      "24 pinned workflows, 9 required checks, 83 repo-level rules, and a coverage floor that only ratchets up.",
+      "24 pinned workflows, 9 required checks, 56 repo-level rules, and a coverage floor that only ratchets up.",
   },
 ] as const;

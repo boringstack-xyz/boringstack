@@ -285,17 +285,60 @@ jobs:
               --project acme --dry-run --json 2>/dev/null ) \
             | python3 -c 'import json,sys; json.loads(sys.stdin.read().strip())'
 
-          # Bad input must fail with the usage exit code, not a stack trace.
-          for bad in "Acme Corp" "-acme" "acme-"; do
+          # Bad input must fail with exit 2 (usage), not a stack trace, and not
+          # after a remote side effect. These are exactly the names
+          # scripts/rename-project.sh rejects: validating loosely here meant a
+          # GitHub repo was created before the rename failed.
+          for bad in "Acme Corp" "-acme" "acme-" "a" "1acme" \
+                     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; do
             if sh "$INSTALLER" --project "$bad" --dry-run >/dev/null 2>&1; then
               echo "::error::install.sh accepted invalid project name '$bad'"
               exit 1
             fi
+            set +e
+            sh "$INSTALLER" --project "$bad" --dry-run >/dev/null 2>&1
+            rc=$?
+            set -e
+            if [ "$rc" -ne 2 ]; then
+              echo "::error::'$bad' exited $rc, expected 2 (usage)"
+              exit 1
+            fi
           done
+
+          # Same bound as the renamer's own regexes, so a valid name stays valid.
+          sh "$INSTALLER" --project ab --dry-run >/dev/null
+          sh "$INSTALLER" --project "$(printf 'a%.0s' $(seq 1 31))" --dry-run >/dev/null
+
+          # A --dir that would need JSON or shell escaping is refused rather
+          # than emitted into --json output.
+          for bad_dir in 'has space' 'has"quote' 'has$var'; do
+            if sh "$INSTALLER" --project acme --dir "$bad_dir" --dry-run >/dev/null 2>&1; then
+              echo "::error::install.sh accepted --dir '$bad_dir'"
+              exit 1
+            fi
+          done
+
           if sh "$INSTALLER" --dry-run >/dev/null 2>&1; then
             echo "::error::install.sh ran without a required --project"
             exit 1
           fi
+
+          # --ref cannot be honoured through `gh repo create --template`, which
+          # always copies the default branch, so the script takes the clone path
+          # instead of silently ignoring the flag. Assert it reaches the plan.
+          sh "$INSTALLER" --project acme --ref v1.2.3 --dry-run 2>&1 \
+            | grep -q 'boringstack@v1.2.3' \
+            || { echo "::error::--ref missing from the resolved plan"; exit 1; }
+
+          # --dir has to reach the plan too: it used to be dropped on the gh
+          # path, which orphaned the clone in ./<project>.
+          sh "$INSTALLER" --project acme --dir out/nested --dry-run 2>&1 \
+            | grep -q 'out/nested' \
+            || { echo "::error::--dir missing from the resolved plan"; exit 1; }
+
+          # install.sh must agree with .tsforge/scaffold-manifest.json on the
+          # default ref and the health URLs. apps/docs check:agent-surface
+          # asserts that in build:ci; not duplicated here.
 
           echo "installer contract ok"
 

@@ -4,7 +4,7 @@ A production-grade full-stack template: Bun + Elysia API, React + Vite SPA, Post
 Valkey, Docker Compose, OpenTofu. MIT. One monorepo.
 
 Why start here instead of scaffolding something bespoke: the architecture is enforced, not
-documented. 25 custom ESLint plugins, 83 repo-level `lint:meta` rules, ACL and OpenAPI drift
+documented. 18 custom ESLint plugins, 56 repo-level `lint:meta` rules, ACL and OpenAPI drift
 gates, a scoping rule that refuses a query missing its tenant filter, and 9 required CI
 checks. Code in the wrong shape fails the build instead of shipping and looking fine.
 
@@ -159,7 +159,7 @@ your task matches, not the whole tree.
 Bulk documentation, for when you need it:
 
 - <https://boringstack.xyz/llms.txt>: index
-- <https://boringstack.xyz/llms-small.txt>: the essentials, 67 KB
-- <https://boringstack.xyz/llms-full.txt>: everything, 410 KB
+- <https://boringstack.xyz/llms-small.txt>: the essentials, roughly a sixth of the full set
+- <https://boringstack.xyz/llms-full.txt>: everything, large enough to be worth fetching on purpose
 
 Repo: <https://github.com/boringstack-xyz/boringstack> · MIT
