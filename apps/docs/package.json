@@ -6,9 +6,9 @@
   "description": "boringstack.xyz docs site for the BoringStack project. Astro Starlight, deployed via Cloudflare Pages.",
   "engines": {
     "node": ">=24.0.0",
-    "bun": "1.3.14"
+    "bun": "1.4.0"
   },
-  "packageManager": "bun@1.3.14",
+  "packageManager": "bun@1.4.0",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
@@ -32,40 +32,40 @@
     "a11y": "bash scripts/a11y.sh"
   },
   "dependencies": {
-    "@astrojs/react": "6.0.2",
+    "@astrojs/react": "6.0.4",
     "@astrojs/sitemap": "3.7.3",
-    "@astrojs/starlight": "0.41.7",
+    "@astrojs/starlight": "0.41.10",
     "@tailwindcss/vite": "4.3.3",
-    "astro": "7.2.0",
+    "astro": "7.2.9",
     "astro-mermaid": "2.1.0",
     "clsx": "2.1.1",
-    "mermaid": "11.16.1",
+    "mermaid": "11.17.2",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "reading-time": "1.5.0",
     "remark-gfm": "4.0.1",
-    "sharp": "0.35.3",
+    "sharp": "0.35.4",
     "tailwindcss": "4.3.3",
-    "ws": "8.21.2"
+    "ws": "8.21.3"
   },
   "devDependencies": {
-    "@axe-core/cli": "4.12.1",
+    "@axe-core/cli": "4.13.0",
     "http-server": "14.1.1",
     "starlight-llms-txt": "0.11.0",
-    "wrangler": "4.119.0"
+    "wrangler": "4.123.0"
   },
   "//overrides": {
     "_": "Why these transitive deps are pinned. Build-time/dev tooling only — the deployed site is static Cloudflare Pages. Re-evaluate quarterly (see osv-scanner.toml).",
     "adm-zip": "Pin patched adm-zip (GHSA-xcpc-8h2w-3j85). 0.5.17 is vulnerable; 0.6.0 patches it. Build-time tooling only.",
     "axios": "Pin patched axios (GHSA-gcfj-64vw-6mp9 and related). 1.16.1 is vulnerable; 1.18.0 patches it. Build-time tooling only.",
     "dompurify": "Pin patched DOMPurify (GHSA-c2j3-45gr-mqc4). 3.4.12 is vulnerable (GHSA-55q2-fjhq-7xh7); 3.4.13 patches it. Pulled via mermaid diagram rendering; diagram source is author-controlled.",
-    "js-yaml": "Pin patched js-yaml (GHSA-52cp-r559-cp3m). 4.3.0 is vulnerable (GHSA-5p4m-2wfm-xmqj); 4.3.1 patches it. Build-time config loading only.",
+    "js-yaml": "Pin patched js-yaml (GHSA-52cp-r559-cp3m, GHSA-2883-xcg3-v3hh). 4.3.1 is vulnerable (maxTotalMergeKeys CPU exhaustion); 4.3.2 patches it. Build-time config loading only. Mirrors the UI app pin.",
     "postcss": "Pin patched postcss (GHSA-r28c-9q8g-f849). 8.5.18 is vulnerable (GHSA-fxqj-rqcc-2cmp); 8.5.23 patches it. Build-time CSS tooling via vite/tailwind.",
-    "sharp": "Collapse transitive sharp@0.34.5 (GHSA-f88m-g3jw-g9cj) onto the direct sharp@0.35.3 pin. Image processing at build time only.",
-    "svgo": "Pin patched svgo (GHSA-2p49-hgcm-8545). 4.0.1 is vulnerable; 4.0.2 patches it. SVG optimization at build time only.",
+    "sharp": "Collapse transitive sharp@0.34.5 (GHSA-f88m-g3jw-g9cj) onto the direct sharp@0.35.4 pin. 0.35.3 is vulnerable (GHSA-rgj7-g3m4-5g8c); 0.35.4 patches it. Image processing at build time only.",
+    "svgo": "Pin patched svgo (GHSA-2p49-hgcm-8545, GHSA-w27v-7q3p-w38r, GHSA-4vpr-x523-8j87). 4.0.2 is vulnerable; 4.1.0 patches it. SVG optimization at build time only.",
     "ws": "Pin patched ws (GHSA-58qx-3vcg-4xpx) pulled via miniflare/wrangler dev tooling.",
     "devalue": "Pin patched devalue build-time serialization XSS (GHSA-77vg-94rm-hx3p).",
-    "qs": "Pin patched qs (GHSA-q8mj-m7cp-5q26) pulled via the http-server dev preview tool.",
+    "qs": "Pin patched qs (GHSA-q8mj-m7cp-5q26, GHSA-4mjr-xmp4-gh2g, GHSA-x5fp-wj9c-mxmx). 6.15.2 is vulnerable; 6.16.0 patches it. Pulled via the http-server dev preview tool. Mirrors the UI app pin.",
     "tmp": "Pin patched tmp (GHSA-7c78-jf6q-g5cm type-confusion path traversal); 0.2.6 is now vulnerable, 0.2.7 patches it. Transitive dev-tooling dep. Mirrors the UI app pin.",
     "form-data": "Pin patched form-data (GHSA-hmw2-7cc7-3qxx CRLF injection); 4.0.5 is vulnerable, 4.0.6 patches it. Build-time tooling only (wrangler/astro fetches). Mirrors the API app pin. Excluded from the install quarantine while <7 days old.",
     "undici": "Pin patched undici (GHSA-vmh5-mc38-953g TLS cert-validation bypass, GHSA-pr7r-676h-xcf6); 7.29.0 patches it (adds the GHSA-4cwx-7wf7-3272 batch). Build-time tooling only (wrangler/astro fetches). Mirrors the UI app pin. Excluded from the install quarantine while <7 days old.",
@@ -78,14 +78,14 @@
     "devalue": "5.8.1",
     "dompurify": "3.4.13",
     "form-data": "4.0.6",
-    "js-yaml": "4.3.1",
+    "js-yaml": "4.3.2",
     "postcss": "8.5.23",
-    "qs": "6.15.2",
-    "sharp": "0.35.3",
-    "svgo": "4.0.2",
+    "qs": "6.16.0",
+    "sharp": "0.35.4",
+    "svgo": "4.1.0",
     "tmp": "0.2.7",
     "undici": "7.29.0",
-    "ws": "8.21.2",
+    "ws": "8.21.3",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4"
   }

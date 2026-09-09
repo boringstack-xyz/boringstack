@@ -43,7 +43,7 @@ export async function syncMeAfterSessionEstablished(
   const BACKOFF_MS = 30;
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
-    const me = await qc.fetchQuery<IMe | null>({
+    const me = await qc.query<IMe | null>({
       queryKey: AUTH_QUERY_KEYS.me,
       queryFn: async (): Promise<IMe | null> => {
         const { data } = await apiClient.GET("/api/v1/users/me");

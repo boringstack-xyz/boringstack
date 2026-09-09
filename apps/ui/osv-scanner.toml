@@ -63,3 +63,28 @@ Lighthouse CI toolchain that downloads a Chrome binary. Build/CI-only; the
 archives extracted are release artifacts fetched from Google's CDN, not
 user-supplied input. Re-evaluate when extract-zip ships a fix.
 """
+
+[[IgnoredVulns]]
+id = "GHSA-7pqw-9j4j-h8q3"
+ignoreUntil = "2026-12-09T00:00:00Z"
+reason = """
+extract-zip arbitrary file write via symlink archive entries, affecting
+<=2.0.1 with no patched release published — the same unfixable dependency as
+GHSA-jmr9-qjv8-65gv. Reaches us only through @puppeteer/browsers under both
+@lhci/cli and estimo, i.e. the size-limit and Lighthouse CI toolchain that
+unpacks a Chrome download. Build/CI-only; the archives are release artifacts
+fetched from Google's CDN, not user-supplied input. Re-evaluate when
+extract-zip ships a fix.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-xwg4-73v4-xw9w"
+ignoreUntil = "2026-11-13T00:00:00Z"
+reason = """
+Same estimo@3.0.5 -> nanoid@5.1.5 exact pin as GHSA-28wg-ghj8-5hjv and
+GHSA-2v37-7h3g-55p8; this advisory covers the 4.0.0-5.1.11 integer-overflow
+range that the same pinned copy falls into. Reaches us only through
+@size-limit/time, i.e. CI/dev timing tooling, and no nanoid 5.x copy ships in
+the UI bundle. A flat override cannot fix it — postcss needs the CJS 3.x line.
+Re-evaluate when estimo advances its nanoid pin.
+"""
