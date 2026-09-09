@@ -38,7 +38,7 @@ export const codeTabs: CodeTab[] = [
       { kind: "command", text: "curl -fsSL https://boringstack.xyz/install.sh | sh -s -- --project acme" },
       { kind: "spacer" },
       { kind: "ok", text: "[1/5] preflight  compose v2, ports free, 12GB" },
-      { kind: "ok", text: "[2/5] scaffold   gh repo create --template" },
+      { kind: "ok", text: "[2/5] scaffold   gh repo create (or git clone)" },
       { kind: "ok", text: "[3/5] rename     boringstack -> acme" },
       { kind: "ok", text: "[4/5] boot       ./setup.sh --up" },
       { kind: "ok", text: "[5/5] health     ui 200, api 200" },
@@ -46,7 +46,7 @@ export const codeTabs: CodeTab[] = [
       { kind: "muted", text: "# ready -> http://localhost:7331" },
     ],
     caption:
-      "Point an agent at the domain and it has everything it needs in one fetch.",
+      "Point an agent at the domain and it has everything it needs in one fetch. GitHub auth is optional. Without it the installer clones the public repo, so nothing waits on a browser login.",
   },
 
   {
