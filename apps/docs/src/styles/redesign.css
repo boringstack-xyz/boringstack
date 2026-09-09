@@ -180,12 +180,17 @@ starlight-toc a[aria-current="true"] {
   box-shadow: none;
 }
 
-/* The landing owns its own code presentation; keep custom.css's reset
-   winning over the rule above. */
-.sl-markdown-content .bs-landing :not(pre) > code {
+/* The landing owns its own code presentation. font-weight is included
+   deliberately: the rule above sets 600, which leaked into the hero's prompt
+   and made it read as bold-broken rather than as a command. Weight now comes
+   from the component's own wrapper, which the code element inherits. */
+.sl-markdown-content .bs-landing :not(pre) > code,
+.sl-markdown-content .bs-landing code {
   border: 0;
   background: none;
   box-shadow: none;
+  font-weight: inherit;
+  font-size: inherit;
 }
 
 /* ── Code windows (Expressive Code) ──────────────────────────────────────

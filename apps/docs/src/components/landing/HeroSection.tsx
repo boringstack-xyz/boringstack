@@ -32,6 +32,30 @@ function useCopy() {
   return { state, copy };
 }
 
+function CopyIcon({ done }: { done: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-3.5 w-3.5"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.6"
+      viewBox="0 0 16 16"
+    >
+      {done ? (
+        <path d="M3 8.5 6.5 12 13 4.5" />
+      ) : (
+        <>
+          <rect height="9" rx="1" width="9" x="5.5" y="1.5" />
+          <path d="M10.5 14.5H2.5a1 1 0 0 1-1-1V5.5" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 function CopyButton({
   label,
   value,
@@ -43,9 +67,25 @@ function CopyButton({
 }) {
   const { state, copy } = useCopy();
 
+  /* Icon-only, so the accessible name has to carry the whole meaning and
+     change with the result. A failed clipboard write says so rather than
+     silently looking like success. */
+  const announced =
+    state === "copied"
+      ? "Copied"
+      : state === "failed"
+        ? "Copy failed, select the text and copy manually"
+        : label;
+
   return (
-    <button className={className} onClick={() => copy(value)} type="button">
-      {state === "copied" ? "Copied" : state === "failed" ? "Select and copy" : label}
+    <button
+      aria-label={announced}
+      className={className}
+      onClick={() => copy(value)}
+      title={announced}
+      type="button"
+    >
+      <CopyIcon done={state === "copied"} />
     </button>
   );
 }
@@ -96,19 +136,18 @@ export function HeroSection() {
         <div className="mt-9 w-full max-w-full min-[641px]:w-[min(100%,34rem)]">
           <div className="mono-caps mb-2">Paste this into your coding agent</div>
           <div className="flex items-stretch border border-[var(--bs-line)] bg-[color-mix(in_oklch,var(--bs-panel)_60%,transparent)]">
-            <div className="flex items-center gap-2 px-3 text-[var(--bs-muted)] hairline-r">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--bs-success)]" />
-              <span className="font-mono text-[11px]">&gt;</span>
+            <div className="flex shrink-0 items-center gap-1.5 px-2.5 text-[var(--bs-muted)] hairline-r">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--bs-accent)]" />
+              <span className="font-mono text-[11px] leading-none">&gt;</span>
             </div>
-            {/* The size lives on the wrapper, not the <code>. custom.css
-                resets landing code to `font-size: inherit` at a specificity
-                Tailwind's text-[13px] utility cannot beat, so setting it on
-                the code element itself silently did nothing. */}
-            <div className="min-w-0 flex-1 px-3 py-3 font-mono text-[13px] leading-normal text-[var(--bs-text)]">
-              <code>{agentPrompt}</code>
+            {/* The size and weight live here, not on the <code>: the landing
+                code reset makes the element inherit both, so setting them on
+                it directly does nothing. */}
+            <div className="min-w-0 flex-1 overflow-x-auto px-2.5 py-2.5 font-mono text-[13px] font-normal leading-normal text-[var(--bs-text)]">
+              <code className="whitespace-nowrap">{agentPrompt}</code>
             </div>
             <CopyButton
-              className="grid cursor-pointer place-items-center border-0 bg-transparent px-3 text-[var(--bs-muted)] transition-colors hairline-l hover:text-[var(--bs-accent)] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--bs-accent)]"
+              className="grid shrink-0 cursor-pointer place-items-center border-0 bg-transparent px-2.5 text-[var(--bs-muted)] transition-colors hairline-l hover:text-[var(--bs-accent)] focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--bs-accent)]"
               label="Copy"
               value={agentPrompt}
             />
