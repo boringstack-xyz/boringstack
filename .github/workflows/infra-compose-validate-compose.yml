@@ -409,6 +409,20 @@ jobs:
           grep -q 'conflict by type' "$INSTALLER" \
             || { echo "::error::install.sh no longer pre-flights type conflicts"; exit 1; }
 
+          # Signal handlers must exit. `trap cleanup EXIT INT TERM` runs cleanup
+          # on the signal and then RESUMES the script, so a SIGTERM during the
+          # copy restored .git and then carried on through boot and health,
+          # exiting 0. Separate handlers that exit are what stop it; exiting
+          # still fires the EXIT trap, so cleanup runs exactly once.
+          if grep -nE '^trap .*(INT|TERM).*(INT|TERM)|^trap [^ ]+ EXIT (INT|TERM)' "$INSTALLER"; then
+            echo "::error::install.sh shares one trap across EXIT and signals; signals must exit"
+            exit 1
+          fi
+          grep -qE "^trap 'exit 130' INT" "$INSTALLER" \
+            || { echo "::error::install.sh has no INT handler that exits 130"; exit 1; }
+          grep -qE "^trap 'exit 143' TERM" "$INSTALLER" \
+            || { echo "::error::install.sh has no TERM handler that exits 143"; exit 1; }
+
           # install.sh must agree with .tsforge/scaffold-manifest.json on the
           # default ref and the health URLs. apps/docs check:agent-surface
           # asserts that in build:ci; not duplicated here.

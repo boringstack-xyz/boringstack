@@ -464,7 +464,16 @@ cleanup() {
     fi
   fi
 }
-trap cleanup EXIT INT TERM
+# Separate handlers on purpose. A single `trap cleanup EXIT INT TERM` runs
+# cleanup when the signal arrives and then RESUMES the script at the point it
+# was interrupted, so a SIGTERM during the copy restored .git and then carried
+# on through boot and health, exiting 0. The signal handlers exit instead, and
+# exiting fires the EXIT trap, so cleanup still runs exactly once.
+#
+# 130 and 143 are the conventional 128+signal codes for SIGINT and SIGTERM.
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 if [ "$use_gh" -eq 1 ]; then
   # `gh repo create --clone` always lands in ./<name> with no way to redirect
