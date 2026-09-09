@@ -268,6 +268,31 @@ if (/click\s+\*{0,2}Use this template/i.test(agents)) {
   );
 }
 
+/* -------------------------------------------------- the homepage transcript */
+
+/* An agent that fetched only the homepage read `gh repo create --template` in
+ * the transcript and concluded it "will require you to authenticate with
+ * GitHub in your browser". It does not: the installer falls back to
+ * `git clone` on the public repo. agents.md said so, the homepage did not, and
+ * the homepage is the page an agent hits first. Keep the fallback visible in
+ * whichever surface names `gh`. */
+const landing = readFileSync(
+  join(DOCS, "src", "components", "landing", "landingContent.ts"),
+  "utf8",
+);
+if (landing.includes("gh repo create") && !/git clone/.test(landing)) {
+  fail(
+    "the homepage names `gh repo create` without the `git clone` fallback",
+    "an agent reading only the homepage concludes a browser login is required",
+  );
+}
+if (!/auth(entication)? is optional/i.test(landing)) {
+  fail(
+    "the homepage does not say GitHub auth is optional",
+    "add it to the agent tab caption in landingContent.ts",
+  );
+}
+
 /* ---------------------------------------------------------------- robots */
 
 const robots = read("robots.txt");
