@@ -9,4 +9,14 @@
 #
 # Re-evaluate quarterly via `bun run update` to drop entries that newer
 # transitive versions have patched.
-# (No active ignores — transitive CVEs are pinned via package.json overrides.)
+
+[[IgnoredVulns]]
+id = "GHSA-vwc7-r8mq-g2x9"
+ignoreUntil = "2026-12-09T00:00:00Z"
+reason = """
+adm-zip path traversal. 0.6.0 is the newest release and no patched version
+exists yet, so the existing override cannot clear it. Pulled in transitively
+by the wrangler/miniflare dev toolchain, which only unpacks archives it
+fetches from Cloudflare's own CDN — never user-supplied input — and never runs
+in the published static site. Re-evaluate when adm-zip ships a fix.
+"""
