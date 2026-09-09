@@ -35,15 +35,15 @@ export function DocsGuide() {
             href={step.href}
             key={step.number}
           >
-            <span className="mt-0.5 font-mono text-[0.92rem] font-extrabold leading-snug text-[var(--bs-accent-strong)]">
+            <div className="mt-0.5 font-mono text-[0.92rem] font-extrabold leading-snug text-[var(--bs-accent-strong)]">
               {step.number}
-            </span>
-            <span className="grid min-w-0 gap-1">
+            </div>
+            <div className="grid min-w-0 gap-1">
               <strong className="text-[1.08rem] leading-tight text-[var(--bs-text)] group-hover:text-[var(--bs-accent-strong)] min-[641px]:text-[1.26rem]">
                 {step.title}
               </strong>
               <small className="leading-[1.62] text-[var(--bs-muted)]">{step.detail}</small>
-            </span>
+            </div>
           </a>
         ))}
       </div>

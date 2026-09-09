@@ -293,6 +293,135 @@ if (!/auth(entication)? is optional/i.test(landing)) {
   );
 }
 
+/* ------------------------------------------- the homepage survives flattening */
+
+/*
+ * An agent does not read the homepage, it reads a text conversion of it, and
+ * the conversion has no CSS. Anything whose only separator is a Tailwind
+ * `block` class, a flex `gap`, or whitespace the minifier is free to drop
+ * arrives as one fused token.
+ *
+ * This shipped: the transcript gutter is a `<span>`, so the `ok` marker of one
+ * line fused onto the end of the previous one and the install command came out
+ * as `--project acmeok`. The footer entrypoint row fused into
+ * `/agents.md/install.sh/scaffold-manifest.json...`.
+ *
+ * So flatten dist/index.html the way a converter does, honouring block-level
+ * tags only, and assert the command survives intact.
+ */
+/*
+ * A scanner, not a chain of regex replaces. Stripping `<script>` with
+ * `.replace(/<(script|style)\b[\s\S]*?<\/\1>/g, "")` is the exact pattern
+ * CodeQL's incomplete-multi-character-sanitization rule exists to catch, and
+ * it is right to: a regex cannot reliably find the end of a tag it does not
+ * tokenize. Walking the input once is both quieter and more correct.
+ */
+const BLOCK_TAGS = new Set([
+  "address", "article", "aside", "blockquote", "br", "dd", "div", "dl", "dt",
+  "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4",
+  "h5", "h6", "header", "hr", "li", "main", "nav", "ol", "p", "pre", "section",
+  "table", "tbody", "td", "tfoot", "th", "thead", "tr", "ul",
+]);
+const SKIP_CONTENT_TAGS = new Set(["script", "style", "template", "svg", "noscript"]);
+const ENTITIES = new Map([
+  ["nbsp", " "], ["amp", "&"], ["lt", "<"], ["gt", ">"], ["quot", '"'],
+  ["apos", "'"], ["#39", "'"], ["#039", "'"], ["#x27", "'"],
+]);
+
+const decodeEntities = (text) =>
+  text.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (whole, name) => {
+    const known = ENTITIES.get(name.toLowerCase());
+    if (known !== undefined) return known;
+    if (name.startsWith("#x") || name.startsWith("#X")) {
+      return String.fromCodePoint(Number.parseInt(name.slice(2), 16));
+    }
+    if (name.startsWith("#")) return String.fromCodePoint(Number.parseInt(name.slice(1), 10));
+    return whole;
+  });
+
+const flatten = (rawHtml) => {
+  const out = [];
+  let i = rawHtml.indexOf("<body");
+  if (i === -1) i = 0;
+  let skipUntilCloseOf = null;
+
+  while (i < rawHtml.length) {
+    const lt = rawHtml.indexOf("<", i);
+    if (lt === -1) {
+      if (!skipUntilCloseOf) out.push(rawHtml.slice(i));
+      break;
+    }
+    if (!skipUntilCloseOf && lt > i) out.push(rawHtml.slice(i, lt));
+
+    const gt = rawHtml.indexOf(">", lt);
+    if (gt === -1) break;
+
+    const raw = rawHtml.slice(lt + 1, gt);
+    const closing = raw.startsWith("/");
+    const name = (closing ? raw.slice(1) : raw)
+      .split(/[\s/>]/, 1)[0]
+      .toLowerCase();
+
+    if (skipUntilCloseOf) {
+      if (closing && name === skipUntilCloseOf) skipUntilCloseOf = null;
+    } else if (!closing && SKIP_CONTENT_TAGS.has(name) && !raw.endsWith("/")) {
+      skipUntilCloseOf = name;
+    } else if (BLOCK_TAGS.has(name)) {
+      // A block boundary is a line break with no CSS required. This is the
+      // whole point of the check.
+      out.push("\n");
+    }
+    i = gt + 1;
+  }
+  return decodeEntities(out.join(""));
+};
+
+const homeText = flatten(read("index.html"));
+
+/* Pulled from the source rather than hardcoded, so this check cannot pass
+ * against a command the page no longer shows. */
+const installCommandMatch = landing.match(
+  /export const installCommand\s*=\s*\n?\s*"([^"]+)"/,
+);
+if (!installCommandMatch) {
+  fail(
+    "cannot find `export const installCommand` in landingContent.ts",
+    "check-agent-surface parses it to verify the homepage renders it intact",
+  );
+}
+const installCommand = installCommandMatch?.[1] ?? "";
+
+// The command an agent copies must appear verbatim, with nothing fused to it.
+if (installCommand && !homeText.includes(installCommand)) {
+  fail(
+    "the install command does not survive flattening dist/index.html to text",
+    "a gutter or separator is CSS-only; use a block element so the text stream breaks",
+  );
+}
+for (const fused of homeText.match(/\bacme\w+/g) ?? []) {
+  fail(
+    `flattened homepage contains "${fused}" where the project name should end`,
+    "adjacent text fused onto the command; the separator before it is CSS-only",
+  );
+}
+/* Each agent entrypoint must read as its own token, not one run of them.
+ * Set membership over the split text, rather than a regex built from the path,
+ * so there is no escaping to get wrong. */
+const homeTokens = new Set(
+  homeText
+    .split(/[\s,()]+/)
+    .map((token) => token.replace(/[.]+$/, ""))
+    .filter(Boolean),
+);
+for (const path of ["/agents.md", "/install.sh", "/scaffold-manifest.json"]) {
+  if (!homeTokens.has(path)) {
+    fail(
+      `${path} does not stand alone in the flattened homepage`,
+      "the link row needs block-level items; a flex gap is not a text separator",
+    );
+  }
+}
+
 /* ---------------------------------------------------------------- robots */
 
 const robots = read("robots.txt");

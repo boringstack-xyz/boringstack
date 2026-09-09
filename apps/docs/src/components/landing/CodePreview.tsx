@@ -10,30 +10,45 @@ const tabBaseClass =
 const panelClass =
   "!mt-0 grid min-h-0 gap-[0.24rem] overflow-x-auto bg-[color-mix(in_oklch,var(--bs-bg)_60%,transparent)] p-4 font-mono text-[0.8rem] leading-[1.6] text-[var(--bs-code)] min-[641px]:h-[19rem] min-[641px]:p-[1.25rem_1.35rem] min-[641px]:text-[0.8rem]";
 
+/*
+ * Every line is a real block element, and every gutter glyph carries a
+ * trailing space in the text stream.
+ *
+ * These were `<span className="block">` with the glyph flush against the
+ * text. `block` is a Tailwind class, so an agent converting the page to
+ * text has no CSS and reads a `<span>` as inline: the whole transcript
+ * collapsed into one run and the `ok` gutter of the next line fused onto
+ * the end of the previous one. The command came out as
+ * `--project acmeok`, on the one element of the page an agent is most
+ * likely to copy. `<div>` is a line break by tag name, with no CSS
+ * needed; the panel is a grid, so the layout is unchanged.
+ */
 function CodeLineView({ line }: { line: CodeLine }) {
   if (line.kind === "spacer") {
-    return <span aria-hidden="true" className="h-[0.7rem]" />;
+    return <div aria-hidden="true" className="h-[0.7rem]" />;
   }
 
   if (line.kind === "command") {
     return (
-      <span className="block whitespace-nowrap">
-        <span className="inline-flex w-[2.45rem] font-extrabold text-[#e6c26f]">$</span>
+      <div className="whitespace-nowrap">
+        <span className="inline-flex w-[2.45rem] font-extrabold text-[#e6c26f]">{"$ "}</span>
         {line.text}
-      </span>
+      </div>
     );
   }
 
   if (line.kind === "ok") {
     return (
-      <span className="block whitespace-nowrap">
-        <span className="inline-flex w-[2.45rem] font-extrabold text-[var(--bs-success)]">ok</span>
+      <div className="whitespace-nowrap">
+        <span className="inline-flex w-[2.45rem] font-extrabold text-[var(--bs-success)]">
+          {"ok "}
+        </span>
         {line.text}
-      </span>
+      </div>
     );
   }
 
-  return <span className="block whitespace-nowrap text-[#7f8c86]">{line.text}</span>;
+  return <div className="whitespace-nowrap text-[#7f8c86]">{line.text}</div>;
 }
 
 export function CodePreview() {
