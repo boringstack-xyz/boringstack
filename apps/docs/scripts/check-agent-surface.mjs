@@ -293,6 +293,76 @@ if (!/auth(entication)? is optional/i.test(landing)) {
   );
 }
 
+/* ------------------------------------------- the homepage survives flattening */
+
+/*
+ * An agent does not read the homepage, it reads a text conversion of it, and
+ * the conversion has no CSS. Anything whose only separator is a Tailwind
+ * `block` class, a flex `gap`, or whitespace the minifier is free to drop
+ * arrives as one fused token.
+ *
+ * This shipped: the transcript gutter is a `<span>`, so the `ok` marker of one
+ * line fused onto the end of the previous one and the install command came out
+ * as `--project acmeok`. The footer entrypoint row fused into
+ * `/agents.md/install.sh/scaffold-manifest.json...`.
+ *
+ * So flatten dist/index.html the way a converter does, honouring block-level
+ * tags only, and assert the command survives intact.
+ */
+const flatten = (rawHtml) => {
+  const body = rawHtml.includes("<body") ? rawHtml.slice(rawHtml.indexOf("<body")) : rawHtml;
+  const BLOCK =
+    "div|p|li|tr|h[1-6]|section|header|footer|nav|ul|ol|table|main|article|br|pre|blockquote|dd|dt";
+  return body
+    .replace(/<(script|style)\b[\s\S]*?<\/\1>/g, "")
+    .replace(new RegExp(`</?(?:${BLOCK})\\b[^>]*>`, "g"), "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+};
+
+const homeText = flatten(read("index.html"));
+
+/* Pulled from the source rather than hardcoded, so this check cannot pass
+ * against a command the page no longer shows. */
+const installCommandMatch = landing.match(
+  /export const installCommand\s*=\s*\n?\s*"([^"]+)"/,
+);
+if (!installCommandMatch) {
+  fail(
+    "cannot find `export const installCommand` in landingContent.ts",
+    "check-agent-surface parses it to verify the homepage renders it intact",
+  );
+}
+const installCommand = installCommandMatch?.[1] ?? "";
+
+// The command an agent copies must appear verbatim, with nothing fused to it.
+if (installCommand && !homeText.includes(installCommand)) {
+  fail(
+    "the install command does not survive flattening dist/index.html to text",
+    "a gutter or separator is CSS-only; use a block element so the text stream breaks",
+  );
+}
+for (const fused of homeText.match(/\bacme\w+/g) ?? []) {
+  fail(
+    `flattened homepage contains "${fused}" where the project name should end`,
+    "adjacent text fused onto the command; the separator before it is CSS-only",
+  );
+}
+// Each agent entrypoint must read as its own path, not one run of them.
+for (const path of ["/agents.md", "/install.sh", "/scaffold-manifest.json"]) {
+  if (!new RegExp(`(^|[\\s(])${path.replace(/[.]/g, "\\.")}([\\s,.)]|$)`, "m").test(homeText)) {
+    fail(
+      `${path} does not stand alone in the flattened homepage`,
+      "the link row needs block-level items; a flex gap is not a text separator",
+    );
+  }
+}
+
 /* ---------------------------------------------------------------- robots */
 
 const robots = read("robots.txt");

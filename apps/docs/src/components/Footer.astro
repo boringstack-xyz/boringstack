@@ -29,12 +29,24 @@ import { Icon } from "@astrojs/starlight/components";
     class="mx-auto flex w-fit flex-wrap items-center justify-center gap-x-1 gap-y-1 text-xs text-[var(--sl-color-gray-3)] [&_a]:rounded-full [&_a]:border [&_a]:border-transparent [&_a]:px-2 [&_a]:py-1 [&_a]:font-mono [&_a]:text-[var(--sl-color-gray-3)] [&_a]:no-underline [&_a]:transition-colors [&_a:hover]:border-[color-mix(in_srgb,var(--sl-color-accent)_34%,transparent)] [&_a:hover]:text-[var(--sl-color-white)]"
   >
     <span class="pr-1 not-italic">For agents:</span>
-    <a href="/agents.md">/agents.md</a>
-    <a href="/install.sh">/install.sh</a>
-    <a href="/scaffold-manifest.json">/scaffold-manifest.json</a>
-    <a href="/llms.txt">/llms.txt</a>
-    <a href="/llms-small.txt">/llms-small.txt</a>
-    <a href="/llms-full.txt">/llms-full.txt</a>
+    {/*
+      A real list, not a flex run of bare anchors. The visual spacing here is
+      `gap-x-1`, which puts no separator in the text stream, and the HTML
+      minifier drops the whitespace between the source lines: an agent
+      converting the page read the whole row as one token,
+      `/agents.md/install.sh/scaffold-manifest.json...`. `<li>` is a line
+      break by tag name and needs no CSS to survive the conversion.
+    */}
+    <ul
+      class="m-0 flex list-none flex-wrap items-center justify-center gap-x-1 gap-y-1 p-0 [&_li]:m-0 [&_li]:p-0"
+    >
+      <li><a href="/agents.md">/agents.md</a></li>
+      <li><a href="/install.sh">/install.sh</a></li>
+      <li><a href="/scaffold-manifest.json">/scaffold-manifest.json</a></li>
+      <li><a href="/llms.txt">/llms.txt</a></li>
+      <li><a href="/llms-small.txt">/llms-small.txt</a></li>
+      <li><a href="/llms-full.txt">/llms-full.txt</a></li>
+    </ul>
   </nav>
 
   {
