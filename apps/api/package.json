@@ -119,10 +119,10 @@
     "eslint-plugin-unicorn": "74.0.0",
     "globals": "17.11.0",
     "husky": "9.1.7",
-    "knip": "6.33.0",
+    "knip": "6.34.0",
     "prettier": "3.9.6",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.68.0"
+    "typescript-eslint": "8.69.0"
   },
   "//overrides": {
     "_": "Why these transitive deps are pinned. Keep each entry in sync with the matching `overrides` key — enforced by the package-override-parity lint-meta rule.",
