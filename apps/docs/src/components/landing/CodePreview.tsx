@@ -69,11 +69,19 @@ export function CodePreview() {
           ))}
         </div>
 
+        {/*
+          tabIndex={0} is required, not optional. panelClass sets
+          overflow-x-auto, and the agent transcript's lines are wide enough to
+          actually scroll, which trips axe's scrollable-region-focusable: a
+          keyboard user could not reach the hidden content. It is also standard
+          ARIA practice for a tabpanel whose content has no other focus stop.
+        */}
         <div
           aria-labelledby={`${idPrefix}-tab-${activeTab.id}`}
           className={panelClass}
           id={`${idPrefix}-${activeTab.id}`}
           role="tabpanel"
+          tabIndex={0}
         >
           {activeTab.lines.map((line, index) => (
             <CodeLineView key={`${activeTab.id}-${index}`} line={line} />
@@ -82,7 +90,7 @@ export function CodePreview() {
       </div>
 
       <p className="mx-0 mt-4 max-w-full text-left text-[0.95rem] leading-normal text-[var(--bs-muted)] min-[641px]:mx-auto min-[641px]:max-w-[44rem] min-[641px]:text-center">
-        API -&gt; OpenAPI -&gt; UI, with Compose underneath and deploy docs beside the code.
+        {activeTab.caption}
       </p>
     </div>
   );

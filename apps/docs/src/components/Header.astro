@@ -13,6 +13,9 @@ const navLinkClass =
   "rounded-md px-3 py-2 text-[0.92rem] font-bold leading-none text-[var(--sl-color-gray-2)] no-underline transition-colors hover:bg-white/[0.05] hover:text-[var(--sl-color-white)]";
 
 const navItems = [
+  // /agents.md is a static file in public/, not a docs route, so it is absent
+  // from the sidebar. The nav is the only place a reader finds it by browsing.
+  { href: "/agents.md", label: "Agents" },
   { href: "/quickstart/", label: "Quickstart" },
   { href: "/architecture/why-boringstack/", label: "Why" },
   { href: "/architecture/decisions/", label: "Decisions" },

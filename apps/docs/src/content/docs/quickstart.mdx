@@ -1,13 +1,16 @@
 ---
 title: Quickstart
-description: "Use the BoringStack template on GitHub, clone your new repo, run setup.sh, sign in at localhost:7331."
+description: "One command sets the stack up: curl -fsSL https://boringstack.xyz/install.sh | sh. Or scaffold from the GitHub template, rename, run setup.sh, and sign in at localhost:7331."
+verifiedOn: "2026-09"
 ---
 
 import { Aside } from "@astrojs/starlight/components";
 
-From a fresh clone to a working dev stack in about three minutes. The
-only prerequisite is Docker and Docker Compose v2; no local Node, no
-local Bun, no local Postgres. Compose runs every runtime.
+From nothing to a working dev stack in about three minutes. Docker and
+Docker Compose v2 are the only prerequisites for booting: Compose runs
+every runtime, so you need no local Postgres and no local Node. You do
+need Bun to *develop* once it is up, because every root script
+(`bun run check`, `bun run regen`, `bun run rename:project`) runs on it.
 
 After boot you have a register/login UI at `http://localhost:7331`,
 the API at `http://localhost:7330/api/*` (OpenAPI spec served at
@@ -21,31 +24,84 @@ update notifications.
 
 - Docker + Docker Compose v2 (`docker compose version` reports `v2.x` or newer).
 - About 4 GB of free RAM.
-- No local Node or Bun needed for the default path.
+- `git`. Optionally `gh`, authenticated, to get a GitHub-hosted repo.
+- Bun 1.4.0 to develop. Not needed to boot.
 
-## 1. Use this template
+## 1. Point an agent at it
 
-The BoringStack monorepo is a [GitHub template repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template).
-On the [`boringstack-xyz/boringstack`](https://github.com/boringstack-xyz/boringstack)
-page, click **Use this template → Create a new repository**. That makes a
-fresh copy under your org with full ownership and no fork relationship.
+Paste this into your coding agent:
 
-Clone the repo you just created:
+```text
+Set up boringstack.xyz for me
+```
+
+It reads [/agents.md](/agents.md), which carries the install command, the
+health checks, the machine-readable config surface at
+[/scaffold-manifest.json](/scaffold-manifest.json), and the invariants that keep
+generated code passing CI. Nothing else needs to be in the prompt.
+
+## 2. Or run the one command yourself
 
 ```bash
-git clone https://github.com/<your-org>/<your-repo>.git
+curl -fsSL https://boringstack.xyz/install.sh | sh -s -- --project acme
+```
+
+Five phases, announced as they go: preflight (Compose v2, free ports, memory),
+scaffold, rename, boot, health check. It never prompts, so it works the same
+from a terminal, a CI job or an agent. Useful flags:
+
+| Flag | Effect |
+| ---- | ------ |
+| `--dry-run` | Print the resolved plan and exit without writing. |
+| `--json` | One JSON object per phase on stdout; human output on stderr. |
+| `--no-boot` | Scaffold and rename only; skip Docker. |
+| `--no-rename` | Keep the BoringStack identifiers. |
+| `--ghcr-owner`, `--domain`, `--dir`, `--ref` | Override the defaults. |
+
+Each phase exits with its own code (`3` preflight, `4` scaffold, `5` rename,
+`6` boot, `7` health), and every failure prints the fix.
+
+## 3. Or do it step by step
+
+The monorepo is a [GitHub template repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template),
+so `gh` can create your copy without touching a browser:
+
+```bash
+gh repo create <your-repo> \
+  --template boringstack-xyz/boringstack --private --clone
 cd <your-repo>
 ```
 
-API, UI, docs, Compose, and bootstrap infrastructure all live in this
-one tree. The top-level directories are `apps/api/` (Bun + Elysia +
-Drizzle API), `apps/ui/` (Vite + React SPA), `apps/docs/` (this site's
-source), `infra/compose/` (the Docker Compose stack), and
-`infra/bootstrap/` (optional OpenTofu VPS bootstrap). Run
-`bun run rename:project` from the root any time to rebrand the
-BoringStack identifiers across the codebase.
+Without `gh`, clone and detach from upstream so this is your project rather than
+a fork:
 
-## 2. Boot the local stack
+```bash
+git clone --depth 1 \
+  https://github.com/boringstack-xyz/boringstack <your-repo>
+cd <your-repo> && rm -rf .git && git init
+```
+
+Then rebrand. The script is idempotent and self-verifying: it fails if any
+upstream identifier survives the rewrite, and `DRY_RUN=1` previews the edits.
+
+```bash
+./scripts/rename-project.sh <project> <ghcr-owner> <domain>
+```
+
+API, UI, docs, Compose and bootstrap infrastructure all live in this one tree:
+`apps/api/` (Bun + Elysia + Drizzle), `apps/ui/` (Vite + React SPA),
+`apps/docs/` (this site), `infra/compose/` (the Docker Compose stack) and
+`infra/bootstrap/` (optional OpenTofu VPS bootstrap).
+
+<Aside type="note" title="Prefer the button?">
+  You can still open the
+  [repo page](https://github.com/boringstack-xyz/boringstack) and click **Use
+  this template → Create a new repository**, then clone the result. It does the
+  same thing as `gh repo create --template`. It is listed last here because an
+  agent cannot click it, and the agent path is the one this stack is built for.
+</Aside>
+
+## 4. Boot the local stack
 
 From the repo root:
 
@@ -81,7 +137,7 @@ a fast laptop.
   before you deploy.
 </Aside>
 
-## 3. Sign in
+## 5. Sign in
 
 Open `http://localhost:7331`.
 
@@ -91,7 +147,7 @@ Otherwise click "Sign up" on the form and register a new account; that
 user becomes the first user in the system. You land on a dashboard
 that's intentionally empty. Start building from here.
 
-## 4. Build your first feature
+## 6. Build your first feature
 
 The dashboard is intentionally empty so you start shipping
 immediately. BoringStack supports two workflows for adding features,

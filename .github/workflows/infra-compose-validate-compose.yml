@@ -14,6 +14,9 @@ on:
       # trigger in lockstep so direct pushes touching them still run it.
       - "scripts/**"
       - "setup.sh"
+      # The published installer at boringstack.xyz/install.sh. It is the first
+      # command a new user or their agent runs, so it gets the same bar.
+      - "apps/docs/public/install.sh"
       # The yamllint job lints every workflow file, so any workflow edit
       # must trigger this run — not just edits to this file.
       - ".github/workflows/**"
@@ -224,6 +227,7 @@ jobs:
               - 'infra/compose/**'
               - 'scripts/**'
               - 'setup.sh'
+              - 'apps/docs/public/install.sh'
               - '.github/workflows/**'
 
       - name: ShellCheck
@@ -237,7 +241,63 @@ jobs:
             infra/compose/scripts/*.sh \
             scripts/*.sh \
             scripts/ci/*.sh \
-            setup.sh
+            setup.sh \
+            apps/docs/public/install.sh
+
+      - name: Installer contract (arg parsing, validation, dry run)
+        if: steps.filter.outputs.code == 'true'
+        # The installer is the entrypoint the whole project points at, and it
+        # runs on strangers' machines via curl | sh. These assertions are cheap
+        # and need no Docker and no network.
+        #
+        # GH_TOKEN is cleared so the scaffold path is deterministic: with a
+        # token present the script would create a real repository.
+        env:
+          GH_TOKEN: ""
+          GITHUB_TOKEN: ""
+        run: |
+          set -eu
+          INSTALLER=apps/docs/public/install.sh
+
+          # curl | sh has no usable stdin, so a prompt is a hang. Guard against
+          # one being reintroduced.
+          if grep -nE '^[[:space:]]*read[[:space:]]' "$INSTALLER"; then
+            echo "::error::install.sh contains a 'read' call; it must never prompt"
+            exit 1
+          fi
+          if grep -n '/dev/tty' "$INSTALLER"; then
+            echo "::error::install.sh references /dev/tty; it must never prompt"
+            exit 1
+          fi
+
+          sh "$INSTALLER" --help >/dev/null
+
+          # --dry-run must resolve the plan and write nothing.
+          work="$(mktemp -d)"
+          ( cd "$work" && sh "$GITHUB_WORKSPACE/$INSTALLER" --project acme --dry-run )
+          if [ -n "$(ls -A "$work")" ]; then
+            echo "::error::--dry-run wrote to disk"
+            exit 1
+          fi
+
+          # --json must put parseable JSON on stdout with prose on stderr.
+          ( cd "$work" && sh "$GITHUB_WORKSPACE/$INSTALLER" \
+              --project acme --dry-run --json 2>/dev/null ) \
+            | python3 -c 'import json,sys; json.loads(sys.stdin.read().strip())'
+
+          # Bad input must fail with the usage exit code, not a stack trace.
+          for bad in "Acme Corp" "-acme" "acme-"; do
+            if sh "$INSTALLER" --project "$bad" --dry-run >/dev/null 2>&1; then
+              echo "::error::install.sh accepted invalid project name '$bad'"
+              exit 1
+            fi
+          done
+          if sh "$INSTALLER" --dry-run >/dev/null 2>&1; then
+            echo "::error::install.sh ran without a required --project"
+            exit 1
+          fi
+
+          echo "installer contract ok"
 
   prod-image-build:
     name: build prod images (sanity)

@@ -217,16 +217,129 @@ export default defineConfig({
     starlight({
       title: "BoringStack",
       description:
-        "The production-grade SaaS starter. Auth, billing, queues, email, observability — already wired. Skip months of setup. Ship product on day one. MIT, open source.",
+        "The production-grade SaaS starter, built to be set up by an agent. Auth, billing, queues, email and observability already wired, with the architecture enforced by lint and CI. MIT, open source.",
       favicon: "/favicon.svg",
       customCss: ["./src/styles/tailwind.css", "./src/styles/custom.css"],
       plugins: [
+        /*
+         * Agent-facing documentation sets. An agent pointed at this domain
+         * reads llms.txt first, so the description below has to carry the
+         * install command outright — not a link to it.
+         *
+         * `rawContent: true` is load-bearing and must stay on. With it off the
+         * plugin renders each page through Astro, and index.mdx mounts
+         * `<LandingPage client:load />` — a React component the plugin's
+         * render context has no renderer for, so the build dies with
+         * "No valid renderer was found for the .tsx file extension".
+         *
+         * The cost of keeping it on is that the MDX pipeline is skipped
+         * entirely: every `import ... from "..."` line and every `<Aside>` /
+         * `<DocCallout>` tag lands verbatim in the output (46 import lines in
+         * llms-full.txt), and the plugin's own `minify` option is inert,
+         * because it operates on rendered HTML that never gets produced.
+         * That is why llms-small.txt used to come out 412,756 bytes against
+         * llms-full.txt's 414,104 — a 0.3% saving on the tier that is
+         * supposed to be the cheap one.
+         *
+         * So both are fixed downstream instead: `scripts/sanitize-llms.mjs`
+         * strips the MDX residue from all three files after the build, and the
+         * `exclude` list below does the real curation work for the small tier.
+         *
+         * Note `exclude` applies to llms-small.txt ONLY, not llms-full.txt;
+         * that asymmetry is upstream behaviour, not a mistake here. The small
+         * tier is a deliberate curation: quickstart, architecture and the
+         * rules an agent must not break. Runbooks and per-topic deep dives
+         * stay in llms-full.txt where an agent can go looking on purpose.
+         *
+         * check:agent-surface asserts the size gap and the absence of MDX
+         * leakage on every build, so none of this can regress silently.
+         */
         starlightLlmsTxt({
           projectName: "BoringStack",
           description:
-            "UI, API, and infra GitHub templates: React, Bun, Elysia, Postgres, Valkey, Docker Compose, OpenTofu, and ESLint plugins. OpenAPI contract between API and UI.",
+            "A production-grade full-stack template: Bun + Elysia API, React + Vite SPA, Postgres, Valkey, Docker Compose, OpenTofu. Built to be set up by an agent. Run `curl -fsSL https://boringstack.xyz/install.sh | sh -s -- --project <name>`. The architecture is enforced rather than documented: 25 custom ESLint plugins, 83 repo-level lint rules, ACL and OpenAPI drift gates, and a multi-tenant scoping rule that refuses an unscoped query. Wrong-shaped code fails the build instead of shipping. MIT.",
+          details: `Start at https://boringstack.xyz/agents.md. It has the setup command, the health checks, and the invariants an agent must not break, on one page.
+
+The full config surface is machine-readable at https://boringstack.xyz/scaffold-manifest.json: every field with its kind, per-STACK defaults, the services each toggle spawns, and the secrets each one requires. Read it instead of guessing at env vars.
+
+\`bun run check\` is the oracle. If anything in these docs disagrees with what it reports, the lint config wins.`,
+          optionalLinks: [
+            {
+              label: "Agent guide",
+              url: "https://boringstack.xyz/agents.md",
+              description:
+                "setup command, health checks and the invariants, on one page",
+            },
+            {
+              label: "Installer",
+              url: "https://boringstack.xyz/install.sh",
+              description:
+                "preflight, scaffold, rename, boot, health check; never prompts, --json for machine-readable progress",
+            },
+            {
+              label: "Scaffold manifest",
+              url: "https://boringstack.xyz/scaffold-manifest.json",
+              description:
+                "machine-readable config surface: toggles, defaults, spawned services, required secrets",
+            },
+          ],
           rawContent: true,
-          exclude: ["index", "404"],
+          // Ordering matters more for agents than for humans: a reader with a
+          // context budget takes the first pages and stops. Collection order
+          // put "ACL & feature resolution" first and Quickstart 40% deep.
+          promote: [
+            "index*",
+            "quickstart*",
+            "before-you-build*",
+            "architecture/why-boringstack*",
+            "architecture/stack*",
+            "architecture/lint-as-contract*",
+            "reference/commands*",
+          ],
+          // Reference material an agent should reach for deliberately, not
+          // read on the way in.
+          demote: [
+            "runbooks/**",
+            "reference/glossary*",
+            "reference/cost-methodology*",
+            "topics/privacy*",
+            "topics/terms*",
+            "topics/cookie-consent*",
+            "changelog*",
+          ],
+          // llms-small.txt is the cheap tier: keep it to setup, architecture
+          // and the rules. Everything dropped here is still in llms-full.txt.
+          // llms-small.txt is the cheap tier: 67 KB against llms-full.txt's
+          // 410 KB. Keep it to what an agent needs to set the stack up and then
+          // write its first correct change: quickstart, the architecture
+          // rationale, and the rules that fail the build.
+          //
+          // Everything excluded here is still in llms-full.txt. Subsystem deep
+          // dives (api/, ui/, infra/), operational runbooks and the per-topic
+          // guides are things an agent should fetch on purpose once it knows
+          // which one it needs — not read on the way in.
+          exclude: [
+            "404",
+            "api/**",
+            "ui/**",
+            "infra/**",
+            "topics/**",
+            "runbooks/**",
+            "recipes/**",
+            "architecture/decisions",
+            "architecture/lint-meta",
+            "architecture/csrf-stance",
+            "architecture/background-work",
+            "reference/cost-methodology",
+            "reference/glossary",
+            "reference/scripts-tooling",
+            "reference/env-vars",
+            "changelog",
+            "resources",
+          ],
+          // No `minify` block: it only affects llms-small.txt and only works
+          // on rendered HTML, which `rawContent` skips. Curation happens via
+          // `exclude` above and sanitize-llms.mjs after the build.
         }),
       ],
       tableOfContents: false,
@@ -266,7 +379,7 @@ export default defineConfig({
           attrs: {
             property: "og:image:alt",
             content:
-              "Skip the boring stuff. Ship the rest. — BoringStack, the production-grade SaaS starter. Auth, billing, queues, email, observability already wired. MIT, open source.",
+              "BoringStack: point your agent at this stack. A production-grade SaaS starter with auth, billing, queues, email and observability already wired. MIT, open source.",
           },
         },
         {
@@ -300,7 +413,7 @@ export default defineConfig({
           attrs: {
             name: "twitter:image:alt",
             content:
-              "Skip the boring stuff. Ship the rest. — BoringStack, the production-grade SaaS starter. Auth, billing, queues, email, observability already wired. MIT, open source.",
+              "BoringStack: point your agent at this stack. A production-grade SaaS starter with auth, billing, queues, email and observability already wired. MIT, open source.",
           },
         },
         {
@@ -437,6 +550,14 @@ export default defineConfig({
           label: "Start here",
           items: [
             { label: "Welcome", link: "/" },
+            // /agents.md is a static file in public/, not a content-collection
+            // route, so Starlight cannot infer it. `attrs` marks it as a plain
+            // document rather than a docs page.
+            {
+              label: "For agents: /agents.md",
+              link: "/agents.md",
+              attrs: { target: "_blank", rel: "noopener" },
+            },
             { label: "Before you build", link: "/before-you-build/" },
             { label: "Quickstart", link: "/quickstart/" },
             {
