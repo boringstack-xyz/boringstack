@@ -443,9 +443,28 @@ phase 2 scaffold
 parent_dir="$(dirname "$target_dir")"
 mkdir -p "$parent_dir" || die 4 "could not create $parent_dir"
 staging="$parent_dir/.boringstack-install.$$"
-rm -rf "$staging"
-# Only ever removes the staging directory, which belongs to this run.
-trap 'rm -rf "$staging"' EXIT INT TERM
+conflicts="$parent_dir/.boringstack-conflicts.$$"
+git_backup="$parent_dir/.boringstack-gitbackup.$$"
+install_ok=0
+rm -rf "$staging" "$conflicts" "$git_backup"
+
+# Removes only paths this run created. The .git clause is the important part:
+# if the destination's repository was moved aside and the install did not
+# finish, put it back rather than leaving the caller without their history.
+cleanup() {
+  rm -rf "$staging" "$conflicts" 2>/dev/null || true
+  if [ -d "$git_backup" ]; then
+    if [ "$install_ok" = "1" ]; then
+      rm -rf "$git_backup"
+    else
+      rm -rf "${target_dir:?}/.git" 2>/dev/null || true
+      if mv "$git_backup" "$target_dir/.git" 2>/dev/null; then
+        printf 'warning: restored the original .git in %s\n' "$target_dir" >&2
+      fi
+    fi
+  fi
+}
+trap cleanup EXIT INT TERM
 
 if [ "$use_gh" -eq 1 ]; then
   # `gh repo create --clone` always lands in ./<name> with no way to redirect
@@ -509,17 +528,33 @@ fi
 # staging is on the same filesystem and correctness is worth the copy.
 mkdir -p "$target_dir" || die 4 "could not create $target_dir"
 
-# .git is the one thing that cannot be merged: the installer brings a fresh
-# history, and interleaving two object stores produces a corrupt repository.
-# Replace it outright, loudly, rather than silently mixing them.
-if [ -d "$target_dir/.git" ]; then
-  warn "replacing the existing git repository in $target_dir"
-  warn "  its history is NOT preserved; move it aside first if you need it"
-  rm -rf "${target_dir:?}/.git"
+# Check every path for a type conflict BEFORE touching the destination. cp
+# cannot put a directory where a file is, or a file where a directory is, and
+# it fails part-way through, so discovering this during the copy leaves the
+# destination half-merged. Refusing up front leaves it untouched.
+: > "$conflicts"
+( cd "$staging" && find . -mindepth 1 -not -path './.git' -not -path './.git/*' -print ) \
+  | while IFS= read -r rel; do
+      rel="${rel#./}"
+      [ -e "$target_dir/$rel" ] || continue
+      if [ -d "$staging/$rel" ] && [ ! -d "$target_dir/$rel" ]; then
+        printf '  %s: template has a directory, destination has a file\n' "$rel" >> "$conflicts"
+      elif [ ! -d "$staging/$rel" ] && [ -d "$target_dir/$rel" ]; then
+        printf '  %s: template has a file, destination has a directory\n' "$rel" >> "$conflicts"
+      fi
+    done
+
+if [ -s "$conflicts" ]; then
+  printf 'error: %s cannot receive the template; these paths conflict by type:\n' \
+    "$target_dir" >&2
+  cat "$conflicts" >&2
+  die 4 "type conflicts in $target_dir" \
+    "nothing has been changed in $target_dir" \
+    "move or rename the listed paths, or install into an empty --dir"
 fi
 
 # Name the files about to be overwritten. .git is excluded because it is
-# thousands of objects and was just handled above.
+# thousands of objects and is handled separately below.
 ( cd "$staging" && find . -type f -not -path './.git/*' -print ) \
   | while IFS= read -r rel; do
       rel="${rel#./}"
@@ -528,9 +563,25 @@ fi
       fi
     done
 
-cp -R "$staging/." "$target_dir/" \
-  || die 4 "could not copy the template into $target_dir" \
-       "the clone is at $staging until this shell exits"
+# .git cannot be merged: the installer brings a fresh history, and interleaving
+# two object stores produces a corrupt repository. Move the existing one aside
+# rather than deleting it, so a failed copy can put it back. An earlier version
+# deleted it before the copy, and a copy that then failed took the caller's
+# history with it.
+if [ -d "$target_dir/.git" ]; then
+  warn "moving the existing git repository in $target_dir aside"
+  warn "  the template's fresh history replaces it if the install succeeds"
+  mv "$target_dir/.git" "$git_backup" \
+    || die 4 "could not move $target_dir/.git aside" \
+         "nothing has been changed in $target_dir"
+fi
+
+if ! cp -R "$staging/." "$target_dir/"; then
+  # cleanup() restores .git from the backup because install_ok is still 0.
+  die 4 "could not copy the template into $target_dir" \
+    "the clone is at $staging until this shell exits"
+fi
+install_ok=1
 
 rm -rf "$staging"
 

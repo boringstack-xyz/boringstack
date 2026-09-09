@@ -390,6 +390,25 @@ jobs:
             exit 1
           fi
 
+          # The destination's .git must be moved aside, never deleted before the
+          # copy. An earlier version deleted it first, so a copy that then failed
+          # (a file where the template has a directory, for one) destroyed the
+          # caller's history. It has to be restorable until the copy succeeds.
+          grep -q 'mv "\$target_dir/\.git" "\$git_backup"' "$INSTALLER" \
+            || { echo "::error::install.sh must move \$target_dir/.git aside, not delete it"; exit 1; }
+          grep -q 'install_ok=1' "$INSTALLER" \
+            || { echo "::error::install.sh has no success flag guarding the .git restore"; exit 1; }
+          if grep -nE 'rm -rf "\$\{target_dir:\?\}/\.git"' "$INSTALLER" \
+               | grep -qv 'cleanup\|2>/dev/null'; then
+            echo "::error::install.sh deletes \$target_dir/.git outside cleanup()"
+            exit 1
+          fi
+
+          # Type conflicts have to be found before anything is written, because
+          # cp fails part-way and would leave the destination half-merged.
+          grep -q 'conflict by type' "$INSTALLER" \
+            || { echo "::error::install.sh no longer pre-flights type conflicts"; exit 1; }
+
           # install.sh must agree with .tsforge/scaffold-manifest.json on the
           # default ref and the health URLs. apps/docs check:agent-surface
           # asserts that in build:ci; not duplicated here.
