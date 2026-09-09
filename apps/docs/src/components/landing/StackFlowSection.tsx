@@ -1,43 +1,93 @@
-import { stackFlow } from "./landingContent";
+import { useId, useState } from "react";
+import { stackLayers } from "./landingContent";
 import { SectionHeading } from "./LandingPrimitives";
 
 export function StackFlowSection() {
+  const [selected, setSelected] = useState(1);
+  const panelId = useId();
+  const layer = stackLayers[selected];
   return (
-    <section aria-labelledby="bs-compose-title" className="mt-14 min-[641px]:mt-[clamp(4.8rem,6.5vw,6rem)]">
+    <section className="bs-section" aria-labelledby="bs-compose-title">
       <SectionHeading
-        body="Separate GitHub repos per concern, wired through OpenAPI and Compose. Auth, billing, queues, Traefik TLS, and deploy scripts cross layer boundaries."
-        eyebrow="Templates"
         id="bs-compose-title"
-        title="What each layer ships."
+        eyebrow="02 / INSIDE THE STACK"
+        title="One repo. All the moving parts."
+        body="Explore the layers. Auth, billing, queues, and deploys are already connected, with explicit contracts between them."
       />
-
-      <div
-        aria-label="BoringStack repository map"
-        className="mt-8 grid grid-cols-1 border-y border-[var(--bs-line)] min-[641px]:grid-cols-2 lg:grid-cols-4"
-      >
-        {stackFlow.map((item, index) => (
-          <a
-            className="group relative grid min-h-0 grid-rows-[auto_auto_1fr] gap-2 border-t border-[var(--bs-line)] p-4 text-inherit no-underline transition-colors first:border-t-0 hover:bg-[rgba(255,255,255,0.018)] min-[641px]:min-h-48 min-[641px]:p-[1.2rem_1.15rem_1.25rem] min-[641px]:[&:nth-child(2)]:border-t-0 lg:border-l lg:border-t-0 lg:first:border-l-0"
-            href={item.href}
-            key={item.href}
+      <div className="bs-repo">
+        <div className="bs-panel-bar">
+          <span>
+            <span className="bs-status-dot" /> BORINGSTACK / REPOSITORY
+          </span>
+          <span>FOUR LAYERS. ONE SYSTEM.</span>
+        </div>
+        <div className="bs-repo-workspace">
+          <div className="bs-repo-tree" aria-label="Explore repository layers">
+            <div className="bs-repo-root">⌂ boringstack/</div>
+            {stackLayers.map((item, index) => (
+              <button
+                key={item.path}
+                type="button"
+                aria-pressed={selected === index}
+                aria-controls={panelId}
+                onClick={() => setSelected(index)}
+              >
+                <span className="bs-tree-branch" aria-hidden="true">
+                  {index === 3 ? "└" : "├"}─
+                </span>
+                <span>
+                  <strong>{item.path}/</strong>
+                  <small>{item.name}</small>
+                </span>
+                <span className="bs-tree-arrow" aria-hidden="true">
+                  ↗
+                </span>
+              </button>
+            ))}
+            <a className="bs-repo-manifest" href="/scaffold-manifest.json">
+              <span aria-hidden="true">{"{ }"}</span> scaffold-manifest.json ↗
+            </a>
+            <p>
+              Configuration is part of the contract. Your agent can read it,
+              too.
+            </p>
+          </div>
+          <div
+            className="bs-repo-detail"
+            id={panelId}
+            role="region"
+            aria-label={`${layer.name} layer`}
           >
-            <span className="font-mono text-[0.84rem] font-extrabold leading-snug text-[var(--bs-accent-strong)]">
-              {item.label}
-            </span>
-            <strong className="text-[1.08rem] leading-tight text-[var(--bs-text)] group-hover:text-[var(--bs-accent-strong)] min-[641px]:text-[1.22rem]">
-              {item.title}
-            </strong>
-            <small className="self-start leading-[1.58] text-[var(--bs-muted)] min-[641px]:self-end">
-              {item.detail}
-            </small>
-            <span className="pointer-events-none absolute left-4 right-4 top-[-1px] hidden h-0.5 bg-transparent group-hover:bg-[linear-gradient(90deg,var(--bs-accent),transparent)] min-[641px]:block" />
-            {index < stackFlow.length - 1 ? (
-              <span className="pointer-events-none absolute right-[-0.6rem] top-[1.12rem] z-[1] hidden font-mono text-[0.85rem] text-[var(--bs-accent-strong)] opacity-70 lg:block">
-                -&gt;
-              </span>
-            ) : null}
-          </a>
-        ))}
+            <div className="bs-repo-meta">
+              <span>LAYER / {layer.symbol}</span>
+              <span>{layer.technology}</span>
+            </div>
+            <h3>{layer.title}</h3>
+            <p className="bs-repo-description">{layer.description}</p>
+            <div className="bs-layer-features">
+              {layer.features.map(([title, detail]) => (
+                <div key={title}>
+                  <span aria-hidden="true">+</span>
+                  <div>
+                    <h4>{title}</h4>
+                    <p>{detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="bs-layer-route" aria-label="Layer connection">
+              {layer.connection.map((name, index) => (
+                <span key={name}>
+                  {index > 0 && <i aria-hidden="true">→</i>}
+                  {name}
+                </span>
+              ))}
+            </div>
+            <a className="bs-text-link" href={layer.href}>
+              Explore {layer.path} <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </div>
       </div>
     </section>
   );

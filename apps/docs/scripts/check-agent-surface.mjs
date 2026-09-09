@@ -289,7 +289,7 @@ if (landing.includes("gh repo create") && !/git clone/.test(landing)) {
 if (!/auth(entication)? is optional/i.test(landing)) {
   fail(
     "the homepage does not say GitHub auth is optional",
-    "add it to the agent tab caption in landingContent.ts",
+    "add it to the setup note in landingContent.ts",
   );
 }
 

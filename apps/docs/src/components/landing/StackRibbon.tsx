@@ -1,21 +1,38 @@
-import { stackLinks } from "./landingContent";
+const principles = [
+  ["01", "Agent-ready", "One page to get started", "/agents.md"],
+  [
+    "02",
+    "Machine-checked",
+    "Architecture enforced by lint + CI",
+    "/architecture/lint-as-contract/",
+  ],
+  [
+    "03",
+    "Self-hosted",
+    "Your infrastructure, your data",
+    "/topics/deployment/",
+  ],
+  [
+    "04",
+    "Open source",
+    "MIT-licensed. Yours to change.",
+    "https://github.com/boringstack-xyz/boringstack",
+  ],
+] as const;
 
 export function StackRibbon() {
   return (
-    <section
-      aria-label="Composed templates"
-      className="grid grid-cols-1 border-y border-[var(--bs-line)] min-[641px]:grid-cols-2 lg:grid-cols-4"
-    >
-      {stackLinks.map((link) => (
-        <a
-          className="grid min-w-0 gap-1 border-t border-[var(--bs-line)] px-5 py-4 text-inherit no-underline transition-colors first:border-t-0 hover:bg-[var(--bs-accent-low)] min-[641px]:border-l min-[641px]:first:border-l-0 min-[641px]:[&:nth-child(2)]:border-t-0 lg:border-t-0"
-          href={link.href}
-          key={link.href}
-        >
-          <span className="font-extrabold leading-tight text-[var(--bs-text)]">{link.label}</span>
-          <small className="leading-snug text-[var(--bs-muted)]">{link.detail}</small>
+    <nav className="bs-principles" aria-label="BoringStack principles">
+      {principles.map(([number, title, detail, href]) => (
+        <a key={number} href={href}>
+          <span className="bs-index">{number} /</span>
+          <div>
+            <strong>{title}</strong>
+            <span>{detail}</span>
+          </div>
+          <span aria-hidden="true">↗</span>
         </a>
       ))}
-    </section>
+    </nav>
   );
 }
