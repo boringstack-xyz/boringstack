@@ -2,6 +2,26 @@
 
 Single repository: `apps/api`, `apps/ui`, `apps/docs`, `infra/compose`, `infra/bootstrap`.
 
+## Starting a new project from this template
+
+This repo is a GitHub template, so there is a programmatic path. Do not look for
+the "Use this template" button; it is a browser action.
+
+```bash
+curl -fsSL https://boringstack.xyz/install.sh | sh -s -- --project acme
+```
+
+That does preflight, scaffold, rename, boot and a health check, and never
+prompts. The equivalent by hand:
+
+```bash
+gh repo create acme --template boringstack-xyz/boringstack --private --clone
+cd acme && ./scripts/rename-project.sh acme acme-corp acme.com && ./setup.sh --up
+```
+
+The one-page version for an agent, including the invariants that keep generated
+code passing CI, is served at <https://boringstack.xyz/agents.md>.
+
 ## Maintainer commands (repo root)
 
 ```bash
@@ -27,14 +47,21 @@ CI: `.github/workflows/` at repo root with path filters.
 
 Remote: https://github.com/boringstack-xyz/boringstack
 
-## Scaffold manifest — keep it in sync
+## Scaffold manifest: keep it in sync
 
-`.tsforge/scaffold-manifest.json` is the single source of truth for how the
-tsforge setup wizard understands this stack. tsforge clones BoringStack and reads
-this file to drive its greenfield wizard: the questions it asks, the
-container-topology preview (5 vs 20 services), the required-secrets checklist, and
-the `.env` it writes. tsforge holds **no** stack knowledge of its own — it all
-lives here.
+`.tsforge/scaffold-manifest.json` is the single source of truth for this stack's
+config surface: every field with its kind and per-`STACK` defaults, the services
+each toggle spawns, the secrets each one requires, and the cross-rules between
+them.
+
+It is the public agent contract. `apps/docs` publishes it verbatim at
+<https://boringstack.xyz/scaffold-manifest.json> (via
+`bun run generate:scaffold-manifest`, drift-checked in `build:ci`) so any agent
+asked to set this stack up can read the real options instead of guessing at env
+vars. The tsforge setup wizard is one consumer: it clones BoringStack and reads
+this file to drive the questions it asks, the container-topology preview (5 vs 20
+services), the required-secrets checklist, and the `.env` it writes. tsforge holds
+no stack knowledge of its own; it all lives here.
 
 **When you change the config surface, update this file in the same change.** That
 means whenever you:

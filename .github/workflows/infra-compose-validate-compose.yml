@@ -14,6 +14,9 @@ on:
       # trigger in lockstep so direct pushes touching them still run it.
       - "scripts/**"
       - "setup.sh"
+      # The published installer at boringstack.xyz/install.sh. It is the first
+      # command a new user or their agent runs, so it gets the same bar.
+      - "apps/docs/public/install.sh"
       # The yamllint job lints every workflow file, so any workflow edit
       # must trigger this run — not just edits to this file.
       - ".github/workflows/**"
@@ -224,6 +227,7 @@ jobs:
               - 'infra/compose/**'
               - 'scripts/**'
               - 'setup.sh'
+              - 'apps/docs/public/install.sh'
               - '.github/workflows/**'
 
       - name: ShellCheck
@@ -237,7 +241,193 @@ jobs:
             infra/compose/scripts/*.sh \
             scripts/*.sh \
             scripts/ci/*.sh \
-            setup.sh
+            setup.sh \
+            apps/docs/public/install.sh
+
+      - name: Installer contract (arg parsing, validation, dry run)
+        if: steps.filter.outputs.code == 'true'
+        # The installer is the entrypoint the whole project points at, and it
+        # runs on strangers' machines via curl | sh. These assertions are cheap
+        # and need no Docker and no network.
+        #
+        # GH_TOKEN is cleared so the scaffold path is deterministic: with a
+        # token present the script would create a real repository.
+        env:
+          GH_TOKEN: ""
+          GITHUB_TOKEN: ""
+        run: |
+          set -eu
+          INSTALLER=apps/docs/public/install.sh
+
+          # curl | sh has no usable stdin, so a prompt is a hang. Guard against
+          # one being reintroduced.
+          if grep -nE '^[[:space:]]*read[[:space:]]' "$INSTALLER"; then
+            echo "::error::install.sh contains a 'read' call; it must never prompt"
+            exit 1
+          fi
+          if grep -n '/dev/tty' "$INSTALLER"; then
+            echo "::error::install.sh references /dev/tty; it must never prompt"
+            exit 1
+          fi
+
+          sh "$INSTALLER" --help >/dev/null
+
+          # --dry-run must resolve the plan and write nothing.
+          work="$(mktemp -d)"
+          ( cd "$work" && sh "$GITHUB_WORKSPACE/$INSTALLER" --project acme --dry-run )
+          if [ -n "$(ls -A "$work")" ]; then
+            echo "::error::--dry-run wrote to disk"
+            exit 1
+          fi
+
+          # --json must put parseable JSON on stdout with prose on stderr.
+          ( cd "$work" && sh "$GITHUB_WORKSPACE/$INSTALLER" \
+              --project acme --dry-run --json 2>/dev/null ) \
+            | python3 -c 'import json,sys; json.loads(sys.stdin.read().strip())'
+
+          # Bad input must fail with exit 2 (usage), not a stack trace, and not
+          # after a remote side effect. These are exactly the names
+          # scripts/rename-project.sh rejects: validating loosely here meant a
+          # GitHub repo was created before the rename failed.
+          for bad in "Acme Corp" "-acme" "acme-" "a" "1acme" \
+                     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; do
+            if sh "$INSTALLER" --project "$bad" --dry-run >/dev/null 2>&1; then
+              echo "::error::install.sh accepted invalid project name '$bad'"
+              exit 1
+            fi
+            set +e
+            sh "$INSTALLER" --project "$bad" --dry-run >/dev/null 2>&1
+            rc=$?
+            set -e
+            if [ "$rc" -ne 2 ]; then
+              echo "::error::'$bad' exited $rc, expected 2 (usage)"
+              exit 1
+            fi
+          done
+
+          # Same bound as the renamer's own regexes, so a valid name stays valid.
+          sh "$INSTALLER" --project ab --dry-run >/dev/null
+          sh "$INSTALLER" --project "$(printf 'a%.0s' $(seq 1 31))" --dry-run >/dev/null
+
+          # A --dir that would need JSON or shell escaping is refused rather
+          # than emitted into --json output.
+          for bad_dir in 'has space' 'has"quote' 'has$var'; do
+            if sh "$INSTALLER" --project acme --dir "$bad_dir" --dry-run >/dev/null 2>&1; then
+              echo "::error::install.sh accepted --dir '$bad_dir'"
+              exit 1
+            fi
+          done
+
+          if sh "$INSTALLER" --dry-run >/dev/null 2>&1; then
+            echo "::error::install.sh ran without a required --project"
+            exit 1
+          fi
+
+          # --ref cannot be honoured through `gh repo create --template`, which
+          # always copies the default branch, so the script takes the clone path
+          # instead of silently ignoring the flag. Assert it reaches the plan.
+          sh "$INSTALLER" --project acme --ref v1.2.3 --dry-run 2>&1 \
+            | grep -q 'boringstack@v1.2.3' \
+            || { echo "::error::--ref missing from the resolved plan"; exit 1; }
+
+          # --dir has to reach the plan too: it used to be dropped on the gh
+          # path, which orphaned the clone in ./<project>.
+          sh "$INSTALLER" --project acme --dir out/nested --dry-run 2>&1 \
+            | grep -q 'out/nested' \
+            || { echo "::error::--dir missing from the resolved plan"; exit 1; }
+
+          # LC_ALL=C regression guard. Under en_US.UTF-8 a case range like
+          # [a-z] collates as aAbBcC and so matches uppercase, which let
+          # `--project ACME` and `--domain ACME.com` pass validation and then
+          # fail in the renamer after the repo existed.
+          for bad in ACME Acme aCme; do
+            if sh "$INSTALLER" --project "$bad" --dry-run >/dev/null 2>&1; then
+              echo "::error::install.sh accepted uppercase project '$bad' (LC_ALL regression?)"
+              exit 1
+            fi
+          done
+          if sh "$INSTALLER" --project acme --domain ACME.com --dry-run >/dev/null 2>&1; then
+            echo "::error::install.sh accepted an uppercase domain"
+            exit 1
+          fi
+
+          # Domain validation must match the renamer per label, not just on
+          # charset: "acme-.com" has a label ending in a dash and used to pass.
+          # "acme.com." is the case a per-label loop misses on its own: shell
+          # word splitting discards the trailing empty field, so it split into
+          # two valid labels and passed, then failed the renamer.
+          for bad_domain in "acme-.com" "-acme.com" "acme..com" "acme." "acme" \
+                            "acme.com-" "acme.com." ".acme.com" "acme...com"; do
+            if sh "$INSTALLER" --project acme --domain "$bad_domain" --dry-run >/dev/null 2>&1; then
+              echo "::error::install.sh accepted invalid domain '$bad_domain'"
+              exit 1
+            fi
+          done
+          for ok_domain in "acme.com" "ac-me.com" "a.co" "acme.co.uk" "x.y.z"; do
+            sh "$INSTALLER" --project acme --domain "$ok_domain" --dry-run >/dev/null \
+              || { echo "::error::install.sh rejected valid domain '$ok_domain'"; exit 1; }
+          done
+
+          # Data-loss regression guard. The installer must never empty the
+          # destination: an earlier version did, so --force on a non-empty
+          # directory deleted the caller's files before the clone was known to
+          # have succeeded. It stages beside the destination instead.
+          if grep -nE 'find "\$target_dir" -mindepth|rm -rf "\$target_dir"[^/]' "$INSTALLER"; then
+            echo "::error::install.sh empties \$target_dir; stage beside it instead"
+            exit 1
+          fi
+          grep -q 'staging=' "$INSTALLER" \
+            || { echo "::error::install.sh no longer stages the clone"; exit 1; }
+
+          # The tree has to be MERGED in. A version that moved top-level entries
+          # and rm -rf'd each collision deleted apps/api/my-unrelated-work.txt,
+          # because the template also ships apps/. Only .git may be replaced
+          # wholesale, since two object stores cannot be interleaved.
+          grep -q 'cp -R "\$staging/\." "\$target_dir/"' "$INSTALLER" \
+            || { echo "::error::install.sh no longer merges the tree with cp -R"; exit 1; }
+          if grep -nE 'rm -rf "\$\{target_dir:\?\}/\$\{base' "$INSTALLER"; then
+            echo "::error::install.sh replaces whole top-level entries; merge instead"
+            exit 1
+          fi
+
+          # The destination's .git must be moved aside, never deleted before the
+          # copy. An earlier version deleted it first, so a copy that then failed
+          # (a file where the template has a directory, for one) destroyed the
+          # caller's history. It has to be restorable until the copy succeeds.
+          grep -q 'mv "\$target_dir/\.git" "\$git_backup"' "$INSTALLER" \
+            || { echo "::error::install.sh must move \$target_dir/.git aside, not delete it"; exit 1; }
+          grep -q 'install_ok=1' "$INSTALLER" \
+            || { echo "::error::install.sh has no success flag guarding the .git restore"; exit 1; }
+          if grep -nE 'rm -rf "\$\{target_dir:\?\}/\.git"' "$INSTALLER" \
+               | grep -qv 'cleanup\|2>/dev/null'; then
+            echo "::error::install.sh deletes \$target_dir/.git outside cleanup()"
+            exit 1
+          fi
+
+          # Type conflicts have to be found before anything is written, because
+          # cp fails part-way and would leave the destination half-merged.
+          grep -q 'conflict by type' "$INSTALLER" \
+            || { echo "::error::install.sh no longer pre-flights type conflicts"; exit 1; }
+
+          # Signal handlers must exit. `trap cleanup EXIT INT TERM` runs cleanup
+          # on the signal and then RESUMES the script, so a SIGTERM during the
+          # copy restored .git and then carried on through boot and health,
+          # exiting 0. Separate handlers that exit are what stop it; exiting
+          # still fires the EXIT trap, so cleanup runs exactly once.
+          if grep -nE '^trap .*(INT|TERM).*(INT|TERM)|^trap [^ ]+ EXIT (INT|TERM)' "$INSTALLER"; then
+            echo "::error::install.sh shares one trap across EXIT and signals; signals must exit"
+            exit 1
+          fi
+          grep -qE "^trap 'exit 130' INT" "$INSTALLER" \
+            || { echo "::error::install.sh has no INT handler that exits 130"; exit 1; }
+          grep -qE "^trap 'exit 143' TERM" "$INSTALLER" \
+            || { echo "::error::install.sh has no TERM handler that exits 143"; exit 1; }
+
+          # install.sh must agree with .tsforge/scaffold-manifest.json on the
+          # default ref and the health URLs. apps/docs check:agent-surface
+          # asserts that in build:ci; not duplicated here.
+
+          echo "installer contract ok"
 
   prod-image-build:
     name: build prod images (sanity)

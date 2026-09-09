@@ -13,6 +13,10 @@ const navLinkClass =
   "rounded-md px-3 py-2 text-[0.92rem] font-bold leading-none text-[var(--sl-color-gray-2)] no-underline transition-colors hover:bg-white/[0.05] hover:text-[var(--sl-color-white)]";
 
 const navItems = [
+  // /agents.md is a static file in public/, not a content-collection route,
+  // so Starlight cannot infer it. Listed here and in the sidebar's "Start
+  // here" group, both by hand.
+  { href: "/agents.md", label: "Agents" },
   { href: "/quickstart/", label: "Quickstart" },
   { href: "/architecture/why-boringstack/", label: "Why" },
   { href: "/architecture/decisions/", label: "Decisions" },
@@ -67,7 +71,7 @@ const navItems = [
     class="sl-hidden items-center justify-end justify-self-end gap-3 print:hidden before:h-7 before:w-px before:bg-[var(--sl-color-gray-5)] before:content-[''] md:sl-flex"
   >
     <a
-      class="inline-flex items-center gap-1.5 rounded-md border border-[var(--sl-color-gray-5)] bg-[rgba(74,222,128,0.06)] px-2.5 py-1.5 text-[0.85rem] font-bold leading-none text-[var(--sl-color-white)] no-underline transition-colors hover:border-[color-mix(in_srgb,var(--sl-color-accent)_62%,transparent)] hover:bg-[color-mix(in_srgb,var(--sl-color-accent)_18%,transparent)]"
+      class="inline-flex items-center gap-1.5 border border-[var(--sl-color-gray-5)] bg-[color-mix(in_oklch,var(--primary)_8%,transparent)] px-2.5 py-1.5 text-[0.85rem] font-bold leading-none text-[var(--sl-color-white)] no-underline transition-colors hover:border-[var(--primary)] hover:bg-[color-mix(in_oklch,var(--primary)_16%,transparent)]"
       href="https://github.com/boringstack-xyz/boringstack"
       rel="noopener noreferrer"
       target="_blank"

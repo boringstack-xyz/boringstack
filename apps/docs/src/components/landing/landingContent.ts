@@ -8,9 +8,47 @@ export interface CodeTab {
   id: string;
   label: string;
   lines: CodeLine[];
+  /** One line under the panel. Per-tab, because a single caption describing
+   *  the API -> OpenAPI -> UI flow made no sense beside an agent transcript. */
+  caption: string;
 }
 
+/*
+ * The two strings the hero is built around. `agentPrompt` is what a person
+ * pastes into their agent; `installCommand` is what the agent (or a person who
+ * would rather not delegate) runs. Both are duplicated in
+ * apps/docs/public/agents.md and public/install.sh — check:agent-surface
+ * asserts the installer and the manifest agree, and these should be updated
+ * alongside them.
+ */
+export const agentPrompt = "Set up boringstack.xyz for me";
+
+export const installCommand =
+  "curl -fsSL https://boringstack.xyz/install.sh | sh -s -- --project acme";
+
 export const codeTabs: CodeTab[] = [
+  {
+    id: "agent",
+    label: "Point an agent at it",
+    lines: [
+      { kind: "muted", text: "# you, to your coding agent" },
+      { kind: "command", text: "Set up boringstack.xyz for me" },
+      { kind: "spacer" },
+      { kind: "muted", text: "# the agent reads /agents.md and runs" },
+      { kind: "command", text: "curl -fsSL https://boringstack.xyz/install.sh | sh -s -- --project acme" },
+      { kind: "spacer" },
+      { kind: "ok", text: "[1/5] preflight  compose v2, ports free, 12GB" },
+      { kind: "ok", text: "[2/5] scaffold   gh repo create --template" },
+      { kind: "ok", text: "[3/5] rename     boringstack -> acme" },
+      { kind: "ok", text: "[4/5] boot       ./setup.sh --up" },
+      { kind: "ok", text: "[5/5] health     ui 200, api 200" },
+      { kind: "spacer" },
+      { kind: "muted", text: "# ready -> http://localhost:7331" },
+    ],
+    caption:
+      "Point an agent at the domain and it has everything it needs in one fetch.",
+  },
+
   {
     id: "boot",
     label: "Boot locally",
@@ -20,12 +58,14 @@ export const codeTabs: CodeTab[] = [
       { kind: "spacer" },
       { kind: "ok", text: "postgres ready on 5432" },
       { kind: "ok", text: "valkey ready on 6379" },
-      { kind: "ok", text: "api-dev migrated and serving /openapi.json" },
+      { kind: "ok", text: "api-dev migrated and serving /swagger/json" },
       { kind: "ok", text: "ui-dev generated client and started Vite" },
       { kind: "ok", text: "observability + GlitchTip on by default; opt out with WITH_*=0" },
       { kind: "spacer" },
       { kind: "muted", text: "# open http://localhost:7331 and sign in" },
     ],
+    caption:
+      "One command from a fresh clone to a running stack, migrations included.",
   },
   {
     id: "api",
@@ -40,6 +80,8 @@ export const codeTabs: CodeTab[] = [
       { kind: "spacer" },
       { kind: "muted", text: "# server and client move together" },
     ],
+    caption:
+      "API -> OpenAPI -> UI. Server and client move together or the build fails.",
   },
   {
     id: "jobs",
@@ -54,6 +96,8 @@ export const codeTabs: CodeTab[] = [
       { kind: "spacer" },
       { kind: "muted", text: "# delayed work stays visible while you build" },
     ],
+    caption:
+      "Queues and cache share one Valkey, with the job UI available in dev.",
   },
   {
     id: "deploy",
@@ -71,6 +115,8 @@ export const codeTabs: CodeTab[] = [
       { kind: "spacer" },
       { kind: "muted", text: "# local shape and deploy shape stay related" },
     ],
+    caption:
+      "The local shape and the deploy shape stay related, with runbooks beside the code.",
   },
 ];
 
@@ -99,25 +145,25 @@ export const stackLinks = [
 
 export const docsSteps = [
   {
-    href: "/architecture/why-boringstack/",
+    href: "/agents.md",
     number: "01",
-    title: "Read the architecture rationale.",
+    title: "Hand your agent one page.",
     detail:
-      "See how the layers connect, what lint enforces, and where OpenAPI sits between SPA and API.",
-  },
-  {
-    href: "/architecture/stack/",
-    number: "02",
-    title: "Map what already exists.",
-    detail:
-      "Find the service, queue, env var, or script before you add a parallel implementation.",
+      "/agents.md is the setup command, the health checks, the config manifest, and the invariants it must not break. One fetch, then it can work.",
   },
   {
     href: "/quickstart/",
-    number: "03",
-    title: "Boot locally, then open the page you need.",
+    number: "02",
+    title: "Or run the five phases yourself.",
     detail:
-      "Run compose/dev.sh first. Open auth, queues, or deploy docs when you edit that subsystem.",
+      "install.sh does preflight, scaffold, rename, boot and health check. It never prompts, and --json makes every phase machine-readable.",
+  },
+  {
+    href: "/architecture/lint-as-contract/",
+    number: "03",
+    title: "Read what the rules enforce.",
+    detail:
+      "The lint config is the contract, so agent output either matches the architecture or fails the build. This page is why.",
   },
 ] as const;
 
@@ -188,5 +234,47 @@ export const proofRows = [
     label: "real deploy shape",
     value:
       "TLS, firewall, backups, image updates, secrets, and runbooks live beside the code.",
+  },
+] as const;
+
+/*
+ * The answer to the obvious objection: an agent can scaffold something bespoke
+ * in minutes, so why start from a template?
+ *
+ * Because the code is the easy half. Every row here is a mechanical fact in
+ * this repo, not a claim — the plugin names, workflow filenames and rule names
+ * are real and greppable. Keep it that way: if a row cannot be pointed at, it
+ * does not belong here.
+ */
+export const guardrailRows = [
+  {
+    bespoke: "Looks right",
+    boringstack:
+      "18 custom ESLint plugins block the wrong shape at commit time, not at review time.",
+  },
+  {
+    bespoke: "A quiet tenant leak",
+    boringstack:
+      "A lint rule refuses any query that omits the accountId scope. Isolation is a build error, not a code review.",
+  },
+  {
+    bespoke: "API and UI drift apart",
+    boringstack:
+      "The API emits OpenAPI; the UI generates its client from it. A contract change is a compile error before it is a bug.",
+  },
+  {
+    bespoke: "Plausible auth",
+    boringstack:
+      "ACL types are generated from the API\u2019s own constants, and drift fails its own CI job.",
+  },
+  {
+    bespoke: "Unverified webhooks",
+    boringstack:
+      "Signature verification is required by rule. Forgetting it doesn\u2019t compile.",
+  },
+  {
+    bespoke: "No CI worth the name",
+    boringstack:
+      "24 pinned workflows, 9 required checks, 56 repo-level rules, and a coverage floor that only ratchets up.",
   },
 ] as const;

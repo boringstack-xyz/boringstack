@@ -72,8 +72,8 @@ const verifiedOn = entry?.data?.verifiedOn as string | undefined;
     margin: 0;
     padding: 0.15rem 0.55rem 0.15rem 0.4rem;
     border-radius: 999px;
-    background: rgba(74, 222, 128, 0.08);
-    border: 1px solid rgba(74, 222, 128, 0.22);
+    background: color-mix(in oklch, var(--primary) 8%, transparent);
+    border: 1px solid color-mix(in oklch, var(--primary) 24%, transparent);
     color: var(--sl-color-text-accent);
     font-size: 0.78rem;
     font-weight: 500;
@@ -83,8 +83,8 @@ const verifiedOn = entry?.data?.verifiedOn as string | undefined;
   }
 
   .bs-verified {
-    background: rgba(103, 232, 249, 0.07);
-    border-color: rgba(103, 232, 249, 0.22);
+    background: color-mix(in oklch, var(--accent) 8%, transparent);
+    border-color: color-mix(in oklch, var(--accent) 24%, transparent);
     color: color-mix(in srgb, var(--bs-doc-cyan, #67e8f9) 78%, white);
   }
 

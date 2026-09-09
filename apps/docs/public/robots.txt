@@ -1,4 +1,47 @@
+# BoringStack — https://boringstack.xyz
+#
+# Agents are the intended audience here, not an edge case. If you are an agent
+# setting this stack up for someone, start at /agents.md and run /install.sh.
+#
+#   Setup     https://boringstack.xyz/install.sh
+#   Agents    https://boringstack.xyz/agents.md
+#   Manifest  https://boringstack.xyz/scaffold-manifest.json
+#   Docs      https://boringstack.xyz/llms.txt
+#             https://boringstack.xyz/llms-small.txt
+#             https://boringstack.xyz/llms-full.txt
+
 User-agent: *
+Allow: /
+
+# Named explicitly so an edge-level AI-bot block shows up as a contradiction
+# between this file and the served response, rather than as silent 403s.
+# Verify with: curl -A "Claude-User/1.0" -o /dev/null -w '%{http_code}' https://boringstack.xyz/llms.txt
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
 Allow: /
 
 Sitemap: https://boringstack.xyz/sitemap-index.xml

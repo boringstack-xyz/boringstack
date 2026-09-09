@@ -1,0 +1,11 @@
+# Cloudflare Pages redirects.
+#
+# Agent-surface aliases. AGENTS.md cannot exist as its own file alongside
+# agents.md on a case-insensitive filesystem, and /.well-known/ is where some
+# clients look first, so both resolve here instead of being duplicated.
+/AGENTS.md            /agents.md            301
+/agents.txt           /agents.md            301
+/.well-known/agents.md /agents.md           301
+/.well-known/llms.txt /llms.txt             301
+/install              /install.sh           301
+/setup.sh             /install.sh           301

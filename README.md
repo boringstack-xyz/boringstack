@@ -21,8 +21,8 @@
 </p>
 
 <p align="center">
-  <strong>Production-ready from the first template clone.</strong><br />
-  One monorepo for the full stack.
+  <strong>Point your agent at this stack.</strong><br />
+  It ships production-grade, or it doesn't compile.
 </p>
 
 <p align="center">
@@ -33,7 +33,48 @@
   <a href="https://github.com/boringstack-xyz/eslint-plugins"><img src="https://img.shields.io/badge/eslint--plugins-4ade80?style=for-the-badge&labelColor=090909" alt="eslint-plugins"></a>
 </p>
 
-Documentation lives at [boringstack.xyz](https://boringstack.xyz) — start with the [Quickstart](https://boringstack.xyz/quickstart/).
+## Set it up
+
+```sh
+curl -fsSL https://boringstack.xyz/install.sh | sh -s -- --project acme
+```
+
+Preflight, scaffold, rename, boot, health check. It never prompts, and `--json`
+puts one object per phase on stdout. Pass `--dry-run` first to see the plan.
+
+Or run the steps yourself:
+
+```sh
+gh repo create acme --template boringstack-xyz/boringstack --private --clone
+cd acme
+./scripts/rename-project.sh acme acme-corp acme.com
+./setup.sh --up
+```
+
+Docker and Compose v2 are the only prerequisites; Compose runs every runtime.
+Bun is needed to develop, not to boot.
+
+## If you are an agent
+
+Read [boringstack.xyz/agents.md](https://boringstack.xyz/agents.md). One page:
+the setup command, the health checks, the machine-readable config manifest at
+[/scaffold-manifest.json](https://boringstack.xyz/scaffold-manifest.json), and
+the invariants that make your output pass CI instead of merely look right.
+
+Inside this repo, start at [`AGENTS.md`](AGENTS.md), then
+[`apps/api/AGENTS.md`](apps/api/AGENTS.md) or
+[`apps/ui/AGENTS.md`](apps/ui/AGENTS.md). Each is a one-table index pointing at
+single-concern guides under `apps/*/docs/agents/`. Load the row your task
+matches, not the whole tree.
+
+`bun run check` is the oracle. If the docs and the lint config disagree, the
+lint config wins.
+
+## Docs
+
+Full documentation is at [boringstack.xyz](https://boringstack.xyz), starting
+with the [Quickstart](https://boringstack.xyz/quickstart/) and
+[Why BoringStack](https://boringstack.xyz/architecture/why-boringstack/).
 
 ## License
 

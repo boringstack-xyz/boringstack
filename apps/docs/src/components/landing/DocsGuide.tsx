@@ -10,17 +10,18 @@ export function DocsGuide() {
       <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent_0_5rem,rgba(255,255,255,0.025)_5rem_calc(5rem+1px))] opacity-50 min-[641px]:bg-[repeating-linear-gradient(90deg,transparent_0_5.8rem,rgba(255,255,255,0.025)_5.8rem_calc(5.8rem+1px))]" />
 
       <div className="relative z-[1] self-start">
-        <Eyebrow>How to use this documentation</Eyebrow>
+        <Eyebrow>How to read these docs</Eyebrow>
         <h2
           className="mt-[0.45rem] max-w-full text-[2.35rem] leading-[1.02] text-[var(--bs-text)] min-[641px]:max-w-[16ch] min-[641px]:text-[3.1rem] lg:max-w-[14ch] lg:text-[clamp(3.2rem,5.5vw,4.8rem)]"
           id="bs-docs-title"
         >
-          Architecture first, reference on demand.
+          One page for the agent, the rest on demand.
         </h2>
         <p className="mt-5 max-w-[38rem] text-[1.04rem] leading-[1.72] text-[var(--bs-muted)]">
-          Run the quickstart, then open the page for the subsystem you are editing: auth routes while
-          changing auth, queue docs while adding a worker, deploy runbooks when you touch Traefik or
-          TLS. The architecture pages explain repo boundaries and lint rules; the rest is reference.
+          An agent needs one fetch to start working, so /agents.md carries the setup command, the
+          config manifest and the rules it must not break. Everything else is reference you open when
+          you get there: auth routes while changing auth, queue docs while adding a worker, deploy
+          runbooks when you touch Traefik or TLS.
         </p>
       </div>
 
@@ -52,7 +53,7 @@ export function DocsGuide() {
         className="relative z-[1] col-span-full flex flex-wrap items-start gap-x-3 gap-y-2 border-t border-[var(--bs-line)] pt-5 text-[var(--bs-muted)] min-[641px]:items-center"
       >
         <strong className="basis-full text-[var(--bs-text)] min-[641px]:mr-2 min-[641px]:basis-auto">
-          Manual pages cover
+          Reference pages cover
         </strong>
         {docsCoverage.map((item, index) => (
           <span

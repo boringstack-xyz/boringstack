@@ -21,16 +21,22 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT_DIR = path.resolve(__dirname, "../public");
 const OUTPUT_PATH = path.join(OUTPUT_DIR, "og-image.png");
 
+/*
+ * Hex equivalents of the OKLCH tokens in src/styles/tailwind.css, the same
+ * mapping the mermaid theme uses in astro.config.mjs. SVG here is rendered by
+ * sharp, which does not resolve CSS variables, so these are literals by
+ * necessity. Update them with the tokens.
+ */
 const PALETTE = {
-  bgOuter: "#04140a",
-  bgCard: "#0b1f13",
-  bgCardEdge: "#102a18",
-  border: "#1f4a2e",
-  borderStrong: "#2f7048",
-  accent: "#4ade80",
-  accentStrong: "#86efac",
-  text: "#f5fbf6",
-  muted: "#8ea493"
+  bgOuter: "#04070f",       // --code-surface
+  bgCard: "#090d16",        // --background
+  bgCardEdge: "#111826",    // --card
+  border: "#2b3342",        // --border
+  borderStrong: "#424d63",  // --border-strong
+  accent: "#00d2d3",        // --primary
+  accentStrong: "#00d2d3",
+  text: "#eef2f9",          // --foreground
+  muted: "#9199a5"          // --muted-foreground
 };
 
 function escapeXml(value) {
@@ -105,7 +111,7 @@ function buildSvg() {
     font-weight="800"
     fill="${PALETTE.text}"
     letter-spacing="-2.5"
-  >Skip the boring stuff.</text>
+  >Point your agent</text>
   <text
     x="80" y="376"
     font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif"
@@ -113,7 +119,7 @@ function buildSvg() {
     font-weight="800"
     fill="${PALETTE.accent}"
     letter-spacing="-2.5"
-  >Ship the rest.</text>
+  >at this stack.</text>
 
   <!-- Sub: value-prop, not stack list -->
   <text
@@ -122,7 +128,7 @@ function buildSvg() {
     font-size="26"
     font-weight="500"
     fill="${PALETTE.muted}"
-  >Production-grade auth, billing, queues, email, observability.</text>
+  >It ships production-grade, or it doesn\u2019t compile.</text>
   <text
     x="80" y="486"
     font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif"

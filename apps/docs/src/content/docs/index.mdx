@@ -1,16 +1,34 @@
 ---
-title: "BoringStack — Skip the boring stuff. Ship the rest."
-description: "The production-grade SaaS starter. Auth, billing, queues, email, observability — already wired. Skip months of setup. Ship product on day one. MIT, open source."
+# `title` and `description` are load-bearing SEO/social copy: they ship as
+# <title>, og:title and og:description, and as the OG image alt text in
+# astro.config.mjs. They are NOT what a visitor reads. The visible headline
+# lives in src/components/landing/HeroSection.tsx. Keep the two saying the
+# same thing; they disagreed for months and it was invisible from either side.
+# Starlight appends "| BoringStack", so the site name does not belong here.
+title: "Point your agent at this stack"
+description: "A full-stack template built to be set up by an agent. One command: curl -fsSL https://boringstack.xyz/install.sh | sh -s -- --project acme. Auth, billing, queues, email and observability already wired. Architecture enforced by 18 ESLint plugins and 9 required CI checks, so generated code either fits or fails the build. MIT, open source."
 template: splash
+#
+# DO NOT DELETE the `hero:` block below, even though nothing here is visible.
+#
+# It looks like dead copy. custom.css hides it:
+#   .sl-container:has(.bs-landing) > .hero { display: none; }
+# Its presence is what makes Starlight's splash template render `.hero`
+# INSTEAD OF the PageTitle component. Remove it and Starlight falls back to
+# PageTitle, which stamps a second <h1> and a "1 min read" badge directly above
+# the real hero. The block is a switch, not content.
+#
+# Its text still needs to match HeroSection.tsx so a future reader comparing
+# the two isn't misled about which one ships.
 hero:
-  tagline: "The production-grade SaaS starter. Auth, billing, queues, email, observability — already wired. Skip months of setup. Ship product on day one."
+  tagline: "Point your agent at this stack. It ships production-grade, or it doesn't compile."
   actions:
     - text: Quickstart
       link: /quickstart/
       icon: right-arrow
       variant: primary
-    - text: Why BoringStack
-      link: /architecture/why-boringstack/
+    - text: Read /agents.md
+      link: /agents.md
       icon: right-arrow
       variant: minimal
     - text: View on GitHub

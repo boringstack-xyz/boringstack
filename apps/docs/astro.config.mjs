@@ -149,84 +149,223 @@ export default defineConfig({
           useMaxWidth: true,
         },
         themeVariables: {
+          /*
+           * Diagram palette, kept in step with the OKLCH tokens in
+           * tailwind.css. Mermaid's theme is build-time JavaScript and cannot
+           * read CSS variables, so these are the hex equivalents:
+           *   primary  cyan    oklch(0.78 0.14 195) -> #00d2d3
+           *   accent   violet  oklch(0.62 0.18 300) -> #9867e1
+           *   warning  amber   oklch(0.78 0.16 85)  -> #e6ad00
+           *   fg               oklch(0.96 0.01 260) -> #eef2f9
+           *   card             oklch(0.21 0.03 265) -> #111826
+           *   border           oklch(0.32 0.03 265) -> #2b3342
+           * Update both together, or diagrams drift back to a different accent
+           * than the rest of the site.
+           */
+
           // Surfaces: Starlight owns the page background.
           background: "transparent",
-          mainBkg: "rgba(74, 222, 128, 0.14)",
-          secondBkg: "rgba(103, 232, 249, 0.10)",
-          tertiaryColor: "rgba(240, 171, 252, 0.10)",
-          clusterBkg: "rgba(74, 222, 128, 0.05)",
-          clusterBorder: "rgba(134, 239, 172, 0.42)",
+          mainBkg: "rgba(0, 210, 211, 0.12)",
+          secondBkg: "rgba(152, 103, 225, 0.12)",
+          tertiaryColor: "rgba(230, 173, 0, 0.10)",
+          clusterBkg: "rgba(0, 210, 211, 0.04)",
+          clusterBorder: "rgba(0, 210, 211, 0.38)",
 
-          // Primary palette: emerald, the BoringStack accent.
-          primaryColor: "rgba(74, 222, 128, 0.16)",
-          primaryBorderColor: "#4ade80",
-          primaryTextColor: "#f0fdf4",
+          // Primary palette: cyan, the BoringStack accent.
+          primaryColor: "rgba(0, 210, 211, 0.14)",
+          primaryBorderColor: "#00d2d3",
+          primaryTextColor: "#eef2f9",
 
-          // Secondary palette: cyan accent for alt nodes.
-          secondaryColor: "rgba(103, 232, 249, 0.12)",
-          secondaryBorderColor: "#67e8f9",
-          secondaryTextColor: "#cffafe",
+          // Secondary palette: violet for alternate nodes.
+          secondaryColor: "rgba(152, 103, 225, 0.14)",
+          secondaryBorderColor: "#9867e1",
+          secondaryTextColor: "#eef2f9",
 
-          // Tertiary palette: pink accent.
-          tertiaryBorderColor: "#f0abfc",
-          tertiaryTextColor: "#fae8ff",
+          // Tertiary palette: amber.
+          tertiaryBorderColor: "#e6ad00",
+          tertiaryTextColor: "#eef2f9",
 
           // Edges / lines.
-          lineColor: "#86efac",
-          arrowheadColor: "#86efac",
+          lineColor: "#5f93a8",
+          arrowheadColor: "#00d2d3",
 
           // Text & default node.
-          textColor: "#f0fdf4",
-          nodeBorder: "#4ade80",
-          nodeTextColor: "#f0fdf4",
-          titleColor: "#dcfce7",
+          textColor: "#eef2f9",
+          nodeBorder: "#2b3342",
+          nodeTextColor: "#eef2f9",
+          titleColor: "#eef2f9",
 
           // Edge label chips: mermaid paints a `.labelBkg` div per edge even when
           // there's no label. We restore the colored backing so real labels cover
           // the edge line behind their text, then strip empty edge labels via JS
           // (see the wireMermaidCleanup head script).
-          edgeLabelBackground: "rgba(13, 15, 18, 0.92)",
-          labelBackground: "rgba(13, 15, 18, 0.92)",
-          labelTextColor: "#f0fdf4",
+          edgeLabelBackground: "rgba(9, 13, 22, 0.94)",
+          labelBackground: "rgba(9, 13, 22, 0.94)",
+          labelTextColor: "#9199a5",
           labelBoxBorderColor: "transparent",
 
           // Notes (sequence / generic).
-          noteBkgColor: "rgba(134, 239, 172, 0.12)",
-          noteTextColor: "#dcfce7",
-          noteBorderColor: "#4ade80",
+          noteBkgColor: "rgba(0, 210, 211, 0.10)",
+          noteTextColor: "#eef2f9",
+          noteBorderColor: "#00d2d3",
 
           // Sequence diagram surfaces.
-          actorBkg: "rgba(74, 222, 128, 0.16)",
-          actorBorder: "#4ade80",
-          actorTextColor: "#f0fdf4",
-          actorLineColor: "rgba(134, 239, 172, 0.4)",
-          signalColor: "#86efac",
-          signalTextColor: "#f0fdf4",
-          loopTextColor: "#dcfce7",
-          activationBkgColor: "rgba(74, 222, 128, 0.22)",
-          activationBorderColor: "#4ade80",
-          sequenceNumberColor: "#0b0d11",
+          actorBkg: "rgba(0, 210, 211, 0.12)",
+          actorBorder: "#00d2d3",
+          actorTextColor: "#eef2f9",
+          actorLineColor: "rgba(0, 210, 211, 0.34)",
+          signalColor: "#5f93a8",
+          signalTextColor: "#eef2f9",
+          loopTextColor: "#9199a5",
+          activationBkgColor: "rgba(0, 210, 211, 0.18)",
+          activationBorderColor: "#00d2d3",
+          sequenceNumberColor: "#03060d",
 
-          // Typography.
+          // Typography: the mono display face carries diagram labels too, so a
+          // node reads like the filename it usually names.
           fontFamily:
-            "'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-          fontSize: "14px",
+            "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace",
+          fontSize: "13px",
         },
       },
     }),
     starlight({
       title: "BoringStack",
       description:
-        "The production-grade SaaS starter. Auth, billing, queues, email, observability — already wired. Skip months of setup. Ship product on day one. MIT, open source.",
+        "The production-grade SaaS starter, built to be set up by an agent. Auth, billing, queues, email and observability already wired, with the architecture enforced by lint and CI. MIT, open source.",
       favicon: "/favicon.svg",
-      customCss: ["./src/styles/tailwind.css", "./src/styles/custom.css"],
+      /*
+       * Load order matters. redesign.css is the skin ported from tsforge and
+       * has to come last so it owns the final look; custom.css stays intact
+       * underneath for the accessible-table wrapper, the mermaid theme and
+       * the .bs-landing inline-code reset. Removing the last entry reverts
+       * the site to the previous green/rounded look.
+       */
+      customCss: [
+        "./src/styles/tailwind.css",
+        "./src/styles/custom.css",
+        "./src/styles/redesign.css",
+      ],
       plugins: [
+        /*
+         * Agent-facing documentation sets. An agent pointed at this domain
+         * reads llms.txt first, so the description below has to carry the
+         * install command outright — not a link to it.
+         *
+         * `rawContent: true` is load-bearing and must stay on. With it off the
+         * plugin renders each page through Astro, and index.mdx mounts
+         * `<LandingPage client:load />` — a React component the plugin's
+         * render context has no renderer for, so the build dies with
+         * "No valid renderer was found for the .tsx file extension".
+         *
+         * The cost of keeping it on is that the MDX pipeline is skipped
+         * entirely: every `import ... from "..."` line and every `<Aside>` /
+         * `<DocCallout>` tag lands verbatim in the output (46 import lines in
+         * llms-full.txt), and the plugin's own `minify` option is inert,
+         * because it operates on rendered HTML that never gets produced.
+         * That is why llms-small.txt used to come out 412,756 bytes against
+         * llms-full.txt's 414,104 — a 0.3% saving on the tier that is
+         * supposed to be the cheap one.
+         *
+         * So both are fixed downstream instead: `scripts/sanitize-llms.mjs`
+         * strips the MDX residue from all three files after the build, and the
+         * `exclude` list below does the real curation work for the small tier.
+         *
+         * Note `exclude` applies to llms-small.txt ONLY, not llms-full.txt;
+         * that asymmetry is upstream behaviour, not a mistake here. The small
+         * tier is a deliberate curation: quickstart, architecture and the
+         * rules an agent must not break. Runbooks and per-topic deep dives
+         * stay in llms-full.txt where an agent can go looking on purpose.
+         *
+         * check:agent-surface asserts the size gap and the absence of MDX
+         * leakage on every build, so none of this can regress silently.
+         */
         starlightLlmsTxt({
           projectName: "BoringStack",
           description:
-            "UI, API, and infra GitHub templates: React, Bun, Elysia, Postgres, Valkey, Docker Compose, OpenTofu, and ESLint plugins. OpenAPI contract between API and UI.",
+            "A production-grade full-stack template: Bun + Elysia API, React + Vite SPA, Postgres, Valkey, Docker Compose, OpenTofu. Built to be set up by an agent. Run `curl -fsSL https://boringstack.xyz/install.sh | sh -s -- --project <name>`. The architecture is enforced rather than documented: 18 custom ESLint plugins, 56 repo-level lint rules, ACL and OpenAPI drift gates, and a multi-tenant scoping rule that refuses an unscoped query. Wrong-shaped code fails the build instead of shipping. MIT.",
+          details: `Start at https://boringstack.xyz/agents.md. It has the setup command, the health checks, and the invariants an agent must not break, on one page.
+
+The full config surface is machine-readable at https://boringstack.xyz/scaffold-manifest.json: every field with its kind, per-STACK defaults, the services each toggle spawns, and the secrets each one requires. Read it instead of guessing at env vars.
+
+\`bun run check\` is the oracle. If anything in these docs disagrees with what it reports, the lint config wins.`,
+          optionalLinks: [
+            {
+              label: "Agent guide",
+              url: "https://boringstack.xyz/agents.md",
+              description:
+                "setup command, health checks and the invariants, on one page",
+            },
+            {
+              label: "Installer",
+              url: "https://boringstack.xyz/install.sh",
+              description:
+                "preflight, scaffold, rename, boot, health check; never prompts, --json for machine-readable progress",
+            },
+            {
+              label: "Scaffold manifest",
+              url: "https://boringstack.xyz/scaffold-manifest.json",
+              description:
+                "machine-readable config surface: toggles, defaults, spawned services, required secrets",
+            },
+          ],
           rawContent: true,
-          exclude: ["index", "404"],
+          // Ordering matters more for agents than for humans: a reader with a
+          // context budget takes the first pages and stops. Collection order
+          // put "ACL & feature resolution" first and Quickstart 40% deep.
+          promote: [
+            "index*",
+            "quickstart*",
+            "before-you-build*",
+            "architecture/why-boringstack*",
+            "architecture/stack*",
+            "architecture/lint-as-contract*",
+            "reference/commands*",
+          ],
+          // Reference material an agent should reach for deliberately, not
+          // read on the way in.
+          demote: [
+            "runbooks/**",
+            "reference/glossary*",
+            "reference/cost-methodology*",
+            "topics/privacy*",
+            "topics/terms*",
+            "topics/cookie-consent*",
+            "changelog*",
+          ],
+          // llms-small.txt is the cheap tier: keep it to setup, architecture
+          // and the rules. Everything dropped here is still in llms-full.txt.
+          // llms-small.txt is the cheap tier: 67 KB against llms-full.txt's
+          // 410 KB. Keep it to what an agent needs to set the stack up and then
+          // write its first correct change: quickstart, the architecture
+          // rationale, and the rules that fail the build.
+          //
+          // Everything excluded here is still in llms-full.txt. Subsystem deep
+          // dives (api/, ui/, infra/), operational runbooks and the per-topic
+          // guides are things an agent should fetch on purpose once it knows
+          // which one it needs — not read on the way in.
+          exclude: [
+            "404",
+            "api/**",
+            "ui/**",
+            "infra/**",
+            "topics/**",
+            "runbooks/**",
+            "recipes/**",
+            "architecture/decisions",
+            "architecture/lint-meta",
+            "architecture/csrf-stance",
+            "architecture/background-work",
+            "reference/cost-methodology",
+            "reference/glossary",
+            "reference/scripts-tooling",
+            "reference/env-vars",
+            "changelog",
+            "resources",
+          ],
+          // No `minify` block: it only affects llms-small.txt and only works
+          // on rendered HTML, which `rawContent` skips. Curation happens via
+          // `exclude` above and sanitize-llms.mjs after the build.
         }),
       ],
       tableOfContents: false,
@@ -238,6 +377,25 @@ export default defineConfig({
         ThemeProvider: "./src/components/ThemeProvider.astro",
       },
       head: [
+        {
+          tag: "link",
+          attrs: { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        },
+        {
+          tag: "link",
+          attrs: {
+            rel: "preconnect",
+            href: "https://fonts.gstatic.com",
+            crossorigin: true,
+          },
+        },
+        {
+          tag: "link",
+          attrs: {
+            rel: "stylesheet",
+            href: "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap",
+          },
+        },
         /*
          * Open Graph + Twitter card meta. Starlight injects og:title and
          * og:description from frontmatter automatically, but it does NOT
@@ -266,7 +424,7 @@ export default defineConfig({
           attrs: {
             property: "og:image:alt",
             content:
-              "Skip the boring stuff. Ship the rest. — BoringStack, the production-grade SaaS starter. Auth, billing, queues, email, observability already wired. MIT, open source.",
+              "BoringStack: point your agent at this stack. A production-grade SaaS starter with auth, billing, queues, email and observability already wired. MIT, open source.",
           },
         },
         {
@@ -300,7 +458,7 @@ export default defineConfig({
           attrs: {
             name: "twitter:image:alt",
             content:
-              "Skip the boring stuff. Ship the rest. — BoringStack, the production-grade SaaS starter. Auth, billing, queues, email, observability already wired. MIT, open source.",
+              "BoringStack: point your agent at this stack. A production-grade SaaS starter with auth, billing, queues, email and observability already wired. MIT, open source.",
           },
         },
         {
@@ -437,6 +595,14 @@ export default defineConfig({
           label: "Start here",
           items: [
             { label: "Welcome", link: "/" },
+            // /agents.md is a static file in public/, not a content-collection
+            // route, so Starlight cannot infer it. `attrs` marks it as a plain
+            // document rather than a docs page.
+            {
+              label: "For agents: /agents.md",
+              link: "/agents.md",
+              attrs: { target: "_blank", rel: "noopener" },
+            },
             { label: "Before you build", link: "/before-you-build/" },
             { label: "Quickstart", link: "/quickstart/" },
             {

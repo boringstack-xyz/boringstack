@@ -11,6 +11,14 @@ on:
     paths:
       - "apps/docs/src/**"
       - "apps/docs/scripts/**"
+      # The agent surface: install.sh, agents.md, robots.txt, _redirects and
+      # the published manifest. check:agent-surface asserts all of it inside
+      # build:ci, so a PR touching only these files has to run this workflow.
+      # Without them a change to agents.md skipped the gate meant to protect it.
+      - "apps/docs/public/**"
+      # generate:scaffold-manifest copies this into public/ and check:docs-data
+      # fails on drift, so a manifest edit must rebuild too.
+      - ".tsforge/scaffold-manifest.json"
       - "apps/docs/astro.config.mjs"
       - "apps/docs/package.json"
       - "apps/docs/bun.lock"
@@ -65,6 +73,10 @@ jobs:
             docs:
               - 'apps/docs/src/**'
               - 'apps/docs/scripts/**'
+              # Kept in parity with the push paths above: the agent surface
+              # and the manifest published from it.
+              - 'apps/docs/public/**'
+              - '.tsforge/scaffold-manifest.json'
               - 'apps/docs/astro.config.mjs'
               - 'apps/docs/package.json'
               - 'apps/docs/bun.lock'
