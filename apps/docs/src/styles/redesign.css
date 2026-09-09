@@ -27,7 +27,11 @@
   --sl-color-bg: var(--background);
   --sl-color-bg-nav: var(--background);
   --sl-color-bg-sidebar: var(--background);
-  --sl-color-bg-inline-code: color-mix(in oklch, var(--primary) 14%, var(--card));
+  --sl-color-bg-inline-code: color-mix(
+    in oklch,
+    var(--primary) 14%,
+    var(--card)
+  );
   --sl-color-bg-accent: var(--primary);
 
   /* Hairlines */
@@ -49,7 +53,11 @@
 
   /* Gray ramp mapped onto the muted/border tokens */
   --sl-color-gray-1: var(--foreground);
-  --sl-color-gray-2: color-mix(in oklch, var(--foreground) 75%, var(--muted-foreground));
+  --sl-color-gray-2: color-mix(
+    in oklch,
+    var(--foreground) 75%,
+    var(--muted-foreground)
+  );
   --sl-color-gray-3: var(--muted-foreground);
   --sl-color-gray-4: var(--muted-foreground);
   --sl-color-gray-5: var(--border-strong);
@@ -381,7 +389,11 @@ site-search kbd {
   --bs-line-strong: var(--border-strong);
   --bs-text: var(--foreground);
   --bs-muted: var(--muted-foreground);
-  --bs-muted-strong: color-mix(in oklch, var(--foreground) 78%, var(--muted-foreground));
+  --bs-muted-strong: color-mix(
+    in oklch,
+    var(--foreground) 78%,
+    var(--muted-foreground)
+  );
   --bs-accent: var(--primary);
   --bs-accent-strong: var(--primary);
   --bs-accent-low: color-mix(in oklch, var(--primary) 12%, transparent);
@@ -526,7 +538,11 @@ site-search kbd {
 .sidebar-pane a[aria-current="page"]:focus,
 [data-theme="light"] .sidebar-pane a[aria-current="page"],
 [data-theme="light"] .sidebar-pane a[aria-current="page"]:focus {
-  background-color: color-mix(in oklch, var(--primary) 10%, transparent) !important;
+  background-color: color-mix(
+    in oklch,
+    var(--primary) 10%,
+    transparent
+  ) !important;
   color: var(--primary) !important;
 }
 
@@ -545,4 +561,29 @@ site-search kbd {
   color: var(--primary) !important;
   fill: var(--primary) !important;
   text-shadow: none !important;
+}
+
+/* ── Starlight's own semantic ramps ───────────────────────────────────────
+   Starlight ships built-in green/orange/red/blue/purple token ramps that its
+   asides, badges and link cards draw from. They are not part of custom.css,
+   so retokenising that file left them behind: the tip aside and the success
+   badge still rendered mint green. Map them onto the palette. */
+:root,
+:root[data-theme="dark"],
+:root[data-theme="light"] {
+  --sl-color-green: var(--success);
+  --sl-color-green-low: color-mix(in oklch, var(--success) 18%, transparent);
+  --sl-color-green-high: var(--success);
+
+  --sl-color-orange: var(--warning);
+  --sl-color-orange-low: color-mix(in oklch, var(--warning) 18%, transparent);
+  --sl-color-orange-high: var(--warning);
+
+  --sl-color-red: var(--destructive);
+  --sl-color-red-low: color-mix(in oklch, var(--destructive) 18%, transparent);
+  --sl-color-red-high: var(--destructive);
+
+  --sl-color-blue: var(--primary);
+  --sl-color-blue-low: color-mix(in oklch, var(--primary) 18%, transparent);
+  --sl-color-blue-high: var(--primary);
 }
