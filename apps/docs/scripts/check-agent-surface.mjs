@@ -309,20 +309,71 @@ if (!/auth(entication)? is optional/i.test(landing)) {
  * So flatten dist/index.html the way a converter does, honouring block-level
  * tags only, and assert the command survives intact.
  */
+/*
+ * A scanner, not a chain of regex replaces. Stripping `<script>` with
+ * `.replace(/<(script|style)\b[\s\S]*?<\/\1>/g, "")` is the exact pattern
+ * CodeQL's incomplete-multi-character-sanitization rule exists to catch, and
+ * it is right to: a regex cannot reliably find the end of a tag it does not
+ * tokenize. Walking the input once is both quieter and more correct.
+ */
+const BLOCK_TAGS = new Set([
+  "address", "article", "aside", "blockquote", "br", "dd", "div", "dl", "dt",
+  "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4",
+  "h5", "h6", "header", "hr", "li", "main", "nav", "ol", "p", "pre", "section",
+  "table", "tbody", "td", "tfoot", "th", "thead", "tr", "ul",
+]);
+const SKIP_CONTENT_TAGS = new Set(["script", "style", "template", "svg", "noscript"]);
+const ENTITIES = new Map([
+  ["nbsp", " "], ["amp", "&"], ["lt", "<"], ["gt", ">"], ["quot", '"'],
+  ["apos", "'"], ["#39", "'"], ["#039", "'"], ["#x27", "'"],
+]);
+
+const decodeEntities = (text) =>
+  text.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (whole, name) => {
+    const known = ENTITIES.get(name.toLowerCase());
+    if (known !== undefined) return known;
+    if (name.startsWith("#x") || name.startsWith("#X")) {
+      return String.fromCodePoint(Number.parseInt(name.slice(2), 16));
+    }
+    if (name.startsWith("#")) return String.fromCodePoint(Number.parseInt(name.slice(1), 10));
+    return whole;
+  });
+
 const flatten = (rawHtml) => {
-  const body = rawHtml.includes("<body") ? rawHtml.slice(rawHtml.indexOf("<body")) : rawHtml;
-  const BLOCK =
-    "div|p|li|tr|h[1-6]|section|header|footer|nav|ul|ol|table|main|article|br|pre|blockquote|dd|dt";
-  return body
-    .replace(/<(script|style)\b[\s\S]*?<\/\1>/g, "")
-    .replace(new RegExp(`</?(?:${BLOCK})\\b[^>]*>`, "g"), "\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&quot;/g, '"')
-    .replace(/&#0?39;|&apos;/g, "'")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&");
+  const out = [];
+  let i = rawHtml.indexOf("<body");
+  if (i === -1) i = 0;
+  let skipUntilCloseOf = null;
+
+  while (i < rawHtml.length) {
+    const lt = rawHtml.indexOf("<", i);
+    if (lt === -1) {
+      if (!skipUntilCloseOf) out.push(rawHtml.slice(i));
+      break;
+    }
+    if (!skipUntilCloseOf && lt > i) out.push(rawHtml.slice(i, lt));
+
+    const gt = rawHtml.indexOf(">", lt);
+    if (gt === -1) break;
+
+    const raw = rawHtml.slice(lt + 1, gt);
+    const closing = raw.startsWith("/");
+    const name = (closing ? raw.slice(1) : raw)
+      .split(/[\s/>]/, 1)[0]
+      .toLowerCase();
+
+    if (skipUntilCloseOf) {
+      if (closing && name === skipUntilCloseOf) skipUntilCloseOf = null;
+    } else if (!closing && SKIP_CONTENT_TAGS.has(name) && !raw.endsWith("/")) {
+      skipUntilCloseOf = name;
+    } else if (BLOCK_TAGS.has(name)) {
+      // A block boundary is a line break with no CSS required. This is the
+      // whole point of the check.
+      out.push("\n");
+    }
+    i = gt + 1;
+  }
+  return decodeEntities(out.join(""));
 };
 
 const homeText = flatten(read("index.html"));
@@ -353,9 +404,17 @@ for (const fused of homeText.match(/\bacme\w+/g) ?? []) {
     "adjacent text fused onto the command; the separator before it is CSS-only",
   );
 }
-// Each agent entrypoint must read as its own path, not one run of them.
+/* Each agent entrypoint must read as its own token, not one run of them.
+ * Set membership over the split text, rather than a regex built from the path,
+ * so there is no escaping to get wrong. */
+const homeTokens = new Set(
+  homeText
+    .split(/[\s,()]+/)
+    .map((token) => token.replace(/[.]+$/, ""))
+    .filter(Boolean),
+);
 for (const path of ["/agents.md", "/install.sh", "/scaffold-manifest.json"]) {
-  if (!new RegExp(`(^|[\\s(])${path.replace(/[.]/g, "\\.")}([\\s,.)]|$)`, "m").test(homeText)) {
+  if (!homeTokens.has(path)) {
     fail(
       `${path} does not stand alone in the flattened homepage`,
       "the link row needs block-level items; a flex gap is not a text separator",
