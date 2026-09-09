@@ -353,7 +353,11 @@ jobs:
 
           # Domain validation must match the renamer per label, not just on
           # charset: "acme-.com" has a label ending in a dash and used to pass.
-          for bad_domain in "acme-.com" "-acme.com" "acme..com" "acme." "acme" "acme.com-"; do
+          # "acme.com." is the case a per-label loop misses on its own: shell
+          # word splitting discards the trailing empty field, so it split into
+          # two valid labels and passed, then failed the renamer.
+          for bad_domain in "acme-.com" "-acme.com" "acme..com" "acme." "acme" \
+                            "acme.com-" "acme.com." ".acme.com" "acme...com"; do
             if sh "$INSTALLER" --project acme --domain "$bad_domain" --dry-run >/dev/null 2>&1; then
               echo "::error::install.sh accepted invalid domain '$bad_domain'"
               exit 1
@@ -374,6 +378,17 @@ jobs:
           fi
           grep -q 'staging=' "$INSTALLER" \
             || { echo "::error::install.sh no longer stages the clone"; exit 1; }
+
+          # The tree has to be MERGED in. A version that moved top-level entries
+          # and rm -rf'd each collision deleted apps/api/my-unrelated-work.txt,
+          # because the template also ships apps/. Only .git may be replaced
+          # wholesale, since two object stores cannot be interleaved.
+          grep -q 'cp -R "\$staging/\." "\$target_dir/"' "$INSTALLER" \
+            || { echo "::error::install.sh no longer merges the tree with cp -R"; exit 1; }
+          if grep -nE 'rm -rf "\$\{target_dir:\?\}/\$\{base' "$INSTALLER"; then
+            echo "::error::install.sh replaces whole top-level entries; merge instead"
+            exit 1
+          fi
 
           # install.sh must agree with .tsforge/scaffold-manifest.json on the
           # default ref and the health URLs. apps/docs check:agent-surface

@@ -243,6 +243,23 @@ for (const [needle, why] of [
     fail(`agents.md is missing ${why} (${needle})`, "edit apps/docs/public/agents.md");
   }
 }
+/* Onboarding claims that were wrong twice: registration does not set
+ * is_platform_admin (only apps/api/scripts/db/seed-superuser.ts does), and the
+ * seed skips an email that already exists rather than promoting it, so
+ * "register, then seed with that address" is a silent no-op. */
+if (/first user becomes|becomes the superuser/i.test(agents)) {
+  fail(
+    "agents.md says the first signup becomes the superuser",
+    "registration leaves is_platform_admin false; only seed-superuser.ts sets it",
+  );
+}
+if (!/not.{0,20}registered/i.test(agents)) {
+  fail(
+    "agents.md does not warn that the superuser seed needs an unregistered email",
+    "the seed skips an existing email instead of promoting it",
+  );
+}
+
 // The instruction an agent structurally cannot follow.
 if (/click\s+\*{0,2}Use this template/i.test(agents)) {
   fail(

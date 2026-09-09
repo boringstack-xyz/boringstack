@@ -245,6 +245,19 @@ domain_reject() {
 
 case "$domain" in
   *[!a-z0-9.-]*) domain_reject "only lowercase letters, digits, dots and dashes" ;;
+esac
+
+# Checked before the split, because `set -- $domain` with IFS='.' discards a
+# trailing empty field: "acme.com." split to exactly two valid labels and so
+# passed, then failed the renamer, whose regex requires the string to end
+# alphanumeric.
+case "$domain" in
+  .*) domain_reject "it starts with a dot" ;;
+  *.) domain_reject "it ends with a dot" ;;
+  *..*) domain_reject "it has an empty label" ;;
+esac
+
+case "$domain" in
   *.*) : ;;
   *) domain_reject "it needs at least one dot" ;;
 esac
@@ -486,24 +499,39 @@ fi
 [ -f "$staging/setup.sh" ] || die 4 "the clone does not look like BoringStack (no setup.sh)" \
   "the template layout may have changed; see $REPO_URL"
 
-# Move the tree in. The three globs cover dotfiles (.github, .git, .tsforge),
-# which a bare * would skip; each is guarded because an unmatched glob stays
-# literal in sh.
+# Merge the tree in. Never replace a directory wholesale: an earlier version
+# looped over top-level entries and ran `rm -rf "$target_dir/$base"` for each
+# collision, so installing into a directory that already had apps/ deleted
+# apps/api/my-unrelated-work.txt, because the template also ships apps/.
+#
+# `cp -R` over a "$staging/." source merges directories, overwrites colliding
+# files, and leaves everything else alone. It copies rather than renames, but
+# staging is on the same filesystem and correctness is worth the copy.
 mkdir -p "$target_dir" || die 4 "could not create $target_dir"
-for entry in "$staging"/* "$staging"/.[!.]* "$staging"/..?*; do
-  [ -e "$entry" ] || continue
-  base="${entry##*/}"
-  if [ -e "$target_dir/$base" ]; then
-    # Only reachable with --force, since preflight refuses a non-empty --dir
-    # otherwise. Say what is being replaced rather than doing it silently.
-    warn "replacing existing $target_dir/$base"
-    # ${var:?} so an empty expansion aborts instead of becoming `rm -rf /`.
-    rm -rf "${target_dir:?}/${base:?}"
-  fi
-  mv "$entry" "$target_dir/$base" \
-    || die 4 "could not move $base into $target_dir" \
-         "the clone is at $staging until this shell exits"
-done
+
+# .git is the one thing that cannot be merged: the installer brings a fresh
+# history, and interleaving two object stores produces a corrupt repository.
+# Replace it outright, loudly, rather than silently mixing them.
+if [ -d "$target_dir/.git" ]; then
+  warn "replacing the existing git repository in $target_dir"
+  warn "  its history is NOT preserved; move it aside first if you need it"
+  rm -rf "${target_dir:?}/.git"
+fi
+
+# Name the files about to be overwritten. .git is excluded because it is
+# thousands of objects and was just handled above.
+( cd "$staging" && find . -type f -not -path './.git/*' -print ) \
+  | while IFS= read -r rel; do
+      rel="${rel#./}"
+      if [ -e "$target_dir/$rel" ]; then
+        warn "overwriting $target_dir/$rel"
+      fi
+    done
+
+cp -R "$staging/." "$target_dir/" \
+  || die 4 "could not copy the template into $target_dir" \
+       "the clone is at $staging until this shell exits"
+
 rm -rf "$staging"
 
 [ -d "$target_dir" ] || die 4 "expected $target_dir to exist after scaffolding, but it does not"
@@ -625,11 +653,14 @@ say "  OpenAPI       http://localhost:7330/swagger"
 say ""
 say "  cd $project_dir"
 say ""
-say "Sign up at http://localhost:7331. Signup is open in dev, and it makes you"
-say "the owner of your own account. It does NOT make you a platform admin:"
-say "registration leaves is_platform_admin false. For that, set SUPERUSER_EMAIL"
-say "and SUPERUSER_PASSWORD in infra/compose/compose/.env and reboot, which runs"
-say "the seed that sets the flag."
+say "Sign up at http://localhost:7331. Signup is open in dev and makes you the"
+say "owner of your own account. It does NOT make you a platform admin:"
+say "registration leaves is_platform_admin false."
+say ""
+say "For a platform admin, set SUPERUSER_EMAIL and SUPERUSER_PASSWORD in"
+say "infra/compose/compose/.env and reboot. Use an address you have NOT"
+say "registered: the seed skips an email that already exists rather than"
+say "promoting it, so pointing it at your own account is a silent no-op."
 say ""
 say "Next:"
 say "  agent guide   https://boringstack.xyz/agents.md"

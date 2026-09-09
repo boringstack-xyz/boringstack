@@ -76,9 +76,13 @@ curl -si http://localhost:7330/swagger/json      # 200, OpenAPI document
 
 Signup is open in dev. Registering makes you the owner of your own account (every signup
 creates a personal account, an owner membership and a Free plan row in one transaction), but
-it does **not** make you a platform admin: `is_platform_admin` stays `false`. Only the seed
-sets that flag, so for an admin set `SUPERUSER_EMAIL` and `SUPERUSER_PASSWORD` in
-`infra/compose/compose/.env` and boot again.
+it does not make you a platform admin: `is_platform_admin` stays `false`.
+
+Only `apps/api/scripts/db/seed-superuser.ts` sets that flag. To get an admin, put
+`SUPERUSER_EMAIL` and `SUPERUSER_PASSWORD` in `infra/compose/compose/.env` and boot again,
+using an address you have **not** registered. The seed skips an email that already exists
+instead of promoting it, so aiming it at your own account does nothing and says so in the
+migrator log.
 
 When something is wrong:
 

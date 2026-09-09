@@ -144,7 +144,8 @@ Open `http://localhost:7331`.
 If you set `SUPERUSER_EMAIL` and `SUPERUSER_PASSWORD` in
 `compose/.env` before booting, sign in with those credentials. That
 path runs `scripts/db/seed-superuser.ts`, which is the only thing that
-sets `is_platform_admin`.
+sets `is_platform_admin`. It skips an email that already exists rather
+than promoting it, so give it an address you have not registered.
 
 Otherwise click "Sign up" and register. That makes you the owner of
 your own account, since every signup creates a personal account, an
