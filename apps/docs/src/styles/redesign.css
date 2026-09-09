@@ -1,0 +1,543 @@
+/* =====================================================================
+   Skin ported from tsforge (apps/docs/src/styles/redesign.css) so the two
+   sites read as one product. Loaded LAST in customCss, after custom.css,
+   so it owns the final look: OKLCH surfaces, cyan primary, sharp corners,
+   mono display headings.
+
+   Tokens come from tailwind.css. Nothing here defines a colour literally
+   except the two code-window traffic lights, which have no token.
+
+   custom.css is deliberately left intact underneath. It carries the
+   accessible-table wrapper styling, the mermaid theme, the scrollable-region
+   fixes and the inline-code reset for .bs-landing; re-deriving those would
+   have been a bigger change than skinning over them. Anything below that
+   contradicts custom.css wins by load order, not by !important, except
+   where Starlight's own media queries force the issue.
+
+   To revert: drop this file from customCss in astro.config.mjs.
+   ===================================================================== */
+
+:root,
+:root[data-theme="dark"],
+:root[data-theme="light"] {
+  --sl-font: var(--font-sans);
+  --sl-font-mono: var(--font-mono);
+
+  /* Surfaces */
+  --sl-color-bg: var(--background);
+  --sl-color-bg-nav: var(--background);
+  --sl-color-bg-sidebar: var(--background);
+  --sl-color-bg-inline-code: color-mix(in oklch, var(--primary) 14%, var(--card));
+  --sl-color-bg-accent: var(--primary);
+
+  /* Hairlines */
+  --sl-color-hairline: var(--border);
+  --sl-color-hairline-light: var(--border);
+  --sl-color-hairline-shade: var(--border);
+
+  /* Text */
+  --sl-color-text: var(--foreground);
+  --sl-color-text-accent: var(--primary);
+  --sl-color-text-invert: var(--primary-foreground);
+  --sl-color-white: var(--foreground);
+  --sl-color-black: var(--background);
+
+  /* Accent ramp */
+  --sl-color-accent: var(--primary);
+  --sl-color-accent-low: color-mix(in oklch, var(--primary) 18%, transparent);
+  --sl-color-accent-high: var(--primary);
+
+  /* Gray ramp mapped onto the muted/border tokens */
+  --sl-color-gray-1: var(--foreground);
+  --sl-color-gray-2: color-mix(in oklch, var(--foreground) 75%, var(--muted-foreground));
+  --sl-color-gray-3: var(--muted-foreground);
+  --sl-color-gray-4: var(--muted-foreground);
+  --sl-color-gray-5: var(--border-strong);
+  --sl-color-gray-6: var(--border);
+  --sl-color-gray-7: var(--card);
+
+  /* Sharp corners everywhere */
+  --sl-border-radius: 0px;
+}
+
+html,
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--sl-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* custom.css paints a gradient/glow wash on body; the skin is flat. */
+body {
+  background: var(--background) !important;
+}
+
+::selection {
+  background-color: color-mix(in oklch, var(--primary) 35%, transparent);
+  color: var(--foreground);
+}
+
+/* Headings use the mono display face, matching the landing. */
+.sl-markdown-content :is(h1, h2, h3, h4, h5, h6),
+h1[data-page-title],
+.content-panel h1 {
+  font-family: var(--sl-font-mono);
+  letter-spacing: -0.01em;
+}
+
+/* ── Top nav: same background as the page, just a hairline ─────────────── */
+header.header,
+body > .page > header.header {
+  border-bottom: 1px solid var(--border) !important;
+  background: var(--background) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────── */
+.sidebar-pane {
+  border-right: 1px solid var(--border);
+  background: var(--background);
+}
+
+nav.sidebar .top-level > li > details > summary .group-label .large,
+.sidebar-content .group-label > span {
+  font-family: var(--sl-font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.sidebar-content a {
+  border-radius: 0;
+  border-left: 1px solid transparent;
+  color: var(--muted-foreground);
+  font-size: 0.86rem;
+}
+
+.sidebar-content a:hover {
+  color: var(--foreground);
+  background: color-mix(in oklch, var(--card) 50%, transparent);
+}
+
+.sidebar-content a[aria-current="page"] {
+  border-left-color: var(--primary);
+  color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 8%, transparent);
+  font-weight: 500;
+}
+
+/* ── Table of contents ────────────────────────────────────────────────── */
+starlight-toc nav > h2,
+mobile-starlight-toc nav > h2 {
+  font-family: var(--sl-font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+}
+
+starlight-toc a {
+  border-left: 1px solid transparent;
+  border-radius: 0;
+  color: var(--muted-foreground);
+}
+
+starlight-toc a:hover,
+starlight-toc a[aria-current="true"] {
+  border-left-color: var(--primary);
+  color: var(--foreground);
+}
+
+/* ── Prose ───────────────────────────────────────────────────────────── */
+.sl-markdown-content {
+  color: color-mix(in oklch, var(--foreground) 88%, transparent);
+  line-height: 1.75;
+}
+
+/* The landing renders inside .sl-markdown-content, so this rule catches its
+ * links too. At (0,1,1) it outranks Tailwind's text-[...] utility (0,1,0),
+ * which turned every landing link and both accent buttons the same cyan as
+ * their own background. Excluding the landing inside :where() keeps the
+ * specificity unchanged and lets the components own their colour. */
+.sl-markdown-content a:not(:where(.not-content *, .bs-landing, .bs-landing *)) {
+  color: var(--primary);
+  text-underline-offset: 3px;
+}
+
+/* Flat inline code: hairline box, no glow. custom.css's version carried a
+   gradient plus an 18px accent bloom. */
+.sl-markdown-content :not(pre) > code {
+  border: 1px solid color-mix(in oklch, var(--primary) 30%, transparent);
+  border-radius: 0;
+  background: color-mix(in oklch, var(--primary) 12%, var(--card));
+  color: var(--foreground);
+  font-family: var(--sl-font-mono);
+  box-shadow: none;
+}
+
+/* The landing owns its own code presentation; keep custom.css's reset
+   winning over the rule above. */
+.sl-markdown-content .bs-landing :not(pre) > code {
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/* ── Code windows (Expressive Code) ──────────────────────────────────────
+   Flat, sharp, with a uniform three-dot header band drawn on the frame so
+   every block looks the same regardless of EC's own chrome. */
+.expressive-code {
+  --ec-brdRad: 0px;
+  --ec-frm-trmTtbDotsOpa: 0;
+}
+
+.expressive-code figure.frame {
+  position: relative;
+  box-shadow: none !important;
+  background: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: visible;
+}
+
+.expressive-code figure.frame::before {
+  background-image: none;
+}
+
+.expressive-code figure.frame figcaption.header {
+  display: none !important;
+}
+
+.expressive-code figure.frame pre {
+  position: relative;
+  border: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  background: var(--code-surface) !important;
+  box-shadow: none !important;
+  font-family: var(--sl-font-mono);
+  font-size: 13px;
+  padding-top: 2.7rem;
+}
+
+.expressive-code figure.frame pre > code {
+  font-family: var(--sl-font-mono);
+}
+
+/* Traffic lights. The amber has no token of its own, so --warning carries it. */
+.expressive-code figure.frame > pre::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  left: 16px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--destructive);
+  box-shadow:
+    16px 0 0 var(--warning),
+    32px 0 0 var(--success);
+}
+
+.expressive-code figure.frame > pre::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 2.3rem;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--border);
+}
+
+.expressive-code .copy {
+  top: 0.4rem !important;
+  bottom: auto !important;
+  right: 0.5rem !important;
+  height: auto !important;
+}
+
+.expressive-code .copy button {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 0;
+  border: 1px solid var(--border);
+  background: color-mix(in oklch, var(--card) 70%, transparent);
+}
+
+.expressive-code .copy button:hover {
+  border-color: var(--primary);
+}
+
+/* ── Asides: left rule plus a mono-caps label ─────────────────────────── */
+.sl-markdown-content .starlight-aside {
+  border-radius: 0;
+  border: none;
+  border-left: 2px solid var(--primary);
+  background: color-mix(in oklch, var(--primary) 6%, transparent);
+  padding: 0.85rem 1rem;
+}
+
+.starlight-aside__title {
+  font-family: var(--sl-font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.7rem;
+  color: var(--muted-foreground);
+}
+
+.starlight-aside--tip {
+  border-left-color: var(--success);
+  background: color-mix(in oklch, var(--success) 6%, transparent);
+}
+
+.starlight-aside--caution {
+  border-left-color: var(--warning);
+  background: color-mix(in oklch, var(--warning) 7%, transparent);
+}
+
+.starlight-aside--danger {
+  border-left-color: var(--destructive);
+  background: color-mix(in oklch, var(--destructive) 7%, transparent);
+}
+
+/* ── Sharp corners for everything that still rounds ───────────────────── */
+.sl-markdown-content :is(.sl-link-button),
+.sl-markdown-content table,
+.sl-markdown-content th,
+.sl-markdown-content td,
+.sl-markdown-content blockquote,
+.sl-markdown-content img,
+.card,
+.sl-badge,
+dialog,
+[role="dialog"] {
+  border-radius: 0;
+}
+
+/* Search field and its kbd hint. */
+site-search button[data-open-modal] {
+  border-radius: 0;
+  border: 1px solid var(--border);
+  background: color-mix(in oklch, var(--card) 60%, transparent);
+  font-family: var(--sl-font-mono);
+  font-size: 0.78rem;
+}
+
+site-search button[data-open-modal]:hover {
+  border-color: var(--border-strong);
+}
+
+site-search kbd {
+  border-radius: 0;
+  background: none;
+  border: 1px solid var(--border);
+  font-family: var(--sl-font-mono);
+}
+
+/* ── Reading-time / verified badges from PageTitle.astro ──────────────── */
+.bs-reading-time,
+.bs-verified {
+  border-radius: 0 !important;
+  background: color-mix(in oklch, var(--primary) 8%, transparent) !important;
+  border-color: color-mix(in oklch, var(--primary) 26%, transparent) !important;
+  color: var(--muted-foreground) !important;
+  font-family: var(--sl-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.68rem !important;
+}
+
+.bs-verified {
+  background: color-mix(in oklch, var(--accent) 8%, transparent) !important;
+  border-color: color-mix(in oklch, var(--accent) 26%, transparent) !important;
+}
+
+/* ── Landing tokens ──────────────────────────────────────────────────────
+   The landing components in src/components/landing/ address colour through
+   --bs-* variables that custom.css defines as a hardcoded green ramp, once
+   for dark and again for light. Rather than edit every component, point the
+   whole set at the OKLCH tokens: both themes then follow the palette
+   automatically, and there is one source of truth instead of three.
+
+   Same specificity as custom.css's `.bs-landing`, so this wins on load
+   order. redesign.css must stay last in customCss for that to hold. */
+.bs-landing,
+[data-theme="light"] .bs-landing {
+  --bs-bg: var(--background);
+  --bs-bg-soft: var(--card);
+  --bs-panel: var(--card);
+  --bs-panel-strong: var(--secondary);
+  --bs-line: var(--border);
+  --bs-line-strong: var(--border-strong);
+  --bs-text: var(--foreground);
+  --bs-muted: var(--muted-foreground);
+  --bs-muted-strong: color-mix(in oklch, var(--foreground) 78%, var(--muted-foreground));
+  --bs-accent: var(--primary);
+  --bs-accent-strong: var(--primary);
+  --bs-accent-low: color-mix(in oklch, var(--primary) 12%, transparent);
+  --bs-accent-ink: var(--primary-foreground);
+  --bs-success: var(--success);
+  --bs-code: var(--foreground);
+  /* The skin is flat: no drop shadows anywhere on the landing. */
+  --bs-shadow: transparent;
+}
+
+/* Section headings on the landing take the mono display face, matching the
+   docs headings and tsforge. */
+.bs-landing :is(h1, h2, h3) {
+  font-family: var(--sl-font-mono);
+  letter-spacing: -0.02em;
+}
+
+/* Flat: custom.css hangs a 22px/60px shadow off the hero code panel and the
+   section cards. */
+.bs-landing [data-bs-code-preview],
+.bs-landing [class*="shadow-"] {
+  box-shadow: none;
+}
+
+/* ── Landing display scale ────────────────────────────────────────────────
+   The section components each carried their own size (2.9rem, 3.1rem, 4rem
+   and a clamp up to 4.8rem), tuned for the previous sans headline face. In
+   the mono display face those render 15-20% wider per character, so the
+   large end wrapped to four lines and the sections no longer agreed with
+   each other.
+
+   One scale, applied here rather than in eight components. `.bs-landing h2`
+   is (0,1,1) and outranks Tailwind's text-[...] utilities at (0,1,0), so the
+   component classes stay harmless where they are. */
+.bs-landing h1 {
+  font-size: clamp(1.9rem, 4vw, 3.05rem);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  max-width: 22ch;
+}
+
+.bs-landing h2 {
+  font-size: clamp(1.55rem, 2.7vw, 2.3rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  /* The SectionHeading primitive caps its title at 13ch for the old face,
+     which forced a five-line stack in mono. */
+  max-width: 28ch;
+}
+
+.bs-landing h3 {
+  font-size: clamp(1.05rem, 1.4vw, 1.2rem);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+/* Eyebrows: the Eyebrow primitive is sans uppercase; the skin's is mono with
+   wide tracking. Restyled centrally so every section matches the hero. */
+.bs-landing .mono-caps,
+.bs-landing p:has(+ h2),
+.bs-landing [class*="uppercase"] {
+  font-family: var(--sl-font-mono);
+  letter-spacing: 0.2em;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+/* ── Remaining green traces ───────────────────────────────────────────────
+   custom.css defines its whole palette as literal emerald hex values across
+   four token families. Overriding the families here is the leverage point:
+   every downstream rule (asides, diagram labels, syntax highlighting, code
+   frames, the sidebar) follows without touching custom.css itself.
+
+   Anything still green after this is a hardcoded literal in a rule rather
+   than a token, and is handled explicitly below. */
+:root,
+:root[data-theme="dark"],
+:root[data-theme="light"] {
+  --sl-color-accent-ink: var(--primary-foreground);
+  --sl-color-purple: var(--accent);
+  --sl-color-purple-low: color-mix(in oklch, var(--accent) 20%, transparent);
+  --sl-color-purple-high: var(--accent);
+
+  /* Docs chrome */
+  --bs-doc-line: var(--border);
+  --bs-doc-line-strong: var(--border-strong);
+  --bs-doc-glow: transparent;
+  --bs-doc-panel: var(--card);
+  --bs-doc-panel-strong: var(--secondary);
+  --bs-doc-code-bg: var(--code-surface);
+  --bs-doc-code-bg-soft: var(--card);
+  --bs-doc-code-text: var(--foreground);
+  --bs-doc-code-muted: var(--muted-foreground);
+  --bs-doc-inline-bg: color-mix(in oklch, var(--primary) 12%, transparent);
+  --bs-doc-aside-bg: color-mix(in oklch, var(--primary) 6%, transparent);
+
+  /* Semantic hues used by callouts and diagram accents */
+  --bs-doc-mint: var(--primary);
+  --bs-doc-cyan: var(--primary);
+  --bs-doc-amber: var(--warning);
+  --bs-doc-pink: var(--accent);
+  --bs-doc-red: var(--destructive);
+}
+
+/* Expressive Code: selection, marked lines and diff insertions were emerald. */
+.expressive-code {
+  --ec-codeSelBg: color-mix(in oklch, var(--primary) 30%, transparent);
+  --ec-tm-markBg: color-mix(in oklch, var(--primary) 16%, transparent);
+  --ec-tm-insBg: color-mix(in oklch, var(--success) 14%, transparent);
+  --ec-tm-insBrdCol: color-mix(in oklch, var(--success) 65%, transparent);
+}
+
+/* custom.css paints a green wash across the code frame and its header band;
+   the skin's frames are flat. */
+.expressive-code .frame pre,
+.expressive-code .frame .header {
+  background-image: none !important;
+}
+
+/* Syntax tokens: custom.css remaps two theme colours onto emerald via
+   attribute selectors on the inline style. Same selectors, new hues. */
+.expressive-code .ec-line span[style*="#C5E478"] {
+  --0: var(--primary) !important;
+  --1: var(--primary) !important;
+}
+
+.expressive-code .ec-line span[style*="#AA0982"] {
+  --0: var(--accent) !important;
+  --1: var(--accent) !important;
+}
+
+/* Asides: custom.css sets these per variant, so the note variant needs the
+   same treatment as the others. */
+.sl-markdown-content .starlight-aside--note {
+  --bs-aside-accent: var(--primary);
+  --bs-aside-title: var(--primary);
+}
+
+/* The active sidebar item in custom.css is !important, so matching its
+   specificity is not enough. */
+.sidebar-pane a[aria-current="page"],
+.sidebar-pane a[aria-current="page"]:focus,
+[data-theme="light"] .sidebar-pane a[aria-current="page"],
+[data-theme="light"] .sidebar-pane a[aria-current="page"]:focus {
+  background-color: color-mix(in oklch, var(--primary) 10%, transparent) !important;
+  color: var(--primary) !important;
+}
+
+/* Mermaid: the diagram palette itself lives in astro.config.mjs
+   (themeVariables, build-time JS). These are the CSS-side glows and
+   light-theme label overrides custom.css adds on top. */
+.mermaid svg,
+[data-theme="light"] .mermaid svg {
+  filter: none !important;
+}
+
+[data-theme="light"] .mermaid-zoom-dialog svg .edgeLabel,
+[data-theme="light"] .mermaid svg .edgeLabel,
+[data-theme="light"] .mermaid-zoom-dialog svg .messageText,
+[data-theme="light"] .mermaid svg .cluster-label foreignObject div {
+  color: var(--primary) !important;
+  fill: var(--primary) !important;
+  text-shadow: none !important;
+}

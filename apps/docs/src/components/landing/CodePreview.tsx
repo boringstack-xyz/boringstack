@@ -4,10 +4,10 @@ import { useId, useState } from "react";
 import { codeTabs, type CodeLine } from "./landingContent";
 
 const tabBaseClass =
-  "relative m-0 flex min-h-[3.35rem] cursor-pointer items-center justify-center whitespace-nowrap border-0 border-b-2 border-[var(--bs-line-strong)] bg-transparent px-4 py-0 text-center font-sans text-[0.82rem] font-extrabold leading-tight text-[var(--bs-muted)] outline-none transition-colors data-[active=true]:border-[var(--bs-accent)] data-[active=true]:text-[var(--bs-accent-strong)] focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--bs-accent)] min-[641px]:px-[1.1rem] min-[641px]:text-[0.88rem]";
+  "relative m-0 flex min-h-[3.35rem] cursor-pointer items-center justify-center whitespace-nowrap border-0 border-b-2 border-[var(--bs-line-strong)] bg-transparent px-4 py-0 text-center font-mono text-[0.76rem] font-medium leading-tight text-[var(--bs-muted)] outline-none transition-colors data-[active=true]:border-[var(--bs-accent)] data-[active=true]:text-[var(--bs-accent-strong)] focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[var(--bs-accent)] min-[641px]:px-[1.1rem] min-[641px]:text-[0.8rem]";
 
 const panelClass =
-  "!mt-0 grid min-h-0 gap-[0.24rem] overflow-x-auto bg-[linear-gradient(180deg,rgba(255,255,255,0.025),transparent),color-mix(in_srgb,var(--bs-bg)_82%,#000_18%)] p-4 font-mono text-[0.82rem] leading-[1.55] text-[var(--bs-code)] min-[641px]:h-[18.5rem] min-[641px]:p-[1.25rem_1.35rem] min-[641px]:text-[0.94rem]";
+  "!mt-0 grid min-h-0 gap-[0.24rem] overflow-x-auto bg-[color-mix(in_oklch,var(--bs-bg)_60%,transparent)] p-4 font-mono text-[0.8rem] leading-[1.6] text-[var(--bs-code)] min-[641px]:h-[19rem] min-[641px]:p-[1.25rem_1.35rem] min-[641px]:text-[0.8rem]";
 
 function CodeLineView({ line }: { line: CodeLine }) {
   if (line.kind === "spacer") {
@@ -43,7 +43,7 @@ export function CodePreview() {
   return (
     <div className="bs-hero-code relative z-[1] mt-[0.4rem] w-full min-w-0 max-w-full lg:mt-0">
       <div
-        className="overflow-hidden rounded-lg border border-[var(--bs-line-strong)] bg-[color-mix(in_srgb,var(--bs-panel)_90%,transparent)] shadow-[0_22px_60px_var(--bs-shadow)]"
+        className="overflow-hidden border border-[var(--bs-line)] bg-[color-mix(in_oklch,var(--bs-panel)_70%,transparent)]"
         data-bs-code-preview
       >
         <div

@@ -3,3 +3,177 @@
 
 @source "../components/**/*.{astro,tsx,jsx,ts,js}";
 @source "../content/**/*.{mdx,astro,tsx,jsx}";
+
+/* =====================================================================
+   Design tokens, ported from tsforge (apps/docs) so the two sites read as
+   one product: OKLCH ramp, cyan primary, zero radius, Inter + JetBrains
+   Mono. `redesign.css` maps these onto Starlight's --sl-* variables and
+   owns the final look; this file only declares the palette and the
+   utilities the landing components use.
+
+   tsforge is dark-only and forces `color-scheme: dark` on every theme.
+   BoringStack ships a working theme toggle in its header, so the light
+   ramp below is derived from the same hues rather than dropped. Removing
+   the `[data-theme="light"]` block is all it takes to go dark-only.
+   ===================================================================== */
+
+:root,
+:root[data-theme="dark"] {
+  --radius: 0rem;
+
+  --background: oklch(0.16 0.02 265);
+  --foreground: oklch(0.96 0.01 260);
+  --card: oklch(0.21 0.03 265);
+  --card-foreground: oklch(0.96 0.01 260);
+  --popover: oklch(0.21 0.03 265);
+  --popover-foreground: oklch(0.96 0.01 260);
+  --primary: oklch(0.78 0.14 195);
+  --primary-foreground: oklch(0.12 0.02 265);
+  --secondary: oklch(0.27 0.03 265);
+  --secondary-foreground: oklch(0.96 0.01 260);
+  --muted: oklch(0.24 0.03 265);
+  --muted-foreground: oklch(0.68 0.02 260);
+  --accent: oklch(0.62 0.18 300);
+  --accent-foreground: oklch(0.96 0.01 260);
+  --destructive: oklch(0.65 0.22 22);
+  --destructive-foreground: oklch(0.96 0.01 260);
+  --success: oklch(0.78 0.18 155);
+  --warning: oklch(0.78 0.16 85);
+  --border: oklch(0.32 0.03 265);
+  --border-strong: oklch(0.42 0.04 265);
+  --input: oklch(0.3 0.04 265);
+  --ring: oklch(0.78 0.14 195);
+
+  /* The code-window surface sits a touch below --background so a block
+     reads as inset rather than floating. */
+  --code-surface: oklch(0.13 0.02 265);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* Same hues, inverted lightness. Primary drops to L 0.52 because the dark
+   ramp's L 0.78 cyan cannot carry 4.5:1 against a near-white page. */
+:root[data-theme="light"] {
+  --background: oklch(0.99 0.003 260);
+  --foreground: oklch(0.21 0.02 265);
+  --card: oklch(0.97 0.006 260);
+  --card-foreground: oklch(0.21 0.02 265);
+  --popover: oklch(0.97 0.006 260);
+  --popover-foreground: oklch(0.21 0.02 265);
+  --primary: oklch(0.52 0.11 210);
+  --primary-foreground: oklch(0.99 0.003 260);
+  --secondary: oklch(0.94 0.008 260);
+  --secondary-foreground: oklch(0.21 0.02 265);
+  --muted: oklch(0.95 0.006 260);
+  --muted-foreground: oklch(0.44 0.02 260);
+  --accent: oklch(0.47 0.17 300);
+  --accent-foreground: oklch(0.99 0.003 260);
+  --destructive: oklch(0.52 0.2 22);
+  --destructive-foreground: oklch(0.99 0.003 260);
+  --success: oklch(0.5 0.14 155);
+  --warning: oklch(0.55 0.13 75);
+  --border: oklch(0.89 0.008 260);
+  --border-strong: oklch(0.76 0.015 260);
+  --input: oklch(0.88 0.01 260);
+  --ring: oklch(0.52 0.11 210);
+  --code-surface: oklch(0.96 0.006 260);
+}
+
+@theme inline {
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-full: 9999px;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+/* ── Utilities the landing sections use ───────────────────────────────── */
+
+/* Section eyebrows: mono, uppercase, wide tracking. Paired with a short
+   rule to its left in the hero and section headings. */
+@utility mono-caps {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.7rem;
+  color: var(--color-muted-foreground);
+}
+
+@utility hairline-t {
+  border-top: 1px solid var(--color-border);
+}
+@utility hairline-b {
+  border-bottom: 1px solid var(--color-border);
+}
+@utility hairline-l {
+  border-left: 1px solid var(--color-border);
+}
+@utility hairline-r {
+  border-right: 1px solid var(--color-border);
+}
+
+/* The graph-paper wash behind the hero. Signature element of the skin. */
+@utility grid-bg {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in oklch, var(--color-border) 60%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklch, var(--color-border) 60%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 72px 72px;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out both;
+}
+
+/* WCAG 2.2.2: honour a reduced-motion request. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up {
+    animation: none !important;
+  }
+}

@@ -149,68 +149,83 @@ export default defineConfig({
           useMaxWidth: true,
         },
         themeVariables: {
+          /*
+           * Diagram palette, kept in step with the OKLCH tokens in
+           * tailwind.css. Mermaid's theme is build-time JavaScript and cannot
+           * read CSS variables, so these are the hex equivalents:
+           *   primary  cyan    oklch(0.78 0.14 195) -> #00d2d3
+           *   accent   violet  oklch(0.62 0.18 300) -> #9867e1
+           *   warning  amber   oklch(0.78 0.16 85)  -> #e6ad00
+           *   fg               oklch(0.96 0.01 260) -> #eef2f9
+           *   card             oklch(0.21 0.03 265) -> #111826
+           *   border           oklch(0.32 0.03 265) -> #2b3342
+           * Update both together, or diagrams drift back to a different accent
+           * than the rest of the site.
+           */
+
           // Surfaces: Starlight owns the page background.
           background: "transparent",
-          mainBkg: "rgba(74, 222, 128, 0.14)",
-          secondBkg: "rgba(103, 232, 249, 0.10)",
-          tertiaryColor: "rgba(240, 171, 252, 0.10)",
-          clusterBkg: "rgba(74, 222, 128, 0.05)",
-          clusterBorder: "rgba(134, 239, 172, 0.42)",
+          mainBkg: "rgba(0, 210, 211, 0.12)",
+          secondBkg: "rgba(152, 103, 225, 0.12)",
+          tertiaryColor: "rgba(230, 173, 0, 0.10)",
+          clusterBkg: "rgba(0, 210, 211, 0.04)",
+          clusterBorder: "rgba(0, 210, 211, 0.38)",
 
-          // Primary palette: emerald, the BoringStack accent.
-          primaryColor: "rgba(74, 222, 128, 0.16)",
-          primaryBorderColor: "#4ade80",
-          primaryTextColor: "#f0fdf4",
+          // Primary palette: cyan, the BoringStack accent.
+          primaryColor: "rgba(0, 210, 211, 0.14)",
+          primaryBorderColor: "#00d2d3",
+          primaryTextColor: "#eef2f9",
 
-          // Secondary palette: cyan accent for alt nodes.
-          secondaryColor: "rgba(103, 232, 249, 0.12)",
-          secondaryBorderColor: "#67e8f9",
-          secondaryTextColor: "#cffafe",
+          // Secondary palette: violet for alternate nodes.
+          secondaryColor: "rgba(152, 103, 225, 0.14)",
+          secondaryBorderColor: "#9867e1",
+          secondaryTextColor: "#eef2f9",
 
-          // Tertiary palette: pink accent.
-          tertiaryBorderColor: "#f0abfc",
-          tertiaryTextColor: "#fae8ff",
+          // Tertiary palette: amber.
+          tertiaryBorderColor: "#e6ad00",
+          tertiaryTextColor: "#eef2f9",
 
           // Edges / lines.
-          lineColor: "#86efac",
-          arrowheadColor: "#86efac",
+          lineColor: "#5f93a8",
+          arrowheadColor: "#00d2d3",
 
           // Text & default node.
-          textColor: "#f0fdf4",
-          nodeBorder: "#4ade80",
-          nodeTextColor: "#f0fdf4",
-          titleColor: "#dcfce7",
+          textColor: "#eef2f9",
+          nodeBorder: "#2b3342",
+          nodeTextColor: "#eef2f9",
+          titleColor: "#eef2f9",
 
           // Edge label chips: mermaid paints a `.labelBkg` div per edge even when
           // there's no label. We restore the colored backing so real labels cover
           // the edge line behind their text, then strip empty edge labels via JS
           // (see the wireMermaidCleanup head script).
-          edgeLabelBackground: "rgba(13, 15, 18, 0.92)",
-          labelBackground: "rgba(13, 15, 18, 0.92)",
-          labelTextColor: "#f0fdf4",
+          edgeLabelBackground: "rgba(9, 13, 22, 0.94)",
+          labelBackground: "rgba(9, 13, 22, 0.94)",
+          labelTextColor: "#9199a5",
           labelBoxBorderColor: "transparent",
 
           // Notes (sequence / generic).
-          noteBkgColor: "rgba(134, 239, 172, 0.12)",
-          noteTextColor: "#dcfce7",
-          noteBorderColor: "#4ade80",
+          noteBkgColor: "rgba(0, 210, 211, 0.10)",
+          noteTextColor: "#eef2f9",
+          noteBorderColor: "#00d2d3",
 
           // Sequence diagram surfaces.
-          actorBkg: "rgba(74, 222, 128, 0.16)",
-          actorBorder: "#4ade80",
-          actorTextColor: "#f0fdf4",
-          actorLineColor: "rgba(134, 239, 172, 0.4)",
-          signalColor: "#86efac",
-          signalTextColor: "#f0fdf4",
-          loopTextColor: "#dcfce7",
-          activationBkgColor: "rgba(74, 222, 128, 0.22)",
-          activationBorderColor: "#4ade80",
-          sequenceNumberColor: "#0b0d11",
+          actorBkg: "rgba(0, 210, 211, 0.12)",
+          actorBorder: "#00d2d3",
+          actorTextColor: "#eef2f9",
+          actorLineColor: "rgba(0, 210, 211, 0.34)",
+          signalColor: "#5f93a8",
+          signalTextColor: "#eef2f9",
+          loopTextColor: "#9199a5",
+          activationBkgColor: "rgba(0, 210, 211, 0.18)",
+          activationBorderColor: "#00d2d3",
+          sequenceNumberColor: "#03060d",
 
-          // Typography.
+          // Typography: the mono display face carries diagram labels too, so a
+          // node reads like the filename it usually names.
           fontFamily:
-            "'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-          fontSize: "14px",
+            "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace",
+          fontSize: "13px",
         },
       },
     }),
@@ -219,7 +234,18 @@ export default defineConfig({
       description:
         "The production-grade SaaS starter, built to be set up by an agent. Auth, billing, queues, email and observability already wired, with the architecture enforced by lint and CI. MIT, open source.",
       favicon: "/favicon.svg",
-      customCss: ["./src/styles/tailwind.css", "./src/styles/custom.css"],
+      /*
+       * Load order matters. redesign.css is the skin ported from tsforge and
+       * has to come last so it owns the final look; custom.css stays intact
+       * underneath for the accessible-table wrapper, the mermaid theme and
+       * the .bs-landing inline-code reset. Removing the last entry reverts
+       * the site to the previous green/rounded look.
+       */
+      customCss: [
+        "./src/styles/tailwind.css",
+        "./src/styles/custom.css",
+        "./src/styles/redesign.css",
+      ],
       plugins: [
         /*
          * Agent-facing documentation sets. An agent pointed at this domain
@@ -351,6 +377,25 @@ The full config surface is machine-readable at https://boringstack.xyz/scaffold-
         ThemeProvider: "./src/components/ThemeProvider.astro",
       },
       head: [
+        {
+          tag: "link",
+          attrs: { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        },
+        {
+          tag: "link",
+          attrs: {
+            rel: "preconnect",
+            href: "https://fonts.gstatic.com",
+            crossorigin: true,
+          },
+        },
+        {
+          tag: "link",
+          attrs: {
+            rel: "stylesheet",
+            href: "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap",
+          },
+        },
         /*
          * Open Graph + Twitter card meta. Starlight injects og:title and
          * og:description from frontmatter automatically, but it does NOT
