@@ -44,6 +44,12 @@ paths = [
   # `generic-api-key` rule flags the provider/secret-keyword proximity,
   # but the file holds only key names and placeholder config — no values.
   '''\.tsforge/scaffold-manifest\.json''',
+  # apps/docs publishes that manifest byte-identically at
+  # boringstack.xyz/scaffold-manifest.json (generate:scaffold-manifest, drift-
+  # checked in build:ci), so the copy trips the same false positive on the same
+  # line: `"requiresSecretsWhen": "AI_ENABLED=true"` is a toggle expression, not
+  # a value. Both paths need the entry or the copy fails the push gate.
+  '''apps/docs/public/scaffold-manifest\.json''',
 ]
 # Docs setup recipes use the literal placeholder
 # `<set-from-your-secret-manager>` as the example value for secret-valued
