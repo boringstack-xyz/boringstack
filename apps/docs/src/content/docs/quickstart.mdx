@@ -142,10 +142,15 @@ a fast laptop.
 Open `http://localhost:7331`.
 
 If you set `SUPERUSER_EMAIL` and `SUPERUSER_PASSWORD` in
-`compose/.env` before booting, sign in with those credentials.
-Otherwise click "Sign up" on the form and register a new account; that
-user becomes the first user in the system. You land on a dashboard
-that's intentionally empty. Start building from here.
+`compose/.env` before booting, sign in with those credentials. That
+path runs `scripts/db/seed-superuser.ts`, which is the only thing that
+sets `is_platform_admin`.
+
+Otherwise click "Sign up" and register. That makes you the owner of
+your own account, since every signup creates a personal account, an
+owner membership and a Free plan row in one transaction. It does not
+make you a platform admin, whatever order you register in. You land on
+a dashboard that's intentionally empty. Start building from here.
 
 ## 6. Build your first feature
 

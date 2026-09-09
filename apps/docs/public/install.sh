@@ -24,6 +24,15 @@
 
 set -eu
 
+# Byte collation, not the caller's locale. Under en_US.UTF-8 (and most other
+# non-C locales) a `case` range like [a-z] collates as aAbBcC..., so it MATCHES
+# uppercase: `--project ACME` and `--domain ACME.com` both passed validation and
+# then failed in scripts/rename-project.sh, whose regexes are lowercase-only,
+# after the GitHub repository already existed. Every range check below depends
+# on this line.
+LC_ALL=C
+export LC_ALL
+
 REPO_SLUG="boringstack-xyz/boringstack"
 REPO_URL="https://github.com/${REPO_SLUG}"
 
@@ -185,8 +194,15 @@ case "$project" in
       "npm package names and Docker container names cannot start with a digit or dash" \
       "try: --project $(suggest_name "$project")" ;;
 esac
+# Deliberately stricter than the renamer here, which allows a trailing dash.
+# The renamer derives image names as <project>-api, so "acme-" produces
+# "acme--api", and GHCR permits only a single separator between alphanumeric
+# runs, making that an invalid image name. Rejecting costs exit 2 before any
+# side effect; allowing it costs a broken registry push later.
 case "$project" in
-  *-) die 2 "project name '$project' cannot end with a dash" ;;
+  *-) die 2 "project name '$project' cannot end with a dash" \
+        "the renamer derives <project>-api, so this would give 'acme--api'" \
+        "GHCR rejects a double separator in an image name" ;;
 esac
 project_len=${#project}
 if [ "$project_len" -lt 2 ] || [ "$project_len" -gt 31 ]; then
@@ -212,15 +228,41 @@ case "$target_dir" in
       "paths outside that set break the --json output and need shell quoting" ;;
 esac
 
-# A domain is only cosmetic here (seeded mailboxes), but the renamer rejects a
-# malformed one, so catch it before the repo exists.
+# The domain is only cosmetic here (it seeds the noreply@ and demo@ mailboxes),
+# but the renamer rejects a malformed one, so it has to be caught before the
+# repo exists. Matching the renamer means matching it per label:
+#
+#   ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$
+#
+# Every label must start AND end alphanumeric. A charset-plus-shape check on the
+# whole string is not equivalent: it accepts "acme-.com", whose first label ends
+# in a dash, and that failed in phase 3 after the repository already existed.
+domain_reject() {
+  die 2 "domain '$domain' is not a valid hostname: $1" \
+    "each dot-separated label must start and end with a letter or digit" \
+    "example: --domain acme.com"
+}
+
 case "$domain" in
-  *[!a-z0-9.-]* | .* | *. | *..*)
-    die 2 "domain '$domain' is not a lowercase hostname" \
-      "example: --domain acme.com" ;;
+  *[!a-z0-9.-]*) domain_reject "only lowercase letters, digits, dots and dashes" ;;
   *.*) : ;;
-  *) die 2 "domain '$domain' needs at least one dot" "example: --domain acme.com" ;;
+  *) domain_reject "it needs at least one dot" ;;
 esac
+
+# Walk the labels. Setting IFS for the split is why this is a subshell-free
+# loop over $domain with IFS restored straight after.
+domain_old_ifs="$IFS"
+IFS='.'
+# shellcheck disable=SC2086  # deliberate word split on IFS to walk the labels
+set -- $domain
+IFS="$domain_old_ifs"
+[ $# -ge 2 ] || domain_reject "it needs at least one dot"
+for label in "$@"; do
+  [ -n "$label" ] || domain_reject "it has an empty label"
+  case "$label" in
+    -* | *-) domain_reject "label '$label' starts or ends with a dash" ;;
+  esac
+done
 
 # ------------------------------------------------------------------ plan
 
@@ -373,22 +415,24 @@ phase_ok
 
 phase 2 scaffold
 
-# Clone straight into --dir. git accepts an existing empty directory, and
-# preflight has already established that --dir is empty or that --force was
-# passed, so there is nothing to move afterwards.
+# Clone into a staging directory beside --dir, then move the tree in. Never
+# touch what is already in --dir.
 #
-# An earlier version cloned to a scratch directory and copied the tree across
-# with tar. That raced with git writing .git (the clone path runs git init and
-# an initial commit immediately after), producing "Couldn't visit directory
-# .git/objects/..". Cloning in place removes both the race and the copy.
-mkdir -p "$target_dir" || die 4 "could not create $target_dir"
-
-# Empty the destination between attempts. Only reached for a directory
-# preflight accepted, and a failed clone leaves a partial .git that makes the
-# next attempt fail on "already exists and is not an empty directory".
-clear_target() {
-  find "$target_dir" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
-}
+# An earlier version cloned straight into --dir and emptied it first, so that a
+# retry would not hit "already exists and is not an empty directory". With
+# --force on a non-empty destination that deleted the caller's files *before*
+# the clone was known to succeed, and a failed clone left them gone. --force
+# means "proceed into a directory that has contents", not "erase them".
+#
+# Staging beside the destination rather than in $TMPDIR keeps the move on one
+# filesystem, so it is a rename rather than a copy, and it sidesteps the race an
+# even earlier version hit when tar read .git while git was still writing it.
+parent_dir="$(dirname "$target_dir")"
+mkdir -p "$parent_dir" || die 4 "could not create $parent_dir"
+staging="$parent_dir/.boringstack-install.$$"
+rm -rf "$staging"
+# Only ever removes the staging directory, which belongs to this run.
+trap 'rm -rf "$staging"' EXIT INT TERM
 
 if [ "$use_gh" -eq 1 ]; then
   # `gh repo create --clone` always lands in ./<name> with no way to redirect
@@ -399,34 +443,38 @@ if [ "$use_gh" -eq 1 ]; then
        "check 'gh auth status' and that the name '$project' is free in your account" \
        "or take the clone path instead: run 'gh auth logout', or unset GH_TOKEN"
 
-  # A template copy is not instant server-side, so the first clone can 404.
+  # A template copy is not instant server-side. The clone can 404, but it can
+  # also SUCCEED against a repository GitHub has created and not yet populated,
+  # printing "you appear to have cloned an empty repository" and exiting 0. So
+  # the retry condition is "the tree arrived", not "the command worked".
   attempt=0
   while : ; do
-    clear_target
-    if gh repo clone "$project" "$target_dir" >&2; then
+    rm -rf "$staging"
+    if gh repo clone "$project" "$staging" >&2 && [ -f "$staging/setup.sh" ]; then
       break
     fi
     attempt=$((attempt + 1))
-    if [ "$attempt" -ge 6 ]; then
-      die 4 "created $project but could not clone it after 6 attempts" \
+    if [ "$attempt" -ge 8 ]; then
+      die 4 "created $project but its contents never arrived after 8 attempts" \
         "the repository exists, so do not rerun this installer" \
-        "clone it by hand: gh repo clone $project $target_dir"
+        "GitHub may still be copying the template; wait, then:" \
+        "  gh repo clone $project $target_dir"
     fi
-    say "  clone not ready yet, retrying ($attempt/6)"
-    sleep 2
+    say "  template contents not ready yet, retrying ($attempt/8)"
+    sleep 3
   done
 else
   say "  git clone --depth 1 --branch $ref $REPO_URL"
-  clear_target
-  git clone --depth 1 --branch "$ref" "$REPO_URL" "$target_dir" >&2 \
+  git clone --depth 1 --branch "$ref" "$REPO_URL" "$staging" >&2 \
   || die 4 "git clone failed" \
        "check network access to github.com, and that the ref '$ref' exists" \
        "list refs with: git ls-remote --heads $REPO_URL"
 
   # Detach from upstream so this is the caller's project, not a fork. The
-  # template path via gh does the same thing server-side.
-  rm -rf "$target_dir/.git"
-  ( cd "$target_dir" \
+  # template path via gh does the same thing server-side. Done here, before the
+  # move, so nothing writes into .git while the tree is being relocated.
+  rm -rf "$staging/.git"
+  ( cd "$staging" \
       && git init -q \
       && git add -A \
       && git -c user.email=installer@localhost -c user.name=installer \
@@ -434,6 +482,29 @@ else
     || warn "could not create the initial commit; the tree is fine, just not committed"
   say "  detached from upstream; no fork relationship"
 fi
+
+[ -f "$staging/setup.sh" ] || die 4 "the clone does not look like BoringStack (no setup.sh)" \
+  "the template layout may have changed; see $REPO_URL"
+
+# Move the tree in. The three globs cover dotfiles (.github, .git, .tsforge),
+# which a bare * would skip; each is guarded because an unmatched glob stays
+# literal in sh.
+mkdir -p "$target_dir" || die 4 "could not create $target_dir"
+for entry in "$staging"/* "$staging"/.[!.]* "$staging"/..?*; do
+  [ -e "$entry" ] || continue
+  base="${entry##*/}"
+  if [ -e "$target_dir/$base" ]; then
+    # Only reachable with --force, since preflight refuses a non-empty --dir
+    # otherwise. Say what is being replaced rather than doing it silently.
+    warn "replacing existing $target_dir/$base"
+    # ${var:?} so an empty expansion aborts instead of becoming `rm -rf /`.
+    rm -rf "${target_dir:?}/${base:?}"
+  fi
+  mv "$entry" "$target_dir/$base" \
+    || die 4 "could not move $base into $target_dir" \
+         "the clone is at $staging until this shell exits"
+done
+rm -rf "$staging"
 
 [ -d "$target_dir" ] || die 4 "expected $target_dir to exist after scaffolding, but it does not"
 [ -f "$target_dir/setup.sh" ] || die 4 "$target_dir does not look like BoringStack (no setup.sh)" \
@@ -554,9 +625,11 @@ say "  OpenAPI       http://localhost:7330/swagger"
 say ""
 say "  cd $project_dir"
 say ""
-say "Sign up at http://localhost:7331 — signup is open in dev and the first"
-say "user becomes the superuser. To seed one instead, set SUPERUSER_EMAIL and"
-say "SUPERUSER_PASSWORD in infra/compose/compose/.env before the first boot."
+say "Sign up at http://localhost:7331. Signup is open in dev, and it makes you"
+say "the owner of your own account. It does NOT make you a platform admin:"
+say "registration leaves is_platform_admin false. For that, set SUPERUSER_EMAIL"
+say "and SUPERUSER_PASSWORD in infra/compose/compose/.env and reboot, which runs"
+say "the seed that sets the flag."
 say ""
 say "Next:"
 say "  agent guide   https://boringstack.xyz/agents.md"

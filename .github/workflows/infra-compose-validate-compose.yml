@@ -336,6 +336,45 @@ jobs:
             | grep -q 'out/nested' \
             || { echo "::error::--dir missing from the resolved plan"; exit 1; }
 
+          # LC_ALL=C regression guard. Under en_US.UTF-8 a case range like
+          # [a-z] collates as aAbBcC and so matches uppercase, which let
+          # `--project ACME` and `--domain ACME.com` pass validation and then
+          # fail in the renamer after the repo existed.
+          for bad in ACME Acme aCme; do
+            if sh "$INSTALLER" --project "$bad" --dry-run >/dev/null 2>&1; then
+              echo "::error::install.sh accepted uppercase project '$bad' (LC_ALL regression?)"
+              exit 1
+            fi
+          done
+          if sh "$INSTALLER" --project acme --domain ACME.com --dry-run >/dev/null 2>&1; then
+            echo "::error::install.sh accepted an uppercase domain"
+            exit 1
+          fi
+
+          # Domain validation must match the renamer per label, not just on
+          # charset: "acme-.com" has a label ending in a dash and used to pass.
+          for bad_domain in "acme-.com" "-acme.com" "acme..com" "acme." "acme" "acme.com-"; do
+            if sh "$INSTALLER" --project acme --domain "$bad_domain" --dry-run >/dev/null 2>&1; then
+              echo "::error::install.sh accepted invalid domain '$bad_domain'"
+              exit 1
+            fi
+          done
+          for ok_domain in "acme.com" "ac-me.com" "a.co" "acme.co.uk" "x.y.z"; do
+            sh "$INSTALLER" --project acme --domain "$ok_domain" --dry-run >/dev/null \
+              || { echo "::error::install.sh rejected valid domain '$ok_domain'"; exit 1; }
+          done
+
+          # Data-loss regression guard. The installer must never empty the
+          # destination: an earlier version did, so --force on a non-empty
+          # directory deleted the caller's files before the clone was known to
+          # have succeeded. It stages beside the destination instead.
+          if grep -nE 'find "\$target_dir" -mindepth|rm -rf "\$target_dir"[^/]' "$INSTALLER"; then
+            echo "::error::install.sh empties \$target_dir; stage beside it instead"
+            exit 1
+          fi
+          grep -q 'staging=' "$INSTALLER" \
+            || { echo "::error::install.sh no longer stages the clone"; exit 1; }
+
           # install.sh must agree with .tsforge/scaffold-manifest.json on the
           # default ref and the health URLs. apps/docs check:agent-surface
           # asserts that in build:ci; not duplicated here.

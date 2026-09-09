@@ -74,9 +74,11 @@ curl -si http://localhost:7331/                  # 200
 curl -si http://localhost:7330/swagger/json      # 200, OpenAPI document
 ```
 
-Signup is open in dev and the first user becomes the superuser. To seed one instead, set
-`SUPERUSER_EMAIL` and `SUPERUSER_PASSWORD` in `infra/compose/compose/.env` before the first
-boot.
+Signup is open in dev. Registering makes you the owner of your own account (every signup
+creates a personal account, an owner membership and a Free plan row in one transaction), but
+it does **not** make you a platform admin: `is_platform_admin` stays `false`. Only the seed
+sets that flag, so for an admin set `SUPERUSER_EMAIL` and `SUPERUSER_PASSWORD` in
+`infra/compose/compose/.env` and boot again.
 
 When something is wrong:
 
