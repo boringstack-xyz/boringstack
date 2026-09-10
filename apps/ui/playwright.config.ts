@@ -1,9 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
+import { e2eConfig } from "./e2e.config";
+
 // Default dev/e2e port is 7331; override with PLAYWRIGHT_PORT when the UI
 // dev server is remapped (Docker port mapping, port conflicts on shared hosts).
-const PORT = Number(process.env.PLAYWRIGHT_PORT) || 7331;
-const BASE_URL = `http://localhost:${PORT}`;
+const BASE_URL = e2eConfig.baseURL;
 
 export default defineConfig({
   testDir: "./e2e",

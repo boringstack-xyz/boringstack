@@ -333,6 +333,13 @@ export default ${filePrefix}Routes;
   );
 };
 
+if (process.argv.includes("--scope=account")) {
+  console.error(
+    "Account scope is provided by the root command: bun run agent:resource <Name> --policy=team-read-admin-write"
+  );
+  process.exit(2);
+}
+
 const pascal = parseArgs(process.argv);
 const filePrefix = toFilePrefix(pascal);
 const singular = toSingularEntity(pascal);

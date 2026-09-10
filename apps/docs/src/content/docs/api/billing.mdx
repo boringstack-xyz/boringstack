@@ -57,10 +57,26 @@ Handled events:
 
 - `checkout.session.completed`: creates or updates `billing.account_plans` for the account and plan in session metadata.
 - `customer.subscription.updated`: maps the active Stripe price id back to a local plan and updates the account plan; also tracks `past_due`, `unpaid`, `paused`, `canceled`, `incomplete`, `trialing`, and `active` for the [feature resolver](/api/acl/#feature-gates).
-- `customer.subscription.deleted`: marks the row revoked so the resolver falls back to the Free plan.
+- `customer.subscription.deleted`: handles deletion only for the matching subscription; an older subscription cannot revoke its replacement. Effective access follows the resulting status and period.
 - `invoice.paid` / `invoice.payment_failed`: status transitions for the active plan row.
 
-Unknown event types are logged at debug level and ignored. Late or out-of-order deliveries are tolerated because every status transition is keyed by `(account_id, stripe_event_received_at)`.
+Unknown event types are logged at debug level and ignored. Event identity prevents duplicate processing; ordering checks and subscription identity prevent stale deliveries from overwriting the current subscription. A deletion for an older subscription must not revoke its replacement. Same-second checkout and subscription updates preserve identity, status and period in either tested delivery order; a delayed checkout must not restore a delinquent subscription. These cases do not establish correctness for every possible provider event sequence.
+
+## Entitlement behavior
+
+Server-side feature resolution requires an unrevoked plan whose status and expiry entitle it:
+
+| Plan state | Plan features |
+| --- | --- |
+| `active`, `trialing` | Available unless an administrative grant has expired. |
+| `canceled` | Available only while `currentPeriodEnd` is in the future and any grant expiry has not elapsed. |
+| `past_due`, `unpaid`, `paused`, `incomplete`, unknown status | Not granted by this plan. |
+
+Active overrides still precede plan features; absent a grant, catalog defaults apply. `past_due` has no implicit grace period. An account without an entitling plan or override defaults to one seat and cannot invite a team. Configure plans/features for the intended product even when Stripe is disabled.
+
+Invitation creation requires `can_invite_team`; invitation acceptance and join-request approval enforce `max_seats` against active memberships in their write transaction. Existing invitations cannot bypass a later cap. Pending invitations do not reserve seats.
+
+Sensitive subscription reads recheck membership and return 403 for a revoked member. See [ACL](/api/acl/) for the enforcement helpers and [security rollout](/runbooks/security-upgrade/) before upgrading existing accounts.
 
 ## Env configuration
 

@@ -1,0 +1,14 @@
+{
+  "extends": "../apps/api/tsconfig.json",
+  "compilerOptions": {
+    "types": [],
+    "typeRoots": ["../apps/api/node_modules/@types"],
+    "noUnusedLocals": true
+  },
+  "include": [
+    "agent/**/*.ts",
+    "agent-evals/**/*.ts",
+    "../apps/api/node_modules/bun-types/index.d.ts"
+  ],
+  "exclude": []
+}

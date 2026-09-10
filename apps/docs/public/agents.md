@@ -169,3 +169,18 @@ Bulk documentation, for when you need it:
 - <https://boringstack.xyz/llms-full.txt>: everything, large enough to be worth fetching on purpose
 
 Repo: <https://github.com/boringstack-xyz/boringstack> · MIT
+
+## After setup: account-owned features
+
+In the cloned repository, run `bun run agent:inspect -- account-resource --json`.
+The published [account-resource recipe](https://boringstack.xyz/account-resource.json)
+lists the required decisions, source paths and verification commands; the local
+command validates those references against your checkout.
+Read `tools/agent/README.md` for owned test infrastructure and structured verification.
+Use the feature profile for feature work and release-local for the broader local gate;
+GitHub security scans remain separate.
+
+Public guides: [verified workflow](https://boringstack.xyz/skills/verified-workflow/),
+[account resources](https://boringstack.xyz/recipes/add-account-resource/),
+[security specification](https://boringstack.xyz/topics/security-spec/), and
+[security upgrade](https://boringstack.xyz/runbooks/security-upgrade/).

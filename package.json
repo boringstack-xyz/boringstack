@@ -1,7 +1,7 @@
 {
   "name": "boringstack",
   "private": true,
-  "description": "BoringStack monorepo — api, ui, docs, and infra templates",
+  "description": "BoringStack monorepo \u2014 api, ui, docs, and infra templates",
   "scripts": {
     "regen": "bash scripts/stack-regen.sh",
     "check": "bash scripts/stack-check.sh",
@@ -9,7 +9,24 @@
     "rename:project": "bash scripts/rename-project.sh",
     "spec:init": "bun scripts/spec-init.ts",
     "postinstall": "bash scripts/ci/install-git-hooks.sh",
-    "install:hooks": "bash scripts/ci/install-git-hooks.sh"
+    "install:hooks": "bash scripts/ci/install-git-hooks.sh",
+    "agent:verify": "bun tools/agent/cli.ts",
+    "agent:check": "bun run agent:quality && bun test tools/agent",
+    "sandbox:up": "bun tools/agent/sandbox/cli.ts up",
+    "sandbox:down": "bun tools/agent/sandbox/cli.ts down",
+    "sandbox:inspect": "bun tools/agent/sandbox/cli.ts inspect",
+    "agent:inspect": "bun tools/agent/inspect-cli.ts",
+    "agent:check:docker": "AGENT_DOCKER_TESTS=true bun test tools/agent/sandbox/lifecycle.test.ts",
+    "agent:eval": "bun tools/agent-evals/run.ts",
+    "agent:sync": "bun tools/agent/sync-cli.ts",
+    "agent:resource": "bun tools/agent/generate/cli.ts",
+    "agent:inventory": "bun tools/agent/inventory-cli.ts",
+    "agent:recover": "bun tools/agent/recover-cli.ts",
+    "agent:lint": "cd tools && bun ../apps/api/node_modules/eslint/bin/eslint.js --max-warnings=0 agent agent-evals",
+    "agent:typecheck": "bun apps/api/node_modules/typescript/bin/tsc -p tools/tsconfig.json",
+    "agent:format:check": "bun tools/agent/format-cli.ts",
+    "agent:format": "bun tools/agent/format-cli.ts --write",
+    "agent:quality": "bun run agent:typecheck && bun run agent:lint && bun run agent:format:check"
   },
   "engines": {
     "node": ">=24.0.0",

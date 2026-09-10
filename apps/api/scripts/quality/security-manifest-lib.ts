@@ -80,7 +80,7 @@ const decodeXmlEntities = (value: string): string =>
     .replace(/&amp;/g, "&");
 
 const attribute = (tag: string, name: string): string | undefined =>
-  new RegExp(`${name}="([^"]*)"`).exec(tag)?.[1];
+  new RegExp(`(?:^|\\s)${name}="([^"]*)"`).exec(tag)?.[1];
 
 /**
  * Parses Bun's JUnit report into a flat list of test cases.

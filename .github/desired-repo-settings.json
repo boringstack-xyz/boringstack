@@ -1,5 +1,5 @@
 {
-  "description": "Desired GitHub settings for boringstack-xyz/boringstack (monorepo). Applied via scripts/audit-repo-settings.sh — operator runs the printed commands.",
+  "description": "Desired GitHub settings for boringstack-xyz/boringstack (monorepo). Applied via scripts/audit-repo-settings.sh \u2014 operator runs the printed commands.",
   "security_and_analysis": {
     "secret_scanning": "enabled",
     "secret_scanning_push_protection": "enabled",
@@ -22,7 +22,8 @@
       "tofu fmt + validate",
       "typecheck + lint + test",
       "validate",
-      "yamllint (compose + workflows)"
+      "yamllint (compose + workflows)",
+      "agent verification contract"
     ],
     "required_approving_review_count": 0,
     "dismiss_stale_reviews": true,

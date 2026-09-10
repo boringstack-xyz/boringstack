@@ -1,0 +1,4 @@
+import type { paths } from "@/lib/api/schema";
+
+export type IProject =
+  paths["/api/v1/projects/"]["get"]["responses"][200]["content"]["application/json"][number];

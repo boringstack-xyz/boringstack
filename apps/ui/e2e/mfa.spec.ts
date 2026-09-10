@@ -4,11 +4,12 @@ import { z } from "zod";
 
 import { nowMs } from "@/lib/time/now";
 
+import { e2eConfig } from "../e2e.config";
 import { expect, test } from "./fixtures/auth";
 import { parseBody } from "./fixtures/parse";
 import { LoginPage } from "./pages/LoginPage";
 
-const API_BASE_URL = "http://localhost:7331";
+const API_BASE_URL = e2eConfig.baseURL;
 const TOTP_STEP_MS = 30_000;
 
 interface IMfaTestUser {

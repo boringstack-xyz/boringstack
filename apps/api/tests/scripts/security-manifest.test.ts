@@ -489,3 +489,12 @@ describe("JUnit parsing", () => {
     expect(only?.failureMessage).toContain("\n");
   });
 });
+
+test("JUnit names are not taken from the classname attribute", () => {
+  const cases = parseJUnit(
+    '<testsuites><testcase classname="feature.test.ts" name="account&amp;role" /></testsuites>'
+  );
+
+  expect(cases).toHaveLength(1);
+  expect(cases[0]?.name).toBe("account&role");
+});

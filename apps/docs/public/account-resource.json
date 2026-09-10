@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "account-resource",
+  "summary": "Add an account-owned API resource and a typed UI, with explicit role policy and real tenant-isolation checks.",
+  "requiredIntent": [
+    "plural PascalCase resource name",
+    "fields and validation",
+    "ownership: account",
+    "permission policy",
+    "UI list/detail/create/rename behavior"
+  ],
+  "supportedPolicy": "team-read-admin-write",
+  "policy": {
+    "owner": ["read", "create", "update"],
+    "admin": ["read", "create", "update"],
+    "member": ["read"],
+    "viewer": ["read"],
+    "revoked": []
+  },
+  "guides": [
+    "AGENTS.md",
+    "apps/api/AGENT_CONTRACT.md",
+    "apps/api/docs/agents/drizzle.md",
+    "apps/api/docs/agents/authentication.md",
+    "apps/ui/AGENT_CONTRACT.md",
+    "apps/ui/docs/agents/api-client.md",
+    "apps/ui/docs/agents/state-management.md"
+  ],
+  "integrationPoints": [
+    "tools/agent/generate/cli.ts",
+    "apps/api/src/config/routes/routes.ts",
+    "apps/api/src/config/app/app.ts",
+    "apps/api/src/lib/acl/ability.ts",
+    "apps/api/src/middleware/require-active-membership.ts",
+    "apps/ui/src/app/router/routes.tsx",
+    "apps/ui/src/features/accounts/Accounts.constants.ts",
+    "apps/ui/src/features/accounts/Invitations.mutations.ts"
+  ],
+  "commands": [
+    "sandbox:up",
+    "agent:sync",
+    "agent:verify",
+    "agent:inspect",
+    "sandbox:down",
+    "agent:resource",
+    "agent:inventory"
+  ],
+  "apiGenerator": {
+    "cwd": ".",
+    "script": "agent:resource",
+    "args": [
+      "<Name>",
+      "--scope=account",
+      "--policy=team-read-admin-write",
+      "--dry-run",
+      "--json"
+    ]
+  },
+  "steps": [
+    "Use approved spec intent if present; ask only for unresolved product decisions. The fixed policy is explicit, not inferred.",
+    "Plan the account resource, inspect touched paths, then generate it by removing --dry-run.",
+    "Generate committed Drizzle SQL in the changed checkout; apply only through an owned sandbox.",
+    "Run agent:sync -- --sandbox=<id> --json to apply committed SQL and regenerate ACL/OpenAPI from this checkout through the owned runtime; then implement the typed UI.",
+    "Use the existing UI component/feature conventions. Scope every query key by accountId; capture accountId in mutations and invalidate that exact account's queries.",
+    "Render loading, empty, error and permission-denied states. Translate visible labels into both locales. Do not put service authorization exclusively in the UI.",
+    "Verify owner/admin mutations, member/viewer read access, revoked membership, cross-account reads and writes, forged ownership, and account-switch cache isolation.",
+    "Run feature verification. If intentional test additions change the inventory, explicitly run agent:inventory for the affected lanes, review its case diff, and rerun verification. Run release-local before claiming full local readiness. Report blockers and GitHub-only checks separately."
+  ],
+  "verificationProfile": "feature",
+  "limitations": [
+    "The generated list is bounded to 100 records; add explicit pagination for a larger product.",
+    "The current audit write convention is best-effort, not durable outbox delivery.",
+    "Run independent evaluator tests outside the candidate's writable patch before accepting an agent submission."
+  ]
+}

@@ -1,0 +1,28 @@
+import { expect, test } from "bun:test";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { ESLint } from "../../apps/api/node_modules/eslint";
+
+const ROOT = fileURLToPath(new URL("../../", import.meta.url));
+
+test("tooling lint rejects unsafe shortcuts and suppression while accepting typed code", async () => {
+  const lint = new ESLint({ cwd: join(ROOT, "tools") });
+  const filePath = join(ROOT, "tools/agent/inventory.ts");
+  const [invalid] = await lint.lintText(
+    "/* eslint-disable */\nexport function unsafe(value: any) { return value!.missing; }\n",
+    { filePath }
+  );
+  const violations = invalid?.messages.map((message) => message.ruleId) ?? [];
+
+  expect(violations).toContain("eslint-comments/no-use");
+  expect(violations).toContain("@typescript-eslint/no-explicit-any");
+  expect(violations).toContain("@typescript-eslint/no-non-null-assertion");
+
+  const [valid] = await lint.lintText(
+    "export function identity(value: string): string {\n  return value;\n}\n",
+    { filePath }
+  );
+
+  expect(valid?.errorCount).toBe(0);
+  expect(valid?.warningCount).toBe(0);
+}, 30000);

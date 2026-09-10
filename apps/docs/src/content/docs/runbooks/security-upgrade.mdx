@@ -1,0 +1,52 @@
+---
+title: Security upgrade rollout
+description: Apply refresh-lineage storage, deploy compatible auth writers, and review entitlement changes when upgrading an existing installation.
+---
+
+Use this runbook when upgrading a deployment that predates the September 2026 API security fixes. A fresh database receives the migrations in order; an existing deployment also needs a writer cutover and a review of its effective plan policy.
+
+## 1. Apply the lineage migration before new code serves traffic
+
+Take and verify a recoverable database backup using the [backup runbook](/runbooks/backups/). Use your deployment's migration credentials and database configuration to run `bun run db:migrate` from `apps/api` before starting the new API build. Do not use verification sandboxes for production migrations.
+
+`drizzle/0001_wild_gladiator.sql` creates `auth.session_retired_tokens`, its unique token-hash index and session foreign key with cascading deletion. It backfills non-null `auth.sessions.previous_token_hash` values. Inspect the applied migration history and confirm the table and backfill before routing traffic to the new build.
+
+The migration can recover only the previous generation still stored in the old slot. It cannot reconstruct older token hashes that were already discarded.
+
+## 2. Cut over all authentication writers
+
+New writers record every retired hash and preserve evidence left in the previous-token slot by an old writer. This supports one legacy rotation whose evidence is still available. Two or more consecutive rotations on old writers can discard history that no new instance can recover.
+
+Drain or upgrade old instances before relying on full-depth replay detection. If an immediate stronger guarantee is required, retire affected refresh families after the old writers have stopped serving. Account for the resulting sign-ins in the rollout plan. Keeping the new table during a rollback preserves recorded data, but old writers still do not provide the new guarantee.
+
+OAuth states created without a binding hash are rejected by new callbacks. Users midway through an older sign-in flow must restart it. Fixing only some callback instances leaves the old behavior reachable.
+
+## 3. Check revocation configuration
+
+In production, `JWT_REVOCATION_FAIL_CLOSED=true` requires `CACHE_ENABLED=true` and `CACHE_PROVIDER=valkey`; invalid combinations refuse boot. Configure and verify the shared revocation store before enabling that policy. This boot invariant does not prove resilience during an outage.
+
+Refresh replay deletes the refresh family. Previously issued access JWTs can remain valid for the rest of their 15-minute lifetime unless another action revokes them. Password reset and sign-out-everywhere use the user-wide cutoff; closing that window automatically on every replay would be a separate product policy affecting other sessions.
+
+## 4. Review existing plan and membership state
+
+Catalog defaults are `max_seats=1`, `can_invite_team=false` and `can_export=false`. An account without an entitling plan or applicable override receives those defaults. Disabling Stripe billing does not disable these server-side checks.
+
+Seed or assign the intended plan and feature rows before enabling team workflows. Verify effective entitlements through the application, not just that a plan row exists. Expired grants, unknown statuses and delinquent plans do not provide paid features. `past_due` loses entitlement immediately; no implicit payment grace period is implemented.
+
+Invitation creation checks `can_invite_team`. Invitation acceptance and join-request approval enforce the current seat cap inside the membership transaction. An invitation issued before a downgrade is not permission to exceed the new cap. Existing excess memberships are not automatically evicted by the admission check; choose and implement a downgrade policy if your product requires that.
+
+Revoked membership on sensitive billing reads now returns 403. Clients should treat that as forbidden access, rather than repeatedly refreshing a valid identity.
+
+## 5. Verify behavior before and after cutover
+
+Run `release-local` on the candidate checkout against disposable services and retain its result. CI security scanning remains separate. In staging, exercise verified OAuth, MFA-enabled OAuth, refresh rotation/replay, plan expiry, seat admission and SSE termination after credential revocation. Use dedicated users and test credentials.
+
+Confirm production health, expected sign-in restarts, effective plan access and provider delivery after rollout. Do not run destructive security-spec fixtures against production. Destination validation and redaction reduce risk but do not replace an egress policy, controlled logging or delivery monitoring.
+
+## Related
+
+- [Executable security specification](/topics/security-spec/)
+- [Authentication](/api/auth/)
+- [Two-factor authentication](/api/mfa/)
+- [Billing](/api/billing/)
+- [Verified workflow](/skills/verified-workflow/)

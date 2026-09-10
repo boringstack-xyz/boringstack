@@ -1,0 +1,70 @@
+import type { FC } from "react";
+
+import { useTranslation } from "react-i18next";
+
+import { AppPage } from "@/components/core/AppPage";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+import { PROJECT_NAME_MAX_LENGTH } from "./ProjectsPage.constants";
+import { useProjectsPage } from "./ProjectsPage.hooks";
+
+const ProjectsPage: FC = () => {
+  const { t } = useTranslation();
+  const {
+    items,
+    isLoading,
+    hasError,
+    isSaving,
+    canWrite,
+    selectedId,
+    onSelectionChange,
+    name,
+    onNameChange,
+    onSubmit
+  } = useProjectsPage();
+  const renderedItems = items.map((item) => <li key={item.id}>{item.name}</li>);
+  const renderedOptions = items.map((item) => (
+    <option key={item.id} value={item.id}>
+      {item.name}
+    </option>
+  ));
+  const showEmpty = !isLoading && !hasError && items.length === 0;
+
+  return (
+    <AppPage pageTitle={t("projects.title")} title={t("projects.title")}>
+      {isLoading ? <p role='status'>{t("common.loading")}</p> : null}
+      {hasError ? <p role='alert'>{t("projects.error")}</p> : null}
+      {showEmpty ? <p>{t("projects.empty")}</p> : null}
+      <ul>{renderedItems}</ul>
+      {canWrite ? (
+        <form onSubmit={onSubmit}>
+          <Label htmlFor='project-selection'>{t("projects.selection")}</Label>
+          <select
+            id='project-selection'
+            value={selectedId}
+            onChange={onSelectionChange}
+          >
+            <option value=''>{t("projects.new")}</option>
+            {renderedOptions}
+          </select>
+          <Label htmlFor='project-name'>{t("projects.name")}</Label>
+          <Input
+            id='project-name'
+            value={name}
+            onChange={onNameChange}
+            maxLength={PROJECT_NAME_MAX_LENGTH}
+            required
+          />
+          <Button type='submit' disabled={isSaving}>
+            {t("projects.save")}
+          </Button>
+        </form>
+      ) : null}
+    </AppPage>
+  );
+};
+
+ProjectsPage.displayName = "ProjectsPage";
+export default ProjectsPage;

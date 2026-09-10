@@ -1,0 +1,53 @@
+---
+title: Add an account-owned resource
+description: Generate a tenant-scoped API resource, integrate its typed UI, and verify authorization and cache isolation.
+---
+
+The root generator adds an API resource owned by an account. It is opt-in and supports one explicit policy: owners/admins can read, create and update; members/viewers can read; revoked members have no access. Select it only when that policy matches the product requirement. It does not replace the existing app-local user-scoped generator.
+
+## Inspect and generate
+
+From the repository root:
+
+```sh
+bun run agent:inspect -- account-resource --json
+bun run agent:resource Projects --scope=account --policy=team-read-admin-write --dry-run --json
+```
+
+The recipe lists required product decisions and repository guides. Resolve the resource name, fields/validation, policy and UI behavior from the approved spec before generating. Names use simple plural PascalCase; the generator is not an English inflection engine.
+
+Review the dry-run paths, then remove `--dry-run`:
+
+```sh
+bun run agent:resource Projects --scope=account --policy=team-read-admin-write --json
+```
+
+The output includes schema, relations, service authorization using fresh membership state, tenant predicates, routes, audit events and real HTTP tests. It rejects client-supplied ownership and checks patch targets before writing. Conflicts, ambiguous anchors and symlink targets are refused. Per-file atomic replacement and rollback reduce partial writes, but a killed process can still leave an incomplete multi-file change: inspect the diff before recovery.
+
+## Complete the product behavior
+
+Generated scaffolding is a starting point. Add the approved fields and validation, then generate and review Drizzle SQL with `bun run db:generate` from `apps/api`. Use the [owned sandbox and sync command](/skills/verified-workflow/#regenerate-contracts-explicitly) to apply the migration and regenerate ACL/OpenAPI.
+
+Implement the UI using existing feature/component conventions and the generated API types:
+
+- Put `accountId` in every account-scoped query key.
+- Capture the mutation's account ID and invalidate that account's queries, even if the user switches accounts while it runs.
+- Render loading, empty, error and permission-denied states, with visible labels in both locales.
+- Keep service authorization on the server; hiding an action is not authorization.
+
+The reference UI under `tools/agent-evals/reference-ui` demonstrates these patterns for Projects. The generator does not install that UI as a product feature.
+
+The shared account-switch mutation cancels outstanding queries, resets account data without fetching under the old account's keys, refreshes `/me`, removes inactive cached data and refetches eligible active queries. Preserve this ordering when changing session/cache behavior. An account-specific key alone does not stop an old observer from fetching new-account data during a switch.
+
+## Verify
+
+Run the `feature` profile, review any intentional test-inventory additions, then rerun it. Run `release-local` for the broader local gate. Cover owner/admin writes, member/viewer reads, revoked membership, cross-account reads and writes, forged ownership and account-switch cache isolation.
+
+The generated list is bounded to 100 records. Design a pagination contract before relying on larger lists. Audit writes follow the existing best-effort convention; this generator does not add a durable outbox or deletion behavior.
+
+## Related
+
+- [Verified workflow](/skills/verified-workflow/)
+- [ACL and feature resolution](/api/acl/)
+- [Multi-tenant model](/api/multi-tenant/)
+- [Evaluator scope](/reference/agent-evaluation/)

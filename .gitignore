@@ -20,3 +20,5 @@ ROADMAP.md
 # Local MCP client config — copied from .mcp.json.example and may carry
 # machine-specific paths or credentials. The committed example is the source.
 .mcp.json
+# Owned disposable agent verification state (contains test credentials).
+.agent-state/

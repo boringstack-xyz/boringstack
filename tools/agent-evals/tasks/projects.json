@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "projects",
+  "prompt": "Implement an account-scoped Projects resource and UI using agent:inspect account-resource. Owner/admin can create and rename; member/viewer can read; revoked users cannot access it. Include migrations, regenerate contracts, and demonstrate account switching without stale data.",
+  "acceptance": ["account-resource", "account-cache"],
+  "forbiddenChanges": [
+    "tools/agent-evals",
+    ".github",
+    "apps/api/security-spec",
+    "apps/api/tests/helpers",
+    "apps/api/eslint.config.ts",
+    "apps/ui/eslint.config.ts"
+  ]
+}

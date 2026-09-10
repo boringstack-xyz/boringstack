@@ -1,0 +1,4 @@
+import type { InferSelectModel } from "drizzle-orm";
+import type { resourcePlural } from "../../clients/postgres/schema";
+
+export type IResourceSingular = InferSelectModel<typeof resourcePlural>;

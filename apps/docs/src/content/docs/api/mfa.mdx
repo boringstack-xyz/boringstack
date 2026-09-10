@@ -1,6 +1,6 @@
 ---
 title: Two-factor authentication
-description: Optional TOTP MFA on top of password login. Encrypted secret at rest, opaque single-use challenge tokens in Valkey, hashed recovery codes in Postgres, replay-guarded by step counter.
+description: Optional TOTP MFA on password and OAuth login. Encrypted secret at rest, opaque single-use challenge tokens in Valkey, hashed recovery codes in Postgres, replay-guarded by step counter.
 ---
 
 import { Aside } from "@astrojs/starlight/components";
@@ -45,11 +45,14 @@ flowchart LR
   login["POST /auth/login<br/>(email + password)"] --> check{mfaEnabledAt?}
   check -- no --> session["Issue session + refresh cookies"]
   check -- yes --> challenge["Return {mfaRequired, challengeToken}<br/>(opaque, hashed in Valkey, 5m TTL)"]
-  challenge --> verify["POST /auth/mfa/verify-login<br/>{challengeToken, code}"]
+  challenge --> reserve["Reserve attempt before factor verification"]
+  reserve --> verify["POST /auth/mfa/verify-login<br/>{challengeToken, code}"]
   verify --> step{matchedStep > lastStep?}
-  step -- no --> rejected["recordFailedAttempt<br/>(5 fails → DEL key)"]
+  step -- no --> rejected["Record charged failure<br/>(5 fails → delete challenge)"]
   step -- yes --> issue["Update lastStep, issue session cookies"]
 ```
+
+OAuth sign-in follows the same second-factor requirement. The callback stores the challenge in an HttpOnly cookie and redirects to `/login?mfa=required`, without issuing a session first. The SPA completes the factor challenge. Enrollment still requires a password; an OAuth-only enrollment/step-up flow is not implemented.
 
 The challenge token is opaque: only its HMAC hash sits in Valkey, so
 a Valkey snapshot leak cannot be replayed against the API.
@@ -89,11 +92,7 @@ that quietly enrolled a new device stays visible to the real user.
 An out-of-band confirmation reaches the user so a stripped second
 factor doesn't go unnoticed.
 
-**Five failures destroys the challenge.** Each verify-login or
-verify-recovery attempt increments a counter on the cached
-challenge. The fifth failure deletes the key; the user goes back to
-`/auth/login` and starts a fresh challenge. The account itself is
-never locked.
+**Attempts are reserved before verification.** Each verify-login or verify-recovery submission consumes the shared challenge budget before evaluating the factor, so concurrent guesses cannot reuse one remaining attempt. Five failed attempts destroy the challenge. The counter stays until its own TTL expires; deleting it at lockout would let in-flight requests reopen the budget. The challenge lifetime is not extended by guesses. The user starts a fresh login; the account itself is not locked.
 
 ## Configuration
 

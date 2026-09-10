@@ -35,8 +35,19 @@ For every command below, see the source `package.json` for the full list and opt
 ```bash
 bun run regen     # ACL types, OpenAPI schema, lint-meta, docs JSON
 bun run check     # drift checks (API must be running on :7330)
-bun run validate  # full merge gate (check + tests)
+bun run agent:quality  # strict tooling types, lint and formatting
 ```
+
+### Structured verification (repo root)
+
+```sh
+bun run agent:inspect -- account-resource --json
+bun run sandbox:up -- --json
+bun run agent:verify -- --profile=release-local --sandbox=<id> --json
+bun run sandbox:down -- --id=<id>
+```
+
+Use the returned sandbox ID. See [verified workflow](/skills/verified-workflow/) for profiles, explicit contract synchronization, inventory updates and failure/blocked results. Root `check` is not the full release gate.
 
 ### API app (from apps/api)
 

@@ -1,0 +1,16 @@
+import { seedVerifiedUser } from "../../helpers/auth";
+import { db, sql, cleanDatabase, requireDb } from "../../helpers/db";
+import { test } from "bun:test";
+
+test("prepare a pre-migration project", async () => {
+  if (!(await requireDb())) {
+    throw new Error("SPEC-INFRA: database unavailable");
+  }
+
+  await cleanDatabase();
+  const owner = await seedVerifiedUser({ email: "migration@gmail.com" });
+
+  await db.execute(
+    sql`INSERT INTO app.projects (account_id,name) VALUES (${owner.account.id},'Before migration')`
+  );
+});

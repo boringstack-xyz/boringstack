@@ -38,7 +38,7 @@ sequenceDiagram
 The OAuth flow lands at the same `provisionAfterVerification` call. Branches that converge there:
 
 - Brand-new OAuth signup with a provider-verified email: user created, provisioned, session issued.
-- Existing pending password-signup signing in with OAuth: user gets promoted to verified, the OAuth link is added, the account is provisioned. (This branch quietly fixed a pre-VBA bug where pending users could get OAuth-linked but never end up with an account.)
+- Existing pending password-signup signing in with OAuth: user gets promoted to verified, the OAuth link is added, the account is provisioned. The pre-verification password credential is retired so whoever originally entered that password cannot use it after promotion.
 - Existing already-verified user adding another OAuth provider: link added; `provisionAfterVerification` is idempotent (returns the existing account and membership).
 
 OAuth refuses to issue a session when the IdP says `emailVerified: false`. The transaction rolls back with no user row, no provider link, and no half-state. The caller has to verify through the password flow first.
@@ -78,18 +78,20 @@ sequenceDiagram
     API->>DB: SELECT users WHERE id = userId
     API-->>B: set new auth_token + rotated refresh_token
   else missing / expired / replayed token
-    DB-->>API: no row
+    API->>DB: check retired-token lineage; delete family on known replay
     API-->>B: 401
   end
 ```
 
-Refresh-token rotation means a replayed old refresh token no longer matches a row. Logout deletes the current refresh session. Password reset deletes all refresh sessions for that user.
+Each successful rotation records retired hashes in `auth.session_retired_tokens`. Replaying a known retired token deletes its refresh family and records `AUTH_REFRESH_REPLAY`; the current token in that family can no longer refresh. The previous-token slot remains a rolling-deploy fallback. Logout deletes the current refresh session; password reset deletes all refresh sessions for that user.
+
+Replay does not itself revoke already-issued access JWTs. They can remain valid for the rest of their 15-minute lifetime unless separately revoked. See the [security upgrade runbook](/runbooks/security-upgrade/) for the migration, backfill and mixed-writer limits.
 
 ## Key decisions
 
 JWT lives in HttpOnly cookies, not localStorage, so XSS cannot read the access token. SameSite is strict in prod, lax in dev, for CSRF protection without breaking same-origin dev. The access JWT is short-lived (15 minutes), keeping normal API requests cheap. Refresh is stateful, living in `auth.sessions` keyed by a hash of an opaque token; the API can revoke one session or all sessions for a user.
 
-One user can hold a password and N OAuth links (two tables: `users` and `user_auth_providers`), no nullable password column. OAuth state lives in Valkey, not a cookie, since state must survive the cross-origin redirect. State is read-and-deleted, so replay attacks fail by construction.
+One user can hold a password and N OAuth links (two tables: `users` and `user_auth_providers`), no nullable password column. OAuth state lives in Valkey and is read-and-deleted. A separate browser cookie holds a binding nonce whose hash is stored with the state. The callback requires both single-use state and the matching initiating-browser nonce.
 
 No account exists without a verified email. `/register` writes only the pending user row. The personal account and owner membership are created only at verify-email time, or inline at the OAuth callback when the IdP asserts verified email. Abandoned signups don't leave orphan tenant rows.
 
@@ -104,12 +106,13 @@ sequenceDiagram
   participant Valkey
   participant IdP
   SPA->>API: GET /auth/oauth/:provider
-  API->>Valkey: SETEX oauth:state:<nonce> {codeVerifier} (10m TTL)
+  API->>Valkey: SETEX oauth:state:<nonce> {codeVerifier, binding hash} (10m TTL)
   API-->>SPA: 302 redirect to IdP authorize URL (state + PKCE challenge)
   SPA->>IdP: user authenticates
   IdP-->>API: 302 /auth/oauth/:provider/callback?code&state
   API->>Valkey: GETDEL oauth:state nonce
   Note over API,Valkey: null means replay/expired/forged, 401
+  API->>API: require matching browser binding nonce
   API->>IdP: exchange code + codeVerifier
   IdP-->>API: profile
   API->>API: find-or-create user, create refresh session, sign access JWT
@@ -117,7 +120,9 @@ sequenceDiagram
   API-->>SPA: 302 ${FRONTEND_URL}/oauth/success
 ```
 
-The state record holds the PKCE code verifier. Reading it consumes it; a second callback with the same `state` finds nothing. The 10-minute TTL accommodates a slow IdP without leaving stale state lying around.
+The state record holds the PKCE code verifier and browser-binding hash. Reading it consumes it; a second callback with the same `state` finds nothing. A missing hash, missing cookie nonce or mismatch is rejected before provider exchange. The 10-minute TTL bounds the flow.
+
+The diagram's session-issuance path is for users without MFA. An MFA-enabled OAuth user receives an HttpOnly challenge cookie and is redirected to `/login?mfa=required`; session cookies are issued only after successful factor verification. See [MFA](/api/mfa/).
 
 ## Using auth in routes
 

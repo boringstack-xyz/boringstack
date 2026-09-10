@@ -1,0 +1,46 @@
+---
+title: Agent tooling evaluation
+description: Independent Projects acceptance tests and deliberate defects for checking the generator and verification machinery.
+---
+
+`agent:eval` is a maintainer tool for one concrete Projects feature. It does not start Claude or Cursor, call a model provider, or establish a general agent benchmark. Everyday feature work uses [agent:verify](/skills/verified-workflow/).
+
+## Validate the evaluator
+
+With dependencies installed and Docker available, run from the repository root:
+
+```sh
+bun run agent:check
+bun run agent:check:docker
+bun run agent:eval --deterministic
+```
+
+The deterministic run creates a docs-free fixture, generates Projects, starts isolated services and installs acceptance tests from the reviewing checkout. It checks a known-good implementation and deliberately introduces missing tenant predicates, missing role enforcement, client-selected ownership, an extra delete operation, stale cache invalidation and a missing migration.
+
+An evaluator check passes when the observed named outcomes match expectations. For an intentionally defective variant, that includes the intended assertion failures and passing controls. A crashed fixture is not evidence that a defect was detected.
+
+The run also checks generated API/UI code, exercises Projects through a browser and applies a description migration over existing data. The example UI and acceptance templates are test fixtures, not starter features installed in the application.
+
+## Review an independently implemented Projects feature
+
+```sh
+bun run agent:eval -- --candidate=/absolute/path/to/checkout
+```
+
+The reviewer copies only declared production integration files and appended Drizzle artifacts into its fixture. Existing migration history must match. Candidate tests, scripts, CI and evaluator code are excluded; missing SQL is not generated for the candidate. Files must be regular files inside the selected checkout.
+
+The same named API/UI/browser acceptance and app static checks run against that submission. This first judge does not support arbitrary resource names or task schemas. Security and release verification remain separate requirements.
+
+The candidate's application code still runs as the local user. Use an OS sandbox for untrusted submissions; file selection and disposable services are not a hostile-code boundary.
+
+## Measure agents separately
+
+Task prompts under `tools/agent-evals/tasks` describe Projects, a description migration and a tenant fix. They are inputs for future measured agent runs. Deterministic success only validates this judge against its known examples.
+
+For each live run, retain the agent/model version, prompt, resulting patch, verifier revision, human interventions and complete outcomes. No live-model benchmark result is claimed by this tooling. Selecting agent configurations, executing repeated runs and evaluating tasks beyond Projects are separate work.
+
+## Related
+
+- [Add an account-owned resource](/recipes/add-account-resource/)
+- [Verified workflow](/skills/verified-workflow/)
+- [Executable security specification](/topics/security-spec/)

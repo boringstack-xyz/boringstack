@@ -621,6 +621,7 @@ The full config surface is machine-readable at https://boringstack.xyz/scaffold-
           items: [
             { label: "Overview", link: "/skills/" },
             { label: "Spec loop", link: "/skills/spec-loop/" },
+            { label: "Verified workflow", link: "/skills/verified-workflow/" },
           ],
         },
         {
@@ -634,7 +635,10 @@ The full config surface is machine-readable at https://boringstack.xyz/scaffold-
               label: "Background work",
               link: "/architecture/background-work/",
             },
-            { label: "Repository layout", link: "/architecture/monorepo-layout/" },
+            {
+              label: "Repository layout",
+              link: "/architecture/monorepo-layout/",
+            },
             { label: "Stack at a glance", link: "/architecture/stack/" },
             { label: "CSRF stance", link: "/architecture/csrf-stance/" },
             { label: "Decision log", link: "/architecture/decisions/" },
@@ -727,6 +731,7 @@ The full config surface is machine-readable at https://boringstack.xyz/scaffold-
               label: "Security pipeline",
               link: "/topics/security/",
             },
+            { label: "Security specification", link: "/topics/security-spec/" },
             { label: "Cookie consent", link: "/topics/cookie-consent/" },
             { label: "Privacy policy template", link: "/topics/privacy/" },
             { label: "Terms of service template", link: "/topics/terms/" },
@@ -735,10 +740,23 @@ The full config surface is machine-readable at https://boringstack.xyz/scaffold-
         {
           label: "Recipes",
           items: [
+            {
+              label: "Add an account resource",
+              link: "/recipes/add-account-resource/",
+            },
             { label: "Add Stripe Checkout", link: "/recipes/add-stripe/" },
-            { label: "Add S3-compatible uploads", link: "/recipes/add-s3-uploads/" },
-            { label: "Add a background job", link: "/recipes/add-background-job/" },
-            { label: "Add a service to Compose", link: "/recipes/add-service-to-compose/" },
+            {
+              label: "Add S3-compatible uploads",
+              link: "/recipes/add-s3-uploads/",
+            },
+            {
+              label: "Add a background job",
+              link: "/recipes/add-background-job/",
+            },
+            {
+              label: "Add a service to Compose",
+              link: "/recipes/add-service-to-compose/",
+            },
           ],
         },
         {
@@ -746,7 +764,11 @@ The full config surface is machine-readable at https://boringstack.xyz/scaffold-
           items: [
             { label: "Environment variables", link: "/reference/env-vars/" },
             { label: "Commands cheatsheet", link: "/reference/commands/" },
-            { label: "MCP servers for agents", link: "/reference/mcp-servers/" },
+            { label: "Agent evaluation", link: "/reference/agent-evaluation/" },
+            {
+              label: "MCP servers for agents",
+              link: "/reference/mcp-servers/",
+            },
             {
               label: "Scripts & tooling",
               link: "/reference/scripts-tooling/",
@@ -764,6 +786,7 @@ The full config surface is machine-readable at https://boringstack.xyz/scaffold-
               link: "/runbooks/firewall-and-tls/",
             },
             { label: "Backups", link: "/runbooks/backups/" },
+            { label: "Security upgrade", link: "/runbooks/security-upgrade/" },
             {
               label: "Cloudflare Email setup",
               link: "/runbooks/cloudflare-email-setup/",

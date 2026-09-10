@@ -1,0 +1,19 @@
+import { t } from "elysia";
+
+export const NameBody = t.Object(
+  {
+    name: t.String({ minLength: 1, maxLength: 100 }),
+    accountId: t.Optional(t.Never()),
+    userId: t.Optional(t.Never()),
+  },
+  { additionalProperties: false }
+);
+export const IdParams = t.Object({ id: t.String({ format: "uuid" }) });
+export const ResourceSingularResponse = t.Object({
+  id: t.String(),
+  accountId: t.String(),
+  name: t.String(),
+  createdAt: t.String(),
+  updatedAt: t.String(),
+});
+export const ResourcePluralResponse = t.Array(ResourceSingularResponse);

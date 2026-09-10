@@ -19,7 +19,7 @@ const ALLOWED_WARNING_LINES = [
 const vitestArgs = process.argv.slice(2);
 const args = vitestArgs.length > 0 ? vitestArgs : ["run", "--coverage"];
 
-const result = spawnSync("bunx", ["vitest", ...args], {
+const result = spawnSync("node", ["node_modules/vitest/vitest.mjs", ...args], {
   encoding: "utf8",
   env: {
     ...process.env,
@@ -52,7 +52,17 @@ if (violations.length > 0) {
     console.error(`  ${line}`);
   }
 
-  process.exit(1);
+  // Reserved for a completed product-quality gate; infrastructure retains its own exit.
+  process.exit(86);
+}
+
+if (
+  result.status !== 0 &&
+  /ERROR: Coverage for (lines|functions|branches|statements).*does not meet/.test(
+    combined
+  )
+) {
+  process.exit(86);
 }
 
 process.exit(result.status ?? 1);

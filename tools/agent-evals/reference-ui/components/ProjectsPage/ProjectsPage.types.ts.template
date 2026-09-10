@@ -1,0 +1,16 @@
+import type { ChangeEventHandler, SubmitEventHandler } from "react";
+
+import type { IProject } from "../../Projects.types";
+
+export interface IProjectsPageView {
+  readonly items: readonly IProject[];
+  readonly isLoading: boolean;
+  readonly hasError: boolean;
+  readonly isSaving: boolean;
+  readonly canWrite: boolean;
+  readonly selectedId: string;
+  readonly onSelectionChange: ChangeEventHandler<HTMLSelectElement>;
+  readonly name: string;
+  readonly onNameChange: ChangeEventHandler<HTMLInputElement>;
+  readonly onSubmit: SubmitEventHandler<HTMLFormElement>;
+}

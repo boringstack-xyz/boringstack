@@ -1,0 +1,338 @@
+import { beforeEach, describe, expect, test } from "bun:test";
+
+import { now } from "../../../src/lib/time/now";
+
+import { createApp } from "../../../src/config/app/app";
+
+import {
+  accountMemberships,
+  cleanDatabase,
+  db,
+  eq,
+  requireDb,
+} from "../../helpers/db";
+
+import { seedVerifiedUser } from "../../helpers/auth";
+
+const app = createApp();
+
+const cookies = (response: Response): string =>
+  response.headers
+    .getSetCookie()
+    .map((c) => c.split(";")[0])
+    .join("; ");
+
+async function user(email: string) {
+  const seeded = await seedVerifiedUser({ email });
+
+  const response = await app.handle(
+    new Request("http://localhost/api/v1/auth/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, password: seeded.password }),
+    })
+  );
+
+  if (response.status !== 200) {
+    throw new Error("SPEC-INFRA: login unavailable");
+  }
+
+  return { ...seeded, cookie: cookies(response) };
+}
+
+async function request(
+  cookie: string,
+  method: string,
+  path: string,
+  body?: object
+) {
+  const response = await app.handle(
+    new Request(`http://localhost/api/v1/projects${path}`, {
+      method,
+      headers: { cookie, "content-type": "application/json" },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    })
+  );
+
+  if (response.status === 429 || response.status >= 500) {
+    throw new Error(`SPEC-INFRA: request returned ${response.status}`);
+  }
+
+  return response;
+}
+
+async function json(response: Response): Promise<unknown> {
+  return response.json();
+}
+
+async function status(response: Promise<Response>): Promise<number> {
+  const result = await response;
+
+  return result.status;
+}
+
+async function payload(response: Promise<Response>): Promise<unknown> {
+  return json(await response);
+}
+
+async function record(
+  response: Response
+): Promise<{ id: string; accountId: string; name: string }> {
+  const value = await json(response);
+
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !("id" in value) ||
+    typeof value.id !== "string" ||
+    !("accountId" in value) ||
+    typeof value.accountId !== "string" ||
+    !("name" in value) ||
+    typeof value.name !== "string"
+  ) {
+    throw new Error("SPEC-INFRA: invalid resource response");
+  }
+
+  return { id: value.id, accountId: value.accountId, name: value.name };
+}
+
+beforeEach(async () => {
+  if (!(await requireDb())) {
+    throw new Error("SPEC-INFRA: database required");
+  }
+
+  await cleanDatabase();
+});
+
+describe("account resource acceptance", () => {
+  test("control: owner creates, reads and renames within their account", async () => {
+    const owner = await user("projects-owner@gmail.com");
+
+    const created = await request(owner.cookie, "POST", "/", { name: "First" });
+
+    expect(created.status).toBe(200);
+
+    const row = await record(created);
+
+    expect(row.accountId).toBe(owner.account.id);
+
+    const get = await request(owner.cookie, "GET", `/${row.id}`);
+
+    expect(get.status).toBe(200);
+
+    const update = await request(owner.cookie, "PATCH", `/${row.id}`, {
+      name: "Renamed",
+    });
+
+    expect(update.status).toBe(200);
+
+    expect(await json(update)).toMatchObject({ name: "Renamed" });
+
+    expect(await payload(request(owner.cookie, "GET", "/"))).toHaveLength(1);
+  });
+
+  test("other accounts cannot list, fetch, or rename an owned record", async () => {
+    const owner = await user("projects-one@gmail.com"),
+      other = await user("projects-two@gmail.com");
+
+    const created = await request(owner.cookie, "POST", "/", {
+      name: "Private",
+    });
+
+    expect(created.status).toBe(200);
+
+    const row = await record(created);
+
+    expect(await payload(request(other.cookie, "GET", "/"))).toEqual([]);
+
+    expect(await status(request(other.cookie, "GET", `/${row.id}`))).toBe(404);
+
+    expect(
+      await status(
+        request(other.cookie, "PATCH", `/${row.id}`, { name: "Tampered" })
+      )
+    ).toBe(404);
+
+    expect(
+      await payload(request(owner.cookie, "GET", `/${row.id}`))
+    ).toMatchObject({ name: "Private" });
+  });
+
+  test.each(["member", "viewer"])(
+    "%s reads but cannot mutate",
+    async (role) => {
+      const owner = await user(`projects-${role}@gmail.com`);
+
+      const created = await request(owner.cookie, "POST", "/", {
+        name: "Visible",
+      });
+
+      expect(created.status).toBe(200);
+
+      const row = await record(created);
+
+      await db
+        .update(accountMemberships)
+        .set({ role })
+        .where(eq(accountMemberships.id, owner.membership.id));
+
+      expect(await status(request(owner.cookie, "GET", "/"))).toBe(200);
+
+      expect(
+        await status(request(owner.cookie, "POST", "/", { name: "Denied" }))
+      ).toBe(403);
+
+      expect(
+        await status(
+          request(owner.cookie, "PATCH", `/${row.id}`, { name: "Denied" })
+        )
+      ).toBe(403);
+    }
+  );
+
+  test("control: admin can create", async () => {
+    const owner = await user("projects-admin@gmail.com");
+
+    await db
+      .update(accountMemberships)
+      .set({ role: "admin" })
+      .where(eq(accountMemberships.id, owner.membership.id));
+
+    expect(
+      await status(request(owner.cookie, "POST", "/", { name: "Allowed" }))
+    ).toBe(200);
+  });
+
+  test("revoked membership denies an existing session immediately", async () => {
+    const owner = await user("projects-revoked@gmail.com");
+
+    expect(await status(request(owner.cookie, "GET", "/"))).toBe(200);
+
+    await db
+      .update(accountMemberships)
+      .set({ revokedAt: now() })
+      .where(eq(accountMemberships.id, owner.membership.id));
+
+    expect(await status(request(owner.cookie, "GET", "/"))).toBe(403);
+  });
+
+  test("client ownership fields cannot create data in another account", async () => {
+    const owner = await user("projects-forge@gmail.com"),
+      other = await user("projects-target@gmail.com");
+
+    const result = await request(owner.cookie, "POST", "/", {
+      name: "Forged",
+      accountId: other.account.id,
+    });
+
+    expect([400, 422]).toContain(result.status);
+
+    expect(await payload(request(other.cookie, "GET", "/"))).toEqual([]);
+  });
+  test("client selectors cannot change the session account even for a member of both accounts", async () => {
+    const owner = await user("selector-owner@gmail.com"),
+      other = await user("selector-other@gmail.com");
+
+    await db.insert(accountMemberships).values({
+      userId: owner.user.id,
+      accountId: other.account.id,
+      role: "admin",
+    });
+    const own = await record(
+      await request(owner.cookie, "POST", "/", { name: "Own" })
+    );
+    const foreign = await record(
+      await request(other.cookie, "POST", "/", { name: "Foreign" })
+    );
+
+    expect(await payload(request(owner.cookie, "GET", "/"))).toMatchObject([
+      { id: own.id },
+    ]);
+    const selected = await app.handle(
+      new Request(
+        `http://localhost/api/v1/projects/?accountId=${other.account.id}`,
+        {
+          headers: { cookie: owner.cookie, "x-account-id": other.account.id },
+        }
+      )
+    );
+
+    if (selected.status === 429 || selected.status >= 500) {
+      throw new Error("SPEC-INFRA: selector request unavailable");
+    }
+
+    expect(selected.status).toBe(200);
+    expect(await json(selected)).toMatchObject([
+      { id: own.id, accountId: owner.account.id },
+    ]);
+
+    const createdWithSelector = await app.handle(
+      new Request(
+        `http://localhost/api/v1/projects/?accountId=${other.account.id}`,
+        {
+          method: "POST",
+          headers: {
+            cookie: owner.cookie,
+            "x-account-id": other.account.id,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ name: "Own selected" }),
+        }
+      )
+    );
+
+    if (
+      createdWithSelector.status === 429 ||
+      createdWithSelector.status >= 500
+    ) {
+      throw new Error("SPEC-INFRA: selector create unavailable");
+    }
+
+    expect(createdWithSelector.status).toBe(200);
+    expect(await record(createdWithSelector)).toMatchObject({
+      accountId: owner.account.id,
+    });
+
+    for (const options of [
+      { method: "GET" },
+      { method: "PATCH", body: JSON.stringify({ name: "Redirected" }) },
+    ]) {
+      const response = await app.handle(
+        new Request(
+          `http://localhost/api/v1/projects/${foreign.id}?accountId=${other.account.id}`,
+          {
+            ...options,
+            headers: {
+              cookie: owner.cookie,
+              "x-account-id": other.account.id,
+              "content-type": "application/json",
+            },
+          }
+        )
+      );
+
+      if (response.status === 429 || response.status >= 500) {
+        throw new Error("SPEC-INFRA: selector request unavailable");
+      }
+
+      expect(response.status).toBe(404);
+    }
+
+    expect(
+      await payload(request(other.cookie, "GET", `/${foreign.id}`))
+    ).toMatchObject({ name: "Foreign" });
+  });
+  test("unsupported deletion cannot remove a project", async () => {
+    const owner = await user("delete-control@gmail.com");
+    const row = await record(
+      await request(owner.cookie, "POST", "/", { name: "Keep" })
+    );
+
+    expect([404, 405]).toContain(
+      await status(request(owner.cookie, "DELETE", `/${row.id}`))
+    );
+    expect(
+      await payload(request(owner.cookie, "GET", `/${row.id}`))
+    ).toMatchObject({ name: "Keep" });
+  });
+});

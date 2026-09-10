@@ -1,0 +1,115 @@
+import { subject } from "@casl/ability";
+import { and, eq } from "drizzle-orm";
+import { db } from "../../clients/postgres";
+import { resourcePlural } from "../../clients/postgres/schema";
+import { buildAbility, requireAbility } from "../../lib/acl/ability";
+import { resolveAccountFeatures } from "../../lib/acl/resolve-account-features";
+import type { Action } from "../../lib/acl/acl.types";
+import { AUDIT_ACTIONS, auditLogService } from "../../lib/audit-log";
+import { ApiErrors } from "../../lib/errors";
+import { now } from "../../lib/time/now";
+import { resolveFreshMembership } from "../../middleware/require-active-membership";
+import { PAGE_LIMIT } from "./resourcePlural.constants";
+import type { IResourceSingular } from "./resourcePlural.types";
+
+export class ResourcePluralService {
+  private async authorize(
+    userId: string,
+    accountId: string,
+    action: Action
+  ): Promise<void> {
+    const membership = await resolveFreshMembership(userId, accountId);
+    const features = await resolveAccountFeatures(accountId);
+
+    requireAbility(
+      buildAbility({ userId, accountId, role: membership.role }, features),
+      action,
+      subject("ResourceSingular", { accountId })
+    );
+  }
+
+  async list(userId: string, accountId: string): Promise<IResourceSingular[]> {
+    await this.authorize(userId, accountId, "read");
+
+    return db
+      .select()
+      .from(resourcePlural)
+      .where(eq(resourcePlural.accountId, accountId))
+      .limit(PAGE_LIMIT);
+  }
+
+  async get(
+    userId: string,
+    accountId: string,
+    id: string
+  ): Promise<IResourceSingular> {
+    await this.authorize(userId, accountId, "read");
+    const [row] = await db
+      .select()
+      .from(resourcePlural)
+      .where(
+        and(eq(resourcePlural.accountId, accountId), eq(resourcePlural.id, id))
+      );
+
+    if (!row) {
+      throw ApiErrors.notFound("ResourceSingular");
+    }
+
+    return row;
+  }
+
+  async create(
+    userId: string,
+    accountId: string,
+    name: string
+  ): Promise<IResourceSingular> {
+    await this.authorize(userId, accountId, "create");
+    const [row] = await db
+      .insert(resourcePlural)
+      .values({ accountId, name })
+      .returning();
+
+    if (!row) {
+      throw ApiErrors.internal("Unable to create ResourceSingular");
+    }
+
+    void auditLogService.record({
+      userId,
+      targetAccountId: accountId,
+      action: AUDIT_ACTIONS.RESOURCE_SINGULAR_CREATED,
+      metadata: { resourceId: row.id, accountId },
+    });
+
+    return row;
+  }
+
+  async rename(
+    userId: string,
+    accountId: string,
+    id: string,
+    name: string
+  ): Promise<IResourceSingular> {
+    await this.authorize(userId, accountId, "update");
+    const [row] = await db
+      .update(resourcePlural)
+      .set({ name, updatedAt: now() })
+      .where(
+        and(eq(resourcePlural.accountId, accountId), eq(resourcePlural.id, id))
+      )
+      .returning();
+
+    if (!row) {
+      throw ApiErrors.notFound("ResourceSingular");
+    }
+
+    void auditLogService.record({
+      userId,
+      targetAccountId: accountId,
+      action: AUDIT_ACTIONS.RESOURCE_SINGULAR_UPDATED,
+      metadata: { resourceId: row.id, accountId },
+    });
+
+    return row;
+  }
+}
+export const resourcePluralService = new ResourcePluralService();

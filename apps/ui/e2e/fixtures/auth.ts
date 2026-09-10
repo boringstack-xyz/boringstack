@@ -7,6 +7,7 @@ import { randomUUID } from "node:crypto";
 
 import { now } from "@/lib/time/now";
 
+import { e2eConfig } from "../../e2e.config";
 import { DashboardPage } from "../pages/DashboardPage";
 import { LoginPage } from "../pages/LoginPage";
 
@@ -80,7 +81,7 @@ export const test = base.extend<
   },
   testUser: [
     async ({}, use, workerInfo) => {
-      const baseURL = "http://localhost:7331";
+      const baseURL = e2eConfig.baseURL;
       const user: ITestUser = {
         email: `e2e-${String(workerInfo.workerIndex)}-${randomUUID()}@e2e.test`,
         password: "E2EPassword123!"

@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "id": "description",
+  "prompt": "Extend the provided Projects implementation with a nullable description of at most 2000 characters, preserving existing rows. Add and apply a migration, regenerate the OpenAPI client, and expose description in the UI. Existing projects must remain readable with null description.",
+  "acceptance": ["account-resource", "description-migration", "account-cache"]
+}

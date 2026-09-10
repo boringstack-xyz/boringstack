@@ -1,0 +1,71 @@
+import { requireAuth } from "../auth/auth.plugin";
+import { errorHandler } from "../../middleware/error-handler";
+import { resourcePluralService } from "./resourcePlural.service";
+import {
+  NameBody,
+  IdParams,
+  ResourceSingularResponse,
+  ResourcePluralResponse,
+} from "./resourcePlural.schemas";
+
+const resourcePluralRoutes = requireAuth()
+  .onError(({ code, error, set }) =>
+    errorHandler({ code: String(code), error, set })
+  )
+  .get(
+    "/",
+    ({ user, accountId }) => resourcePluralService.list(user.id, accountId),
+    {
+      response: ResourcePluralResponse,
+      detail: {
+        tags: ["ResourcePlural"],
+        summary: "List account resourcePlural",
+        security: [{ cookieAuth: [] }],
+      },
+    }
+  )
+  .get(
+    "/:id",
+    ({ user, accountId, params }) =>
+      resourcePluralService.get(user.id, accountId, params.id),
+    {
+      params: IdParams,
+      response: ResourceSingularResponse,
+      detail: {
+        tags: ["ResourcePlural"],
+        summary: "Read an account resourceSingular",
+        security: [{ cookieAuth: [] }],
+      },
+    }
+  )
+  .post(
+    "/",
+    ({ user, accountId, body }) =>
+      resourcePluralService.create(user.id, accountId, body.name),
+    {
+      body: NameBody,
+      response: ResourceSingularResponse,
+      detail: {
+        tags: ["ResourcePlural"],
+        summary: "Create an account resourceSingular",
+        security: [{ cookieAuth: [] }],
+      },
+    }
+  )
+  .patch(
+    "/:id",
+    ({ user, accountId, params, body }) =>
+      resourcePluralService.rename(user.id, accountId, params.id, body.name),
+    {
+      params: IdParams,
+      body: NameBody,
+      response: ResourceSingularResponse,
+      detail: {
+        tags: ["ResourcePlural"],
+        summary: "Rename an account resourceSingular",
+        security: [{ cookieAuth: [] }],
+      },
+    }
+  );
+
+export default resourcePluralRoutes;

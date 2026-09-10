@@ -33,6 +33,7 @@ const exists = (p) => existsSync(join(DIST, p));
 const REQUIRED = [
   ["install.sh", "apps/docs/public/install.sh"],
   ["agents.md", "apps/docs/public/agents.md"],
+  ["account-resource.json", "bun run generate:scaffold-manifest"],
   ["scaffold-manifest.json", "bun run generate:scaffold-manifest"],
   ["robots.txt", "apps/docs/public/robots.txt"],
   ["_redirects", "apps/docs/public/_redirects"],
@@ -234,6 +235,7 @@ if (publishedManifest !== sourceManifest) {
 const agents = read("agents.md");
 for (const [needle, why] of [
   ["install.sh", "the setup command"],
+  ["account-resource.json", "the account-owned feature recipe"],
   ["scaffold-manifest.json", "the machine-readable config surface"],
   ["localhost:7331", "the UI health check"],
   ["localhost:7330", "the API health check"],

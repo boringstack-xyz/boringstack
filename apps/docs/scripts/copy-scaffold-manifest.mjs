@@ -25,7 +25,12 @@ import { join, resolve } from "node:path";
 
 const REPO_ROOT = resolve(import.meta.dirname, "..", "..", "..");
 const SOURCE = join(REPO_ROOT, ".tsforge", "scaffold-manifest.json");
-const DEST = join(import.meta.dirname, "..", "public", "scaffold-manifest.json");
+const DEST = join(
+  import.meta.dirname,
+  "..",
+  "public",
+  "scaffold-manifest.json",
+);
 
 const check = process.argv.includes("--check");
 
@@ -42,7 +47,9 @@ let parsed;
 try {
   parsed = JSON.parse(source);
 } catch (error) {
-  console.error(`scaffold-manifest: source is not valid JSON — ${error.message}`);
+  console.error(
+    `scaffold-manifest: source is not valid JSON — ${error.message}`,
+  );
   process.exit(1);
 }
 
@@ -76,4 +83,36 @@ if (check) {
   console.log(
     `scaffold-manifest: published v${parsed.manifestVersion} (${parsed.fields.length} fields) to public/`,
   );
+}
+
+// Publish the checked feature recipe from its downstream-safe source.
+const recipeSource = readFileSync(
+  join(REPO_ROOT, "tools/agent/tasks/account-resource.json"),
+  "utf8",
+);
+const recipe = JSON.parse(recipeSource);
+if (
+  recipe.schemaVersion !== 1 ||
+  recipe.id !== "account-resource" ||
+  Buffer.byteLength(recipeSource) > 8192
+)
+  throw new Error("Invalid account-resource recipe");
+const recipeDest = join(
+  import.meta.dirname,
+  "..",
+  "public",
+  "account-resource.json",
+);
+if (check) {
+  if (
+    !existsSync(recipeDest) ||
+    readFileSync(recipeDest, "utf8") !== recipeSource
+  ) {
+    console.error(
+      "account-resource.json is stale; run generate:scaffold-manifest",
+    );
+    process.exit(1);
+  }
+} else {
+  writeFileSync(recipeDest, recipeSource, "utf8");
 }

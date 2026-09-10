@@ -1,0 +1,60 @@
+import {
+  type ChangeEvent,
+  type SubmitEvent,
+  useCallback,
+  useState
+} from "react";
+
+import { ROLE } from "@/lib/acl/acl.types.generated";
+
+import { useMe } from "@/features/auth/Auth.queries";
+
+import { useSaveProject } from "../../Projects.mutations";
+import { useProjects } from "../../Projects.queries";
+import type { IProjectsPageView } from "./ProjectsPage.types";
+
+export function useProjectsPage(): IProjectsPageView {
+  const me = useMe();
+  const accountId = me.data?.account.id;
+  const query = useProjects(accountId);
+  const save = useSaveProject(accountId);
+  const [selectedId, setSelectedId] = useState("");
+  const onSelectionChange = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      setSelectedId(event.target.value);
+    },
+    []
+  );
+  const [name, setName] = useState("");
+  const onNameChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setName(event.target.value);
+  }, []);
+  const onSubmit = useCallback(
+    (event: SubmitEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      save.mutate(
+        { name, ...(selectedId !== "" ? { id: selectedId } : {}) },
+        {
+          onSuccess: () => {
+            setName("");
+          }
+        }
+      );
+    },
+    [name, save, selectedId]
+  );
+  const role = me.data?.role;
+
+  return {
+    items: query.data ?? [],
+    isLoading: query.isPending,
+    hasError: query.isError || save.isError,
+    isSaving: save.isPending,
+    canWrite: role === ROLE.owner || role === ROLE.admin,
+    selectedId,
+    onSelectionChange,
+    name,
+    onNameChange,
+    onSubmit
+  };
+}

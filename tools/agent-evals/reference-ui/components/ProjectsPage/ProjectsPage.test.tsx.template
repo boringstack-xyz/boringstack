@@ -1,0 +1,58 @@
+import type { ReactNode } from "react";
+
+import { render, screen } from "@testing-library/react";
+import { beforeEach, expect, it, vi } from "vitest";
+
+import ProjectsPage from "./ProjectsPage";
+
+const view = vi.hoisted(() => ({
+  items: [],
+  isLoading: false,
+  hasError: false,
+  isSaving: false,
+  canWrite: false,
+  name: "",
+  selectedId: "",
+  onSelectionChange: vi.fn(),
+  onNameChange: vi.fn(),
+  onSubmit: vi.fn()
+}));
+
+vi.mock("./ProjectsPage.hooks", () => ({ useProjectsPage: () => view }));
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({ t: (key: string) => key })
+}));
+vi.mock("@/components/core/AppPage", () => ({
+  AppPage: ({ children }: { readonly children: ReactNode }) => (
+    <main>{children}</main>
+  )
+}));
+beforeEach(() => {
+  view.isLoading = false;
+  view.hasError = false;
+  view.canWrite = false;
+});
+it("shows an empty state and hides writes from readers", () => {
+  render(<ProjectsPage />);
+  expect(screen.getByText("projects.empty")).toBeInTheDocument();
+  expect(screen.queryByRole("button")).not.toBeInTheDocument();
+});
+it("exposes the form to a writer", () => {
+  view.canWrite = true;
+  render(<ProjectsPage />);
+  expect(
+    screen.getByRole("button", { name: "projects.save" })
+  ).toBeInTheDocument();
+  expect(screen.getByLabelText("projects.name")).toBeRequired();
+});
+it("loading and errors have distinct accessible states", () => {
+  view.isLoading = true;
+  const page = render(<ProjectsPage />);
+
+  expect(screen.getByRole("status")).toBeInTheDocument();
+  view.isLoading = false;
+  view.hasError = true;
+  page.rerender(<ProjectsPage />);
+  expect(screen.getByRole("alert")).toBeInTheDocument();
+  expect(screen.queryByText("projects.empty")).not.toBeInTheDocument();
+});

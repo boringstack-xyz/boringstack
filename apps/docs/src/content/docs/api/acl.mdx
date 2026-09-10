@@ -24,7 +24,7 @@ Stripe never knows about feature keys or roles. The app never queries Stripe at 
 For every feature key at request time, resolved **per account**:
 
 1. Active override in `account_feature_overrides` (not expired, not revoked).
-2. `plan_features` row for the account's current `account_plans` row.
+2. `plan_features` row for an unrevoked, currently entitling `account_plans` row, considering status, paid period and administrative expiry.
 3. Catalog default from `src/lib/acl/acl.constants.ts` (`FEATURES[key].default`).
 
 First match wins. The CASL ability is built from the resolved feature set after that pass. The resolver (`resolveFeatures()` in `src/lib/acl/feature-resolution.ts`) is pure: feed it the plan rows and override rows, get back a typed `ResolvedFeatures` object. Tested in isolation.
@@ -60,6 +60,14 @@ export const FEATURES = {
 ```
 
 Feature gates compose with role rules via CASL's `cannot(...)` rules: a missing feature forbids the action _regardless of role_. Owner is not special here.
+
+## Server-side entitlement and seat checks
+
+`requireFeature(accountId, feature)` rejects a missing boolean entitlement with 403. Invitation creation uses it for `can_invite_team`. The defaults are no team invitations, no exports and one seat when no eligible plan or override grants otherwise. Stripe being disabled does not waive this policy.
+
+`enforceSeatAvailable(tx, accountId)` takes an account advisory transaction lock, resolves the current cap and counts active memberships before admission. Invitation acceptance and join-request approval call it in the same transaction as their membership write. A transaction without a shared lock would not by itself prevent concurrent requests from both seeing a free seat.
+
+Pending invitations do not reserve seats. The check does not remove existing members after a downgrade. See [billing entitlement behavior](/api/billing/#entitlement-behavior) and the [rollout runbook](/runbooks/security-upgrade/).
 
 ## Account-scoping enforcement
 

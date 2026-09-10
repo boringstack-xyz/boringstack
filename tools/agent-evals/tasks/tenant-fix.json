@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "id": "tenant-fix",
+  "prompt": "A supplied Projects implementation exposes another account's records through its list endpoint. Find and fix the tenant-isolation defect without disabling the endpoint or weakening authorization. Run the controls and isolation tests.",
+  "acceptance": ["account-resource"]
+}
