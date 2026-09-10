@@ -35,8 +35,11 @@ if [[ ! -d "$ROOT/apps/api" || ! -d "$ROOT/apps/ui" ]]; then
   fail "Expected monorepo apps at $ROOT/apps/api and $ROOT/apps/ui"
 fi
 
-# Seed an .env mirroring CI so prod overlays validate too.
-cp "$COMPOSE_DIR/.env.example" "$COMPOSE_DIR/.env" 2>/dev/null || true
+# Render CI configuration without overwriting the developer's local .env.
+CHECK_ENV="$(mktemp "${TMPDIR:-/tmp}/bs-compose-check.XXXXXX")"
+trap 'rm -f "$CHECK_ENV"' EXIT
+cp "$COMPOSE_DIR/.env.example" "$CHECK_ENV"
+export COMPOSE_ENV_FILES="$CHECK_ENV"
 {
   echo "GLITCHTIP_SECRET_KEY=ci-local-placeholder-secret-key"
   echo "GLITCHTIP_PUBLIC_HOST=glitchtip.example.com"
@@ -46,13 +49,13 @@ cp "$COMPOSE_DIR/.env.example" "$COMPOSE_DIR/.env" 2>/dev/null || true
   # validation needs values just like CI's Seed .env step.
   echo "GLITCHTIP_SUPERUSER_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=')"
   echo "GRAFANA_ADMIN_PASSWORD=$(openssl rand -base64 24 | tr -d '/+=')"
-} >> "$COMPOSE_DIR/.env"
+} >> "$CHECK_ENV"
 
 config() {
   local name="$1"
   shift
   c_blue "  config: $name"
-  (cd "$COMPOSE_DIR" && docker compose "$@" --quiet >/dev/null)
+  (cd "$COMPOSE_DIR" && docker compose --env-file "$CHECK_ENV" "$@" --quiet >/dev/null)
 }
 
 step "1/4 Compose config validation (every overlay combo)"

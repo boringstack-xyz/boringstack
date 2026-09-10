@@ -10,6 +10,8 @@ ENV_FILE="${ENV_FILE:-$ROOT/.env}"
 # `STACK=dev` line would overwrite it and silently demote smoke runs back
 # to the dev stack.
 STACK_FROM_CALLER="${STACK:-}"
+POSTGRES_PORT_FROM_CALLER="${POSTGRES_HOST_PORT:-}"
+VALKEY_PORT_FROM_CALLER="${VALKEY_HOST_PORT:-}"
 if [[ -f "$ENV_FILE" ]]; then
   set -a
   # shellcheck source=/dev/null
@@ -20,8 +22,15 @@ fi
 if [[ -n "$STACK_FROM_CALLER" ]]; then
   STACK="$STACK_FROM_CALLER"
 fi
+# Explicit host-port overrides must also survive the local .env defaults.
+if [[ -n "$POSTGRES_PORT_FROM_CALLER" ]]; then
+  export POSTGRES_HOST_PORT="$POSTGRES_PORT_FROM_CALLER"
+fi
+if [[ -n "$VALKEY_PORT_FROM_CALLER" ]]; then
+  export VALKEY_HOST_PORT="$VALKEY_PORT_FROM_CALLER"
+fi
 STACK="${STACK:-dev}"
-COMPOSE_FILES=(-f "$ROOT/docker-compose.yml")
+COMPOSE_ARGS=(-f "$ROOT/docker-compose.yml")
 PROFILE_ARGS=()
 
 # Isolate the smoke stack under its own compose project. The pre-push smoke
@@ -30,9 +39,8 @@ PROFILE_ARGS=()
 # hit an empty schema ("audit.audit_log does not exist"). A dedicated project
 # means `down -v` can only ever drop smoke's own volumes. dev/prod keep the
 # docker-compose.yml `name:` (boringstack-infra).
-PROJECT_ARGS=()
 if [[ "$STACK" == "smoke" ]]; then
-  PROJECT_ARGS=(-p boringstack-smoke)
+  COMPOSE_ARGS+=(-p boringstack-smoke)
 fi
 
 # Observability + GlitchTip default to ON for dev and prod, you can't build
@@ -49,7 +57,7 @@ WITH_GLITCHTIP="${WITH_GLITCHTIP:-$WITH_GLITCHTIP_DEFAULT}"
 
 case "$STACK" in
   dev)
-    COMPOSE_FILES+=(-f "$ROOT/docker-compose.development-labels.yml")
+    COMPOSE_ARGS+=(-f "$ROOT/docker-compose.development-labels.yml")
     PROFILE_ARGS+=(--profile dev)
     ;;
   smoke)
@@ -58,11 +66,11 @@ case "$STACK" in
     # full-stack-smoke CI workflow and any local "test the prod build
     # against the dev API" loop. Reuses dev data-service ports so
     # `psql`, `valkey-cli`, and curl against :7330 still work.
-    COMPOSE_FILES+=(-f "$ROOT/docker-compose.development-labels.yml")
+    COMPOSE_ARGS+=(-f "$ROOT/docker-compose.development-labels.yml")
     PROFILE_ARGS+=(--profile smoke)
     ;;
   prod)
-    COMPOSE_FILES+=(-f "$ROOT/docker-compose.production-labels.yml")
+    COMPOSE_ARGS+=(-f "$ROOT/docker-compose.production-labels.yml")
     PROFILE_ARGS+=(--profile prod)
     : "${POSTGRES_USER:?POSTGRES_USER required in prod. Set in compose/.env or via terraform.tfvars.}"
     : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required in prod. Set in compose/.env or via terraform.tfvars.}"
@@ -145,22 +153,22 @@ if [[ "$WITH_OBSERVABILITY" == "1" && "$STACK" != "prod" && -z "${GRAFANA_ADMIN_
 fi
 
 if [[ "$WITH_OBSERVABILITY" == "1" && -f "$ROOT/docker-compose.observability.yml" ]]; then
-  COMPOSE_FILES+=(-f "$ROOT/docker-compose.observability.yml")
+  COMPOSE_ARGS+=(-f "$ROOT/docker-compose.observability.yml")
   PROFILE_ARGS+=(--profile observability)
 fi
 
 if [[ "$WITH_GLITCHTIP" == "1" && -f "$ROOT/docker-compose.glitchtip.yml" ]]; then
-  COMPOSE_FILES+=(-f "$ROOT/docker-compose.glitchtip.yml")
+  COMPOSE_ARGS+=(-f "$ROOT/docker-compose.glitchtip.yml")
   PROFILE_ARGS+=(--profile "glitchtip-${STACK}")
   # In prod, layer the GlitchTip prod labels (HTTPS + Basic Auth + CORS).
   if [[ "$STACK" == "prod" && -f "$ROOT/docker-compose.glitchtip-prod-labels.yml" ]]; then
-    COMPOSE_FILES+=(-f "$ROOT/docker-compose.glitchtip-prod-labels.yml")
+    COMPOSE_ARGS+=(-f "$ROOT/docker-compose.glitchtip-prod-labels.yml")
   fi
   # In dev, publish glitchtip-web on host port 8055 so the operator
   # can open it directly (Traefik is prod-only, so the Traefik labels
   # in the base overlay don't route anything in dev).
   if [[ "$STACK" == "dev" && -f "$ROOT/docker-compose.glitchtip-dev-ports.yml" ]]; then
-    COMPOSE_FILES+=(-f "$ROOT/docker-compose.glitchtip-dev-ports.yml")
+    COMPOSE_ARGS+=(-f "$ROOT/docker-compose.glitchtip-dev-ports.yml")
   fi
 fi
 
@@ -169,7 +177,7 @@ if [[ "${WITH_BULLMQ:-}" == "" && "$STACK" == "dev" ]]; then
 fi
 
 if [[ "${WITH_BULLMQ:-0}" == "1" && "$STACK" == "dev" && -f "$ROOT/docker-compose.bullmq.yml" ]]; then
-  COMPOSE_FILES+=(-f "$ROOT/docker-compose.bullmq.yml")
+  COMPOSE_ARGS+=(-f "$ROOT/docker-compose.bullmq.yml")
   PROFILE_ARGS+=(--profile bullmq)
 fi
 
@@ -178,7 +186,7 @@ if [[ "${WITH_WUD:-}" == "" && "$STACK" == "prod" ]]; then
 fi
 
 if [[ "${WITH_WUD:-0}" == "1" && -f "$ROOT/docker-compose.wud.yml" ]]; then
-  COMPOSE_FILES+=(-f "$ROOT/docker-compose.wud.yml")
+  COMPOSE_ARGS+=(-f "$ROOT/docker-compose.wud.yml")
   PROFILE_ARGS+=(--profile wud)
 fi
 
@@ -187,7 +195,7 @@ if [[ "${WITH_MAILPIT:-}" == "" && "$STACK" == "dev" ]]; then
 fi
 
 if [[ "${WITH_MAILPIT:-0}" == "1" && "$STACK" == "dev" && -f "$ROOT/docker-compose.mailpit.yml" ]]; then
-  COMPOSE_FILES+=(-f "$ROOT/docker-compose.mailpit.yml")
+  COMPOSE_ARGS+=(-f "$ROOT/docker-compose.mailpit.yml")
   PROFILE_ARGS+=(--profile mailpit)
   # Point api-dev at the mailpit catcher only when STACK=dev. The smoke
   # profile shares the api-dev service but doesn't run mailpit, so the
@@ -228,7 +236,7 @@ if [[ "$STACK" == "dev" && "${1:-}" == "up" ]]; then
 fi
 
 if [[ "$WIRE_GLITCHTIP" == "1" || "$WIRE_VAPID" == "1" ]]; then
-  docker compose "${COMPOSE_FILES[@]}" "${PROJECT_ARGS[@]}" "${PROFILE_ARGS[@]}" "$@"
+  docker compose "${COMPOSE_ARGS[@]}" "${PROFILE_ARGS[@]}" "$@"
   # Background: both scripts are idempotent and silent when wiring is
   # already done. Foregrounding them would hold the dev loop on every
   # `up` for first-boot bootstraps that only matter once.
@@ -239,5 +247,5 @@ if [[ "$WIRE_GLITCHTIP" == "1" || "$WIRE_VAPID" == "1" ]]; then
     ( "$ROOT/../scripts/dev-vapid-init.sh" --quiet & ) >/dev/null 2>&1
   fi
 else
-  exec docker compose "${COMPOSE_FILES[@]}" "${PROJECT_ARGS[@]}" "${PROFILE_ARGS[@]}" "$@"
+  exec docker compose "${COMPOSE_ARGS[@]}" "${PROFILE_ARGS[@]}" "$@"
 fi

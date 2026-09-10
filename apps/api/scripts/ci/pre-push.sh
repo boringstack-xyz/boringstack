@@ -61,38 +61,66 @@ RAN=$((RAN + 1))
 
 step "3/${TOTAL} Ensure Postgres + Valkey are running and migrated"
 probe_tcp() { nc -z "$1" "$2" 2>/dev/null; }
-export DATABASE_URL="${DATABASE_URL:-postgresql://app:app_dev_password@localhost:5432/app}"
+# Migration and tests must use the same selected database. A separate test URL
+# takes precedence, matching the test preload's target selection.
+export DATABASE_URL="${TEST_DATABASE_URL:-${DATABASE_URL:-postgresql://app:app_dev_password@127.0.0.1:${POSTGRES_HOST_PORT:-5432}/app}}"
+export TEST_DATABASE_URL="$DATABASE_URL"
+export VALKEY_HOST="${VALKEY_HOST:-127.0.0.1}"
+export VALKEY_PORT="${VALKEY_PORT:-${VALKEY_HOST_PORT:-6379}}"
+DB_ADDRESS="$(bun -e '
+  try {
+    const url = new URL(process.env.DATABASE_URL);
+    if (!["postgres:", "postgresql:"].includes(url.protocol)) throw new Error();
+    console.log(url.hostname.replace(/^\[|\]$/g, "") + " " + (url.port || "5432"));
+  } catch {
+    console.error("Invalid test database URL");
+    process.exit(1);
+  }
+')" || fail "Cannot resolve the configured test database endpoint"
+read -r DB_HOST DB_PORT <<< "$DB_ADDRESS"
 
-if probe_tcp localhost 5432 && probe_tcp localhost 6379; then
-  ok "Postgres + Valkey already up"
+services_ready() {
+  probe_tcp "$DB_HOST" "$DB_PORT" && probe_tcp "$VALKEY_HOST" "$VALKEY_PORT"
+}
+
+is_loopback() {
+  [[ "$1" == "localhost" || "$1" == "127.0.0.1" || "$1" == "::1" ]]
+}
+
+if services_ready; then
+  ok "Configured Postgres + Valkey endpoints are reachable"
 else
+  if ! is_loopback "$DB_HOST" || ! is_loopback "$VALKEY_HOST"; then
+    fail "Configured test services are unavailable; refusing to start unrelated local services for remote endpoints"
+  fi
   if [ ! -x "$COMPOSE_DIR/dev.sh" ]; then
-    fail "Infra dev stack not found at $COMPOSE_DIR/dev.sh. Expected ../../infra/compose sibling checkout."
+    fail "Infra dev stack not found at $COMPOSE_DIR/dev.sh"
   fi
   if ! docker ps >/dev/null 2>&1; then
     fail "Docker daemon not running. Start OrbStack / Docker Desktop and re-push."
   fi
-  c_blue "  starting dev stack (one-time per session, ~20s)…"
-  (cd "$COMPOSE_DIR" && ./dev.sh up -d postgres valkey api-migrate-dev >/dev/null)
+  c_blue "  starting local data services on configured host ports…"
+  (
+    cd "$COMPOSE_DIR"
+    POSTGRES_HOST_PORT="$DB_PORT" VALKEY_HOST_PORT="$VALKEY_PORT" \
+      ./dev.sh up -d postgres valkey >/dev/null
+  )
   for _ in $(seq 1 30); do
-    if probe_tcp localhost 5432 && probe_tcp localhost 6379; then
+    if services_ready; then
       break
     fi
     sleep 1
   done
-  probe_tcp localhost 5432 || fail "Postgres did not become reachable on :5432"
-  probe_tcp localhost 6379 || fail "Valkey did not become reachable on :6379"
-  ok "dev stack ready"
+  probe_tcp "$DB_HOST" "$DB_PORT" || fail "Postgres did not become reachable on the configured test endpoint"
+  probe_tcp "$VALKEY_HOST" "$VALKEY_PORT" || fail "Valkey did not become reachable on the configured test endpoint"
+  ok "test services ready"
 fi
 
-# Always migrate: a reachable :5432 does NOT guarantee a migrated schema. A
-# sibling stack's `down -v` (e.g. the smoke gate) can drop the volume out from
-# under a still-listening Postgres, leaving tests to hit "relation
-# audit.audit_log does not exist". The api-migrate-dev one-shot is idempotent
-# and runs inside the compose network against the real `postgres` service, so
-# it targets the dev DB regardless of what holds the host's :5432.
-c_blue "  applying migrations (idempotent)…"
-(cd "$COMPOSE_DIR" && ./dev.sh up -d api-migrate-dev >/dev/null 2>&1)
+# Run the migration synchronously against the selected test database. A Compose
+# migration container can target a different database and detached startup does
+# not establish that the migration completed successfully.
+c_blue "  applying migrations to the selected test database…"
+bun run db:migrate
 ok "schema migrated"
 RAN=$((RAN + 1))
 
