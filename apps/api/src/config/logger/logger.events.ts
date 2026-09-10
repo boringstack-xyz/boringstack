@@ -141,6 +141,7 @@ export const LOG_EVENTS = [
   "notifications.sse.opened",
   "notifications.sse.revoked",
   "notifications.web_push.delivery_failed",
+  "notifications.web_push.destination_rejected",
   "notifications.web_push.job_completed",
   "notifications.web_push.job_failed",
   "notifications.web_push.subscription_expired",

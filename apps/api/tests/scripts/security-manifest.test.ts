@@ -13,6 +13,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  checkStructure,
   INFRA_MARKER,
   parseJUnit,
   reconcile,
@@ -27,6 +28,7 @@ const ANOTHER = "another aspect of the defect";
 const FAIL = "assertion-fail" as const;
 const PASS = "pass" as const;
 const CONTROL = "control: the fixture works";
+const REFUTED_FILE = "f02-refuted.test.ts";
 
 const finding = (overrides: Partial<IFinding> = {}): IFinding => ({
   id: "F01",
@@ -257,6 +259,195 @@ describe("security manifest reconciler", () => {
     });
 
     expect(problems.join("\n")).toContain("no report");
+  });
+
+  /* ------------------------------------------------- refuted accounting */
+
+  test("accepts a refuted finding with no cases and nothing running", () => {
+    const problems = reconcile({
+      manifest: manifestOf(
+        finding(),
+        finding({
+          id: "F02",
+          status: "refuted",
+          file: REFUTED_FILE,
+          cases: {},
+        })
+      ),
+      cases: [assertionFailure(DEFECT), passing(CONTROL)],
+      runCompleted: true,
+    });
+
+    /*
+     * The shape a refuted finding is supposed to have: the metadata stays
+     * so the review reads, and nothing executable is left behind it.
+     */
+    expect(problems).toBeEmpty();
+  });
+
+  test("rejects a refuted finding that still lists expectations", () => {
+    const problems = reconcile({
+      manifest: manifestOf(
+        finding(),
+        finding({
+          id: "F02",
+          status: "refuted",
+          file: REFUTED_FILE,
+          cases: { [DEFECT]: FAIL },
+        })
+      ),
+      cases: [assertionFailure(DEFECT), passing(CONTROL)],
+      runCompleted: true,
+    });
+
+    expect(problems.join("\n")).toContain("F02 is refuted but still lists");
+  });
+
+  test("rejects passing cases that belong to a refuted finding", () => {
+    const problems = reconcile({
+      manifest: manifestOf(
+        finding(),
+        finding({
+          id: "F02",
+          status: "refuted",
+          file: REFUTED_FILE,
+          cases: {},
+        })
+      ),
+      cases: [
+        assertionFailure(DEFECT),
+        passing(CONTROL),
+        { file: REFUTED_FILE, name: "still here", outcome: "passed" },
+      ],
+      runCompleted: true,
+    });
+
+    /*
+     * Reconciliation skips refuted findings, so anything running from one
+     * is accounted for by nothing at all: it can pass, fail, or stop
+     * running, and the check stays green either way.
+     */
+    expect(problems.join("\n")).toContain('"still here" ran from');
+  });
+
+  test("rejects failing cases that belong to a refuted finding", () => {
+    const problems = reconcile({
+      manifest: manifestOf(
+        finding(),
+        finding({
+          id: "F02",
+          status: "refuted",
+          file: REFUTED_FILE,
+          cases: {},
+        })
+      ),
+      cases: [
+        assertionFailure(DEFECT),
+        passing(CONTROL),
+        {
+          file: REFUTED_FILE,
+          name: "the defect is back",
+          outcome: "failed",
+          failureType: "AssertionError",
+          failureMessage: "expect(received).toBe(expected)",
+        },
+      ],
+      runCompleted: true,
+    });
+
+    expect(problems.join("\n")).toContain('"the defect is back" ran from');
+  });
+
+  test("rejects cases from a file no finding maps to", () => {
+    const problems = reconcile({
+      manifest: manifestOf(finding()),
+      cases: [
+        assertionFailure(DEFECT),
+        passing(CONTROL),
+        { file: "f99-stray.test.ts", name: "orphan", outcome: "passed" },
+      ],
+      runCompleted: true,
+    });
+
+    expect(problems.join("\n")).toContain(
+      "f99-stray.test.ts executed tests but no active finding"
+    );
+  });
+});
+
+describe("security manifest structure", () => {
+  const structure = (findings: IFinding[], specFiles: string[]): string[] =>
+    checkStructure({ manifest: manifestOf(...findings), specFiles });
+
+  test("accepts a live finding whose file exists", () => {
+    expect(structure([finding()], [FILE])).toBeEmpty();
+  });
+
+  test("accepts a refuted finding with no cases and no file", () => {
+    const problems = structure(
+      [
+        finding(),
+        finding({
+          id: "F02",
+          status: "refuted",
+          file: REFUTED_FILE,
+          cases: {},
+        }),
+      ],
+      [FILE]
+    );
+
+    expect(problems).toBeEmpty();
+  });
+
+  test("rejects a refuted finding whose spec file still exists", () => {
+    const problems = structure(
+      [
+        finding(),
+        finding({
+          id: "F02",
+          status: "refuted",
+          file: REFUTED_FILE,
+          cases: {},
+        }),
+      ],
+      [FILE, REFUTED_FILE]
+    );
+
+    /*
+     * Counting a refuted finding's file as mapped was the hole: the file
+     * passed the "every spec file belongs to a finding" sweep, and then
+     * reconciliation skipped the finding that claimed it.
+     */
+    expect(problems.join("\n")).toContain("F02 is refuted but");
+    expect(problems.join("\n")).toContain("still exists");
+  });
+
+  test("rejects a refuted finding that kept its expectations", () => {
+    const problems = structure(
+      [
+        finding(),
+        finding({
+          id: "F02",
+          status: "refuted",
+          file: REFUTED_FILE,
+          cases: { [DEFECT]: FAIL },
+        }),
+      ],
+      [FILE]
+    );
+
+    expect(problems.join("\n")).toContain("must be {}");
+  });
+
+  test("rejects a live finding whose file is missing", () => {
+    expect(structure([finding()], []).join("\n")).toContain("is missing");
+  });
+
+  test("rejects a spec file no finding points at", () => {
+    const problems = structure([finding()], [FILE, "f99-stray.test.ts"]);
+
+    expect(problems.join("\n")).toContain("f99-stray.test.ts exists but");
   });
 });
 

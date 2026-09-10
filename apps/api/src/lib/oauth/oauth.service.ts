@@ -86,16 +86,28 @@ export const completeOAuthCallback = async (
 
   /*
    * The browser presenting this callback must be the one that started the
-   * flow. Without it, holding a valid state is enough: an attacker begins
+   * flow. Without that, holding a valid state is enough: an attacker begins
    * authorization for their own identity and hands the callback URL to a
    * victim, whose browser completes it and ends up signed in as the
-   * attacker. State is consumed above either way, so a failed binding also
-   * burns the state rather than leaving it for a retry.
+   * attacker.
+   *
+   * State with no stored hash is refused rather than waved through. Treating
+   * a missing hash as "nothing to check" reinstates the whole attack for any
+   * state an attacker can get written without one, and every state this
+   * build writes carries a hash. A state issued by an older build is refused
+   * too: the user restarts sign-in, which costs a redirect.
+   *
+   * Checked before the code is exchanged, so a rejected callback never
+   * reaches the provider. State is consumed above either way, so a failed
+   * binding burns it rather than leaving it for a retry.
    */
+  const boundHash = stored.bindingHash;
+
   if (
-    stored.bindingHash !== undefined &&
-    (bindingNonce === "" ||
-      hashOpaqueToken(bindingNonce) !== stored.bindingHash)
+    boundHash === undefined ||
+    boundHash === "" ||
+    bindingNonce === "" ||
+    hashOpaqueToken(bindingNonce) !== boundHash
   ) {
     throw ApiErrors.unauthorized(
       "This sign-in was not started in this browser"

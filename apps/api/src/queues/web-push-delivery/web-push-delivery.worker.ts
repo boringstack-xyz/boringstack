@@ -9,6 +9,7 @@ import {
 import { BULL_PREFIX, getValkeyConnectionOptions } from "../../clients/valkey";
 import { env } from "../../config/env";
 import { logger } from "../../config/logger";
+import { assertAllowedPushEndpoint } from "../../api/notifications/notifications.push.destination";
 import { ApiErrors, getErrorMessage } from "../../lib/errors";
 import { DELIVERY_STATUS } from "../../lib/notifications/notifications.constants";
 import { now } from "../../lib/time/now";
@@ -131,12 +132,44 @@ const loadSubscriptions = async (
     .where(eq(pushSubscription.userId, userId));
 };
 
-const pruneExpiredSubscription = async (
-  subscriptionId: string
-): Promise<void> => {
+const dropSubscription = async (subscriptionId: string): Promise<void> => {
   await db
     .delete(pushSubscription)
     .where(eq(pushSubscription.id, subscriptionId));
+};
+
+/**
+ * Why the destination is checked again here, having been checked at
+ * registration: rows written before that check existed are still in the
+ * table, and nothing rewrites them. The worker is the last point before an
+ * outbound request, so it is the one place that covers every row however it
+ * got there.
+ *
+ * This does not close delivery-time DNS rebinding. The name is re-validated,
+ * not the address it resolves to at connect time, so an allowlisted host that
+ * resolves inward still reaches inward. Closing that needs an egress policy
+ * or a resolve-then-pin client, both out of scope here.
+ */
+const rejectedDestination = (endpoint: string): string | null => {
+  try {
+    assertAllowedPushEndpoint(endpoint);
+
+    return null;
+  } catch (error: unknown) {
+    return getErrorMessage(error);
+  }
+};
+
+/**
+ * The host, and only the host. The rest of a push endpoint is the
+ * subscription credential, so it never reaches a log line.
+ */
+const hostOf = (endpoint: string): string => {
+  try {
+    return new URL(endpoint).hostname;
+  } catch {
+    return "<unparseable>";
+  }
 };
 
 const markUsed = async (subscriptionId: string): Promise<void> => {
@@ -161,6 +194,26 @@ const deliverToSubscription = async (
   payload: string,
   vapid: { subject: string; publicKey: string; privateKey: string }
 ): Promise<{ succeeded: boolean; pruned: boolean }> => {
+  const rejection = rejectedDestination(subscription.endpoint);
+
+  /*
+   * Dropped rather than retried. The destination cannot become allowed by
+   * trying again, so a retry is just a repeated outbound attempt at a host
+   * policy has already refused.
+   */
+  if (rejection !== null) {
+    logger.warn("Dropped Web Push subscription with a refused destination", {
+      event: "notifications.web_push.destination_rejected",
+      subscriptionId: subscription.id,
+      host: hostOf(subscription.endpoint),
+      reason: rejection,
+    });
+
+    await dropSubscription(subscription.id);
+
+    return { succeeded: false, pruned: true };
+  }
+
   try {
     await webPush.sendNotification(
       {
@@ -187,7 +240,7 @@ const deliverToSubscription = async (
         subscriptionId: subscription.id,
         statusCode: error.statusCode,
       });
-      await pruneExpiredSubscription(subscription.id);
+      await dropSubscription(subscription.id);
 
       return { succeeded: false, pruned: true };
     }
@@ -201,6 +254,40 @@ const deliverToSubscription = async (
 
     return { succeeded: false, pruned: false };
   }
+};
+
+/**
+ * Fan out one payload across a user's subscriptions.
+ *
+ * Exported so the destination rule can be exercised against rows seeded
+ * straight into the table. Registration is the only other way a row gets
+ * there, and it now refuses everything this drops, so a test that went
+ * through registration could not build the state this covers.
+ */
+export const deliverToSubscriptions = async (
+  subscriptions: readonly ISubscriptionRow[],
+  payload: string,
+  vapid: { subject: string; publicKey: string; privateKey: string }
+): Promise<IDeliveryResult> => {
+  const result: IDeliveryResult = {
+    attempted: subscriptions.length,
+    succeeded: 0,
+    pruned: 0,
+  };
+
+  for (const subscription of subscriptions) {
+    const outcome = await deliverToSubscription(subscription, payload, vapid);
+
+    if (outcome.succeeded) {
+      result.succeeded += 1;
+    }
+
+    if (outcome.pruned) {
+      result.pruned += 1;
+    }
+  }
+
+  return result;
 };
 
 export class WebPushDeliveryWorker {
@@ -253,36 +340,25 @@ export class WebPushDeliveryWorker {
   private async processJob(job: Job<IWebPushDeliveryJobData>): Promise<void> {
     const subscriptions = await loadSubscriptions(job.data.recipientUserId);
 
-    const result: IDeliveryResult = {
-      attempted: subscriptions.length,
-      succeeded: 0,
-      pruned: 0,
-    };
-
     if (subscriptions.length === 0) {
-      await settleDelivery(job.data.notificationDeliveryId, result);
+      await settleDelivery(job.data.notificationDeliveryId, {
+        attempted: 0,
+        succeeded: 0,
+        pruned: 0,
+      });
 
       return;
     }
 
-    const payload = buildPayload(job.data);
-    const vapid = {
-      subject: env.WEB_PUSH_VAPID_SUBJECT,
-      publicKey: env.WEB_PUSH_VAPID_PUBLIC,
-      privateKey: env.WEB_PUSH_VAPID_PRIVATE,
-    };
-
-    for (const subscription of subscriptions) {
-      const outcome = await deliverToSubscription(subscription, payload, vapid);
-
-      if (outcome.succeeded) {
-        result.succeeded += 1;
+    const result = await deliverToSubscriptions(
+      subscriptions,
+      buildPayload(job.data),
+      {
+        subject: env.WEB_PUSH_VAPID_SUBJECT,
+        publicKey: env.WEB_PUSH_VAPID_PUBLIC,
+        privateKey: env.WEB_PUSH_VAPID_PRIVATE,
       }
-
-      if (outcome.pruned) {
-        result.pruned += 1;
-      }
-    }
+    );
 
     if (shouldRetryTransientFailure(job, result)) {
       throw ApiErrors.externalService(

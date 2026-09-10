@@ -130,10 +130,6 @@ export interface IReconcileInput {
   readonly runCompleted: boolean;
 }
 
-/**
- * Returns a list of human-readable problems. Empty means the manifest and the
- * run agree, every mapped test executed, and every failure is real evidence.
- */
 /** Nothing in this suite is conditional, so a skip means it stopped running. */
 const checkNoSkips = (cases: ITestCase[]): string[] =>
   cases
@@ -283,12 +279,131 @@ const checkFinding = (finding: IFinding, cases: ITestCase[]): string[] => {
  * Returns a list of human-readable problems. Empty means the manifest and the
  * run agree, every mapped test executed, and every failure is real evidence.
  */
-/** Nothing in this suite is conditional, so a skip means it stopped running. */
+const isActive = (finding: IFinding): boolean => finding.status !== "refuted";
+
+export interface IStructureInput {
+  readonly manifest: IManifest;
+  /** Spec-file names present on disk, relative to `security-spec/`. */
+  readonly specFiles: readonly string[];
+}
 
 /**
- * Returns a list of human-readable problems. Empty means the manifest and the
- * run agree, every mapped test executed, and every failure is real evidence.
+ * The manifest-to-disk contract, checked before anything is executed.
+ *
+ * A live finding owns exactly one spec file and that file must exist. A
+ * refuted finding owns none: it keeps its id, severity and title so the
+ * review stays legible, and gives up both its expectations and its file.
+ *
+ * Both halves of that matter. Reconciliation skips refuted findings, so a
+ * file still mapped to one is a place tests can run entirely unaccounted
+ * for: passing, failing, or silently not running.
  */
+export const checkStructure = ({
+  manifest,
+  specFiles,
+}: IStructureInput): string[] => {
+  const problems: string[] = [];
+  const present = new Set(specFiles);
+  const mapped = new Set<string>();
+
+  for (const finding of manifest.findings) {
+    mapped.add(finding.file);
+
+    if (isActive(finding)) {
+      if (!present.has(finding.file)) {
+        problems.push(`${finding.id}: ${finding.file} is missing`);
+      }
+
+      continue;
+    }
+
+    if (Object.keys(finding.cases).length > 0) {
+      problems.push(
+        `${finding.id} is refuted but lists case expectations; a refuted ` +
+          "finding's `cases` must be {}"
+      );
+    }
+
+    if (present.has(finding.file)) {
+      problems.push(
+        `${finding.id} is refuted but ${finding.file} still exists; delete ` +
+          `the spec file or reopen the finding`
+      );
+    }
+  }
+
+  for (const file of specFiles) {
+    if (!mapped.has(file)) {
+      problems.push(
+        `${file} exists but no finding in findings.json points at it`
+      );
+    }
+  }
+
+  return problems;
+};
+
+/**
+ * A refuted finding is a historical record, not a live mapping.
+ *
+ * It keeps its id, severity and title so the review stays legible, and gives
+ * up everything executable: no expectations, and no spec file for cases to
+ * run from. Without both halves the entry is a hole. Skipping refuted
+ * findings during reconciliation (which is what the checker used to do) while
+ * still counting their file as mapped means anything in that file runs
+ * unaccounted: passing, failing, or not running at all.
+ */
+const checkRefuted = (finding: IFinding, cases: ITestCase[]): string[] => {
+  const problems: string[] = [];
+  const expected = Object.keys(finding.cases);
+
+  if (expected.length > 0) {
+    problems.push(
+      `${finding.id} is refuted but still lists ${String(expected.length)} ` +
+        `case expectation(s); a refuted finding has no cases`
+    );
+  }
+
+  for (const entry of cases.filter((item) => item.file === finding.file)) {
+    problems.push(
+      `${finding.id} is refuted but "${entry.name}" ran from ` +
+        `${finding.file}; delete the spec file or reopen the finding`
+    );
+  }
+
+  return problems;
+};
+
+/**
+ * Anything that ran has to belong to a finding that is still live.
+ *
+ * Per-finding reconciliation only sees files the manifest points at, so a
+ * spec file nothing maps to is invisible to it however it behaves.
+ */
+const checkUnmappedCases = (
+  manifest: IManifest,
+  cases: ITestCase[]
+): string[] => {
+  const active = new Set(
+    manifest.findings.filter(isActive).map((finding) => finding.file)
+  );
+  const refuted = new Set(
+    manifest.findings.filter((finding) => !isActive(finding)).map((f) => f.file)
+  );
+
+  const orphaned = new Set(
+    cases
+      .filter((entry) => !active.has(entry.file) && !refuted.has(entry.file))
+      .map((entry) => entry.file)
+  );
+
+  return [...orphaned].map(
+    (file) =>
+      `${file} executed tests but no active finding in findings.json maps ` +
+      `to it`
+  );
+};
+
 export const reconcile = ({
   manifest,
   cases,
@@ -306,8 +421,11 @@ export const reconcile = ({
     ...checkNoSkips(cases),
     ...checkFailureKinds(cases),
     ...checkControlsPass(cases),
-    ...manifest.findings
-      .filter((finding) => finding.status !== "refuted")
-      .flatMap((finding) => checkFinding(finding, cases)),
+    ...checkUnmappedCases(manifest, cases),
+    ...manifest.findings.flatMap((finding) =>
+      isActive(finding)
+        ? checkFinding(finding, cases)
+        : checkRefuted(finding, cases)
+    ),
   ];
 };

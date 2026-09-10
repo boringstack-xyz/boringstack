@@ -46,6 +46,11 @@
         "a callback replayed in another browser issues no session": "pass",
         "control: the initiating browser completes the flow": "pass",
         "control: an authenticated link flow completes in the same browser": "pass",
+        "state stored without a binding hash is refused, cookie or not": "pass",
+        "control: the same unbound state completes once it carries a hash": "pass",
+        "a bound state is refused when the browser's nonce is wrong": "pass",
+        "a refused callback never reaches the provider": "pass",
+        "control: the initiating browser does reach the provider": "pass",
         "control: state is consumed exactly once": "pass"
       }
     },
@@ -98,6 +103,8 @@
         "control: depth-1 replay is already detected": "pass",
         "a token retired before the lineage table existed is still evidence": "pass",
         "a rotation on the new build keeps evidence an old replica left": "pass",
+        "deleting the family kills its retired tokens too": "pass",
+        "an access token issued before a replay outlives it": "pass",
         "control: ordinary rotation keeps working": "pass"
       }
     },

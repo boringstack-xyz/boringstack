@@ -24,10 +24,22 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { sessionService } from "../src/api/auth/services/session.service";
+import { createApp } from "../src/config/app/app";
 import { generateOpaqueToken, hashOpaqueToken } from "../src/lib/tokens";
 import { cleanDatabase, postgresClient } from "../tests/helpers/db";
 import { seedVerifiedUser } from "../tests/helpers/auth";
-import { requireDbOrFail } from "./harness";
+import { requireDbOrFail, specPrecondition } from "./harness";
+
+const LIVE = "still valid";
+const REVOKED = "revoked";
+
+/** The `name=value` pairs from a response's Set-Cookie headers. */
+const cookiePairs = (res: Response): string =>
+  res.headers
+    .getAll("set-cookie")
+    .map((chunk) => chunk.split(";")[0] ?? "")
+    .filter((chunk) => chunk !== "")
+    .join("; ");
 
 const MIGRATION = join(
   import.meta.dir,
@@ -72,10 +84,10 @@ describe("F06 refresh replay revokes the family", () => {
      */
     const afterReplay = await sessionService
       .refresh(t2.token)
-      .then(() => "still valid")
-      .catch(() => "revoked");
+      .then(() => LIVE)
+      .catch(() => REVOKED);
 
-    expect(afterReplay).toBe("revoked");
+    expect(afterReplay).toBe(REVOKED);
   });
 
   test("control: depth-1 replay is already detected", async () => {
@@ -88,10 +100,10 @@ describe("F06 refresh replay revokes the family", () => {
 
     const afterReplay = await sessionService
       .refresh(t1.token)
-      .then(() => "still valid")
-      .catch(() => "revoked");
+      .then(() => LIVE)
+      .catch(() => REVOKED);
 
-    expect(afterReplay).toBe("revoked");
+    expect(afterReplay).toBe(REVOKED);
   });
 
   test("a token retired before the lineage table existed is still evidence", async () => {
@@ -130,10 +142,10 @@ describe("F06 refresh replay revokes the family", () => {
 
     const afterReplay = await sessionService
       .refresh(t1.token)
-      .then(() => "still valid")
-      .catch(() => "revoked");
+      .then(() => LIVE)
+      .catch(() => REVOKED);
 
-    expect(afterReplay).toBe("revoked");
+    expect(afterReplay).toBe(REVOKED);
   });
 
   test("a rotation on the new build keeps evidence an old replica left", async () => {
@@ -172,10 +184,108 @@ describe("F06 refresh replay revokes the family", () => {
 
     const afterReplay = await sessionService
       .refresh(t2.token)
-      .then(() => "still valid")
-      .catch(() => "revoked");
+      .then(() => LIVE)
+      .catch(() => REVOKED);
 
-    expect(afterReplay).toBe("revoked");
+    expect(afterReplay).toBe(REVOKED);
+  });
+
+  test("deleting the family kills its retired tokens too", async () => {
+    const { user } = await seedVerifiedUser({ email: "f06g@example.com" });
+
+    const t0 = await sessionService.create(user.id);
+    const t1 = await sessionService.refresh(t0.token);
+
+    /*
+     * The lineage rows cascade on the session delete, which is what makes
+     * "revoke the family" a single statement. That only holds if the
+     * cascade cannot leave something refreshable behind, so both ends are
+     * asserted: the token the client currently holds, and the one the
+     * lineage remembers.
+     */
+    await sessionService.revokeAllForUser(user.id);
+
+    const live = await sessionService
+      .refresh(t1.token)
+      .then(() => LIVE)
+      .catch(() => REVOKED);
+
+    const retired = await sessionService
+      .refresh(t0.token)
+      .then(() => LIVE)
+      .catch(() => REVOKED);
+
+    expect(live).toBe(REVOKED);
+    expect(retired).toBe(REVOKED);
+    expect(await postgresClient`select id from auth.sessions`).toHaveLength(0);
+  });
+
+  test("an access token issued before a replay outlives it", async () => {
+    const app = createApp();
+
+    await seedVerifiedUser({ email: "f06h@example.com" });
+
+    const loginRes = await app.handle(
+      new Request("http://localhost/api/v1/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: "f06h@example.com",
+          password: "Hunter2Strong!",
+        }),
+      })
+    );
+
+    const issued = cookiePairs(loginRes);
+
+    specPrecondition(issued !== "", "login issued no cookies");
+
+    const rotated = await app.handle(
+      new Request("http://localhost/api/v1/auth/refresh", {
+        method: "POST",
+        headers: { cookie: issued },
+      })
+    );
+
+    specPrecondition(
+      rotated.status < 400,
+      `refresh failed with ${String(rotated.status)}`
+    );
+
+    // Replay the token the rotation retired.
+    await app.handle(
+      new Request("http://localhost/api/v1/auth/refresh", {
+        method: "POST",
+        headers: { cookie: issued },
+      })
+    );
+
+    const refreshAgain = await app.handle(
+      new Request("http://localhost/api/v1/auth/refresh", {
+        method: "POST",
+        headers: { cookie: cookiePairs(rotated) },
+      })
+    );
+
+    const probe = await app.handle(
+      new Request("http://localhost/api/v1/users/me", {
+        headers: { cookie: issued },
+      })
+    );
+
+    /*
+     * What replay detection does and does not do. The family is gone, so
+     * no refresh token from it works again. The access JWT already in the
+     * browser is not consulted against it and stays good for the rest of
+     * its 15 minutes.
+     *
+     * Recorded rather than fixed here. Killing it means a user-wide
+     * revocation, which signs the user out of unrelated sessions, and that
+     * is a product decision rather than a bug fix. `docs/agents/
+     * authentication.md` carries the operational note.
+     */
+    expect(refreshAgain.status).toBeGreaterThanOrEqual(400);
+    expect(probe.status).toBe(200);
   });
 
   test("control: ordinary rotation keeps working", async () => {

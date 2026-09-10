@@ -21,6 +21,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import {
+  checkStructure,
   parseJUnit,
   reconcile,
   type CaseExpectation,
@@ -113,27 +114,10 @@ const manifest = parseManifest(await Bun.file(MANIFEST).json());
 
 /* ------------------------------------- the files must exist and be mapped */
 
-const structural: string[] = [];
-
-for (const finding of manifest.findings) {
-  if (finding.status === "refuted") {
-    continue;
-  }
-
-  if (!existsSync(join(SPEC_DIR, finding.file))) {
-    structural.push(`${finding.id}: ${finding.file} is missing`);
-  }
-}
-
-const listed = new Set(manifest.findings.map((finding) => finding.file));
-
-for (const path of new Bun.Glob("*.test.ts").scanSync({ cwd: SPEC_DIR })) {
-  if (!listed.has(path)) {
-    structural.push(
-      `${path} exists but no finding in findings.json points at it`
-    );
-  }
-}
+const structural = checkStructure({
+  manifest,
+  specFiles: [...new Bun.Glob("*.test.ts").scanSync({ cwd: SPEC_DIR })],
+});
 
 if (structural.length > 0) {
   report(structural);

@@ -74,11 +74,28 @@ try {
       throw new TypeError("a findings entry has no file");
     }
 
+    const own = observed.filter((candidate) => candidate.file === entry.file);
+
+    /*
+     * A refuted finding gets `{}`, always. Recording what its file happened
+     * to do would write the exact combination the checker rejects, and would
+     * do it from a baseline run rather than from a decision.
+     */
+    if (entry.status === "refuted") {
+      if (own.length > 0) {
+        throw new Error(
+          `${String(entry.id)} is refuted but ${entry.file} ran ` +
+            `${String(own.length)} case(s); delete the spec file or reopen ` +
+            `the finding before recording a baseline`
+        );
+      }
+
+      return { ...entry, cases: {} };
+    }
+
     const cases: Record<string, CaseExpectation> = {};
 
-    for (const observation of observed.filter(
-      (candidate) => candidate.file === entry.file
-    )) {
+    for (const observation of own) {
       cases[observation.name] =
         observation.outcome === "passed" ? "pass" : "assertion-fail";
     }

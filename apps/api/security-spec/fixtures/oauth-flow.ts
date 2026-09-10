@@ -31,16 +31,30 @@ const urlOf = (input: RequestInfo | URL): string => {
   return input;
 };
 
+let tokenExchanges = 0;
+
+/**
+ * How many times the provider's token endpoint has been hit since the last
+ * `stubGoogle`. A callback that is refused must never reach it: the whole
+ * point of checking the binding before the exchange is that a handed-out
+ * callback URL cannot be spent.
+ */
+export const providerExchangeCount = (): number => tokenExchanges;
+
 /** Stands in for Google's token and userinfo endpoints. */
 export const stubGoogle = (profile: {
   sub: string;
   email: string;
   emailVerified?: boolean;
 }): void => {
+  tokenExchanges = 0;
+
   const handler = (input: RequestInfo | URL): Promise<Response> => {
     const url = urlOf(input);
 
     if (url.includes("oauth2.googleapis.com/token")) {
+      tokenExchanges += 1;
+
       return Promise.resolve(
         jsonResponse({
           access_token: "spec-access-token",

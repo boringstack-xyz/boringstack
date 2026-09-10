@@ -35,11 +35,14 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { createApp } from "../src/config/app/app";
+import { OAUTH_BINDING_COOKIE_NAME } from "../src/lib/cookies";
 import { oauthStateStore } from "../src/lib/oauth/oauth.state";
+import { generateOpaqueToken, hashOpaqueToken } from "../src/lib/tokens";
 import { cleanDatabase } from "../tests/helpers/db";
 import {
   callback,
   issuesSession,
+  providerExchangeCount,
   restoreFetch,
   startFlow,
   stubGoogle,
@@ -60,6 +63,9 @@ beforeEach(async () => {
 afterEach(() => {
   restoreFetch();
 });
+
+/** Any non-empty verifier works: the stubbed token endpoint does not check it. */
+const UNBOUND_VERIFIER = "spec-f02-code-verifier";
 
 describe("F02 OAuth state binds to the initiating browser", () => {
   test("a callback replayed in another browser issues no session", async () => {
@@ -135,6 +141,112 @@ describe("F02 OAuth state binds to the initiating browser", () => {
     const res = await callback(app, state, `${sessionCookies}; ${cookies}`);
 
     expect(res.status).toBeLessThan(400);
+  });
+
+  test("state stored without a binding hash is refused, cookie or not", async () => {
+    const app = createApp();
+
+    /*
+     * The shape a state has when nothing bound it to a browser: an older
+     * build wrote it, or an attacker got one written by a path that does
+     * not bind. Treating a missing hash as "nothing to check" hands the
+     * whole attack back for exactly those states.
+     *
+     * The verifier is present so the state is complete in every respect
+     * except the binding. Without it Google's exchange fails on the
+     * missing PKCE verifier and no session is issued for a reason that
+     * has nothing to do with what this asserts.
+     */
+    await oauthStateStore.store("spec-f02-unbound-nocookie", {
+      codeVerifier: UNBOUND_VERIFIER,
+    });
+
+    const withoutCookie = await callback(app, "spec-f02-unbound-nocookie", "");
+
+    expect(issuesSession(withoutCookie)).toBe(false);
+
+    /*
+     * Holding a cookie must not help either. The victim's browser has one
+     * whenever it started a flow of its own, so a check that only fires
+     * when a cookie is absent protects nobody.
+     */
+    await oauthStateStore.store("spec-f02-unbound-cookie", {
+      codeVerifier: UNBOUND_VERIFIER,
+    });
+
+    const { cookies } = await startFlow(app);
+    const withCookie = await callback(app, "spec-f02-unbound-cookie", cookies);
+
+    expect(issuesSession(withCookie)).toBe(false);
+  });
+
+  test("control: the same unbound state completes once it carries a hash", async () => {
+    const app = createApp();
+
+    const bindingNonce = generateOpaqueToken();
+
+    await oauthStateStore.store("spec-f02-bound-by-hand", {
+      codeVerifier: UNBOUND_VERIFIER,
+      bindingHash: hashOpaqueToken(bindingNonce),
+    });
+
+    const res = await callback(
+      app,
+      "spec-f02-bound-by-hand",
+      `${OAUTH_BINDING_COOKIE_NAME}=${bindingNonce}`
+    );
+
+    /*
+     * Same hand-written state, same stubbed provider, one field added. It
+     * separates "the binding refused this" from "a hand-written state
+     * could never have completed anyway", which is what would make the
+     * two cases above vacuous.
+     */
+    expect(issuesSession(res)).toBe(true);
+  });
+
+  test("a bound state is refused when the browser's nonce is wrong", async () => {
+    const app = createApp();
+
+    const { state } = await startFlow(app);
+    const other = await startFlow(app);
+
+    // A real nonce, from a different flow.
+    const res = await callback(app, state, other.cookies);
+
+    expect(issuesSession(res)).toBe(false);
+  });
+
+  test("a refused callback never reaches the provider", async () => {
+    const app = createApp();
+
+    const { state } = await startFlow(app);
+
+    expect(providerExchangeCount()).toBe(0);
+
+    await callback(app, state, "");
+
+    /*
+     * The binding is checked before the code is spent. Otherwise a
+     * handed-out callback URL still burns a single-use authorization code
+     * at the provider on every victim who opens it.
+     */
+    expect(providerExchangeCount()).toBe(0);
+  });
+
+  test("control: the initiating browser does reach the provider", async () => {
+    const app = createApp();
+
+    const { state, cookies } = await startFlow(app);
+
+    await callback(app, state, cookies);
+
+    /*
+     * Pairs with the case above: without this, "no exchange" would also
+     * hold for a fixture that never reaches the provider at all, and the
+     * assertion would mean nothing.
+     */
+    expect(providerExchangeCount()).toBe(1);
   });
 
   test("control: state is consumed exactly once", async () => {
