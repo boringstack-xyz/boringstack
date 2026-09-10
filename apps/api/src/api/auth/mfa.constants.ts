@@ -74,6 +74,15 @@ export const MFA_CACHE_KEYS = {
    * cannot be replayed against the API.
    */
   challenge: (tokenHash: string): string => `mfa:challenge:${tokenHash}`,
+  /**
+   * Failed-attempt counter for a challenge. Separate from the payload so it
+   * can be driven by an atomic INCR: counting inside the payload is a
+   * read-modify-write, where concurrent wrong codes all read the same value
+   * and all write value+1, and a 5-attempt budget buys far more than five
+   * guesses at a six-digit code.
+   */
+  challengeAttempts: (tokenHash: string): string =>
+    `mfa:challenge:${tokenHash}:attempts`,
 } as const;
 
 /**

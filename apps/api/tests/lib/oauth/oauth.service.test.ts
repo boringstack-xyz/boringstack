@@ -47,7 +47,12 @@ describe("completeOAuthCallback", () => {
     let caught: unknown;
 
     try {
-      await completeOAuthCallback("google", "code-xyz", "state-no-such-key");
+      await completeOAuthCallback(
+        "google",
+        "code-xyz",
+        "state-no-such-key",
+        "any-binding-nonce"
+      );
     } catch (err) {
       caught = err;
     }

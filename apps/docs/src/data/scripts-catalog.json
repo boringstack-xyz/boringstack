@@ -152,13 +152,31 @@
         "command": "test",
         "script": "quality/run-tests-clean.ts",
         "description": "Runs bun test and fails when the suite prints warning noise to stdout/stderr.",
-        "invocation": "bun run build:templates && NODE_ENV=test bun run scripts/quality/run-tests-clean.ts"
+        "invocation": "bun run build:templates && NODE_ENV=test bun run scripts/quality/run-tests-clean.ts tests"
       },
       {
         "command": "test:coverage",
         "script": "quality/check-coverage.ts",
         "description": "",
         "invocation": "bun run build:templates && NODE_ENV=test bun run scripts/quality/check-coverage.ts"
+      },
+      {
+        "command": "test:security",
+        "script": "quality/run-tests-clean.ts",
+        "description": "Runs bun test and fails when the suite prints warning noise to stdout/stderr.",
+        "invocation": "bun run build:templates && NODE_ENV=test SECURITY_SPEC=true bun run scripts/quality/run-tests-clean.ts security-spec"
+      },
+      {
+        "command": "check:security-manifest",
+        "script": "quality/check-security-manifest.ts",
+        "description": "Reconciles `security-spec/findings.json` against a real run of the security spec suite.",
+        "invocation": "bun run scripts/quality/check-security-manifest.ts"
+      },
+      {
+        "command": "write:security-manifest",
+        "script": "quality/write-security-manifest.ts",
+        "description": "Regenerates the per-case expectations in `security-spec/findings.json` from an actual run.",
+        "invocation": "bun run scripts/quality/write-security-manifest.ts"
       },
       {
         "command": "dev",
@@ -243,6 +261,12 @@
         "script": "codegen/new-feature.ts",
         "description": "",
         "invocation": "bun run scripts/codegen/new-feature.ts"
+      },
+      {
+        "command": "new:finding",
+        "script": "codegen/new-finding.ts",
+        "description": "Scaffolds a security-spec finding.",
+        "invocation": "bun run scripts/codegen/new-finding.ts"
       },
       {
         "command": "generate:acl-types",

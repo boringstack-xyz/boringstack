@@ -4,14 +4,22 @@
     "scripts/**/*.ts",
     "src/**/index.ts",
     "tests/**/*.test.ts",
-    "src/lib/ai/providers/**/index.ts"
+    "src/lib/ai/providers/**/index.ts",
+    "security-spec/**/*.test.ts"
   ],
   "project": [
     "src/**/*.ts!",
     "tests/**/*.ts",
     "!tests/lint-meta/fixtures/**",
-    "scripts/**/*.ts"
+    "scripts/**/*.ts",
+    "security-spec/**/*.ts"
   ],
-  "include": ["files", "dependencies", "unlisted"],
-  "ignore": ["tests/setup-test-env.ts"]
+  "include": [
+    "files",
+    "dependencies",
+    "unlisted"
+  ],
+  "ignore": [
+    "tests/setup-test-env.ts"
+  ]
 }

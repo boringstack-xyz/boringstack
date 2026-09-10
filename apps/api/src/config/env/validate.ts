@@ -736,6 +736,39 @@ const checkCacheProviderInProd = (env: Env): string[] => {
       ];
 };
 
+/**
+ * Fail-closed revocation needs a store that can actually be consulted.
+ *
+ * `checkCacheProviderInProd` above returns early when `CACHE_ENABLED=false`,
+ * so it cannot catch this pairing — disabling the cache skips the only
+ * other rule that inspects it. And the pairing is worse than a plain
+ * misconfiguration: the no-op provider answers every lookup with a miss and
+ * never throws, while the fail-closed branches in
+ * `lib/jwt/jwt-revocation.ts` run only from a `catch`. An operator who asks
+ * for strict revocation would silently get none, and every revoked token
+ * would stay valid until it expired.
+ *
+ * Refused at boot rather than degraded, per the security-review decision to
+ * fail closed: an unsupported pairing must be visible, not quietly downgraded.
+ */
+const checkRevocationHasDurableStore = (env: Env): string[] => {
+  if (env.NODE_ENV !== "production" || !env.JWT_REVOCATION_FAIL_CLOSED) {
+    return [];
+  }
+
+  if (!env.CACHE_ENABLED) {
+    return [
+      "JWT_REVOCATION_FAIL_CLOSED=true requires CACHE_ENABLED=true in production: with the cache off, token revocation is silently a no-op",
+    ];
+  }
+
+  return env.CACHE_PROVIDER === "valkey"
+    ? []
+    : [
+        "JWT_REVOCATION_FAIL_CLOSED=true requires CACHE_PROVIDER=valkey in production so revocation survives restarts and is shared across replicas",
+      ];
+};
+
 const checkValkeyPassword = (env: Env): string[] => {
   if (env.NODE_ENV !== "production" || env.VALKEY_PASSWORD !== "") {
     return [];
@@ -797,6 +830,7 @@ const checkInvariants = (env: Env): string[] => [
   ...checkOAuth(env),
   ...checkQueuesEnabledInProd(env),
   ...checkCacheProviderInProd(env),
+  ...checkRevocationHasDurableStore(env),
   ...checkValkeyPassword(env),
   ...checkWebPushVapid(env),
   ...checkPlaceholderSecrets(env),

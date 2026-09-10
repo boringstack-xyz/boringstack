@@ -61,7 +61,12 @@ export default tseslint.config(
     ],
   },
   {
-    files: ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.ts"],
+    files: [
+      "src/**/*.ts",
+      "tests/**/*.ts",
+      "security-spec/**/*.ts",
+      "scripts/**/*.ts",
+    ],
     extends: [
       pluginJs.configs.recommended,
       ...tseslint.configs.strictTypeChecked,
@@ -489,6 +494,13 @@ export default tseslint.config(
             "**/tests/**",
             "**/__tests__/**",
             "**/src/clients/postgres/schema/**",
+            /*
+             * `pg_advisory_xact_lock` has no query-builder equivalent, and
+             * the seat cap needs it: counting members and inserting one
+             * without the lock is a check-then-act that concurrent
+             * acceptances walk straight through.
+             */
+            "**/src/lib/acl/enforce-entitlement.ts",
           ],
         },
       ],
@@ -664,7 +676,7 @@ export default tseslint.config(
       "test-conventions/no-direct-db-in-tests": [
         "error",
         {
-          testFiles: ["tests/**/*.ts", "**/*.test.ts"],
+          testFiles: ["tests/**/*.ts", "security-spec/**/*.ts", "**/*.test.ts"],
           forbiddenPaths: ["**/clients/postgres/**", "drizzle-orm"],
           helpersPath: "tests/helpers/db",
         },
@@ -762,7 +774,9 @@ export default tseslint.config(
       ],
       "audit-log/audit-write-must-be-fire-and-forget": [
         "error",
-        { allowAwaitInsidePatterns: ["tests/**/*.ts"] },
+        {
+          allowAwaitInsidePatterns: ["tests/**/*.ts", "security-spec/**/*.ts"],
+        },
       ],
       "audit-log/audit-metadata-no-pii": "error",
 
@@ -997,7 +1011,7 @@ export default tseslint.config(
     // `no-restricted-syntax` for enums isn't useful here, and tests
     // legitimately throw `new Error(...)` to simulate retry/error paths
     // — `ApiErrors.*` would obscure the test's intent.
-    files: ["tests/**/*.ts"],
+    files: ["tests/**/*.ts", "security-spec/**/*.ts"],
     rules: {
       "no-console": "off",
       "elysia/no-direct-error-throw": "off",
@@ -1067,6 +1081,10 @@ export default tseslint.config(
       "tests/lint-meta/lint-meta.test.ts",
       // Mirrors scripts/codegen/acl-scaffold/edit-tuple.ts, not src/.
       "tests/scripts/acl-scaffold.test.ts",
+      // Mirrors scripts/quality/security-manifest-lib.ts, not src/.
+      "tests/scripts/security-manifest.test.ts",
+      // Mirrors scripts/codegen/new-finding-lib.ts, not src/.
+      "tests/scripts/new-finding.test.ts",
     ],
     rules: {
       "test-conventions/test-file-mirrors-source": "off",

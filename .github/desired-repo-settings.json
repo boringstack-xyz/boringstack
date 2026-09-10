@@ -16,6 +16,7 @@
       "dep vuln scan (osv + audit)",
       "docker compose config (all overlay combinations)",
       "gitleaks secret scan",
+      "security spec (review findings)",
       "semgrep SAST",
       "shellcheck (scripts/)",
       "tofu fmt + validate",

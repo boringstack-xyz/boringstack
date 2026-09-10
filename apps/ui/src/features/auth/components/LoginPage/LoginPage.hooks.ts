@@ -56,8 +56,19 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
   const verifyRecovery = useMfaVerifyRecovery();
 
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  /*
+   * The OAuth callback cannot hand the SPA a challenge token — it finishes
+   * with a browser redirect — so it sets an httpOnly cookie and returns
+   * here with `?mfa=required`. `mfaPending` means "show the factor form";
+   * `mfaChallengeToken` is the password path's copy of the challenge, and
+   * stays null for OAuth so the request omits it and the server reads its
+   * cookie.
+   */
   const [mfaChallengeToken, setMfaChallengeToken] = useState<string | null>(
     null
+  );
+  const [mfaPending, setMfaPending] = useState<boolean>(
+    new URLSearchParams(location.search).get("mfa") === "required"
   );
   const [mfaCode, setMfaCode] = useState("");
   const [mfaError, setMfaError] = useState<string | null>(null);
@@ -94,6 +105,7 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
 
         if (result.kind === "mfa-required") {
           setMfaChallengeToken(result.challengeToken);
+          setMfaPending(true);
           setMfaCode("");
           setMfaMode("totp");
           logger.info({ event: "auth.mfa_challenge_issued" });
@@ -209,7 +221,7 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
   }, []);
 
   const onMfaSubmit = useCallback((): void => {
-    if (mfaChallengeToken === null || mfaCode.trim() === "") {
+    if (!mfaPending || mfaCode.trim() === "") {
       return;
     }
 
@@ -218,11 +230,14 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
     const mutation = mfaMode === "totp" ? verifyTotp : verifyRecovery;
 
     mutation.mutate(
-      { challengeToken: mfaChallengeToken, code: mfaCode.trim() },
+      mfaChallengeToken === null
+        ? { code: mfaCode.trim() }
+        : { challengeToken: mfaChallengeToken, code: mfaCode.trim() },
       {
         onSuccess: () => {
           logger.info({ event: "auth.mfa_login_success" });
           setMfaChallengeToken(null);
+          setMfaPending(false);
           setMfaCode("");
           void navigate(redirectTarget, { replace: true });
         },
@@ -246,6 +261,7 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
     mfaChallengeToken,
     mfaCode,
     mfaMode,
+    mfaPending,
     navigate,
     redirectTarget,
     t,
@@ -295,7 +311,7 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
     pendingEmail,
     onResendVerification,
     isResending: resend.isPending,
-    mfaChallengeToken,
+    mfaPending,
     mfaCode,
     onMfaCodeChange,
     onMfaSubmit,

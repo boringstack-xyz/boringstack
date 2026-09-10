@@ -41,7 +41,15 @@ const runCoverage = (): {
    * Capture both into the same buffer so the gate's row-parser sees the
    * table, and stream the buffer to the user verbatim at the end.
    */
-  const result = spawnSync("bun", ["test", "--coverage"], {
+  /*
+   * Scoped to `tests` on purpose. Without a path Bun discovers every
+   * `*.test.ts` in the project, which now includes `security-spec/` — an
+   * intentionally-red suite that asserts the behaviour of unfixed security
+   * findings. Those belong to their own lane (`bun run test:security`);
+   * letting them into the coverage gate turns the ordinary merge gate red
+   * for reasons unrelated to the change under review.
+   */
+  const result = spawnSync("bun", ["test", "tests", "--coverage"], {
     encoding: "utf8",
     maxBuffer: MAX_TEST_OUTPUT_BUFFER_BYTES,
     env: {

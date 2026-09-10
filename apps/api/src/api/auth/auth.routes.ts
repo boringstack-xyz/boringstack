@@ -5,6 +5,10 @@ import { buildAuthRateLimit } from "../../config/security";
 import {
   AUTH_COOKIE_CONFIG,
   AUTH_COOKIE_NAME,
+  MFA_CHALLENGE_COOKIE_CONFIG,
+  MFA_CHALLENGE_COOKIE_NAME,
+  OAUTH_BINDING_COOKIE_CONFIG,
+  OAUTH_BINDING_COOKIE_NAME,
   REFRESH_COOKIE_CONFIG,
   REFRESH_COOKIE_NAME,
 } from "../../lib/cookies";
@@ -49,6 +53,24 @@ import {
   passwordResetService,
   sessionService,
 } from "./services";
+
+/**
+ * Hands the browser its half of the OAuth binding.
+ *
+ * Shared by both start routes — login and authenticated linking — because
+ * the callback requires the nonce unconditionally. A start route that omits
+ * it produces a flow that can never complete: the state carries a hash of a
+ * nonce the browser was never given.
+ */
+const setOAuthBindingCookie = (
+  cookie: Record<string, { set: (options: Record<string, unknown>) => void }>,
+  bindingNonce: string
+): void => {
+  cookie[OAUTH_BINDING_COOKIE_NAME]?.set({
+    value: bindingNonce,
+    ...OAUTH_BINDING_COOKIE_CONFIG,
+  });
+};
 
 const credentialingRoutes = new Elysia()
   .use(buildAuthRateLimit())
@@ -419,14 +441,17 @@ const sessionAndOAuthRoutes = new Elysia()
   )
   .get(
     "/oauth/:provider",
-    async ({ params, redirect }) => {
+    async ({ params, redirect, cookie }) => {
       if (!isValidOAuthProvider(params.provider)) {
         throw ApiErrors.notFound(`OAuth provider '${params.provider}'`);
       }
 
-      const { url } = await createAuthorizationURL(params.provider, [
-        ...DEFAULT_OAUTH_SCOPES[params.provider],
-      ]);
+      const { url, bindingNonce } = await createAuthorizationURL(
+        params.provider,
+        [...DEFAULT_OAUTH_SCOPES[params.provider]]
+      );
+
+      setOAuthBindingCookie(cookie, bindingNonce);
 
       return redirect(url.toString(), 302);
     },
@@ -488,10 +513,21 @@ const sessionAndOAuthRoutes = new Elysia()
         throw ApiErrors.validation("Missing OAuth state", "state");
       }
 
+      const binding = cookie[OAUTH_BINDING_COOKIE_NAME];
+      const bindingNonce =
+        typeof binding?.value === "string" ? binding.value : "";
+
+      /*
+       * One round-trip, one nonce. Removed before the exchange so a failed
+       * or replayed callback cannot reuse it.
+       */
+      binding?.remove();
+
       const { profile, linkUserId } = await completeOAuthCallback(
         params.provider,
         query.code,
-        query.state
+        query.state,
+        bindingNonce
       );
 
       if (linkUserId !== undefined) {
@@ -511,6 +547,31 @@ const sessionAndOAuthRoutes = new Elysia()
         params.provider,
         profile
       );
+
+      /*
+       * MFA is a property of the account, not of one login route. The
+       * password path stops here and issues a challenge, and so must this
+       * one: handing over session cookies regardless would mean switching
+       * MFA on protects a single door, and anyone holding the account's
+       * provider identity walks through the other.
+       */
+      if (result.mfaRequired) {
+        const challenge = await mfaService.issueChallenge(result.user.id);
+
+        cookie[MFA_CHALLENGE_COOKIE_NAME]?.set({
+          value: challenge.challengeToken,
+          ...MFA_CHALLENGE_COOKIE_CONFIG,
+        });
+
+        /*
+         * Back to the login screen, which already owns the MFA form. The
+         * challenge itself rides in the httpOnly cookie set above, so
+         * nothing sensitive is in this URL; the marker only tells the SPA
+         * which form to show.
+         */
+        return redirect(`${env.FRONTEND_URL}/login?mfa=required`, 302);
+      }
+
       const session = await sessionService.create(result.user.id);
 
       const token = await jwt.sign(
@@ -573,16 +634,18 @@ const authenticatedAuthRoutes = requireAuth()
   )
   .get(
     "/oauth/:provider/link",
-    async ({ params, user, redirect }) => {
+    async ({ params, user, redirect, cookie }) => {
       if (!isValidOAuthProvider(params.provider)) {
         throw ApiErrors.notFound(`OAuth provider '${params.provider}'`);
       }
 
-      const { url } = await createAuthorizationURL(
+      const { url, bindingNonce } = await createAuthorizationURL(
         params.provider,
         [...DEFAULT_OAUTH_SCOPES[params.provider]],
         { linkUserId: user.id }
       );
+
+      setOAuthBindingCookie(cookie, bindingNonce);
 
       return redirect(url.toString(), 302);
     },

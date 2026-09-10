@@ -12,6 +12,7 @@ import {
   parseAuthJWTPayload,
 } from "../../lib/jwt";
 import type { IUser } from "../users/users.types";
+import type { IAuthCredential, IAuthenticatedContext } from "./auth.types";
 
 /**
  * Two-tier revocation lookup. Runs after signature/expiry verification
@@ -97,7 +98,7 @@ const translateJwtError = (err: unknown): never => {
 const verifyAuthCookie = async (
   jwt: { verify: (token: string) => Promise<unknown> },
   cookieValue: unknown
-): Promise<{ user: IUser; accountId: string } | null> => {
+): Promise<IAuthenticatedContext | null> => {
   if (cookieValue === undefined) {
     return null;
   }
@@ -133,7 +134,15 @@ const verifyAuthCookie = async (
      */
     Sentry.setUser({ id: user.id, email: user.email });
 
-    return { user, accountId: parsed.accountId };
+    return {
+      user,
+      accountId: parsed.accountId,
+      credential: {
+        jti: parsed.jti,
+        issuedAt: parsed.issuedAt,
+        expiresAt: parsed.expiresAt,
+      },
+    };
   } catch (err: unknown) {
     return translateJwtError(err);
   }
@@ -152,25 +161,27 @@ const verifyAuthCookie = async (
  * `/refresh`, `/mfa/status`), reach for `tryAuth` instead.
  */
 export const requireAuth = () =>
-  new Elysia()
-    .use(createJWTConfig())
-    .derive(
-      async ({
-        jwt: jwtPlugin,
-        cookie,
-      }): Promise<{ user: IUser; accountId: string }> => {
-        const session = await verifyAuthCookie(
-          jwtPlugin,
-          cookie[AUTH_COOKIE_NAME]?.value
-        );
+  new Elysia().use(createJWTConfig()).derive(
+    async ({
+      jwt: jwtPlugin,
+      cookie,
+    }): Promise<{
+      user: IUser;
+      accountId: string;
+      credential: IAuthCredential;
+    }> => {
+      const session = await verifyAuthCookie(
+        jwtPlugin,
+        cookie[AUTH_COOKIE_NAME]?.value
+      );
 
-        if (session === null) {
-          throw ApiErrors.unauthorized("Missing authentication cookie");
-        }
-
-        return session;
+      if (session === null) {
+        throw ApiErrors.unauthorized("Missing authentication cookie");
       }
-    );
+
+      return session;
+    }
+  );
 
 /**
  * Best-effort auth guard. Resolves the session if one is presented and

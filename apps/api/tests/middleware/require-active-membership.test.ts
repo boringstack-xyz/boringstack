@@ -143,7 +143,7 @@ describe("requireActiveMembership middleware", () => {
     expect(typeof body.accountId).toBe("string");
   });
 
-  test("returns 401 when the membership has been revoked AND the cache has been cleared", async () => {
+  test("returns 403 when the membership has been revoked AND the cache has been cleared", async () => {
     if (!(await requireDb())) {
       return;
     }
@@ -164,7 +164,13 @@ describe("requireActiveMembership middleware", () => {
       })
     );
 
-    expect(res.status).toBe(401);
+    /*
+     * 403, not 401: authentication succeeded. The token is valid, unexpired
+     * and unrevoked; the caller simply is not a member. A 401 would send an
+     * SPA through a needless logout and hide an authorization boundary
+     * behind an authentication one.
+     */
+    expect(res.status).toBe(403);
   });
 
   test("returns 401 when the parent account is soft-deleted", async () => {

@@ -20,6 +20,7 @@ export type {
 
 export { buildAbility, requireAbility } from "./ability";
 export { enforceLimit } from "./enforce-limit";
+export { enforceSeatAvailable, requireFeature } from "./enforce-entitlement";
 export { resolveAccountFeatures } from "./resolve-account-features";
 export { resolveFeatures } from "./feature-resolution";
 export { coerceRole, isAdminRole, isOwnerRole, isRole } from "./role-coercion";

@@ -2026,19 +2026,19 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @description Opaque token returned by /auth/login when MFA is required */
-                    challengeToken: string;
+                    challengeToken?: string;
                     /** @description 6-digit TOTP code or recovery code */
                     code: string;
                 };
                 "multipart/form-data": {
                     /** @description Opaque token returned by /auth/login when MFA is required */
-                    challengeToken: string;
+                    challengeToken?: string;
                     /** @description 6-digit TOTP code or recovery code */
                     code: string;
                 };
                 "text/plain": {
                     /** @description Opaque token returned by /auth/login when MFA is required */
-                    challengeToken: string;
+                    challengeToken?: string;
                     /** @description 6-digit TOTP code or recovery code */
                     code: string;
                 };
@@ -2104,19 +2104,19 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @description Opaque token returned by /auth/login when MFA is required */
-                    challengeToken: string;
+                    challengeToken?: string;
                     /** @description 6-digit TOTP code or recovery code */
                     code: string;
                 };
                 "multipart/form-data": {
                     /** @description Opaque token returned by /auth/login when MFA is required */
-                    challengeToken: string;
+                    challengeToken?: string;
                     /** @description 6-digit TOTP code or recovery code */
                     code: string;
                 };
                 "text/plain": {
                     /** @description Opaque token returned by /auth/login when MFA is required */
-                    challengeToken: string;
+                    challengeToken?: string;
                     /** @description 6-digit TOTP code or recovery code */
                     code: string;
                 };

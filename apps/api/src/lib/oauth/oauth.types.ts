@@ -25,6 +25,12 @@ export interface IOAuthCredentials {
 export interface IAuthorizationURLResult {
   url: URL;
   state: string;
+  /**
+   * Random value the caller must hand to the browser as a cookie. The
+   * callback requires it back, which is what proves the response reached
+   * the browser that began the flow.
+   */
+  bindingNonce: string;
   /** PKCE verifier — present only for providers that support PKCE (Google). */
   codeVerifier?: string;
 }
@@ -52,6 +58,12 @@ export interface IOAuthProviderModule {
 /** Persisted server-side between authorize → callback. */
 export interface IStoredState {
   codeVerifier?: string;
+  /**
+   * Hash of the nonce handed to the initiating browser. The callback must
+   * present the matching nonce, which is what ties the response to the
+   * browser that began the flow.
+   */
+  bindingHash?: string;
   /** When set, the callback links the provider to this user instead of login. */
   linkUserId?: string;
 }

@@ -31,7 +31,14 @@ export const lookupActiveMembership = async (
   );
 
   if (!membership) {
-    throw ApiErrors.unauthorized("Membership not active for this account");
+    /*
+     * 403, not 401: authentication succeeded. The token is valid, unexpired
+     * and unrevoked; the caller simply is not a member of this account. A
+     * 401 would tell the client to re-authenticate and send an SPA through
+     * a needless logout, hiding an authorization boundary behind an
+     * authentication one.
+     */
+    throw ApiErrors.forbidden("Membership not active for this account");
   }
 
   return membership;

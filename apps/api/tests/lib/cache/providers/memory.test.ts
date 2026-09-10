@@ -94,6 +94,45 @@ describe("MemoryCacheService", () => {
     expect(factoryCalls).toBe(2);
   });
 
+  test("concurrent increments each count", async () => {
+    const cache = createCache();
+
+    const results = await Promise.all(
+      Array.from({ length: 8 }, () => cache.increment("k", 60))
+    );
+
+    /*
+     * Callers of `increment` are budgets — MFA guesses, rate limits. A
+     * read-modify-write that yields between the read and the write lets
+     * every concurrent caller read the same value and write the same
+     * increment, which hands out the budget several times over.
+     */
+    expect([...results].sort((a, b) => a - b)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8,
+    ]);
+    expect(await cache.get<number>("k")).toBe(8);
+  });
+
+  test("increment does not extend an existing window", async () => {
+    const cache = createCache();
+
+    await cache.increment("k", 0.05);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    await cache.increment("k", 0.05);
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    expect(await cache.get<number>("k")).toBeNull();
+  });
+
+  test("increment restarts at 1 once the window has passed", async () => {
+    const cache = createCache();
+
+    await cache.increment("k", 0.05);
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    expect(await cache.increment("k", 0.05)).toBe(1);
+  });
+
   test("close clears the store", async () => {
     const cache = createCache();
 

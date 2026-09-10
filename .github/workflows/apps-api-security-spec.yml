@@ -1,0 +1,154 @@
+name: apps-api-security-spec
+
+# Runs the executable specification for the 2026-09-09 API security review.
+#
+# Every finding is fixed and every case now passes, so this suite gates. It is
+# the regression net for 22 findings: each test asserts the behaviour a
+# finding said was missing, and it goes red the moment one comes back.
+#
+# `check:security-manifest` reconciles the run against
+# `security-spec/findings.json` in BOTH directions — a case that starts
+# failing, one that stops running, one that runs unlisted, a skip, or a
+# failing positive control. Keep the manifest in step with the suite; if a
+# finding is ever reopened, flip its `status` back to "proven" and record the
+# expected outcomes with `bun run write:security-manifest`.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/api/**"
+      - ".github/workflows/apps-api-security-spec.yml"
+  # No `paths` filter on pull_request: this job is a required check, and a
+  # required check that never starts never reports, which blocks every PR
+  # that does not touch apps/api. The workflow runs on every PR and the
+  # `Detect relevant changes` step below skips the expensive work instead.
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security-spec:
+    name: security spec (review findings)
+    defaults:
+      run:
+        working-directory: apps/api
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    services:
+      # Same images and pins as apps-api-ci.yml.
+      postgres:
+        image: postgres:17-alpine@sha256:979c4379dd698aba0b890599a6104e082035f98ef31d9b9291ec22f2b13059ca
+        env:
+          POSTGRES_DB: app
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app_dev_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      valkey:
+        image: valkey/valkey:8-alpine@sha256:77643d152547b446fc15cbafaff22004545663fcd40c6b28038ad283837baa75
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://app:app_dev_password@localhost:5432/app
+      JWT_SECRET: ci-only-jwt-secret-padded-to-thirty-two-chars
+      FRONTEND_URL: http://localhost:7331
+      ALLOWED_ORIGINS: http://localhost:7331
+      APP_NAME: API Template
+      LOG_LEVEL: error
+      EMAIL_PROVIDER: resend
+      RESEND_API_KEY: ""
+      EMAIL_FROM: noreply@example.com
+      VALKEY_HOST: localhost
+      VALKEY_PORT: "6379"
+
+      # --- what makes this lane different from apps-api-ci -----------------
+      # The spec harness fails instead of skipping, so these are required
+      # rather than nice to have.
+      SECURITY_SPEC: "true"
+      REQUIRE_INTEGRATION_DB: "true"
+      RUN_VALKEY_NETWORK_TESTS: "true"
+      # tests/setup-test-env.ts pins the memory cache unless SECURITY_SPEC is
+      # set. Under memory each rate limiter gets its own LRU and the MFA
+      # challenge never reaches Valkey, so F04 and F15 cannot reproduce.
+      CACHE_PROVIDER: valkey
+      CACHE_ENABLED: "true"
+      # F02 exercises the authorization-start path, which resolves provider
+      # credentials before building the URL.
+      GOOGLE_OAUTH_CLIENT_ID: spec-google-client-id
+      GOOGLE_OAUTH_CLIENT_SECRET: spec-google-client-secret
+      # F11 lives inside the domain-claim branch, which is short-circuited
+      # when this flag is off.
+      ACCOUNT_DOMAIN_CLAIMING: "true"
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'apps/api/**'
+              - '.github/workflows/apps-api-security-spec.yml'
+
+      - name: Set up Bun
+        if: steps.filter.outputs.code == 'true'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.0
+
+      - name: Cache bun install
+        if: steps.filter.outputs.code == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('apps/api/bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+
+      - name: Install dependencies
+        if: steps.filter.outputs.code == 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Apply DB migrations
+        if: steps.filter.outputs.code == 'true'
+        run: bun run db:migrate
+
+      - name: Build email templates
+        if: steps.filter.outputs.code == 'true'
+        run: bun run build:templates
+
+      # Green, and gating. A failure here is a security regression against one
+      # of the 22 findings this suite pins.
+      - name: Security spec
+        if: steps.filter.outputs.code == 'true'
+        run: bun run test:security
+
+      # This one does gate: it fails when the manifest and the run disagree,
+      # in either direction — a finding quietly fixed, or a test that stopped
+      # exercising its defect.
+      - name: Reconcile findings manifest
+        if: steps.filter.outputs.code == 'true'
+        run: bun run check:security-manifest

@@ -31,7 +31,12 @@ const insertTestUser = async (suffix: string): Promise<string> => {
 
 const baseSubscribeInput = (userId: string) => ({
   userId,
-  endpoint: "https://push.example/abc",
+  /*
+   * A real push-service host. `subscribe` validates the destination before
+   * storing it, because the delivery worker later POSTs to whatever is
+   * here — an arbitrary host turns registration into an SSRF primitive.
+   */
+  endpoint: "https://fcm.googleapis.com/fcm/send/abc",
   p256dhKey: "p256dh-key",
   authKey: "auth-key",
   expiresAt: null,
@@ -65,7 +70,7 @@ describe("NotificationsPushService.subscribe", () => {
       baseSubscribeInput(userId)
     );
 
-    expect(result.endpoint).toBe("https://push.example/abc");
+    expect(result.endpoint).toBe("https://fcm.googleapis.com/fcm/send/abc");
     expect(result.userAgent).toBe("test-agent");
 
     const rows = await db
@@ -153,7 +158,7 @@ describe("NotificationsPushService.unsubscribe", () => {
 
     const result = await notificationsPushService.unsubscribe({
       userId,
-      endpoint: "https://push.example/abc",
+      endpoint: "https://fcm.googleapis.com/fcm/send/abc",
     });
 
     expect(result.removed).toBe(1);
@@ -174,7 +179,7 @@ describe("NotificationsPushService.unsubscribe", () => {
     const userId = await insertTestUser("nomatch");
     const result = await notificationsPushService.unsubscribe({
       userId,
-      endpoint: "https://push.example/does-not-exist",
+      endpoint: "https://fcm.googleapis.com/fcm/send/does-not-exist",
     });
 
     expect(result.removed).toBe(0);
@@ -195,6 +200,6 @@ describe("NotificationsPushService.listForUser", () => {
 
     expect(items).toHaveLength(1);
     expect(items[0]).not.toHaveProperty("p256dhKey");
-    expect(items[0]?.endpoint).toBe("https://push.example/abc");
+    expect(items[0]?.endpoint).toBe("https://fcm.googleapis.com/fcm/send/abc");
   });
 });

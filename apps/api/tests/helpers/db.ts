@@ -99,6 +99,12 @@ export const requireDb = async (): Promise<boolean> => {
 const CLEANUP_TARGETS = [
   "audit.audit_log",
   "audit.redactions",
+  /*
+   * Before `auth.sessions`: the FK cascades on delete, but listing it
+   * explicitly keeps the child-first ordering of this list honest and makes
+   * the dependency visible to anyone reading it.
+   */
+  "auth.session_retired_tokens",
   "auth.sessions",
   "auth.email_verification_tokens",
   "auth.password_reset_tokens",

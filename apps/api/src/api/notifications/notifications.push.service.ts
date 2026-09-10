@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../../clients/postgres";
 import { pushSubscription } from "../../clients/postgres/schema";
 import { AUDIT_ACTIONS, auditLogService } from "../../lib/audit-log";
+import { assertAllowedPushEndpoint } from "./notifications.push.destination";
 import { ApiErrors } from "../../lib/errors";
 import { now } from "../../lib/time/now";
 import { PUSH_SUBSCRIPTIONS_MAX_PER_USER } from "./notifications.push.constants";
@@ -26,6 +27,13 @@ export class NotificationsPushService {
   async subscribe(
     input: ISubscribePushInput
   ): Promise<IPublicPushSubscription> {
+    /*
+     * Before anything is stored. Proving the destination would be blocked at
+     * send time would mean building the request, which is the thing that
+     * must not happen.
+     */
+    assertAllowedPushEndpoint(input.endpoint);
+
     return db.transaction(async (tx) => {
       const existing = await tx
         .select()

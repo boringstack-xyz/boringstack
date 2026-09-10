@@ -1,4 +1,5 @@
 export { accountsService, AccountsService } from "./accounts.service";
+export { joinRequestsService } from "./join-requests.service";
 export type {
   ActiveMembership,
   IAccount,

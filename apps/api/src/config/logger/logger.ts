@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/bun";
 import pino from "pino";
 import { env } from "../env";
 import type { LOG_EVENTS } from "./logger.events";
+import { redactRecord, scrubText } from "./redact";
 
 type ILogEventName = (typeof LOG_EVENTS)[number];
 
@@ -58,6 +59,31 @@ const baseLogger = pino({
   level: env.LOG_LEVEL,
   formatters: {
     level: (label) => ({ level: label.toUpperCase() }),
+    /*
+     * The sensitive-data boundary. Every context object passes through here
+     * before serialization, so a credential cannot reach the transport
+     * whichever call site logged it. See `redact.ts` for why key-based
+     * censoring alone is insufficient.
+     */
+    log: (object) => redactRecord(object),
+  },
+  /*
+   * `formatters.log` only sees the merged context object. The message and
+   * any interpolation arguments travel beside it, and they are where a
+   * caught error's text lands — a driver error carrying `params: <bound
+   * values>`, or a stack embedding a bearer token. Scrubbing here catches
+   * every level method, on the base logger and on children alike.
+   */
+  hooks: {
+    logMethod(args, method) {
+      for (const [index, arg] of args.entries()) {
+        if (typeof arg === "string") {
+          args[index] = scrubText(arg);
+        }
+      }
+
+      method.apply(this, args);
+    },
   },
   mixin: traceMixin,
 });
@@ -113,7 +139,13 @@ const wrap = (instance: pino.Logger): IAppLogger => {
     trace: (msg, ctx) => {
       call("trace", msg, ctx);
     },
-    child: (bindings) => wrap(instance.child(bindings)),
+    /*
+     * Bindings are serialized once at child creation and then prepended to
+     * every record, so they never reach `formatters.log`. A per-request
+     * child carrying a header or a token would otherwise repeat it on
+     * every line the request logs.
+     */
+    child: (bindings) => wrap(instance.child(redactRecord(bindings))),
   };
 };
 

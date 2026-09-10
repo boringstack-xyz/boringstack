@@ -213,7 +213,7 @@ export class PasswordResetService {
       action: AUDIT_ACTIONS.AUTH_PASSWORD_RESET_COMPLETED,
     });
 
-    void notifications.send(passwordResetCompletedEvent, {
+    notifications.detach(passwordResetCompletedEvent, {
       recipientUserId: record.userId,
       payload: {
         securityUrl: `${env.FRONTEND_URL}/account/settings`,

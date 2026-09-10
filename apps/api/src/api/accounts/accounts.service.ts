@@ -19,7 +19,8 @@ import { joinRequestsService } from "./join-requests.service";
 import type {
   ActiveMembership,
   DbOrTx,
-  ICreatePersonalAccountResult,
+  IDomainClaimResolution,
+  IProvisionOutcome,
   IProvisionAfterVerificationInput,
 } from "./accounts.types";
 
@@ -39,7 +40,7 @@ export class AccountsService {
   async provisionAfterVerification(
     input: IProvisionAfterVerificationInput,
     tx?: DbOrTx
-  ): Promise<ICreatePersonalAccountResult> {
+  ): Promise<IProvisionOutcome> {
     if (tx === undefined) {
       return db.transaction(async (innerTx) =>
         this.provisionAfterVerification(input, innerTx)
@@ -63,15 +64,30 @@ export class AccountsService {
     const first = existing[0];
 
     if (first !== undefined) {
-      return { account: first.account, membership: first.membership };
+      return {
+        kind: "provisioned",
+        account: first.account,
+        membership: first.membership,
+      };
     }
 
-    const claimedDomain = await this.resolveDomainClaim(input.userId, tx);
+    const claim = await this.resolveDomainClaim(input.userId, tx);
+
+    if (claim.kind === "claimed") {
+      return {
+        kind: "domain_claimed",
+        accountId: claim.accountId,
+        accountName: claim.accountName,
+        domain: claim.domain,
+        joinRequestId: claim.joinRequestId,
+      };
+    }
+
     const resolvedName = await this.resolveAccountName(input, tx);
 
     const [account] = await tx
       .insert(accounts)
-      .values({ name: resolvedName, claimedDomain })
+      .values({ name: resolvedName, claimedDomain: claim.domain })
       .returning();
 
     if (!account) {
@@ -98,7 +114,7 @@ export class AccountsService {
       metadata: { name: account.name },
     });
 
-    return { account, membership };
+    return { kind: "provisioned", account, membership };
   }
 
   async getMembershipsForUser(userId: string): Promise<ActiveMembership[]> {
@@ -336,9 +352,9 @@ export class AccountsService {
   private async resolveDomainClaim(
     userId: string,
     tx: DbOrTx
-  ): Promise<string | null> {
+  ): Promise<IDomainClaimResolution> {
     if (!env.ACCOUNT_DOMAIN_CLAIMING) {
-      return null;
+      return { kind: "open", domain: null };
     }
 
     const user = await tx.query.users.findFirst({
@@ -346,13 +362,13 @@ export class AccountsService {
     });
 
     if (!user) {
-      return null;
+      return { kind: "open", domain: null };
     }
 
     const domain = extractDomain(user.email);
 
     if (domain === null || isPublicEmailDomain(domain)) {
-      return null;
+      return { kind: "open", domain: null };
     }
 
     const [claimed] = await tx
@@ -365,34 +381,35 @@ export class AccountsService {
 
     if (claimed) {
       /*
-       * Domain is owned — file a pending join request so the existing
-       * owner can approve, then surface a structured error to the
-       * caller. The request is upserted (partial unique on pending
-       * status), so a retry of the verify-email flow never duplicates.
-       * Failure to create the request is logged but doesn't mask the
-       * original `domainClaimed` error — the user should still see the
-       * friendly "this domain is claimed" page either way.
+       * Domain is owned — file a pending join request so the existing owner
+       * can approve. The request is upserted (partial unique on pending
+       * status), so retrying the verify-email flow never duplicates it.
+       *
+       * The insert shares the caller's transaction and must COMMIT with it,
+       * so the refusal is RETURNED rather than thrown: a throw from here
+       * aborts that transaction and takes the row with it, leaving the
+       * owner-approval path the API advertises with nothing to approve. The
+       * caller raises the error once its transaction is committed.
        */
-      try {
-        await joinRequestsService.createPending(
-          {
-            accountId: claimed.id,
-            userId,
-            email: user.email,
-          },
-          tx
-        );
-      } catch {
-        // Logged inside the service path; do not fail the outer flow.
-      }
+      const pending = await joinRequestsService.createPending(
+        {
+          accountId: claimed.id,
+          userId,
+          email: user.email,
+        },
+        tx
+      );
 
-      throw ApiErrors.domainClaimed(claimed.name, {
+      return {
+        kind: "claimed",
         accountId: claimed.id,
+        accountName: claimed.name,
         domain,
-      });
+        joinRequestId: pending.id,
+      };
     }
 
-    return domain;
+    return { kind: "open", domain };
   }
 
   private async resolveAccountName(

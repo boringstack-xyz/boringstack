@@ -29,6 +29,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.ts"],
+  "include": ["src/**/*.ts", "tests/**/*.ts", "security-spec/**/*.ts", "scripts/**/*.ts"],
   "exclude": ["node_modules", "dist", "drizzle", "src/templates/email/dist"]
 }

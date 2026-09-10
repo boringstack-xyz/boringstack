@@ -159,7 +159,7 @@ describe("useLoginPage onSubmit", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.mfaChallengeToken).toBe("tokenxxxxxxxxxxxx");
+      expect(result.current.mfaPending).toBe(true);
     });
 
     expect(result.current.mfaMode).toBe("totp");

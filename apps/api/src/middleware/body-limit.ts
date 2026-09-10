@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { ApiErrors } from "../lib/errors";
+import { ApiError, ApiErrors } from "../lib/errors";
 
 export const MAX_BODY_SIZE_BYTES = 1024 * 1024; // 1 MB
 
@@ -16,12 +16,13 @@ const BODIED_METHODS = new Set(["POST", "PUT", "PATCH"]);
  * in ways the standard `new Request(...)` API can't override, so this
  * function gets tested with raw values.
  *
- * Two reject paths:
- *   1. Content-Length present → exceeds cap → throws.
- *   2. Bodied method WITHOUT a Content-Length (chunked transfer, or
- *      a misbehaving client/proxy that stripped the header) → throws.
- *      Without this leg a caller can omit the header and stream an
- *      unbounded body past the cap.
+ * This is the cheap pre-parse check, not the enforcement boundary. The
+ * enforcement boundary is `maxRequestBodySize` on the server
+ * (`src/index.ts`), which bounds a body while it streams and therefore
+ * covers chunked transfers and stripped headers — the cases a header check
+ * cannot see. Rejecting a bodied request that carries no `Content-Length`
+ * is not a substitute: it refuses legitimate chunked clients while still
+ * letting a lying header through to an unbounded read.
  *
  * The API doesn't accept streaming uploads anywhere; forks that add
  * one should mount a route-specific exemption rather than loosening
@@ -39,10 +40,11 @@ export const enforceBodyLimit = (input: {
   const cap = input.maxBytes ?? MAX_BODY_SIZE_BYTES;
 
   if (input.contentLength === null) {
-    throw ApiErrors.validation(
-      "Content-Length header is required for requests with a body",
-      "body"
-    );
+    /*
+     * Nothing to check. A chunked request advertises no length, and the
+     * transport cap is what bounds it.
+     */
+    return;
   }
 
   const size = Number.parseInt(input.contentLength, 10);
@@ -55,13 +57,47 @@ export const enforceBodyLimit = (input: {
   }
 
   if (size > cap) {
-    throw ApiErrors.validation("Request body exceeds 1 MB limit", "body");
+    throw ApiErrors.payloadTooLarge("Request body exceeds 1 MB limit");
   }
 };
 
-export const bodyLimit = new Elysia().onParse(({ request }) => {
-  enforceBodyLimit({
-    method: request.method,
-    contentLength: request.headers.get("content-length"),
-  });
-});
+/*
+ * Three details here are load-bearing.
+ *
+ * `.as("global")`: Elysia scopes lifecycle hooks to the declaring instance
+ * and its descendants, so a plugin the parent `use`s does not cover routes
+ * the parent registers afterwards — which is exactly how
+ * `config/app/app.ts` composes. Without this the hook is mounted, looks
+ * correct, and runs for no route in the application.
+ *
+ * `onRequest`, not `onParse`: Elysia wraps anything thrown during the parse
+ * phase in its own `ParseError`, so an `ApiError` never reaches the error
+ * handler and a 413 arrives as a 400 "could not be parsed" —
+ * indistinguishable from malformed JSON. `onRequest` also runs before
+ * routing, so an over-cap body is refused without matching a route.
+ *
+ * Short-circuit, not throw: a value returned from `onRequest` becomes the
+ * response directly. Throwing from this phase routes through `onError`,
+ * where the status the handler sets does not survive and the client gets
+ * the right envelope under a 200.
+ */
+export const bodyLimit = new Elysia()
+  .onRequest(({ request, set }) => {
+    try {
+      enforceBodyLimit({
+        method: request.method,
+        contentLength: request.headers.get("content-length"),
+      });
+    } catch (error: unknown) {
+      if (!(error instanceof ApiError)) {
+        throw error;
+      }
+
+      set.status = error.statusCode;
+
+      return error.toResponse();
+    }
+
+    return undefined;
+  })
+  .as("global");

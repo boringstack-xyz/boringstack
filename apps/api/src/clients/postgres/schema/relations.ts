@@ -9,6 +9,7 @@ import {
 } from "./app.schema";
 import { auditLog } from "./audit.schema";
 import {
+  authSessionRetiredTokens,
   authSessions,
   emailVerificationTokens,
   mfaRecoveryCodes,
@@ -132,12 +133,26 @@ export const userAuthProvidersRelations = relations(
   })
 );
 
-export const authSessionsRelations = relations(authSessions, ({ one }) => ({
-  user: one(users, {
-    fields: [authSessions.userId],
-    references: [users.id],
-  }),
-}));
+export const authSessionsRelations = relations(
+  authSessions,
+  ({ many, one }) => ({
+    user: one(users, {
+      fields: [authSessions.userId],
+      references: [users.id],
+    }),
+    retiredTokens: many(authSessionRetiredTokens),
+  })
+);
+
+export const authSessionRetiredTokensRelations = relations(
+  authSessionRetiredTokens,
+  ({ one }) => ({
+    session: one(authSessions, {
+      fields: [authSessionRetiredTokens.sessionId],
+      references: [authSessions.id],
+    }),
+  })
+);
 
 export const emailVerificationTokensRelations = relations(
   emailVerificationTokens,

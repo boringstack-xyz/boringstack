@@ -1,7 +1,11 @@
 import { now, nowMs } from "../../../lib/time/now";
 import { and, eq, gt, or } from "drizzle-orm";
 import { db } from "../../../clients/postgres";
-import { authSessions, users } from "../../../clients/postgres/schema";
+import {
+  authSessionRetiredTokens,
+  authSessions,
+  users,
+} from "../../../clients/postgres/schema";
 import { AUDIT_ACTIONS, auditLogService } from "../../../lib/audit-log";
 import { ApiErrors } from "../../../lib/errors";
 import { jwtRevocationService } from "../../../lib/jwt";
@@ -51,31 +55,60 @@ export class SessionService {
     const outcome = await db.transaction(
       async (tx): Promise<IRefreshOutcome> => {
         const session = await tx.query.authSessions.findFirst({
-          where: or(
-            eq(authSessions.tokenHash, tokenHash),
-            eq(authSessions.previousTokenHash, tokenHash)
-          ),
+          where: eq(authSessions.tokenHash, tokenHash),
         });
 
-        if (session === undefined) {
-          return { kind: "missing" };
-        }
-
         /*
-         * Replay: the presented token matches the *previous* slot, not the
-         * current one. Someone is reusing a token we already issued a
-         * successor for. Kill the entire family.
+         * Not the live token. Before calling it unknown, check whether this
+         * family has already retired it — at ANY depth.
+         *
+         * The `previousTokenHash` slot remembers one generation only, so
+         * without this lookup a token captured two rotations ago matches
+         * nothing and surfaces as a generic invalid session: the family
+         * stays alive and the compromise goes unrecorded. Waiting would be
+         * the whole attack.
          */
-        if (session.tokenHash !== tokenHash) {
+        if (session === undefined) {
+          const retired = await tx.query.authSessionRetiredTokens.findFirst({
+            where: eq(authSessionRetiredTokens.tokenHash, tokenHash),
+          });
+
+          /*
+           * The `previousTokenHash` slot is still consulted as a fallback.
+           * The migration backfills it into the lineage table, but during a
+           * rolling deploy an instance running the previous build rotates a
+           * token and writes only the slot — a replay of that token between
+           * the two writes would otherwise read as unknown and leave the
+           * family alive.
+           */
+          const legacy =
+            retired === undefined
+              ? await tx.query.authSessions.findFirst({
+                  where: eq(authSessions.previousTokenHash, tokenHash),
+                })
+              : undefined;
+
+          const familyId = retired?.familyId ?? legacy?.familyId;
+
+          if (familyId === undefined) {
+            return { kind: "missing" };
+          }
+
+          const family =
+            legacy ??
+            (await tx.query.authSessions.findFirst({
+              where: eq(authSessions.familyId, familyId),
+            }));
+
           await tx
             .delete(authSessions)
-            .where(eq(authSessions.familyId, session.familyId));
+            .where(eq(authSessions.familyId, familyId));
 
           return {
             kind: "replay",
-            userId: session.userId,
-            sessionId: session.id,
-            familyId: session.familyId,
+            userId: family?.userId ?? "",
+            sessionId: retired?.sessionId ?? legacy?.id ?? "",
+            familyId,
           };
         }
 
@@ -103,6 +136,43 @@ export class SessionService {
         if (rotated === undefined) {
           return { kind: "missing" };
         }
+
+        /*
+         * The token just rotated away is replay evidence for the life of the
+         * family. Recorded in the same transaction as the rotation, so the
+         * lineage can never be missing a generation the client was actually
+         * issued.
+         *
+         * The `previousTokenHash` slot is carried over with it, because the
+         * update above is about to overwrite it. During a rolling deploy an
+         * instance on the previous build rotates a token and writes only
+         * that slot; if the next rotation reaches this build and drops it,
+         * the hash exists nowhere and replaying it revokes nothing.
+         *
+         * Rollout still has a floor: two or more consecutive rotations
+         * through old writers discard history no writer ever persisted.
+         * Deploy the writers that keep this lineage before relying on
+         * depth beyond one generation, or retire the affected families.
+         */
+        const retiring = [tokenHash];
+
+        if (
+          session.previousTokenHash !== null &&
+          session.previousTokenHash !== tokenHash
+        ) {
+          retiring.push(session.previousTokenHash);
+        }
+
+        await tx
+          .insert(authSessionRetiredTokens)
+          .values(
+            retiring.map((hash) => ({
+              sessionId: session.id,
+              familyId: session.familyId,
+              tokenHash: hash,
+            }))
+          )
+          .onConflictDoNothing();
 
         return { kind: "rotated", userId: rotated.userId };
       }

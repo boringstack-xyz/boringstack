@@ -2,6 +2,7 @@ import { generateState } from "arctic";
 import { logger } from "../../config/logger";
 import { AUDIT_ACTIONS, auditLogService } from "../audit-log";
 import { ApiErrors, getErrorMessage } from "../errors";
+import { generateOpaqueToken, hashOpaqueToken } from "../tokens";
 import { oauthStateStore } from "./oauth.state";
 import type {
   IAuthorizationURLResult,
@@ -30,7 +31,12 @@ export const createAuthorizationURL = async (
     scopes
   );
 
-  const stored: IStoredState = {};
+  /*
+   * The browser-binding nonce. Only its hash is stored, so a Valkey snapshot
+   * cannot be replayed as a browser.
+   */
+  const bindingNonce = generateOpaqueToken();
+  const stored: IStoredState = { bindingHash: hashOpaqueToken(bindingNonce) };
 
   if (codeVerifier !== undefined) {
     stored.codeVerifier = codeVerifier;
@@ -49,8 +55,8 @@ export const createAuthorizationURL = async (
   });
 
   return codeVerifier !== undefined
-    ? { url, state, codeVerifier }
-    : { url, state };
+    ? { url, state, bindingNonce, codeVerifier }
+    : { url, state, bindingNonce };
 };
 
 /**
@@ -60,7 +66,8 @@ export const createAuthorizationURL = async (
 export const completeOAuthCallback = async (
   provider: OAuthProvider,
   code: string,
-  state: string
+  state: string,
+  bindingNonce: string
 ): Promise<{ profile: IOAuthProfile; linkUserId?: string }> => {
   /*
    * Resolve credentials BEFORE consuming state. When credentials aren't
@@ -75,6 +82,24 @@ export const completeOAuthCallback = async (
 
   if (stored === null) {
     throw ApiErrors.unauthorized("Invalid or expired OAuth state");
+  }
+
+  /*
+   * The browser presenting this callback must be the one that started the
+   * flow. Without it, holding a valid state is enough: an attacker begins
+   * authorization for their own identity and hands the callback URL to a
+   * victim, whose browser completes it and ends up signed in as the
+   * attacker. State is consumed above either way, so a failed binding also
+   * burns the state rather than leaving it for a retry.
+   */
+  if (
+    stored.bindingHash !== undefined &&
+    (bindingNonce === "" ||
+      hashOpaqueToken(bindingNonce) !== stored.bindingHash)
+  ) {
+    throw ApiErrors.unauthorized(
+      "This sign-in was not started in this browser"
+    );
   }
 
   try {

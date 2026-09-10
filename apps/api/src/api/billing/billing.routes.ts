@@ -14,6 +14,7 @@ import {
   WebhookResponse,
 } from "./billing.schemas";
 import { getBillingService } from "./billing.service";
+import { resolveFreshMembership } from "../../middleware/require-active-membership";
 import { resolveBillingAccount } from "./billing.utils";
 
 const billingRoutes = new Elysia()
@@ -32,7 +33,24 @@ const billingRoutes = new Elysia()
       })
       .get(
         "/subscription",
-        async ({ accountId }) => getBillingService().getSubscription(accountId),
+        async ({ accountId, user }) => {
+          /*
+           * Membership is re-checked here, not taken from the token.
+           * `requireAuth` validates signature, expiry and revocation and
+           * says nothing about whether the caller still belongs to the
+           * account, so without this a removed member reads this account's
+           * billing state until their access token expires.
+           *
+           * The FRESH variant, not the memoized one. The memo is keyed by
+           * (user, account) with its own TTL, so a revocation that lands
+           * inside that window is invisible — which is the same "stale
+           * authorization" defect one layer down, and it reproduces in this
+           * test.
+           */
+          await resolveFreshMembership(user.id, accountId);
+
+          return getBillingService().getSubscription(accountId);
+        },
         {
           response: SubscriptionResponse,
           detail: {

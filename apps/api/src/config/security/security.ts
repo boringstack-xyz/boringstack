@@ -43,12 +43,20 @@ export const buildCors = () => {
  * "memory" in `setup-test-env.ts`), so this branch never executes
  * during the test suite.
  */
-const buildRateLimitContext = (): ValkeyRateLimitContext | undefined => {
+const buildRateLimitContext = (
+  policy: string
+): ValkeyRateLimitContext | undefined => {
   if (!env.CACHE_ENABLED || env.CACHE_PROVIDER !== "valkey") {
     return undefined;
   }
 
-  return new ValkeyRateLimitContext();
+  /*
+   * The policy name becomes a key segment, so these two limiters keep
+   * separate counters. On a shared key, public traffic drains the
+   * credential budget and the general limiter's `onError` refunds failed
+   * logins.
+   */
+  return new ValkeyRateLimitContext(undefined, policy);
 };
 
 /**
@@ -106,7 +114,7 @@ const buildKeyGenerator = (): Generator | undefined => {
  * This app-level limit is the second line of defence.
  */
 export const buildRateLimit = () => {
-  const context = buildRateLimitContext();
+  const context = buildRateLimitContext("general");
   const generator = buildKeyGenerator();
 
   return rateLimit({
@@ -118,7 +126,7 @@ export const buildRateLimit = () => {
 };
 
 export const buildAuthRateLimit = () => {
-  const context = buildRateLimitContext();
+  const context = buildRateLimitContext("credential");
   const generator = buildKeyGenerator();
 
   return rateLimit({

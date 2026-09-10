@@ -182,6 +182,12 @@ export class OwnershipTransfersService {
         );
       }
 
+      /*
+       * `FOR UPDATE` on the successor's row. The lock at the top of this
+       * transaction covers the transfer row, not the memberships, so
+       * without this the read below is a snapshot: a revocation committing
+       * between it and the promote is invisible.
+       */
       const [target] = await tx
         .select()
         .from(accountMemberships)
@@ -192,7 +198,8 @@ export class OwnershipTransfersService {
             isNull(accountMemberships.revokedAt)
           )
         )
-        .limit(1);
+        .limit(1)
+        .for("update");
 
       if (!target) {
         throw ApiErrors.validation(
@@ -216,15 +223,31 @@ export class OwnershipTransfersService {
           )
         );
 
-      await tx
+      /*
+       * `isNull(revokedAt)` is the predicate that matters. Filtering on the
+       * row id alone promotes a membership revoked while this transaction
+       * is in flight: the sitting owner is already demoted above, the
+       * partial unique index excludes revoked rows so it never fires, and
+       * the account commits with zero active owners — a state with no way
+       * back, since initiating a transfer requires an owner.
+       */
+      const promoted = await tx
         .update(accountMemberships)
         .set({ role: ROLE.owner, updatedAt: now() })
         .where(
           and(
             eq(accountMemberships.id, target.id),
-            eq(accountMemberships.accountId, transfer.accountId)
+            eq(accountMemberships.accountId, transfer.accountId),
+            isNull(accountMemberships.revokedAt)
           )
+        )
+        .returning({ id: accountMemberships.id });
+
+      if (promoted.length === 0) {
+        throw ApiErrors.validation(
+          "Target is no longer a member of this account"
         );
+      }
 
       const [accepted] = await tx
         .update(accountOwnershipTransfers)
@@ -269,7 +292,7 @@ export class OwnershipTransfersService {
         .where(eq(accounts.id, transfer.accountId))
         .limit(1);
 
-      void notifications.send(accountOwnershipTransferredEvent, {
+      notifications.detach(accountOwnershipTransferredEvent, {
         recipientUserId: transfer.fromUserId,
         payload: {
           accountId: transfer.accountId,

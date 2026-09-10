@@ -94,6 +94,10 @@ class OAuthStateStore {
         result.codeVerifier = parsed.codeVerifier;
       }
 
+      if ("bindingHash" in parsed && typeof parsed.bindingHash === "string") {
+        result.bindingHash = parsed.bindingHash;
+      }
+
       if ("linkUserId" in parsed && typeof parsed.linkUserId === "string") {
         result.linkUserId = parsed.linkUserId;
       }
