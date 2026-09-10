@@ -19,8 +19,11 @@
 [extend]
 useDefault = true
 
-[allowlist]
+# One allowlist per exemption shape. `[allowlist]` (singular) is deprecated in
+# gitleaks 8.30 and cannot be mixed with these.
+[[allowlists]]
 description = "Test fixtures and placeholder lookup tables that the env validator rejects in production are never real secrets."
+condition = "OR"
 paths = [
   '''apps/api/tests/api/notifications/notifications\.push\.utils\.test\.ts''',
   '''apps/api/tests/api/notifications/notifications\.push\.service\.test\.ts''',
@@ -68,11 +71,26 @@ regexes = [
   '''MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=''',
   # Gitleaks also decodes the base64 and re-flags the decoded literal.
   '''0123456789abcdef0123456789abcdef''',
-  # The security spec's redaction fixture (F17) pushes synthetic
-  # credentials through the logger and asserts none of them reach the
-  # output. They are shaped like the real things on purpose, or a rule
-  # matching only the literal word "password" would pass the test. Every
-  # one carries the `sp3c` prefix, so this allowlists the sentinels
-  # rather than the file: a real secret in the same file still fails.
-  '''sp3c[-_]''',
+]
+
+# The security spec's redaction fixture (F17) pushes synthetic credentials
+# through the logger and asserts none of them come out. They are shaped like
+# the real things on purpose, or a rule matching the literal word "password"
+# would pass the test while a real leak walked through.
+#
+# Its own allowlist, not an entry in the block above, because that block sets
+# `regexTarget = "line"`: a prefix match there would suppress any unrelated
+# secret that happened to share a line with a sentinel, anywhere in the repo.
+# Here the regex is matched against the detected secret and anchored to the
+# exact value, so it exempts those two strings and nothing else.
+#
+# No `paths` entry. A path in a gitleaks allowlist skips the whole file
+# whatever `condition` says, which would exempt any real credential that later
+# landed in that fixture. Two known synthetic strings is the narrower rule.
+[[allowlists]]
+description = "F17 log-redaction sentinels: two exact synthetic values, nothing else."
+regexTarget = "secret"
+regexes = [
+  '''^sp3c-P4ssw0rd-Sentinel$''',
+  '''^sp3c_tok_5f4dcc3b5aa765d61d83$''',
 ]
