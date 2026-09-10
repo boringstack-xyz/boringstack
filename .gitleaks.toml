@@ -68,4 +68,11 @@ regexes = [
   '''MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=''',
   # Gitleaks also decodes the base64 and re-flags the decoded literal.
   '''0123456789abcdef0123456789abcdef''',
+  # The security spec's redaction fixture (F17) pushes synthetic
+  # credentials through the logger and asserts none of them reach the
+  # output. They are shaped like the real things on purpose, or a rule
+  # matching only the literal word "password" would pass the test. Every
+  # one carries the `sp3c` prefix, so this allowlists the sentinels
+  # rather than the file: a real secret in the same file still fails.
+  '''sp3c[-_]''',
 ]
