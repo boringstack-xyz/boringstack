@@ -6,6 +6,7 @@ import {
   type ITestUser,
   authedContext,
   fetchActiveAccountId,
+  grantTeamPlan,
   registerAndVerify,
   uniqueEmail
 } from "./fixtures/helpers";
@@ -35,6 +36,9 @@ test.describe("Leave account", () => {
      */
     const ctxOwner = await authedContext(owner);
     const ownerAccountId = await fetchActiveAccountId(ctxOwner);
+
+    // A second member is a paid feature, and a seat has to exist for them.
+    await grantTeamPlan(ctxOwner);
 
     const inviteRes = await ctxOwner.post(
       `/api/v1/accounts/${ownerAccountId}/invitations`,

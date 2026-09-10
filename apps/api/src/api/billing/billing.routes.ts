@@ -1,4 +1,4 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 
 import { ApiErrors, createSuccessResponse } from "../../lib/errors";
 import { errorHandler } from "../../middleware/error-handler";
@@ -14,6 +14,9 @@ import {
   WebhookResponse,
 } from "./billing.schemas";
 import { getBillingService } from "./billing.service";
+import { grantTestTeamPlan } from "./test-plan";
+import { env } from "../../config/env";
+import { now } from "../../lib/time/now";
 import { resolveFreshMembership } from "../../middleware/require-active-membership";
 import { resolveBillingAccount } from "./billing.utils";
 
@@ -22,6 +25,49 @@ const billingRoutes = new Elysia()
     requireAuth()
       .onError(({ code, error, set }) =>
         errorHandler({ code: String(code), error, set })
+      )
+      .post(
+        "/__test/grant-team-plan",
+        async ({ accountId, set }) => {
+          if (env.NODE_ENV !== "test" && !env.E2E_TEST_ENDPOINTS_ENABLED) {
+            set.status = 404;
+
+            return {
+              success: false as const,
+              error: {
+                code: "NOT_FOUND",
+                message: "Resource not found",
+                timestamp: now(),
+              },
+            };
+          }
+
+          await grantTestTeamPlan(accountId);
+
+          return createSuccessResponse({ granted: true });
+        },
+        {
+          response: t.Union([
+            t.Object({
+              success: t.Literal(true),
+              data: t.Object({ granted: t.Boolean() }),
+            }),
+            t.Object({
+              success: t.Literal(false),
+              error: t.Object({
+                code: t.String(),
+                message: t.String(),
+                timestamp: t.String(),
+              }),
+            }),
+          ]),
+          detail: {
+            tags: ["Billing"],
+            summary:
+              "TEST ONLY. Attaches a seated team plan to the active account. Returns 404 unless NODE_ENV=test or E2E_TEST_ENDPOINTS_ENABLED=true.",
+            security: [{ cookieAuth: [] }],
+          },
+        }
       )
       .get("/plans", async () => getBillingService().listPlans(), {
         response: PlanListResponse,
@@ -43,7 +89,7 @@ const billingRoutes = new Elysia()
            *
            * The FRESH variant, not the memoized one. The memo is keyed by
            * (user, account) with its own TTL, so a revocation that lands
-           * inside that window is invisible — which is the same "stale
+           * inside that window is invisible, which is the same "stale
            * authorization" defect one layer down, and it reproduces in this
            * test.
            */

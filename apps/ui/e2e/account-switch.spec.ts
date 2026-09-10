@@ -6,6 +6,7 @@ import {
   type ITestUser,
   authedContext,
   fetchActiveAccountId,
+  grantTeamPlan,
   registerAndVerify,
   uniqueEmail
 } from "./fixtures/helpers";
@@ -40,6 +41,9 @@ test.describe("Account switcher", () => {
 
     const ctxA = await authedContext(userA);
     const accountA = await fetchActiveAccountId(ctxA);
+
+    // A second member is a paid feature, and a seat has to exist for them.
+    await grantTeamPlan(ctxA);
 
     const inviteRes = await ctxA.post(
       `/api/v1/accounts/${accountA}/invitations`,
