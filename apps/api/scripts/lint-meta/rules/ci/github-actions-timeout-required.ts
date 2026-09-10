@@ -14,7 +14,7 @@ interface IJobBlock {
  * Line-based scan (same pragmatic idiom as github-actions-permissions):
  * collect each `jobs:` child block, then require a job-level
  * `timeout-minutes:` unless the job is a reusable-workflow call
- * (job-level `uses:` — those cannot set timeout-minutes).
+ * (job-level `uses:`, which cannot set timeout-minutes).
  */
 function collectJobBlocks(text: string): IJobBlock[] {
   const lines = text.split("\n");

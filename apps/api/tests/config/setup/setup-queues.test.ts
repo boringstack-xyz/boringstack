@@ -4,7 +4,7 @@ import { getQueueManager } from "../../../src/config/setup/setup-queues";
 
 /*
  * setupQueues() itself constructs real BullMQ queues + workers against
- * Valkey and registers repeatable jobs — that boot path is exercised
+ * Valkey and registers repeatable jobs: that boot path is exercised
  * end-to-end by infra/compose full-stack-smoke. What unit tests can pin
  * down is the accessor contract callers rely on for inline fallback.
  */

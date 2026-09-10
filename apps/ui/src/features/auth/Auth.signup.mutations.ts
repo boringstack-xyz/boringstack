@@ -16,7 +16,7 @@ import type {
 
 /**
  * Server creates only the pending user, hash, and a verification token.
- * No session is issued — the caller must check email and click the link.
+ * No session is issued: the caller must check email and click the link.
  * Resolves with the masked confirmation message returned by the API so
  * the UI can echo "we sent a link to user@x.com" verbatim.
  */

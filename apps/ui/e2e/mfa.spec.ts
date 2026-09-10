@@ -85,10 +85,10 @@ const provisionEnrolledUser = async (): Promise<{
   /*
    * Enrol with the PREVIOUS step's code on purpose. The API accepts a
    * ±1-step window and records the matched step as the replay
-   * watermark — submitting the previous step parks the watermark one
+   * watermark: submitting the previous step parks the watermark one
    * step behind, so the test's first verify-login with a current-step
    * code is strictly greater and passes the replay guard immediately.
-   * (The alternative — sleeping to the next 30s boundary — added up to
+   * (The alternative, sleeping to the next 30s boundary, added up to
    * 30s per run and flaked under CI load.)
    */
   const verifySetupRes = await ctx.post("/api/v1/auth/mfa/verify-setup", {

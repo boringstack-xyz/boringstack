@@ -9,13 +9,13 @@ import type { IMetaRule, IViolation } from "../../types";
  * either mirrors the override or has consciously pinned the same version.
  * Two failure modes are caught:
  *
- *   1. Stale override — an app's own bun.lock resolves a different version
+ *   1. Stale override: an app's own bun.lock resolves a different version
  *      than its declared override (the override never took effect; run
  *      `bun install`).
- *   2. Missing mirror — a sibling resolves the package at a different
+ *   2. Missing mirror: a sibling resolves the package at a different
  *      version than the override and declares no override of its own
  *      (e.g. a GHSA patch pinned in one app but not the others).
- *   3. Undocumented override — an `overrides` key with no matching
+ *   3. Undocumented override: an `overrides` key with no matching
  *      `//overrides` entry explaining why it is pinned. Every override
  *      encodes a non-obvious decision (a GHSA patch, a single-resolution
  *      pin); the rationale must travel with it so a future dep bump does

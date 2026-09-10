@@ -9,7 +9,7 @@
  *
  * KEEP IN SYNC with the inlined copy at `public/sw.js`. The worker is a
  * classic script (no ES module imports) so it cannot import from this
- * module at runtime — both implementations must mirror each other. Tests
+ * module at runtime: both implementations must mirror each other. Tests
  * in `tests/sw/sw.test.ts` exercise the TS surface.
  */
 

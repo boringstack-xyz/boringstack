@@ -1,4 +1,4 @@
-# Full observability stack — on by default for dev + prod via dev.sh.
+# Full observability stack: on by default for dev + prod via dev.sh.
 #   - Prometheus + Alertmanager  → metrics + alerting
 #   - Grafana                    → dashboards (host port 3010)
 #   - Loki + Promtail            → log aggregation
@@ -8,7 +8,7 @@
 #
 # Opt out per-run with `WITH_OBSERVABILITY=0 ./dev.sh up`. The whole point
 # of running this in dev is so you've already used the dashboards before
-# prod day-one — disabling it means learning the panels during your first
+# prod day-one, disabling it means learning the panels during your first
 # real incident.
 #
 # Every service carries a healthcheck so `depends_on: { condition:
@@ -98,7 +98,7 @@ services:
       - no-new-privileges:true
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      # No literal default on purpose — a published fallback password is a
+      # No literal default on purpose, a published fallback password is a
       # credential leak. dev.sh generates and persists a random one for
       # dev/smoke; prod requires an explicit value (guarded in dev.sh).
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set - dev.sh generates one for dev, or set it in compose/.env}

@@ -1,4 +1,4 @@
-# BoringStack ui-template — custom Semgrep rules.
+# BoringStack ui-template: custom Semgrep rules.
 #
 # Backstop for stack-specific bans already enforced at the ESLint /
 # lint:meta layer. Run as part of .github/workflows/security-sast.yml

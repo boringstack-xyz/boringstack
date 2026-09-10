@@ -24,8 +24,8 @@ export const ProtectedRoute: FC<IProtectedRouteProps> = ({ children }) => {
 
   /*
    * Wait when either:
-   *   1. `isPending` — first fetch ever; no cached data exists.
-   *   2. `!data && !error && isFetching` — cached `null`/undefined with
+   *   1. `isPending`: first fetch ever; no cached data exists.
+   *   2. `!data && !error && isFetching`: cached `null`/undefined with
    *      a refetch in flight. Covers the post-login window: a
    *      `useMe` invalidation can race the `navigate('/dashboard')`
    *      and ProtectedRoute mounts while the refetch is still
@@ -69,7 +69,7 @@ export const ProtectedRoute: FC<IProtectedRouteProps> = ({ children }) => {
   const status = resolveAuthStatus({ data, error });
 
   if (status === null) {
-    // Timed out before resolving — treat the same as "not authed".
+    // Timed out before resolving: treat the same as "not authed".
     return <Navigate to='/login' replace state={{ from: location }} />;
   }
 

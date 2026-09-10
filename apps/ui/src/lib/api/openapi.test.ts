@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * Tests for the openapi-fetch client wiring:
- *   - `tokenRefresh`   — silent retry on 401 with refresh dedup
- *   - `throwOnError`   — body parsing + ApiError construction
+ *   - `tokenRefresh`: silent retry on 401 with refresh dedup
+ *   - `throwOnError`: body parsing + ApiError construction
  *
  * The module has module-level state (`inFlightRefresh`) that needs to be a
  * fresh slate between tests. `vi.resetModules()` + dynamic `import` gives
@@ -104,7 +104,7 @@ describe("tokenRefresh middleware", () => {
           },
           timestamp: "2026-06-01T00:00:00.000Z"
         })
-      ) // refresh — real session refresh returns the user envelope
+      ) // refresh: real session refresh returns the user envelope
       .mockResolvedValueOnce(jsonResponse(200, { id: "u1" })); // retry
     const client = await importClient();
 

@@ -6,7 +6,7 @@ import type { IMetaRule, IViolation } from "../../types";
 
 /*
  * Suffixes that flag a file as "logic, must have a sibling test."
- * Pure-presentation `.tsx` components are intentionally excluded — they
+ * Pure-presentation `.tsx` components are intentionally excluded: they
  * are covered by Storybook + Playwright; unit-testing every leaf
  * component is overkill.
  */
@@ -16,7 +16,7 @@ const LOGIC_SUFFIX_REGEX =
 /*
  * Directories whose every module is logic by definition, regardless of
  * suffix. Type guards in src/lib/guards narrow `unknown` at parser
- * boundaries — a regression there silently mis-narrows API payloads, so
+ * boundaries: a regression there silently mis-narrows API payloads, so
  * they are validation logic and must ship with tests.
  */
 const LOGIC_DIR_SEGMENTS = [join("src", "lib", "guards")] as const;

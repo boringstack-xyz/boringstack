@@ -9,7 +9,7 @@ import type { IMetaRule, IViolation } from "../../types";
  * NAME(...)`, `let NAME = ...`) is a duplicate and the rule fails the
  * build.
  *
- * Add a new entry the moment a second copy appears anywhere — that's
+ * Add a new entry the moment a second copy appears anywhere, that's
  * the signal that the helper deserves a single home.
  */
 const CANONICAL_HELPERS: readonly {

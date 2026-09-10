@@ -4,7 +4,7 @@
  *
  * This repo gates 21 bundle budgets, 83 repo-level lint rules and a coverage
  * ratchet. The files an agent reads first should not be the one unguarded
- * thing — especially since every defect this check covers was live in
+ * thing, especially since every defect this check covers was live in
  * production at some point:
  *
  *   - llms-small.txt was 412,756 bytes against llms-full.txt's 414,104

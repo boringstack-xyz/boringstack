@@ -266,7 +266,7 @@ describe("billingService.handleWebhookEvent", () => {
 
     /*
      * record() is fire-and-forget (void), so the insert can land after
-     * handleWebhookEvent resolves — poll briefly instead of asserting
+     * handleWebhookEvent resolves, poll briefly instead of asserting
      * immediately (see tests/helpers/db.ts header).
      */
     const resource = `account:${accountId}`;

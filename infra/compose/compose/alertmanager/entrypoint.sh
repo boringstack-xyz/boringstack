@@ -10,7 +10,7 @@
 # Empty env → that receiver block is omitted entirely (Alertmanager refuses
 # to load a config with an empty URL, so we can't just leave placeholders).
 # If neither receiver is configured, the route fires alerts into the
-# Alertmanager UI only — a valid setup for "I want to see alerts at
+# Alertmanager UI only: a valid setup for "I want to see alerts at
 # :9093 but not pager myself yet."
 #
 # Discord trick: Discord's webhook accepts Slack-format payloads when the

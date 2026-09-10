@@ -186,7 +186,7 @@ function checkDockerBunPin(
  * In a monorepo checkout the root package.json runs scripts of its own
  * (postinstall hooks, stack-check.sh), so its engines.bun pin must not
  * drift from the app's packageManager pin. Standalone checkouts have no
- * parent manifest — the check no-ops there.
+ * parent manifest: the check no-ops there.
  */
 function checkMonorepoRootBunPin(
   root: string,

@@ -10,7 +10,7 @@ import type {
 } from "../../../src/lib/ai/types";
 
 /*
- * `types.ts` is pure type declarations — there is no runtime to exercise.
+ * `types.ts` is pure type declarations: there is no runtime to exercise.
  * The value of a test here is type-level: assert the public contract is
  * stable so accidental renames or shape changes fail the build, not a
  * runtime probe in production.

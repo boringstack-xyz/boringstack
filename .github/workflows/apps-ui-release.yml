@@ -1,7 +1,7 @@
 name: release
 
 # Two responsibilities in one workflow:
-#   1. changesets/action — opens a "Version Packages" PR or publishes when it
+#   1. changesets/action: opens a "Version Packages" PR or publishes when it
 #      merges, creating a GitHub Release with the changeset tag.
 #   2. Build + push the SPA's production image to GHCR.
 #

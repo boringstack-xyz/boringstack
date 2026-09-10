@@ -5,7 +5,7 @@ import { SOURCE_DIRS, collectSourceFiles } from "../../context";
 import type { IMetaRule, IViolation } from "../../types";
 
 /*
- * Identical to the API's `skipped-tests-need-tracking` rule — keeping
+ * Identical to the API's `skipped-tests-need-tracking` rule, keeping
  * the two apps in lockstep so a skipped test in either app surfaces as
  * tracked debt with an owner.
  */

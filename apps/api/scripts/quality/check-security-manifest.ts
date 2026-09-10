@@ -6,7 +6,7 @@
  * The suite is expected to be red: each `proven` finding must have at least
  * one test failing on an assertion, because the defect it describes is still
  * live. That inverts the usual meaning of a green run, which creates several
- * ways to be silently wrong — a finding quietly fixed and still reported as
+ * ways to be silently wrong: a finding quietly fixed and still reported as
  * outstanding, a test that stopped running, a fixture that throws before it
  * reaches the behaviour under test.
  *

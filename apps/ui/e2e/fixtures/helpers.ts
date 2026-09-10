@@ -6,7 +6,7 @@ import { parseBody } from "./parse";
 /**
  * API-driven setup helpers shared by the e2e specs. Specs drive the
  * real API for user provisioning so each test stays focused on its UI
- * flow — and every spec uses THIS module instead of a local copy (the
+ * flow, and every spec uses THIS module instead of a local copy (the
  * canonical-helpers-single-home lint-meta rule enforces it).
  */
 export interface ITestUser {

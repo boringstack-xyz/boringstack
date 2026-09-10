@@ -1158,7 +1158,7 @@ const PKG_JSON = "package.json";
 describe("schema-enum-field-consistency", () => {
   /*
    * The exact shape of the real regression: status/priority are literal-union enums on
-   * input but t.String() on the response — the generated client widens them to `string`
+   * input but t.String() on the response, the generated client widens them to `string`
    * and the UI enum can't reconcile.
    */
   const DRIFT = `import { t } from "elysia";
@@ -2546,8 +2546,8 @@ describe("checkSecuritySpecRequiresControl", () => {
 
   test("does not accept a control that only exists inside a block comment", () => {
     /*
-     * The commented-out control keeps its ordinary indentation — no leading
-     * `*` — because that is what makes it a bypass. A line-scanning rule
+     * The commented-out control keeps its ordinary indentation: no leading
+     * `*`, because that is what makes it a bypass. A line-scanning rule
      * matching /^\s*test\s*\(/ reads it as a real declaration; prefixing it
      * with a JSDoc-style `*` would defeat that regex too, and the case would
      * then pass against the very implementation it exists to reject.

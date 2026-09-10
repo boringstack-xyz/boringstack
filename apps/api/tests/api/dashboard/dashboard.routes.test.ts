@@ -16,7 +16,7 @@ interface ISummaryBody {
 
 /*
  * The summary endpoint returns the bare DashboardSummarySchema shape
- * (see dashboard.routes.ts / dashboard.schemas.ts) — there is no
+ * (see dashboard.routes.ts / dashboard.schemas.ts), there is no
  * { success, data } envelope on this route.
  */
 const isSummaryBody = (value: unknown): value is ISummaryBody => {
@@ -35,7 +35,7 @@ const isSummaryBody = (value: unknown): value is ISummaryBody => {
  * value contains an Expires= attribute whose RFC date format includes a
  * comma (e.g. "Sun, 18-May-2026 GMT"), so the legacy `.get("set-cookie")`
  * comma-joined string is unsafe to split with a regex. `getSetCookie()`
- * returns one entry per Set-Cookie response header — safe to walk.
+ * returns one entry per Set-Cookie response header, safe to walk.
  */
 const findCookieValue = (
   setCookies: readonly string[],
@@ -110,7 +110,7 @@ describe("dashboard routes — HTTP-level user isolation", () => {
    * (auth flows may add rows, never remove them), and the isolation
    * property is asserted via per-user action prefixes, which auth-flow
    * rows can never produce for the *other* user unless the userId scoping
-   * itself is broken — exactly the regression this test exists to catch.
+   * itself is broken: exactly the regression this test exists to catch.
    */
   test("each authenticated user sees only their own data", async () => {
     if (!(await requireDb())) {
@@ -124,7 +124,7 @@ describe("dashboard routes — HTTP-level user isolation", () => {
 
     /*
      * Insert explicit fixture rows. The auth flow ALSO writes audit
-     * rows via fire-and-forget `void auditLogService.record(...)` —
+     * rows via fire-and-forget `void auditLogService.record(...)`,
      * those may or may not have landed yet. To stay deterministic the
      * assertions below compare the API count to the DB ground truth
      * for each user, not to a hardcoded count.
@@ -171,12 +171,12 @@ describe("dashboard routes — HTTP-level user isolation", () => {
     /*
      * Each user's totalEvents must include their explicit fixtures (alice
      * has 2, bob has 3). The auth flows write extra audit rows
-     * fire-and-forget, so the count can drift upward — `>=` not strict
+     * fire-and-forget, so the count can drift upward, `>=` not strict
      * equality. The isolation property is checked via recentActivity
      * titles, which the feed humanizes through formatActivityTitle:
      * "alice.event.1" renders as "Alice event 1". Each user must see
      * their own fixture titles and never the other user's (or the
-     * userId-null system row's) — the fixtures are the newest rows, so
+     * userId-null system row's), the fixtures are the newest rows, so
      * the summary's recent slice always contains them.
      */
     expect(aliceBody.totalEvents).toBeGreaterThanOrEqual(2);

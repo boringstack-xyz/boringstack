@@ -5,7 +5,7 @@ import { env } from "../../src/config/env";
 /*
  * Test-only fixture builders. Round-trip a JSON payload through Stripe's
  * own `generateTestHeaderStringAsync` + `constructEventAsync` so the
- * returned value IS a real `Stripe.Event` — no type assertions, no
+ * returned value IS a real `Stripe.Event`: no type assertions, no
  * partial-shape casts. The signature/verify pair is also exercised on
  * the way through, which is the same code path production uses.
  */

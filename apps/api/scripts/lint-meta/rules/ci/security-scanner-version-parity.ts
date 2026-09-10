@@ -8,12 +8,12 @@ import type { IMetaRule, IViolation } from "../../types";
  * running different gitleaks or semgrep versions scan with different rules,
  * so one can pass code the other would flag. The pinned version is duplicated
  * across every `*-security-secrets`/`-sast` workflow with nothing forcing the
- * copies to agree — a bump to one drifts silently from the rest. This rule
+ * copies to agree: a bump to one drifts silently from the rest. This rule
  * requires a single gitleaks version and a single semgrep image pin across
  * all workflows, AND that scripts/ci/pre-push-security.sh carries a runtime
  * version-parity check (`EXPECTED_<TOOL>_VERSION=` read from the workflow +
  * `LOCAL_<TOOL>_VERSION=` from the installed binary) for every scanner the
- * workflows pin — a scanner checked in CI but not in the pre-push gate lets
+ * workflows pin: a scanner checked in CI but not in the pre-push gate lets
  * a local/CI ruleset gap pass the push that CI then fails.
  */
 

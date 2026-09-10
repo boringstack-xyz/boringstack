@@ -12,6 +12,6 @@ export const emptyAbility: AppAbility = createMongoAbility([]);
 
 /**
  * The ability for the currently-active membership. Server is the
- * authority — this context is for UI rendering hints only.
+ * authority: this context is for UI rendering hints only.
  */
 export const AbilityContext = createContext<AppAbility>(emptyAbility);

@@ -15,15 +15,15 @@ import type { IMetaRule, IViolation } from "../../types";
  * route was never reached. All three look identical in the report, and the
  * second and third are indistinguishable from evidence.
  *
- * A control is a case in the same fixture that must pass — the allowed path,
+ * A control is a case in the same fixture that must pass: the allowed path,
  * the request that should succeed, the account that does hold the feature. It
  * turns "this failed" into "this failed and the setup around it works", and
  * it is the only thing that catches a spec which has quietly stopped
- * exercising its condition — a seeded row that never landed, a login that
+ * exercising its condition: a seeded row that never landed, a login that
  * issued no cookie, a route that answers 404 because it is not mounted.
  *
  * The manifest reconciler enforces the same property at run time, but only
- * per finding — per file. This rule enforces it per fixture, which is the
+ * per finding, per file. This rule enforces it per fixture, which is the
  * level that actually matters once a file grows a nested suite.
  *
  * Parsed, not scanned
@@ -163,7 +163,7 @@ function analyse(source: ts.SourceFile): IAnalysis {
     if ((base === "test" || base === "it") && current !== undefined) {
       /*
        * A dynamic title still counts as a case, so the suite around it still
-       * owes a control. It just cannot be a control itself — a control has to
+       * owes a control. It just cannot be a control itself: a control has to
        * be recognisable as one.
        */
       current.tests += 1;

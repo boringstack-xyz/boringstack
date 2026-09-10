@@ -3,10 +3,10 @@
  * Fail if any React component under src/components is never referenced
  * elsewhere in src. apps/docs has no knip (its Astro/MDX entry graph makes
  * knip's config brittle), so this is the dead-code guard for the component
- * layer — the equivalent of the `knip` step api/ui run in their `check`.
+ * layer, the equivalent of the `knip` step api/ui run in their `check`.
  *
  * A component is "referenced" if its basename (e.g. `CommandRun`) appears in
- * any other src file — an import, an MDX usage, or an .astro tag. Transitively
+ * any other src file: an import, an MDX usage, or an .astro tag. Transitively
  * dead chains surface one layer per run (delete the leaf, re-run, repeat).
  *
  * Usage: node scripts/check-unused-components.mjs   (source-level; no build)

@@ -4,7 +4,7 @@ import type { Job } from "bullmq";
 import { withQueueSpan } from "../../../src/lib/tracing/withQueueSpan";
 
 /*
- * The wrapper only reads `id`, `name`, and `attemptsMade` off the job —
+ * The wrapper only reads `id`, `name`, and `attemptsMade` off the job,
  * its parameter is typed as exactly that Pick, so a structural stub
  * keeps the test independent of a Redis-backed queue. The contract
  * under test is transparency: results pass through and rejections

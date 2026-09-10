@@ -276,7 +276,7 @@ describe("requireActiveMembership middleware", () => {
 
     /*
      * Second request should still succeed even though we don't
-     * assert DB query count — the warm-cache contract is verified
+     * assert DB query count: the warm-cache contract is verified
      * by the fact that both requests return 200 without clearing.
      */
     const second = await app.handle(

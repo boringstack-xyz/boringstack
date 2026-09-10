@@ -156,7 +156,7 @@ describe("errorHandler", () => {
   test("VALIDATION never echoes submitted body values into the response", () => {
     /*
      * Elysia surfaces TypeBox validation failures with the full input
-     * embedded in the error message — including any submitted password
+     * embedded in the error message, including any submitted password
      * or token field. The handler replaces the framework message with
      * a generic one so no raw input reaches the client.
      */

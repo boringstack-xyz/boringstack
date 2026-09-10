@@ -3,14 +3,14 @@
  *
  *   - "push"              Receives an encrypted payload from the browser's
  *                         push service and shows an OS-level notification.
- *                         The payload shape is `{ title, body, url }` —
+ *                         The payload shape is `{ title, body, url }`,
  *                         same shape the the API app's `web-push.channel`
  *                         emits.
  *   - "notificationclick" Focuses an existing app tab if open, otherwise
  *                         opens a new one at the URL the payload carried.
  *
  * Registered from src/app/main.tsx (gated on `'serviceWorker' in navigator`).
- * No build step — Vite copies `public/sw.js` to the dist root as-is so the
+ * No build step: Vite copies `public/sw.js` to the dist root as-is so the
  * scope is `/`, allowing focus/openWindow into any in-app route.
  *
  * URL sanitization: a push payload's `url` field travels through several
@@ -70,7 +70,7 @@ self.addEventListener("push", (event) => {
       payload = { ...payload, ...event.data.json() };
     }
   } catch (_err) {
-    // Non-JSON payload — fall back to default title/body.
+    // Non-JSON payload: fall back to default title/body.
   }
 
   event.waitUntil(

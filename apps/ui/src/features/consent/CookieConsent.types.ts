@@ -2,14 +2,14 @@ export type CookieConsentStatus = "unset" | "configured";
 
 export interface ICookieConsentCategories {
   /**
-   * Strictly necessary cookies — auth, CSRF, session, language preference.
+   * Strictly necessary cookies: auth, CSRF, session, language preference.
    * Always true; the toggle is shown as locked-on in the configure modal
    * so the user can see what's actually required.
    */
   readonly essential: true;
   /**
    * First-party product analytics (page views, feature usage). NEVER set
-   * to true without explicit user consent — defaults to false so the
+   * to true without explicit user consent, defaults to false so the
    * banner-default behaviour is GDPR-friendly out of the box.
    */
   readonly analytics: boolean;

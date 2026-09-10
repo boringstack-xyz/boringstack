@@ -6,7 +6,7 @@ cd "$ROOT"
 
 ENV_FILE="${ENV_FILE:-$ROOT/.env}"
 # Preserve a STACK passed in by the caller (e.g. `STACK=smoke ./dev.sh up`)
-# before sourcing .env — without this snapshot, the `.env` file's own
+# before sourcing .env, without this snapshot, the `.env` file's own
 # `STACK=dev` line would overwrite it and silently demote smoke runs back
 # to the dev stack.
 STACK_FROM_CALLER="${STACK:-}"
@@ -35,7 +35,7 @@ if [[ "$STACK" == "smoke" ]]; then
   PROJECT_ARGS=(-p boringstack-smoke)
 fi
 
-# Observability + GlitchTip default to ON for dev and prod — you can't build
+# Observability + GlitchTip default to ON for dev and prod, you can't build
 # muscle memory for a dashboard you've never seen until prod day-one. They
 # stay OFF for `smoke` (full-stack-smoke CI doesn't need them and the extra
 # containers slow the test loop). Override per-run with WITH_OBSERVABILITY=0
@@ -92,7 +92,7 @@ case "$STACK" in
     fi
     # Prod deploys must be reproducible and auditable: a floating `latest`
     # tag deploys whatever was pushed last (including RC/dev builds) with
-    # no record of the version. Require an explicit pin — either a full
+    # no record of the version. Require an explicit pin, either a full
     # *_IMAGE reference or a *_IMAGE_TAG (semver or sha-<digest>).
     # The API's env validator already refuses to boot in prod without
     # VALKEY_PASSWORD; requiring it here too means the valkey server
@@ -229,7 +229,7 @@ fi
 
 if [[ "$WIRE_GLITCHTIP" == "1" || "$WIRE_VAPID" == "1" ]]; then
   docker compose "${COMPOSE_FILES[@]}" "${PROJECT_ARGS[@]}" "${PROFILE_ARGS[@]}" "$@"
-  # Background — both scripts are idempotent and silent when wiring is
+  # Background: both scripts are idempotent and silent when wiring is
   # already done. Foregrounding them would hold the dev loop on every
   # `up` for first-boot bootstraps that only matter once.
   if [[ "$WIRE_GLITCHTIP" == "1" ]]; then

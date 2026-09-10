@@ -40,7 +40,7 @@ describe("completeOAuthCallback", () => {
     /*
      * No prior `oauthStateStore.store` call, so `oauthStateStore.consume`
      * returns null and the handler throws unauthorized. This branch is
-     * reached regardless of whether Valkey is up — `consume` swallows the
+     * reached regardless of whether Valkey is up: `consume` swallows the
      * Redis miss and returns null. (When Valkey isn't reachable the
      * lazy client's first call will reject, which is also captured.)
      */

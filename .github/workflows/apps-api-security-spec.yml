@@ -7,7 +7,7 @@ name: apps-api-security-spec
 # finding said was missing, and it goes red the moment one comes back.
 #
 # `check:security-manifest` reconciles the run against
-# `security-spec/findings.json` in BOTH directions — a case that starts
+# `security-spec/findings.json` in BOTH directions: a case that starts
 # failing, one that stops running, one that runs unlisted, a skip, or a
 # failing positive control. Keep the manifest in step with the suite; if a
 # finding is ever reopened, flip its `status` back to "proven" and record the
@@ -147,7 +147,7 @@ jobs:
         run: bun run test:security
 
       # This one does gate: it fails when the manifest and the run disagree,
-      # in either direction — a finding quietly fixed, or a test that stopped
+      # in either direction: a finding quietly fixed, or a test that stopped
       # exercising its defect.
       - name: Reconcile findings manifest
         if: steps.filter.outputs.code == 'true'

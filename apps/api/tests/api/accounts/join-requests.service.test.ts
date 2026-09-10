@@ -38,8 +38,8 @@ const seedUserAndAccount = async (
   );
 
   /*
-   * Approving a join request consumes a seat, and `max_seats` defaults to 1
-   * — the owner. These cases exercise the approval flow rather than the cap,
+   * Approving a join request consumes a seat, and `max_seats` defaults to 1,
+   * the owner. These cases exercise the approval flow rather than the cap,
    * so the account runs on a plan with room.
    */
   await grantTeamPlan({ accountId: account.id });

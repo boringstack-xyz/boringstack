@@ -1,4 +1,4 @@
-# Prod overlay — merged by dev.sh when STACK=prod.
+# Prod overlay: merged by dev.sh when STACK=prod.
 #
 # Routing model: same-origin path routing.
 #   - Host(PUBLIC_UI_HOST):                          → ui (nginx static + SPA)
@@ -7,7 +7,7 @@
 #
 # One domain, one TLS cert, no CORS. The api router has a higher priority so
 # it matches before the ui fallback. The api container does NOT have a prefix
-# stripped — Elysia already serves under /api/v1/*, so the path stays intact.
+# stripped, Elysia already serves under /api/v1/*, so the path stays intact.
 #
 # Required env: PUBLIC_UI_HOST, ACME_EMAIL.
 
@@ -15,7 +15,7 @@ services:
   traefik:
     # Compose REPLACES `command:` from the base file (it does not merge
     # arrays). Dashboard is deliberately omitted here so it's not reachable
-    # in prod — re-add `--api.dashboard=true` + an auth-protected router if
+    # in prod, re-add `--api.dashboard=true` + an auth-protected router if
     # you need it.
     command:
       - "--providers.docker=true"
@@ -41,7 +41,7 @@ services:
       - letsencrypt_data:/letsencrypt
     labels:
       # ----- Shared middleware definitions ------------------------------------
-      # Security headers — single source of truth for the whole stack. Applied
+      # Security headers: single source of truth for the whole stack. Applied
       # to both routers below. Helmet was removed from the api; nginx in ui
       # no longer sets headers. This is where every browser-visible header
       # comes from.
@@ -57,14 +57,14 @@ services:
       # Origin-side compression. Cloudflare also brotli-compresses at the edge;
       # this keeps cache-miss latency down between origin and edge.
       - "traefik.http.middlewares.boringstack-compress.compress=true"
-      # CSP for the SPA — applied only on the ui router. The api returns JSON,
+      # CSP for the SPA, applied only on the ui router. The api returns JSON,
       # CSP is meaningless there.
       - "traefik.http.middlewares.boringstack-ui-csp.headers.customResponseHeaders.Content-Security-Policy=default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
 
   api:
     labels:
       - "traefik.enable=true"
-      # Higher priority than ui — matches /api/* and /health first.
+      # Higher priority than ui, matches /api/* and /health first.
       - "traefik.http.routers.api.rule=Host(`${PUBLIC_UI_HOST}`) && (PathPrefix(`/api`) || Path(`/health`))"
       - "traefik.http.routers.api.priority=10"
       - "traefik.http.routers.api.entrypoints=websecure"
@@ -81,7 +81,7 @@ services:
   ui:
     labels:
       - "traefik.enable=true"
-      # Lower priority than api — acts as the host-wide fallback for everything
+      # Lower priority than api, acts as the host-wide fallback for everything
       # not under /api or /health (i.e., the SPA shell and its assets).
       - "traefik.http.routers.ui.rule=Host(`${PUBLIC_UI_HOST}`)"
       - "traefik.http.routers.ui.priority=1"

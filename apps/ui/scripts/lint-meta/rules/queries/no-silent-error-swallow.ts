@@ -46,7 +46,7 @@ function findCatchSpans(text: string): ICatchSpan[] {
     }
 
     if (depth !== 0) {
-      // Unbalanced — bail to avoid false positives on a parse failure.
+      // Unbalanced: bail to avoid false positives on a parse failure.
       continue;
     }
 

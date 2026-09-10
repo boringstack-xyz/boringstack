@@ -7,7 +7,7 @@
  * services each toggle spawns, the secrets each one requires, and the
  * cross-rules between them. It is the most useful file in the repo for an
  * agent asked to "set this up", and it was previously reachable only by
- * cloning — and named after a tool that lives in a different repository.
+ * cloning, and named after a tool that lives in a different repository.
  *
  * Serving it at https://boringstack.xyz/scaffold-manifest.json makes it the
  * public agent contract, of which tsforge is one consumer.

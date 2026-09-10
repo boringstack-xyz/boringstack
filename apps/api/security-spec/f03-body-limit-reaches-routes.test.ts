@@ -16,17 +16,14 @@
  * production Traefik labels attach only security-headers, compress and
  * ratelimit, no buffering middleware.
  *
- * Why the existing test does not catch it
- * ---------------------------------------
- * `tests/middleware/body-limit.test.ts:88` sends `"ignored — the cap fires
- * before parse"` with `content-type: application/json`. That is not valid
- * JSON, so Elysia's parser rejects it with `code: "PARSE"` → 400, and the
- * assertion only checks `status === 400` plus the presence of an `error` key.
- * The cap never fires and the test passes anyway. Sending a *valid* body of
- * the same advertised size returns 200.
+ * Why the body has to be valid JSON
+ * ---------------------------------
+ * A malformed body proves nothing here. Elysia's parser rejects it with
+ * `code: "PARSE"` and a 400 before the cap is ever consulted, so a test
+ * asserting "some 4xx" passes whether the cap exists or not, while a valid
+ * body of the same advertised size returns 200.
  *
- * So this test uses a valid JSON body and asserts on 413 specifically, not on
- * "some 4xx".
+ * So this sends valid JSON and asserts 413 specifically.
  */
 import { describe, expect, test } from "bun:test";
 

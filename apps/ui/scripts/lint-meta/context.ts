@@ -9,7 +9,7 @@ export const SOURCE_DIRS = ["src", "tests", "e2e", ".storybook"] as const;
 /*
  * Subtrees under SOURCE_DIRS that the source-text walk skips. Fixtures used
  * by tests/lint-meta/ deliberately violate the rules, so they must not be
- * scanned by the live lint:meta run — only by the tests that target them.
+ * scanned by the live lint:meta run, only by the tests that target them.
  * Must not match scripts/lint-meta/ (repo guardrail implementation).
  */
 export const TESTS_LINT_META_SKIP = [join("tests", "lint-meta")] as const;

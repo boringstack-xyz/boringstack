@@ -19,7 +19,7 @@ export function useCookieConsentBanner(): ICookieConsentBannerView {
    * Mirror draftCategories into a ref so saveConfigure can be a stable
    * callback that reads the latest value, even when openConfigure +
    * toggleDraftCategory + saveConfigure are called in the same React
-   * batch — the closure-over-state pattern would otherwise see the
+   * batch: the closure-over-state pattern would otherwise see the
    * pre-toggle draft.
    */
   const draftRef = useRef(draftCategories);

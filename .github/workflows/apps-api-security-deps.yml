@@ -58,7 +58,7 @@ jobs:
       - name: Run osv-scanner
         if: steps.filter.outputs.code == 'true'
         run: |
-          # Don't fail the step on findings here — we want the SARIF uploaded
+          # Don't fail the step on findings here: we want the SARIF uploaded
           # first. Capture exit code, evaluate after upload.
           set +e
           osv-scanner \

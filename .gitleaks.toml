@@ -42,7 +42,7 @@ paths = [
   # it declares which env-var *names* each AI provider requires (e.g.
   # OPENAI_API_KEY, ANTHROPIC_API_KEY) and their non-secret defaults. The
   # `generic-api-key` rule flags the provider/secret-keyword proximity,
-  # but the file holds only key names and placeholder config — no values.
+  # but the file holds only key names and placeholder config, no values.
   '''\.tsforge/scaffold-manifest\.json''',
   # apps/docs publishes that manifest byte-identically at
   # boringstack.xyz/scaffold-manifest.json (generate:scaffold-manifest, drift-
@@ -55,12 +55,12 @@ paths = [
 # `<set-from-your-secret-manager>` as the example value for secret-valued
 # env vars (e.g. MEILI_MASTER_KEY in the Meilisearch compose recipe).
 # Gitleaks's `generic-api-key` heuristic flags the angle-bracket placeholder
-# as a leaked key. Matched by regex against the whole line — not a commit
-# fingerprint — so the allowlist survives history rewrites.
+# as a leaked key. Matched by regex against the whole line, not a commit
+# fingerprint, so the allowlist survives history rewrites.
 regexTarget = "line"
 regexes = [
   '''<set-from-your-secret-manager>''',
-  # The well-known dev/test MFA encryption key placeholder — base64 of
+  # The well-known dev/test MFA encryption key placeholder: base64 of
   # the literal string "0123456789abcdef0123456789abcdef". It ships in
   # docker-compose.yml as the api-dev fallback, the env validator
   # rejects it in production, and CI guardrail steps reference it as a

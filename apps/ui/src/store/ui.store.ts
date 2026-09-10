@@ -4,7 +4,7 @@ import { create } from "zustand";
  * App-level UI state. Anything that's visual + cross-page lives here:
  * sidebar open/closed, modal stack, command-palette visibility, etc.
  *
- * Server state and form state do NOT belong here — they live in
+ * Server state and form state do NOT belong here: they live in
  * `*.queries.ts` (TanStack Query) and `useForm` respectively.
  */
 export interface IUiState {

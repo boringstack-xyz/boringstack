@@ -486,7 +486,7 @@ describe("POST /api/v1/invitations/accept", () => {
     });
 
     /*
-     * `max_seats` defaults to 1 — the owner — so acceptance needs a plan
+     * `max_seats` defaults to 1, the owner, so acceptance needs a plan
      * with room. This case is about the accept route, not the cap.
      */
     await grantTeamPlan({ accountId: account.id });
@@ -809,7 +809,7 @@ describe("POST /api/v1/accounts/:id/transfer-ownership", () => {
     expect(res.status).toBe(200);
 
     /*
-     * The endpoint initiates a two-step transfer — the target user
+     * The endpoint initiates a two-step transfer: the target user
      * must accept via /accept-ownership-transfer before the role
      * flip lands. The route response carries the new transfer's
      * metadata (id + expiry); roles in `account_memberships` stay

@@ -2,8 +2,8 @@
  * Tests for the security-spec finding scaffold.
  *
  * The first version interpolated the title straight into double-quoted
- * TypeScript, so `rejects "none" as a signing algorithm` — an entirely
- * ordinary finding title — closed the string literal and produced a file that
+ * TypeScript, so `rejects "none" as a signing algorithm`, an entirely
+ * ordinary finding title, closed the string literal and produced a file that
  * did not parse. The generator reported success and had already written the
  * manifest row, leaving a manifest that pointed at a broken file.
  *
@@ -28,7 +28,7 @@ const FILE = "f19-example.test.ts";
 
 /*
  * `Array.isArray` widens `unknown` to `any[]`, which then infects every
- * element access. Narrow to `unknown[]` instead — the same guard the manifest
+ * element access. Narrow to `unknown[]` instead: the same guard the manifest
  * checker uses, for the same reason.
  */
 const isUnknownArray = (value: unknown): value is unknown[] =>

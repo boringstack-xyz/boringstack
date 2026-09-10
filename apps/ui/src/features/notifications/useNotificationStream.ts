@@ -63,7 +63,7 @@ export function useNotificationStream(enabled = true): void {
          * Untrusted source: the notification payload travels through the
          * dispatcher pipeline (worker, queue, broadcaster) before reaching
          * the browser. The same allowlist the service worker uses for push
-         * CTAs guards in-app toasts too — off-origin/malformed URLs
+         * CTAs guards in-app toasts too: off-origin/malformed URLs
          * collapse to "/" instead of letting the toast navigate the focused
          * window off-domain.
          */

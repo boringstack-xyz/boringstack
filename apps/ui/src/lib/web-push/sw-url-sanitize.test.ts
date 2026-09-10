@@ -47,7 +47,7 @@ describe("sanitizeTargetPath (in-app notification CTA sanitization)", () => {
     /*
      * `new URL("not a url", ORIGIN)` resolves to `${ORIGIN}/not%20a%20url`,
      * which is same-origin and therefore passes the allowlist. The point
-     * of `sanitizeTargetPath` is not URL syntax validation — it's a
+     * of `sanitizeTargetPath` is not URL syntax validation: it's a
      * cross-origin gate, and that's covered above.
      */
     expect(sanitizeTargetPath("not a url", ORIGIN)).toBe("/not%20a%20url");

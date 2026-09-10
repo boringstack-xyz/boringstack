@@ -1,9 +1,9 @@
-# WUD (What's Up Docker) — watches running containers for newer image tags.
+# WUD (What's Up Docker): watches running containers for newer image tags.
 # Merged by dev.sh when WITH_WUD=1 (default for STACK=prod).
 #
 # Behaviour matrix (all flags in compose/.env):
 #
-#   WUD_TRIGGER_DOCKER_APP_AUTO=false  (default)  Notify-only — polls GHCR,
+#   WUD_TRIGGER_DOCKER_APP_AUTO=false  (default)  Notify-only: polls GHCR,
 #                                                  posts to Discord/Slack on
 #                                                  new tags; you decide when
 #                                                  to redeploy.
@@ -18,7 +18,7 @@
 # every main push has no canary, no health check, and no rollback. Wire
 # Discord or Slack and review the diff before flipping AUTO=true.
 #
-# The socket is mounted read-only by default — sufficient for notify-only
+# The socket is mounted read-only by default, sufficient for notify-only
 # watching. Auto-redeploy (WUD_TRIGGER_DOCKER_APP_AUTO=true) needs to recreate
 # containers, so it additionally requires dropping the ":ro" suffix on the
 # socket mount below. Keeping write access opt-in limits the blast radius of a

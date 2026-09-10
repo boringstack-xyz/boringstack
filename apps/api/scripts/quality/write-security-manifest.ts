@@ -5,8 +5,8 @@
  *
  * Expectations are a baseline, and baselines are recorded rather than typed by
  * hand. The point is that the diff is reviewable: if this flips a case from
- * `assertion-fail` to `pass`, someone fixed something — or a test stopped
- * testing — and that shows up in review instead of being absorbed silently.
+ * `assertion-fail` to `pass`, someone fixed something, or a test stopped
+ * testing, and that shows up in review instead of being absorbed silently.
  *
  * Never run this just to turn a red check green. Read the diff.
  *

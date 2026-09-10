@@ -49,7 +49,7 @@ const useFormField = () => {
   const formState = useFormState({ name: fieldContext.name });
 
   // Both contexts default to {} (a truthy value), so guard on the field that
-  // each provider actually supplies — and do it before any value is consumed.
+  // each provider actually supplies, and do it before any value is consumed.
   if (!fieldContext.name) {
     throw new Error("useFormField should be used within <FormField>");
   }

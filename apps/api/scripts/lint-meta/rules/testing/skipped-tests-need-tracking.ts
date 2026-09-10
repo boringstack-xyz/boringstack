@@ -6,7 +6,7 @@ import type { IMetaRule, IViolation } from "../../types";
 
 /*
  * `.skip` / `xit` / `xdescribe` / `.only` are powerful escape hatches.
- * Left unowned, they rot into permanent dark zones — exactly the
+ * Left unowned, they rot into permanent dark zones, exactly the
  * pattern the password-reset race flake fell into. Each occurrence
  * must carry a tracking comment on the same line (or the previous one)
  * containing either an issue URL or `TODO(@owner)` so the debt has a
@@ -30,7 +30,7 @@ const TEST_FILE_SUFFIX = /\.test\.tsx?$|\.spec\.tsx?$/u;
 
 /*
  * Window of lines above the skip to scan for a tracking comment. 30 is
- * deliberately generous — multi-paragraph JSDoc blocks explaining the
+ * deliberately generous: multi-paragraph JSDoc blocks explaining the
  * skip routinely run that long (see the password-reset spec), and a
  * narrower window would force the comment to hug the call site instead
  * of staying with the describe block above.

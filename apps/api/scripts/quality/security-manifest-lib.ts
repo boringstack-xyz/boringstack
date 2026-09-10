@@ -9,8 +9,8 @@
  * to prevent false-green.
  *
  * The rules below are therefore explicit about *why* a test failed. Only an
- * assertion failure counts as evidence; anything else — a thrown fixture
- * error, an unreachable dependency, a skip, a test that did not run at all —
+ * assertion failure counts as evidence; anything else, a thrown fixture
+ * error, an unreachable dependency, a skip, a test that did not run at all,
  * is an infrastructure problem and fails the check outright.
  */
 
@@ -244,7 +244,7 @@ const checkFinding = (finding: IFinding, cases: ITestCase[]): string[] => {
 
   /*
    * At least one positive control per finding. Without one there is nothing
-   * separating "the defect is present" from "the fixture never worked" —
+   * separating "the defect is present" from "the fixture never worked":
    * which is how two findings in the first version of this suite were
    * reported as proven while their setup was throwing.
    */

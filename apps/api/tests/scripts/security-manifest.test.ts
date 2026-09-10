@@ -4,7 +4,7 @@
  * The first version of this checker classified findings by grepping the test
  * runner's text output for `(fail) Fxx`. That accepted a database setup
  * exception as proof of a vulnerability, and accepted a skipped test as proof
- * of a fix — false-green in both directions, in the one component whose job is
+ * of a fix: false-green in both directions, in the one component whose job is
  * to prevent false-green. These cases pin each of those behaviours.
  *
  * Lives in `tests/` rather than `security-spec/` on purpose: the reconciler is

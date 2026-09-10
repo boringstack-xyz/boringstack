@@ -52,7 +52,7 @@ services:
       - no-new-privileges:true
     logging: *default-logging
     # Auth is enforced whenever VALKEY_PASSWORD is set (an empty
-    # requirepass disables auth — the dev default). The API already
+    # requirepass disables auth, the dev default). The API already
     # fail-closes on a missing password in production (env validate),
     # and dev.sh mirrors that for the stack; this makes the SERVER
     # enforce what the clients were already configured to send.
@@ -91,7 +91,7 @@ services:
     container_name: boringstack-traefik
     profiles: [prod]
     # Root is required: the docker provider reads /var/run/docker.sock,
-    # whose group id varies per host — an unprivileged uid would need a
+    # whose group id varies per host, an unprivileged uid would need a
     # host-specific group mapping and break the template's portability.
     # Root is neutered instead: every capability is dropped except binding
     # :80/:443, and no-new-privileges blocks escalation. An RCE in Traefik
@@ -145,7 +145,7 @@ services:
           memory: "${TRAEFIK_RESERVATIONS_MEMORY:-64M}"
 
   api-migrate-dev:
-    # Activated by both `dev` and `smoke` profiles — the smoke stack reuses
+    # Activated by both `dev` and `smoke` profiles: the smoke stack reuses
     # the dev-mode API + migrator and only swaps the UI for a pre-built
     # nginx-served bundle. See `ui-smoke` below.
     profiles: [dev, smoke]
@@ -249,7 +249,7 @@ services:
       # MFA setup stages the encrypted secret in cache between
       # `/auth/mfa/setup` and `/auth/mfa/verify-setup`. With the
       # default noop cache the second call always returns "Enrollment
-      # session expired" — surfaced by the smoke + Playwright gate.
+      # session expired", surfaced by the smoke + Playwright gate.
       # Pinning Valkey here keeps every Valkey-backed feature
       # (cache, MFA staging, OAuth state, rate limit) on one provider
       # in dev/smoke.
@@ -284,7 +284,7 @@ services:
       PORT: "7330"
       JWT_SECRET: ${API_DEV_JWT_SECRET:-docker-compose-api-dev-jwt-secret-keys}
       # AES-256-GCM key for MFA secret encryption. Base64 32 bytes.
-      # Same shape as JWT_SECRET — dev/smoke gets a deterministic
+      # Same shape as JWT_SECRET: dev/smoke gets a deterministic
       # placeholder so the smoke stack and Playwright e2e can enrol
       # MFA without a real secret in the box. Production sets
       # API_MFA_ENCRYPTION_KEY explicitly (or via secret manager
@@ -303,7 +303,7 @@ services:
       # production keeps the strict default.
       RATE_LIMIT_MAX: ${API_DEV_RATE_LIMIT_MAX:-10000}
       AUTH_RATE_LIMIT_MAX: ${API_DEV_AUTH_RATE_LIMIT_MAX:-10000}
-      # Tempo trace export — empty when WITH_OBSERVABILITY=0 (the OTel
+      # Tempo trace export: empty when WITH_OBSERVABILITY=0 (the OTel
       # SDK then no-ops). Resolves to the observability overlay's
       # `tempo` service over the shared `backend` network.
       OTEL_EXPORTER_OTLP_ENDPOINT: ${API_DEV_OTEL_EXPORTER_OTLP_ENDPOINT:-http://tempo:4318}
@@ -392,7 +392,7 @@ services:
     # bundle with `Dockerfile.prod` and serves it through nginx with a
     # `/api/` reverse proxy to `api-dev`. Eliminates the Vite dev-server
     # cold-compile that pushed Playwright tests past their 30 s timeout
-    # in CI — every page navigation now hits a static asset, sub-second.
+    # in CI: every page navigation now hits a static asset, sub-second.
     #
     # Local repro: `STACK=smoke ./dev.sh up -d --build`.
     profiles: [smoke]
@@ -451,7 +451,7 @@ services:
         condition: service_completed_successfully
     # Readiness, not liveness. The api starts listening before
     # `setupQueues()` resolves (see apps/api/src/index.ts) so `/health`
-    # can flip green while BullMQ is still warming up — ui then boots
+    # can flip green while BullMQ is still warming up, ui then boots
     # through `condition: service_healthy` and the first queue-backed
     # request 503s. `/ready` aggregates db + valkey + queue + email
     # checks and returns 503 until everything in the startup path is
@@ -492,7 +492,7 @@ services:
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
       PUBLIC_API_URL: ${PUBLIC_API_URL:-}
       # Traefik sits in front of the prod api on this profile, so the
-      # rate limiter must key on X-Forwarded-For — otherwise every
+      # rate limiter must key on X-Forwarded-For, otherwise every
       # client looks like the proxy IP and shares one bucket.
       TRUST_PROXY: ${TRUST_PROXY:-true}
       # Tempo trace export. Defaults to the bundled `tempo` service on
@@ -518,7 +518,7 @@ services:
       context: ../../../apps/ui
       dockerfile: Dockerfile.prod
       args:
-        # Origin only — see compose/.env.example. The SPA appends /api/v1.
+        # Origin only, see compose/.env.example. The SPA appends /api/v1.
         VITE_API_URL: ${PUBLIC_API_URL:-}
         # Used by Stripe checkout return URLs + share links. Must equal the
         # API's FRONTEND_URL or `assertAllowedBillingRedirectUrl` rejects it.

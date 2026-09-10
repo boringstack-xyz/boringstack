@@ -5,7 +5,7 @@
  * `coverageThreshold` is documented but not enforced, so we parse the
  * text report ourselves and exit non-zero on regression.
  *
- * The threshold is a ratchet, not a wishlist — it sits a few points
+ * The threshold is a ratchet, not a wishlist: it sits a few points
  * below the current measured rate so a small slip triggers the alarm.
  * Raise it as coverage climbs; never lower it to silence a regression.
  */
@@ -43,7 +43,7 @@ const runCoverage = (): {
    */
   /*
    * Scoped to `tests` on purpose. Without a path Bun discovers every
-   * `*.test.ts` in the project, which now includes `security-spec/` — an
+   * `*.test.ts` in the project, which now includes `security-spec/`: an
    * intentionally-red suite that asserts the behaviour of unfixed security
    * findings. Those belong to their own lane (`bun run test:security`);
    * letting them into the coverage gate turns the ordinary merge gate red

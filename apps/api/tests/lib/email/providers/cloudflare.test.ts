@@ -34,7 +34,7 @@ const installFakeFetch = (response: Response): { calls: IFetchCall[] } => {
   };
 
   /*
-   * Bun's `typeof fetch` includes a `preconnect` static — give the fake a
+   * Bun's `typeof fetch` includes a `preconnect` static: give the fake a
    * matching no-op so the assignment satisfies the type without a cast.
    */
   const preconnect: typeof fetch.preconnect = () => undefined;

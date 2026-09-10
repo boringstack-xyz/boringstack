@@ -84,7 +84,7 @@ export function checkPrePushParity(root: string): IViolation[] {
 
   const workflowPath = resolveCiWorkflow(root, manifest.ciWorkflow);
 
-  // An unresolvable workflow means the parity check never ran — fail closed.
+  // An unresolvable workflow means the parity check never ran: fail closed.
   if (workflowPath === null) {
     return [
       {

@@ -13,7 +13,7 @@ describe("nodejsEventLoopUtilization", () => {
   test("collects an interval utilisation between 0 and 1 on scrape", async () => {
     /*
      * get() triggers the collect() hook, which diffs ELU against the
-     * previous sample — the resulting gauge must stay on the 0..1 scale.
+     * previous sample: the resulting gauge must stay on the 0..1 scale.
      */
     const metric = await nodejsEventLoopUtilization.get();
     const sample = metric.values[0];

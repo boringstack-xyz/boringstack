@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# BoringStack installer — https://boringstack.xyz/install.sh
+# BoringStack installer: https://boringstack.xyz/install.sh
 #
 # Scaffolds a new project from the boringstack-xyz/boringstack template,
 # rebrands it, boots the local stack, and verifies it answers on HTTP.
@@ -401,7 +401,7 @@ else
   say "  docker      skipped (--no-boot)"
 fi
 
-# Bun is not needed to boot — Compose runs every runtime — but it is needed
+# Bun is not needed to boot, Compose runs every runtime, but it is needed
 # to develop, so this is a warning and never a failure. See quickstart.
 if have bun; then
   say "  bun         $(bun --version 2>/dev/null || echo present)"

@@ -34,7 +34,7 @@ const baseSubscribeInput = (userId: string) => ({
   /*
    * A real push-service host. `subscribe` validates the destination before
    * storing it, because the delivery worker later POSTs to whatever is
-   * here — an arbitrary host turns registration into an SSRF primitive.
+   * here: an arbitrary host turns registration into an SSRF primitive.
    */
   endpoint: "https://fcm.googleapis.com/fcm/send/abc",
   p256dhKey: "p256dh-key",
@@ -107,7 +107,7 @@ describe("NotificationsPushService.subscribe", () => {
 
     /*
      * record() is fire-and-forget (void), so the refresh audit row can land
-     * after subscribe() resolves — poll briefly (see tests/helpers/db.ts).
+     * after subscribe() resolves, poll briefly (see tests/helpers/db.ts).
      * The create and refresh both audit, so expect two rows for this user.
      */
     let auditRows: (typeof auditLog.$inferSelect)[] = [];

@@ -4,7 +4,7 @@
 # `full-stack-smoke` workflow (NODE_ENV=development, real Docker stack,
 # real Playwright). The MFA_ENCRYPTION_KEY missing-env bug shipped
 # because validate passed and only the smoke workflow exercised the
-# api-dev container env — pre-push couldn't see the divergence.
+# api-dev container env: pre-push couldn't see the divergence.
 #
 # Two design rules:
 #
@@ -84,7 +84,7 @@ if paths_match '(^apps/api/src/api/auth/(auth|email-verification|password-reset|
 fi
 
 # Compose / infra changes: run the full portable e2e net. Visual
-# regression specs (visual.spec.ts) are deliberately excluded —
+# regression specs (visual.spec.ts) are deliberately excluded:
 # their snapshots are baked against the CI runner's font rendering
 # and Chromium build, and they'll always diff against a local
 # laptop. Visual regression stays a CI-only check.
@@ -193,7 +193,7 @@ step "Running Playwright against the live stack"
 (
   cd apps/ui
   # PLAYWRIGHT_REUSE_SERVER tells Playwright not to spawn its own
-  # `bun run dev` — the dev/smoke stack is already serving on :7331.
+  # `bun run dev`: the dev/smoke stack is already serving on :7331.
   PLAYWRIGHT_REUSE_SERVER="true" \
     bunx playwright test "${SPECS_TO_RUN[@]}" \
     --project=chromium \

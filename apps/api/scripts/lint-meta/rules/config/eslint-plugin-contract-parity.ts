@@ -9,8 +9,8 @@ const CONTRACT_FILE = "AGENT_CONTRACT.md";
 /*
  * AGENT_CONTRACT.md is the first document agents read; its plugin table
  * is the canonical map of what `bun run check` enforces. Two installed
- * plugins (code-flow, comment-hygiene) were missing from it — and one
- * row referenced a plugin that was never installed in that app — so
+ * plugins (code-flow, comment-hygiene) were missing from it, and one
+ * row referenced a plugin that was never installed in that app, so
  * the contract silently drifted from package.json. Parity both ways:
  * every installed plugin must be mentioned, and every mentioned plugin
  * must be installed.

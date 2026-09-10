@@ -11,19 +11,19 @@ import type { IMetaRule, IViolation } from "../../types";
  * supposed to fail; a red run means the findings are outstanding and a green
  * run means they are fixed. That makes the ordinary integration-test posture
  * exactly wrong. `tests/helpers/db.ts` documents that its guards "bail
- * silently when no Postgres is reachable" — right for the main suite, fatal
+ * silently when no Postgres is reachable", right for the main suite, fatal
  * here, because a test that bails is a test that passes, and a suite of
  * bailing tests reports every finding as fixed.
  *
  * `security-spec/harness.ts` exists to be the inverse: `requireDbOrFail` and
  * `requireValkeyOrFail` throw where the normal helpers return `false`. This
- * rule keeps the two apart, so the silent-bail habit cannot leak back in —
+ * rule keeps the two apart, so the silent-bail habit cannot leak back in:
  * 440 sites across the main suite make that a very well-worn habit.
  *
  * Skips are banned outright rather than tracked. `skipped-tests-need-tracking`
  * lets a skip through with a `TODO(@owner)`, which is the right trade in a
  * suite that is meant to be green. Here a skipped case is indistinguishable
- * from a fixed finding, and the manifest reconciler rejects it at run time —
+ * from a fixed finding, and the manifest reconciler rejects it at run time:
  * this rule moves that rejection to lint time.
  */
 const BAILING_GUARDS: readonly { pattern: RegExp; name: string }[] = [
@@ -50,7 +50,7 @@ const SPEC_DIR = "security-spec";
 /*
  * The rule reads its own source when lint:meta scans `scripts/`, and the
  * pattern table above would then match itself. Only `security-spec/*.test.ts`
- * is scanned, so that cannot happen — but the guard names also appear in the
+ * is scanned, so that cannot happen, but the guard names also appear in the
  * spec suite's own prose, which can. Comment and string content is stripped
  * before matching so an explanation of why a guard is banned is not itself a
  * violation.

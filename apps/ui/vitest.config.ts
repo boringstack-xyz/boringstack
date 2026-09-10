@@ -35,7 +35,7 @@ export default defineConfig({
         "src/lib/i18n/**",
         "src/vite-env.d.ts"
       ],
-      // Coverage thresholds — we exclude shadcn primitives, route declarations,
+      // Coverage thresholds: we exclude shadcn primitives, route declarations,
       // i18n init glue, and declarative file suffixes. The global floor is
       // intentionally modest; feature PRs should still add focused tests for
       // new queries, stores, hooks, and utilities.

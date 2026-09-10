@@ -125,7 +125,7 @@ describe("GET /api/v1/users/me", () => {
     const res = await app.handle(new Request(ME_URL));
 
     /*
-     * `/me` is a probe — a logged-out browser hits it on every initial
+     * `/me` is a probe: a logged-out browser hits it on every initial
      * paint. Treating no-credentials as a known anonymous state keeps
      * the noise off the browser console and out of telemetry. The
      * present-but-invalid case below still 401s.

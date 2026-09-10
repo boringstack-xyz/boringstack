@@ -45,7 +45,7 @@ jobs:
           output: trivy-results.sarif
           severity: HIGH,CRITICAL
           exit-code: "1"
-          # Skip the lock file specifically — OpenTofu's format isn't
+          # Skip the lock file specifically: OpenTofu's format isn't
           # parsed; the .tf files are what we care about.
           skip-files: ".terraform.lock.hcl"
 

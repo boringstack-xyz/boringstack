@@ -7,7 +7,7 @@ import type { IMetaRule, IViolation } from "../../types";
  * The stack's whole defense model is "lint as a contract": defects are
  * prevented by these rules, not by review. A rule that is never unit-tested
  * can silently rot into a no-op (a refactor makes it return [] and every
- * defect in its class ships unnoticed) — and a check function that is not
+ * defect in its class ships unnoticed), and a check function that is not
  * re-exported from cli.ts cannot be imported by a test at all. So the
  * guardrails must themselves be guarded: every rule module
  * (`export const …Rule`) must (1) expose a `check<Name>` function, (2)

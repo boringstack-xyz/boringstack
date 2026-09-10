@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Run `bun audit` honoring osv-scanner.toml IgnoredVulns (GHSA ids).
 # osv-scanner and bun audit otherwise diverge: osv reads the toml allowlist,
-# bun audit does not — so CI would fail on accepted-risk findings.
+# bun audit does not, so CI would fail on accepted-risk findings.
 #
 # An entry is honoured only while its `ignoreUntil` is in the future. The
 # previous version read `id` and nothing else, so the re-evaluation dates the
 # file header demands were decorative: every accepted risk stayed suppressed
 # forever, and the two live entries would have gone on hiding their
 # advisories indefinitely past their stated expiry. An entry with no date, or
-# with a date this cannot parse, is NOT honoured — a missing expiry is the
+# with a date this cannot parse, is NOT honoured: a missing expiry is the
 # same permanent suppression by another route.
 set -euo pipefail
 

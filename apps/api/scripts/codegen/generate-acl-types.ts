@@ -33,7 +33,7 @@ const resolveUiTemplateRoot = (): string => {
 };
 
 const HEADER = `/*
- * AUTO-GENERATED — do not edit. Run \`bun run generate:acl-types\` in the
+ * AUTO-GENERATED: do not edit. Run \`bun run generate:acl-types\` in the
  * apps/api workspace to refresh this file. Drift between this file and
  * apps/api/${SOURCE_REL} fails CI via
  * \`bun run generate:acl-types:check\`.

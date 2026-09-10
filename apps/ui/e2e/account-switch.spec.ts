@@ -33,7 +33,7 @@ test.describe("Account switcher", () => {
 
     /*
      * Distinct first/last names per user so the personal account
-     * names (which derive from "FirstName LastName") differ — that
+     * names (which derive from "FirstName LastName") differ, that
      * lets us locate the non-active row in the switcher by label.
      */
     await registerAndVerify(userA, "Alpha", "Owner");
@@ -92,7 +92,7 @@ test.describe("Account switcher", () => {
 
     /*
      * Capture the active account label before switching so we can
-     * assert the trigger label changes after click — independent of
+     * assert the trigger label changes after click, independent of
      * which order the SPA renders the memberships in.
      */
     const labelBefore = (await trigger.textContent())?.trim() ?? "";

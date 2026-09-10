@@ -241,7 +241,7 @@ describe("auth flow — register → verify → login → me → logout", () => 
     expect(verifyAuthCookie).not.toBe("");
     expect(verifyRefreshCookie).not.toBe("");
 
-    // 4. Login (separate cookie jar — fresh Set-Cookie)
+    // 4. Login (separate cookie jar, fresh Set-Cookie)
     const loginRes = await app.handle(
       new Request("http://localhost/api/v1/auth/login", {
         method: "POST",
@@ -387,8 +387,8 @@ describe("auth flow — register → verify → login → me → logout", () => 
     expect(first.status).toBe(200);
 
     /*
-     * The second attempt must be indistinguishable from the first —
-     * same status, same body — so the endpoint is no oracle for which
+     * The second attempt must be indistinguishable from the first,
+     * same status, same body, so the endpoint is no oracle for which
      * emails hold accounts. No duplicate user may be created.
      */
     const second = await make();

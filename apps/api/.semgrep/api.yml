@@ -1,4 +1,4 @@
-# BoringStack api-template — custom Semgrep rules.
+# BoringStack api-template: custom Semgrep rules.
 #
 # Catches stack-specific footguns the registry rules miss. Run as part of
 # .github/workflows/security-sast.yml (Phase 4 of the security pipeline).

@@ -102,7 +102,7 @@ describe("MemoryCacheService", () => {
     );
 
     /*
-     * Callers of `increment` are budgets — MFA guesses, rate limits. A
+     * Callers of `increment` are budgets: MFA guesses, rate limits. A
      * read-modify-write that yields between the read and the write lets
      * every concurrent caller read the same value and write the same
      * increment, which hands out the budget several times over.

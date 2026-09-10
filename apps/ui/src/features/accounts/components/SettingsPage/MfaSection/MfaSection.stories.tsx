@@ -18,7 +18,7 @@ import MfaSection from "./MfaSection";
  * states deterministically without spawning real API requests.
  *
  * The "enrolling" state (post-`/auth/mfa/setup`, pre-`/verify-setup`)
- * is interactive — it's reached by clicking the Enable button and
+ * is interactive: it's reached by clicking the Enable button and
  * needs a live mutation round-trip. Skipped here; covered by the
  * hook + component tests instead.
  */

@@ -6,7 +6,7 @@ import type { IMetaRule, IViolation } from "../../types";
  * Audit-log reads are tenant data. A query that filters auditLog by
  * userId alone returns the user's events from EVERY account they belong
  * to, bleeding account-level activity (billing changes, invitations,
- * feature overrides) across tenant boundaries — the dashboard feed
+ * feature overrides) across tenant boundaries: the dashboard feed
  * shipped exactly this defect. The schema carries an indexed
  * targetAccountId for scoping, so any file that filters on
  * eq(auditLog.userId, …) must also reference auditLog.targetAccountId

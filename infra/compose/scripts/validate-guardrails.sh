@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Single source of truth for the compose guardrails. CI
 # (infra-compose-validate-compose.yml) and the local pre-push gate both
-# invoke THIS script, so the two layers cannot drift — the 2026-06-03
+# invoke THIS script, so the two layers cannot drift: the 2026-06-03
 # incident (a guardrail env seeded in CI but not locally) is structurally
 # impossible to repeat.
 #
@@ -59,7 +59,7 @@ check_healthchecks() {
   # the base prod services. Overlay daemons (glitchtip-worker, whatsupdocker,
   # BullMQ, observability) are exactly the long-running services that need a
   # readiness probe so `docker compose up --wait` and `service_healthy`
-  # gating work — checking only the base stack let them ship probe-less. This
+  # gating work: checking only the base stack let them ship probe-less. This
   # mirrors check_no_new_privileges, which already renders the full config.
   render_full_config
   python3 - <<'EOF'
@@ -88,7 +88,7 @@ import glob
 import re
 
 # Literal image refs must pin a @sha256 digest and must not carry the
-# floating :latest tag (even alongside a digest — the digest wins, but
+# floating :latest tag (even alongside a digest, the digest wins, but
 # the tag misdocuments what is pinned). Interpolated refs (with a
 # dollar-brace variable) are validated at runtime by the stack scripts.
 IMAGE_RE = re.compile(r"^\s+image:\s*(?P<ref>[^\s#]+)")
@@ -121,7 +121,7 @@ check_credential_fallbacks() {
 import glob
 import re
 
-# Secret-named env vars must not ship a literal fallback — a
+# Secret-named env vars must not ship a literal fallback: a
 # dollar-brace VAR with a :-hunter2 default in a published template is
 # a credential leak. Use the :?message form and let dev.sh generate dev
 # values. The allowlist documents the deliberate dev-only placeholders
@@ -200,7 +200,7 @@ check_no_new_privileges() {
   python3 - <<'EOF'
 import json
 
-# Every long-running service — base AND optional overlay — must block
+# Every long-running service, base AND optional overlay, must block
 # privilege escalation. The base stack (traefik/api/ui) already sets it;
 # the observability/GlitchTip/BullMQ overlays did not, leaving an RCE in
 # Grafana or GlitchTip one setuid binary away from host escalation.
@@ -278,12 +278,12 @@ check_prod_image_tags() {
 check_resource_reservations() {
   # Render the FULL stack (base prod + every prod-capable overlay) and require
   # that every long-running service declares deploy.resources.reservations, not
-  # just limits. Limits cap a container; reservations guarantee its floor — the
+  # just limits. Limits cap a container; reservations guarantee its floor: the
   # scheduler honors them so an observability/exporter container can't be
   # starved or OOM-killed under host memory pressure, which is exactly when an
   # operator needs metrics and dashboards. The base stack, GlitchTip, and
   # BullMQ already set reservations; the observability + WUD overlays drifted.
-  # One-shot jobs (restart: no) are exempt — same criterion as
+  # One-shot jobs (restart: no) are exempt, same criterion as
   # check_healthchecks. Dev-only overlays (mailpit) are out of scope here, like
   # the other full-stack guardrails.
   render_full_config

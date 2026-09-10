@@ -20,7 +20,7 @@ scrape_configs:
       - targets: ["alertmanager:9093"]
 
   # Traefik exposes Prometheus metrics on a dedicated entrypoint (:8899)
-  # configured in docker-compose.yml. Internal docker DNS only — not
+  # configured in docker-compose.yml. Internal docker DNS only, not
   # published to the host.
   - job_name: traefik
     static_configs:
@@ -35,7 +35,7 @@ scrape_configs:
       - targets: ["node-exporter:9100"]
 
   # apps/api exposes /metrics via prom-client (Node defaults + per-route
-  # HTTP counter and duration histogram). Internal docker DNS — the
+  # HTTP counter and duration histogram). Internal docker DNS, the
   # `api-dev` hostname resolves under the `frontend` network when the
   # dev profile is up; `api` (prod) is reachable on the same name when
   # the prod profile is up. Each target is labelled with its profile

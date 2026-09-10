@@ -3,7 +3,7 @@ import { now } from "@/lib/time/now";
 import type { IUser } from "@/features/auth/Auth.types";
 
 /**
- * Build a valid `IUser` for tests and Storybook decorators —
+ * Build a valid `IUser` for tests and Storybook decorators,
  * anywhere you need a user payload that passes Zod validation.
  *
  * Pass `overrides` to vary the shape without redeclaring every field:
@@ -33,7 +33,7 @@ export function makeUser(overrides: Partial<IUser> = {}): IUser {
 }
 
 /**
- * Reset the internal counter — useful in `beforeEach` if you depend on the
+ * Reset the internal counter, useful in `beforeEach` if you depend on the
  * generated ids being predictable across tests.
  */
 export function resetUserFactory(): void {

@@ -191,7 +191,7 @@ export function useWebPush(): IUseWebPushView {
 
       /*
        * Order matters. `subscription.unsubscribe()` flips the browser
-       * state irreversibly — there is no `subscription.subscribe()` to
+       * state irreversibly: there is no `subscription.subscribe()` to
        * roll it back. Once that succeeds the UI is unsubscribed in
        * reality, and `isSubscribed` must reflect that even if the
        * follow-up server DELETE fails (the worker prunes the stale row

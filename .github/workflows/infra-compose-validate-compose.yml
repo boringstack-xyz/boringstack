@@ -1,7 +1,7 @@
 name: validate-compose
 
 # Validates every docker-compose YAML and every meaningful overlay
-# combination — without actually building images or booting services.
+# combination, without actually building images or booting services.
 # Catches syntax errors, missing env vars, malformed Traefik labels, and
 # overlay-merge regressions before they hit a developer's `up`.
 
@@ -10,7 +10,7 @@ on:
     branches: [main]
     paths:
       - "infra/compose/**"
-      # Root gate scripts are validated here (shellcheck job) — keep the
+      # Root gate scripts are validated here (shellcheck job): keep the
       # trigger in lockstep so direct pushes touching them still run it.
       - "scripts/**"
       - "setup.sh"
@@ -18,10 +18,10 @@ on:
       # command a new user or their agent runs, so it gets the same bar.
       - "apps/docs/public/install.sh"
       # The yamllint job lints every workflow file, so any workflow edit
-      # must trigger this run — not just edits to this file.
+      # must trigger this run, not just edits to this file.
       - ".github/workflows/**"
       # Prod Dockerfiles COPY the whole app context, so any app source
-      # change can break the prod image build — not just Dockerfile or
+      # change can break the prod image build, not just Dockerfile or
       # lockfile edits.
       - "apps/api/**"
       - "apps/ui/**"
@@ -235,7 +235,7 @@ jobs:
         run: |
           # Strict: error on warnings, follow `source` directives.
           # Root gate scripts (scripts/ci/*, stack-*.sh, setup.sh) are the
-          # repo's primary local defense — they get the same bar as infra.
+          # repo's primary local defense: they get the same bar as infra.
           shellcheck -x -S warning \
             infra/compose/compose/dev.sh \
             infra/compose/scripts/*.sh \
@@ -448,7 +448,7 @@ jobs:
         with:
           filters: |
             code:
-              # Dockerfile.prod runs COPY . . — the whole app tree is
+              # Dockerfile.prod runs COPY . .: the whole app tree is
               # image input, so app-only source changes must rebuild too.
               - 'apps/api/**'
               - 'apps/ui/**'
@@ -490,7 +490,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     env:
-      # Single source for the yamllint pin — the local pre-push gate
+      # Single source for the yamllint pin: the local pre-push gate
       # (infra/compose/scripts/pre-push.sh) reads this value at runtime to
       # warn when the brew-installed yamllint diverges from CI.
       YAMLLINT_VERSION: "1.38.0"
@@ -513,6 +513,6 @@ jobs:
         run: |
           pip install --user "yamllint==${YAMLLINT_VERSION}"
           # Document syntax (line length, indentation, truthy values) but
-          # don't fail on style nits — only on real syntax errors.
+          # don't fail on style nits, only on real syntax errors.
           ~/.local/bin/yamllint -d "{extends: relaxed, rules: {line-length: disable}}" \
             infra/compose/compose/ .github/workflows/

@@ -8,7 +8,7 @@ import { requestLogger } from "../../src/middleware/request-logger";
 /*
  * Invariant: every response carries `x-request-id`, including error
  * paths (validation, 404, ApiError throws). Elysia's `onAfterHandle`
- * only fires on successful returns — without an equivalent on the
+ * only fires on successful returns, without an equivalent on the
  * error path the UI sees `x-request-id: null` for the exact responses
  * support tickets pivot on.
  */

@@ -30,7 +30,7 @@ const VISUAL_OPTS = {
 test.describe("Visual regression — canonical pages", () => {
   /*
    * TODO(@boringstack-xyz/maintainers): this is Playwright's parametric
-   * `test.skip(condition, reason)` form — a runtime branch, not unowned
+   * `test.skip(condition, reason)` form: a runtime branch, not unowned
    * debt. Kept tagged so the skipped-tests rule has a tracker; if a
    * future check distinguishes parametric skips from name-skips it can
    * drop this tag.

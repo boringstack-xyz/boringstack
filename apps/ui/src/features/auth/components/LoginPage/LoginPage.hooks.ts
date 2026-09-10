@@ -57,8 +57,8 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
 
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   /*
-   * The OAuth callback cannot hand the SPA a challenge token — it finishes
-   * with a browser redirect — so it sets an httpOnly cookie and returns
+   * The OAuth callback cannot hand the SPA a challenge token: it finishes
+   * with a browser redirect, so it sets an httpOnly cookie and returns
    * here with `?mfa=required`. `mfaPending` means "show the factor form";
    * `mfaChallengeToken` is the password path's copy of the challenge, and
    * stays null for OAuth so the request omits it and the server reads its
@@ -167,7 +167,7 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
       setOauthPending(provider);
 
       /*
-       * startOAuth is synchronous (browser navigation) — wrap in try/catch
+       * startOAuth is synchronous (browser navigation): wrap in try/catch
        * for the rare case of a malformed URL or blocked navigation. The
        * page unloads on success so this block is fire-and-forget.
        */

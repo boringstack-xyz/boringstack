@@ -11,7 +11,7 @@ const SUFFIX_REQUIRES_TEST =
  * Directories whose every module is logic by definition, regardless of
  * suffix: observability wrappers (metrics, tracing) and ACL resolution.
  * Barrel re-exports (index.ts) and type-only modules (*.types.ts) are
- * exempt — there is nothing to execute.
+ * exempt: there is nothing to execute.
  */
 const LOGIC_DIR_SEGMENTS = [
   join("src", "lib", "metrics"),

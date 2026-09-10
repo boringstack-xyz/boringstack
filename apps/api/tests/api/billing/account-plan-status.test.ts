@@ -26,8 +26,8 @@ describe("selectEffectiveFeatures — status → effective plan", () => {
   test("past_due falls back to free features", () => {
     /*
      * Delinquency ends entitlement immediately. No grace period is applied
-     * at a higher layer, and nothing sweeps this status — the maintenance
-     * job revokes `canceled` only — so treating `past_due` as paid grants a
+     * at a higher layer, and nothing sweeps this status: the maintenance
+     * job revokes `canceled` only, so treating `past_due` as paid grants a
      * failed card indefinite access. A real grace period belongs in an
      * explicit expiry the resolver can read.
      */

@@ -9,7 +9,7 @@ import { requireDb } from "../../helpers/db";
  * Integration test (skips without a reachable Postgres, mirroring
  * audit-log.service.test.ts). An account id with no plan row and no
  * overrides must resolve to exactly the same default feature map as
- * resolveFeatures([], []) — the DB wrapper adds data access, never
+ * resolveFeatures([], []), the DB wrapper adds data access, never
  * resolution semantics.
  */
 describe("resolveAccountFeatures", () => {

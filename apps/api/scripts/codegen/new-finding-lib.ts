@@ -175,7 +175,7 @@ export const parseError = (
 
 /*
  * `Array.isArray` narrows `unknown` to `any[]`, which then infects every
- * element. Narrow to `unknown[]` instead — the same guard the manifest
+ * element. Narrow to `unknown[]` instead: the same guard the manifest
  * checker uses, for the same reason.
  */
 const isUnknownArray = (value: unknown): value is unknown[] =>

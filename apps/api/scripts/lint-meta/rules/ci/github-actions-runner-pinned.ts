@@ -10,8 +10,8 @@ const RUNS_ON_REGEX = /^\s*runs-on:\s*(?<label>\S+)\s*(?:#.*)?$/u;
  * `ubuntu-latest` floats on GitHub's migration schedule: preinstalled
  * tool versions and OS packages change with no commit to blame, so CI
  * behavior (scanners, compose, system deps) can differ between two runs
- * of the same SHA. Everything else in this repo is exact-pinned — deps,
- * action SHAs, scanner versions, bun — so runner images get the same
+ * of the same SHA. Everything else in this repo is exact-pinned: deps,
+ * action SHAs, scanner versions, bun, so runner images get the same
  * bar: name an explicit OS version (e.g. ubuntu-24.04). Expression
  * labels (matrix strategies) are out of scope for a line scan.
  */

@@ -12,10 +12,10 @@
 #   4. Remove the local temp dump
 #
 # Env (sourced from compose/.env if present):
-#   POSTGRES_USER, POSTGRES_DB              — required
-#   RCLONE_REMOTE_NAME, RCLONE_REMOTE_PATH  — required
-#   BACKUP_RETENTION_DAYS                   — optional, default 30
-#   BACKUP_DRY_RUN=1                        — log the steps but don't run them
+#   POSTGRES_USER, POSTGRES_DB: required
+#   RCLONE_REMOTE_NAME, RCLONE_REMOTE_PATH: required
+#   BACKUP_RETENTION_DAYS: optional, default 30
+#   BACKUP_DRY_RUN=1: log the steps but don't run them
 
 set -euo pipefail
 

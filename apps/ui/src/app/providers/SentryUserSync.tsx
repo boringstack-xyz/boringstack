@@ -15,7 +15,7 @@ import { useMe } from "@/features/auth/Auth.queries";
  * Mounted as a sibling of AbilityProvider in App.tsx. No UI; purely a
  * side-effect on every change to the current-user query result.
  *
- * No-op when VITE_SENTRY_DSN is empty — Sentry.init didn't run, the
+ * No-op when VITE_SENTRY_DSN is empty: Sentry.init didn't run, the
  * setUser call is a noop. Logout sets the user to null so subsequent
  * unauthenticated errors aren't attributed to the last signed-in user.
  */

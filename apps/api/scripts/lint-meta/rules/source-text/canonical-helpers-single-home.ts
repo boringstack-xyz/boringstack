@@ -9,7 +9,7 @@ import type { IMetaRule, IViolation } from "../../types";
  * duplicate and the rule fails the build.
  *
  * Add a new entry the moment a second copy of a helper appears anywhere
- * in the codebase — that is the signal that the helper deserves a
+ * in the codebase, that is the signal that the helper deserves a
  * single home.
  *
  * `canonicalSrc` is the path relative to repo root.

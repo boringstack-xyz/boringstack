@@ -15,7 +15,7 @@ const PROVIDER_ENTRY_REGEX = /(\w+)\s*=\s*\{([^}]*)\}/gu;
 
 /*
  * Extract the body of every `required_providers { … }` block by walking
- * brace depth from the opening brace — a regex can't because each provider
+ * brace depth from the opening brace, a regex can't because each provider
  * entry is itself a `{ … }`.
  */
 function requiredProvidersBodies(text: string): string[] {

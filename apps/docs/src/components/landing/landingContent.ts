@@ -17,7 +17,7 @@ export interface CodeTab {
  * The two strings the hero is built around. `agentPrompt` is what a person
  * pastes into their agent; `installCommand` is what the agent (or a person who
  * would rather not delegate) runs. Both are duplicated in
- * apps/docs/public/agents.md and public/install.sh — check:agent-surface
+ * apps/docs/public/agents.md and public/install.sh: check:agent-surface
  * asserts the installer and the manifest agree, and these should be updated
  * alongside them.
  */
@@ -242,7 +242,7 @@ export const proofRows = [
  * in minutes, so why start from a template?
  *
  * Because the code is the easy half. Every row here is a mechanical fact in
- * this repo, not a claim — the plugin names, workflow filenames and rule names
+ * this repo, not a claim: the plugin names, workflow filenames and rule names
  * are real and greppable. Keep it that way: if a row cannot be pointed at, it
  * does not belong here.
  */

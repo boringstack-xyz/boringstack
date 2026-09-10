@@ -88,7 +88,7 @@ const enrollViaService = async (
    * Verifying setup writes the current TOTP step into mfaLastTotpStep
    * for replay protection. The route tests then immediately try to log
    * in inside that same 30-second window, which the replay guard would
-   * otherwise reject. Clearing the step is safe — a real user picks
+   * otherwise reject. Clearing the step is safe: a real user picks
    * up the same protection on their next verify.
    */
   await db
@@ -320,7 +320,7 @@ describe("MFA routes", () => {
     expect(lockedRes.headers.get(SET_COOKIE_HEADER)).toBeNull();
     expect(await lockedRes.text()).toContain("Too many failed attempts");
 
-    // The challenge is consumed on lockout — retrying reports expiry.
+    // The challenge is consumed on lockout: retrying reports expiry.
     const afterLockout = await verifyWithWrongCode();
 
     expect(afterLockout.status).toBe(401);

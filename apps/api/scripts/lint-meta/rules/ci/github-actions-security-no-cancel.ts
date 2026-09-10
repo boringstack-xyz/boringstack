@@ -9,7 +9,7 @@ const SECURITY_WORKFLOW_REGEX = /-security-(?:sast|secrets|deps)\.ya?ml$/u;
 /*
  * Security scans (SAST, secret, dependency) must run to completion for every
  * pushed ref. With `cancel-in-progress: true`, a follow-up push cancels the
- * in-flight scan — the superseded commit is then neither passed nor failed,
+ * in-flight scan: the superseded commit is then neither passed nor failed,
  * and a PR can read green over code that was never actually scanned. So any
  * `*-security-{sast,secrets,deps}` workflow's concurrency block must set
  * `cancel-in-progress: false`. Build/validate workflows are intentionally

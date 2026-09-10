@@ -22,7 +22,7 @@ vi.mock("@/lib/env", () => ({ env: hoisted.env }));
 const { useWebPush } = await import("./useWebPush.hooks");
 
 /*
- * A short, obviously-fake base64url value — the hook only `atob`-decodes the
+ * A short, obviously-fake base64url value: the hook only `atob`-decodes the
  * key (no crypto validation), so this is all the subscribe path needs.
  */
 const STUB_VAPID = "dGVzdA";

@@ -16,7 +16,7 @@ import type { IAuditLogListResponse } from "./AuditLog.types";
  *
  * Caller passes the account id (typically from a sibling hook that
  * reads `useMe`) so this query stays decoupled from the auth feature
- * — the `no-cross-feature-imports` rule keeps barrel coupling out of
+ * the `no-cross-feature-imports` rule keeps barrel coupling out of
  * the audit-log surface.
  */
 export function useAuditLog(

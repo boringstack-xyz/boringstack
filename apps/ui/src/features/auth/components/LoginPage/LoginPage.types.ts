@@ -52,7 +52,7 @@ export interface ILoginPageView {
    */
   /**
    * Whether the factor form is showing. Set by password login receiving a
-   * challenge, and by the OAuth callback returning with `?mfa=required` —
+   * challenge, and by the OAuth callback returning with `?mfa=required`,
    * that path holds its challenge in an httpOnly cookie, so there is no
    * token for the SPA to key off.
    */

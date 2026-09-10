@@ -9,7 +9,7 @@
 #   3. Writes the three vars into compose/.env, then forces api-dev +
 #      ui-dev to recreate so the new env reaches both runtimes.
 #
-# Idempotent. Safe to invoke from dev.sh on every detached `up` — does
+# Idempotent. Safe to invoke from dev.sh on every detached `up`, does
 # nothing once the keys are wired.
 #
 # Usage:

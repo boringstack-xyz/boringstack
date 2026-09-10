@@ -59,7 +59,7 @@ app_changed() {
 # `docker compose config`s every overlay combination + shellchecks + yamllints.
 # Its local mirror is infra/compose/scripts/pre-push.sh. Without this, a push
 # that only touches infra/compose runs smoke (one dev+smoke boot) but never the
-# config matrix — a malformed prod/glitchtip/wud overlay would slip to CI. Gate
+# config matrix: a malformed prod/glitchtip/wud overlay would slip to CI. Gate
 # on the same paths the CI workflow triggers on.
 infra_compose_changed() {
   if [[ -z "$CHANGED_PATHS" ]]; then
@@ -106,7 +106,7 @@ else
   echo "$CHANGED_PATHS" | sed 's/^/    /'
 fi
 
-# Security scanners run first — gitleaks, semgrep, osv-scanner all
+# Security scanners run first: gitleaks, semgrep, osv-scanner all
 # fail the entire push, so racing them ahead of the slower per-app
 # `validate` saves time when a finding lands here.
 bash "$ROOT/scripts/ci/pre-push-security.sh"

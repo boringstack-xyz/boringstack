@@ -6,7 +6,7 @@ import type { IMetaRule, IViolation } from "../../types";
 /*
  * Credentials that once shipped as documented defaults and were removed
  * (2026-06-03: dev.sh now generates random passwords). Docs teaching a
- * retired default trains users to hardcode it back — every literal here
+ * retired default trains users to hardcode it back: every literal here
  * must stay banned from documentation prose forever.
  */
 const RETIRED_CREDENTIALS = [

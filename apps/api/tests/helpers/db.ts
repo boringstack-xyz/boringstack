@@ -2,7 +2,7 @@
  * Integration-test helpers for the application database.
  *
  * Do not assert on `void auditLogService.record(...)` without awaiting the
- * returned promise or polling `audit_log` — fire-and-forget writes race in CI.
+ * returned promise or polling `audit_log`, fire-and-forget writes race in CI.
  *
  * The pattern: each integration test file imports `requireDb()` and bails
  * silently when no Postgres is reachable (dev runs without docker, CI
@@ -129,8 +129,8 @@ const CLEANUP_TARGETS = [
 
 /*
  * Arbitrary 64-bit key for the advisory lock that serialises cleanup
- * calls across concurrent test workers. The value itself is meaningless
- * — only its uniqueness across the schema matters. Stable across runs.
+ * calls across concurrent test workers. The value itself is meaningless;
+ * only its uniqueness across the schema matters. Stable across runs.
  */
 const CLEANUP_ADVISORY_LOCK_KEY = 7283041928571064n;
 
@@ -148,13 +148,13 @@ const CLEANUP_ADVISORY_LOCK_KEY = 7283041928571064n;
  *  2. `DELETE FROM` instead of `TRUNCATE` so we hold
  *     `RowExclusiveLock` rather than `AccessExclusiveLock`. A truncate
  *     conflicts with the `AccessShareLock` that every concurrent SELECT
- *     takes — that's the recipe for the postgres deadlock we hit in CI
+ *     takes: that's the recipe for the postgres deadlock we hit in CI
  *     when one worker was mid-cleanup and another was mid-test. Delete
  *     does not.
  *
  * The trade-off: DELETE is slower than TRUNCATE on large tables. For
  * the small per-test datasets this helper sees, the difference is
- * single-digit milliseconds — well worth it for a CI suite that never
+ * single-digit milliseconds, well worth it for a CI suite that never
  * flake-deadlocks.
  */
 export const cleanDatabase = async (): Promise<void> => {

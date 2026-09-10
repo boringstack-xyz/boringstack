@@ -213,7 +213,7 @@ describe("validateEnv", () => {
      * Schema says QUEUES_ENABLED / CACHE_ENABLED / NOTIFICATIONS_SSE_ENABLED
      * default to `true`. Operators copying a minimal prod env (compose
      * without explicit overrides) shouldn't silently end up with cache
-     * off — that weakens JWT revocation and shared rate limits. Lock
+     * off: that weakens JWT revocation and shared rate limits. Lock
      * the schema↔resolved-config alignment here.
      */
     delete testEnv.QUEUES_ENABLED;

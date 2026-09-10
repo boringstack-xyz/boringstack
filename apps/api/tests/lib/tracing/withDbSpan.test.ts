@@ -4,7 +4,7 @@ import { withDbSpan } from "../../../src/lib/tracing/withDbSpan";
 
 /*
  * No OTel SDK is registered in tests, so the tracer is the API's no-op
- * implementation — which is exactly the contract worth locking: the
+ * implementation, which is exactly the contract worth locking: the
  * wrapper must be transparent (results pass through, rejections
  * re-throw unchanged) whether or not a real exporter is wired up.
  */

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# GlitchTip prod bootstrap — run after the first prod boot to apply Django
+# GlitchTip prod bootstrap: run after the first prod boot to apply Django
 # migrations and create the initial superuser. Dev users don't need this:
 # `glitchtip-dev` runs with GLITCHTIP_SUPERUSER_* envs and the image's
 # entrypoint handles migration + superuser creation automatically.
