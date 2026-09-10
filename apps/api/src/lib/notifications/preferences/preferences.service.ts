@@ -82,7 +82,7 @@ export class NotificationPreferencesService {
    * `enabled=true`) ends up in `enabled`.
    *
    * Failures are non-fatal: on DB error, every candidate is treated as
-   * enabled so notifications still flow — losing a notification because
+   * enabled so notifications still flow: losing a notification because
    * the preferences table is flaky would be strictly worse than ignoring
    * the user's preference for one event.
    */

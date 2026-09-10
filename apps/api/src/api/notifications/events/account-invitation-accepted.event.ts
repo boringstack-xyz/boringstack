@@ -4,7 +4,7 @@ import { defineNotificationEvent } from "../../../lib/notifications";
 
 /**
  * Notification event: a user just accepted an invitation into an
- * account. Recipient is the inviter (or any account owner/admin) — the
+ * account. Recipient is the inviter (or any account owner/admin): the
  * invitations service hands the recipient id to `notifications.send`.
  *
  * Ships in-app only. Add a `render.email` block to also send the

@@ -9,7 +9,7 @@ export interface IEmailDeliveryJobData {
   /**
    * Optional reference to a `notification_delivery` row. When set, the
    * worker settles the row to `sent` / `failed` after the email send
-   * completes — this is how the notifications subsystem tracks per-channel
+   * completes: this is how the notifications subsystem tracks per-channel
    * delivery without coupling the email pipeline to the notifications
    * model surface.
    */

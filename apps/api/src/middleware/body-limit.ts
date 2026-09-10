@@ -19,7 +19,7 @@ const BODIED_METHODS = new Set(["POST", "PUT", "PATCH"]);
  * This is the cheap pre-parse check, not the enforcement boundary. The
  * enforcement boundary is `maxRequestBodySize` on the server
  * (`src/index.ts`), which bounds a body while it streams and therefore
- * covers chunked transfers and stripped headers — the cases a header check
+ * covers chunked transfers and stripped headers, the cases a header check
  * cannot see. Rejecting a bodied request that carries no `Content-Length`
  * is not a substitute: it refuses legitimate chunked clients while still
  * letting a lying header through to an unbounded read.
@@ -62,18 +62,18 @@ export const enforceBodyLimit = (input: {
 };
 
 /*
- * Three details here are load-bearing.
+ * Three details here matter.
  *
  * `.as("global")`: Elysia scopes lifecycle hooks to the declaring instance
  * and its descendants, so a plugin the parent `use`s does not cover routes
- * the parent registers afterwards — which is exactly how
+ * the parent registers afterwards, which is exactly how
  * `config/app/app.ts` composes. Without this the hook is mounted, looks
  * correct, and runs for no route in the application.
  *
  * `onRequest`, not `onParse`: Elysia wraps anything thrown during the parse
  * phase in its own `ParseError`, so an `ApiError` never reaches the error
- * handler and a 413 arrives as a 400 "could not be parsed" —
- * indistinguishable from malformed JSON. `onRequest` also runs before
+ * handler and a 413 arrives as a 400 "could not be parsed".
+ * Indistinguishable from malformed JSON. `onRequest` also runs before
  * routing, so an over-cap body is refused without matching a route.
  *
  * Short-circuit, not throw: a value returned from `onRequest` becomes the

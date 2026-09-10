@@ -1,11 +1,11 @@
 /**
- * F09b — the runtime resolver does not apply effective-plan semantics.
+ * F09b: the runtime resolver does not apply effective-plan semantics.
  *
  * `selectEffectiveFeatures` (`src/api/billing/account-plan-status.ts:17`) has
  * a doc comment describing it as what "the resolver should treat as the
  * 'effective plan'". It has ten call sites in its own test file and none in
- * `src`. `resolveAccountFeatures` — the one resolver with a production caller
- * — selects on `revokedAt IS NULL` alone (`resolve-account-features.ts:25-30`)
+ * `src`. `resolveAccountFeatures`, the one resolver with a production caller,
+ * selects on `revokedAt IS NULL` alone (`resolve-account-features.ts:25-30`)
  * and never consults `status`, `currentPeriodEnd` or `expiresAt`.
  *
  * A passing unit-test suite for an uncalled helper reads as assurance that
@@ -120,7 +120,7 @@ describe("F09b effective-plan semantics are applied at resolution", () => {
 
     /*
      * The sweeper revokes this within the hour. Until it runs, resolution
-     * must not grant it — the window is the defect, not the sweep.
+     * must not grant it: the window is the defect, not the sweep.
      */
     expect(features.can_export).toBe(false);
   });

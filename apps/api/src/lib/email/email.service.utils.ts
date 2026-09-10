@@ -11,7 +11,7 @@ import { SmtpEmailService } from "./providers/smtp";
 /**
  * A provider was selected via `EMAIL_PROVIDER` but its credential is empty.
  * In production that means transactional mail (verification, password
- * reset, billing) would silently vanish — so fail closed at boot. In dev
+ * reset, billing) would silently vanish, so fail closed at boot. In dev
  * and test, warn and fall back to the noop provider so local work and the
  * suite stay frictionless.
  */

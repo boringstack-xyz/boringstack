@@ -21,10 +21,10 @@ import { env } from "../env";
  *
  * Initialised once at boot, before any instrumented code runs. The auto-
  * instrumentations patch HTTP / undici (outgoing fetch) / ioredis (Valkey +
- * BullMQ) / fs / dns / and a handful more — see
+ * BullMQ) / fs / dns / and a handful more. See
  * @opentelemetry/auto-instrumentations-node for the full list.
  *
- * Not auto-instrumented: postgres-js (Drizzle's underlying driver — no
+ * Not auto-instrumented: postgres-js (Drizzle's underlying driver, no
  * upstream OTel instrumentation exists for it). Wrap DB calls manually
  * with `withDbSpan` from lib/tracing when you want them visible.
  *
@@ -65,7 +65,7 @@ export const initializeOpenTelemetry = (): void => {
 };
 
 /*
- * Best-effort shutdown — called from the process exit handlers so
+ * Best-effort shutdown, called from the process exit handlers so
  * in-flight spans get a chance to flush before the runtime exits.
  */
 export const shutdownOpenTelemetry = async (): Promise<void> => {

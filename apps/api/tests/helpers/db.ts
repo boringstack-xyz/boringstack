@@ -138,7 +138,7 @@ const CLEANUP_ADVISORY_LOCK_KEY = 7283041928571064n;
  * Wipe user-data tables. Use in `beforeEach` so each test starts with a
  * clean slate.
  *
- * Two pieces of robustness on top of the obvious DELETE loop:
+ * Two safeguards on top of the obvious DELETE loop:
  *
  *  1. `pg_advisory_xact_lock` on a fixed key serialises every cleanup
  *     across the suite. Two test files calling `cleanDatabase()` at the

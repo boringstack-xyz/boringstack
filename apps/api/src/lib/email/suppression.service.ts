@@ -58,7 +58,7 @@ const toProvider = (raw: string): EmailSuppressionProvider => {
  * downgrading a "complaint" to a later "hard_bounce" would lose the
  * stronger compliance signal.
  *
- * `clear` is used when a user verifies a new primary email address —
+ * `clear` is used when a user verifies a new primary email address,
  * the new address starts fresh regardless of what happened to it
  * before the verification.
  */

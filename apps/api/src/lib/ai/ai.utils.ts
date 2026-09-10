@@ -26,7 +26,7 @@ const warnInvalid = (reason: string): void => {
 /**
  * Parses `OPENAI_DEFAULT_HEADERS` (a JSON object) into a flat
  * `Record<string, string>`. Returns `undefined` when unset, malformed, or
- * empty after filtering — the factory then omits the option entirely so
+ * empty after filtering: the factory then omits the option entirely so
  * the SDK falls back to its own defaults.
  *
  * Example:

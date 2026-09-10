@@ -33,7 +33,7 @@ import type {
 export class OwnershipTransfersService {
   /**
    * Files a pending transfer offer. The current owner is *not* demoted
-   * here — the swap happens only on `accept`. The partial unique index
+   * here: the swap happens only on `accept`. The partial unique index
    * on (account_id) WHERE pending guarantees at most one outstanding
    * offer per account; a second initiate while one is live will fail
    * the unique constraint and surface as a 409.
@@ -228,7 +228,7 @@ export class OwnershipTransfersService {
        * row id alone promotes a membership revoked while this transaction
        * is in flight: the sitting owner is already demoted above, the
        * partial unique index excludes revoked rows so it never fires, and
-       * the account commits with zero active owners — a state with no way
+       * the account commits with zero active owners: a state with no way
        * back, since initiating a transfer requires an owner.
        */
       const promoted = await tx

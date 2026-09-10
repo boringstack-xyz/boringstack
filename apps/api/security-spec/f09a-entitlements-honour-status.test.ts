@@ -1,5 +1,5 @@
 /**
- * F09a — the runtime feature resolver ignores subscription status.
+ * F09a: the runtime feature resolver ignores subscription status.
  *
  * `resolve-account-features.ts:25-30` selects the account's plan on
  * `revokedAt IS NULL` alone:
@@ -19,7 +19,7 @@
  * against `canceled` would be asserting against a condition that resolves on
  * its own within the hour.
  *
- * `unpaid`, `paused`, `incomplete` and `past_due` are swept by nothing — the
+ * `unpaid`, `paused`, `incomplete` and `past_due` are swept by nothing: the
  * sweeper's `eq(status, "canceled")` filter excludes them all. An account
  * whose card fails keeps its paid features permanently. That is what this
  * asserts.
@@ -30,7 +30,7 @@
  * enforces features. See f09c.
  *
  * POLICY (ROADMAP decision 3): encodes "delinquency loses paid features
- * immediately". A grace period is a legitimate alternative — express it by
+ * immediately". A grace period is a legitimate alternative: express it by
  * asserting the boundary, not by dropping the assertion.
  */
 import { beforeEach, describe, expect, test } from "bun:test";

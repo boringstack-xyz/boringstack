@@ -1,5 +1,5 @@
 /**
- * F15 — the credential and global limiters share one Valkey counter.
+ * F15: the credential and global limiters share one Valkey counter.
  *
  * `src/lib/rate-limit/valkey-context.ts:53`:
  *
@@ -18,7 +18,7 @@
  *
  * There is a second effect the review did not name. The global limiter's
  * `onError` hook is global-scoped, so it fires on failed auth responses and
- * calls `decrement` on the same shared key — refunding exactly the failures
+ * calls `decrement` on the same shared key, refunding exactly the failures
  * that `countFailedRequest: true` exists to charge for.
  *
  * This cannot reproduce under the default test environment, which pins

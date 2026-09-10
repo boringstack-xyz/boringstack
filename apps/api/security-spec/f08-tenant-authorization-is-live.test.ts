@@ -1,5 +1,5 @@
 /**
- * F08 — tenant authorization is inconsistent after membership changes.
+ * F08: tenant authorization is inconsistent after membership changes.
  *
  * `billing.routes.ts:33-35` reads the subscription straight off the token:
  *
@@ -7,7 +7,7 @@
  *     getBillingService().getSubscription(accountId), { ... })
  *
  * `accountId` comes from the JWT (`auth.plugin.ts:136`), and `requireAuth`
- * checks signature, expiry and revocation — never membership. The billing
+ * checks signature, expiry and revocation, never membership. The billing
  * module imports no membership resolver for this route. A removed member
  * keeps reading the account's billing data until their access token expires.
  *

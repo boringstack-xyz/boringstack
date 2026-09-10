@@ -1,5 +1,5 @@
 /**
- * F13 — notification side effects are detached without a rejection handler.
+ * F13: notification side effects are detached without a rejection handler.
  *
  * `error-handlers.ts:98-117` installs an `unhandledRejection` handler that
  * calls `process.exit(1)` when `NODE_ENV === "production"`. Several business
@@ -12,7 +12,7 @@
  *   src/api/accounts/invitations.service.ts:324
  *
  * `void` discards the promise without attaching a handler, and
- * `NotificationDispatcher.send` genuinely rejects — on schema validation
+ * `NotificationDispatcher.send` genuinely rejects: on schema validation
  * (`notifications.dispatcher.ts:52`) and on inline dispatch failure (`:88`).
  * So a queue or Valkey failure after an already-committed mutation becomes an
  * unhandled rejection, and in production that terminates the process: a

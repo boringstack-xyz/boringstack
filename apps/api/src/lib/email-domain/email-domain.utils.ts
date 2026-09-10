@@ -4,7 +4,7 @@ import { PUBLIC_EMAIL_DOMAINS } from "./public-domains";
  * Lowercases + strips the trailing dot a fully-qualified domain name
  * may carry, then returns the part after the `@`. Returns `null` when
  * the input doesn't have exactly one `@` or the local-part/domain is
- * empty — `null` is the explicit "this email can't be domain-scoped"
+ * empty: `null` is the explicit "this email can't be domain-scoped"
  * signal so callers don't have to repeat the parsing rules.
  */
 export const extractDomain = (email: string): string | null => {

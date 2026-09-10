@@ -22,7 +22,7 @@ const isWebPushConfigured = (): boolean =>
  * tests run) depends on the same registries the worker uses.
  *
  * Each channel registers only when its prerequisites are present in the
- * environment — email always, SSE when Valkey-backed pub/sub is enabled,
+ * environment: email always, SSE when Valkey-backed pub/sub is enabled,
  * Web Push when all three VAPID keys are configured. A fork that doesn't
  * ship a given channel never sees a non-functional entry in the registry.
  */

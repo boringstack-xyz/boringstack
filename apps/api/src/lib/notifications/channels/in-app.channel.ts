@@ -21,7 +21,7 @@ import type {
  *
  * The handler exists separately even though its job is small because every
  * channel must record a `notification_delivery` row for cross-channel
- * status visibility — keeping that bookkeeping uniform avoids special cases
+ * status visibility, keeping that bookkeeping uniform avoids special cases
  * in the worker.
  */
 class InAppChannel implements INotificationChannel {

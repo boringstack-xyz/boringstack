@@ -70,7 +70,7 @@ export interface INotificationEventDefinition<
 
 /**
  * Runtime-erased event shape stored in the registry. All callables take
- * `unknown` payload internally — the wrapping inside
+ * `unknown` payload internally: the wrapping inside
  * `defineNotificationEvent` adapts the user's typed functions to this
  * shape via TypeBox `Value.Cast`, preserving type safety end-to-end
  * without any TS assertions.
@@ -102,7 +102,7 @@ export interface IRegisteredEvent {
  * Phantom payload brand. Lets `notifications.send(event, args)` infer the
  * typed payload shape from `event` at the call site, while the underlying
  * stored object remains a runtime-erased `IRegisteredEvent`. The brand is
- * never present at runtime — it only exists in the type system.
+ * never present at runtime: it only exists in the type system.
  */
 export interface IPayloadBrand<TPayload> {
   readonly __payload?: (p: TPayload) => void;
@@ -135,7 +135,7 @@ export interface IChannelDispatchContext {
  * Contract every channel implements. `name` keys the registry. `dispatch`
  * runs whatever side effect the channel needs (DB update, BullMQ enqueue,
  * Valkey publish) and is called from inside the worker's per-channel
- * `Promise.allSettled` — a thrown error is captured into the delivery row.
+ * `Promise.allSettled`: a thrown error is captured into the delivery row.
  */
 export interface INotificationChannel {
   readonly name: NotificationChannelName;

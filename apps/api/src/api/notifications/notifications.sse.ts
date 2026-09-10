@@ -41,7 +41,7 @@ interface ISseContext {
  * `data:` event. Sends a comment-only `:ping` every 25 s so proxies don't
  * idle-close the connection.
  *
- * Cleanup is anchored to the request's `AbortSignal` — when the browser
+ * Cleanup is anchored to the request's `AbortSignal`: when the browser
  * tab closes or the connection drops, the signal fires, the wait loop
  * resolves, the generator's `finally` block runs, and the Valkey
  * subscriber disconnects. Without that signal hook a closed browser would
@@ -65,7 +65,7 @@ export const notificationsStreamHandler = async function* (
 
   /*
    * Indirected through a function so TypeScript's flow analysis doesn't
-   * narrow `signal.aborted` to its initial `false` value — it actually
+   * narrow `signal.aborted` to its initial `false` value: it actually
    * flips when the request is aborted from outside.
    */
   const signal = ctx.request.signal;
@@ -116,7 +116,7 @@ export const notificationsStreamHandler = async function* (
    *   - it expired. The token carries its own `exp`; nothing else bounds
    *     how long this connection may live.
    *   - it was revoked individually. Ordinary `/auth/logout` calls
-   *     `revokeJti` — NOT `revokeAllForUser` — so a user-wide check alone
+   *     `revokeJti`, NOT `revokeAllForUser`, so a user-wide check alone
    *     never sees the revocation that logging out actually writes.
    *   - every token for the user was revoked (password reset,
    *     "sign out everywhere"), compared against the token's own `iat`.
@@ -162,7 +162,7 @@ export const notificationsStreamHandler = async function* (
        * The credential is re-checked before every payload, not once per
        * pass. Each `yield` suspends the generator for as long as the
        * consumer wants, and a revocation landing in that window has to
-       * stop the next message — a check that only runs when the buffer
+       * stop the next message: a check that only runs when the buffer
        * empties is one a publisher can postpone indefinitely by keeping
        * the buffer full.
        */
@@ -211,7 +211,7 @@ export const notificationsStreamHandler = async function* (
          * Keepalive. SSE allows comment-only frames (`:foo\n\n`), but
          * Elysia's generator-to-SSE adapter wraps every yielded value
          * as `data:`, so a bare `:ping` would reach the browser as a
-         * real `message` event with payload `:ping` — not a comment.
+         * real `message` event with payload `:ping`, not a comment.
          * We emit a JSON envelope instead: servers and proxies count
          * it as activity (same as a comment would), and the client's
          * `parseStreamMessage` ignores any type other than

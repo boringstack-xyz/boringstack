@@ -12,7 +12,7 @@ import { emailSuppressionService } from "../suppression.service";
  * list. Hits here mirror the provider's verdict into our local
  * `email_suppression` table so the next call skips the network entirely.
  *
- * Tuning these is provider-specific maintenance — keep the list narrow
+ * Tuning these is provider-specific maintenance: keep the list narrow
  * to avoid false-positive suppressions when the API just returned a
  * transient error.
  */
@@ -33,7 +33,7 @@ export const isProviderSuppressionError = (errorBody: string): boolean => {
 
 /**
  * Mirror a provider-level suppression rejection into our local
- * blocklist. Best-effort: a failure here is logged but never thrown —
+ * blocklist. Best-effort: a failure here is logged but never thrown:
  * the caller is about to re-raise its own send error anyway, and a
  * missed mirror row at most costs one extra wasted retry next time.
  */

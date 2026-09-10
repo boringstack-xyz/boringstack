@@ -1,5 +1,5 @@
 /**
- * F17 — error logging has no sensitive-data boundary.
+ * F17: error logging has no sensitive-data boundary.
  *
  * Framework validation errors are sanitized, but generic errors go through
  * `getErrorMessage` untouched (`error-handler.ts:58`), and
@@ -95,7 +95,7 @@ describe("F17 log redaction boundary", () => {
     /*
      * The message travels beside the context object, so a boundary that
      * only inspects context misses the single place a caught error's own
-     * text lands — which is exactly where a driver puts its bound values.
+     * text lands, which is exactly where a driver puts its bound values.
      */
     expect(output).not.toContain(SENTINELS.password);
   });

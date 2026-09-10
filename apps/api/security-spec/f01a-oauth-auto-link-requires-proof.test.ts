@@ -1,5 +1,5 @@
 /**
- * F01a — automatic OAuth linking does not check who proved the email.
+ * F01a: automatic OAuth linking does not check who proved the email.
  *
  * `src/api/auth/services/oauth.service.ts:67-87` inserts a new
  * `user_auth_providers` row whenever the incoming profile's email matches an
@@ -16,7 +16,7 @@
  *
  * Provider choice matters. GitHub cannot currently reach this because F01c
  * makes it fail closed. Google and LinkedIn read genuine OIDC
- * `email_verified`, so they are the live exposure — hence "google" here.
+ * `email_verified`, so they are the live exposure, hence "google" here.
  *
  * This behaviour is currently PINNED by
  * `tests/api/auth/services/oauth.service.test.ts:154`, "re-links + provisions

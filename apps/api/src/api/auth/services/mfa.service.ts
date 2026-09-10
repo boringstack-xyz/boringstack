@@ -249,7 +249,7 @@ export class MfaService {
     /*
      * Atomic consume. Two concurrent verifies with the same valid TOTP
      * code would otherwise both clear the in-memory replay check and
-     * both UPDATE — issuing two sessions from one factor. The
+     * both UPDATE, issuing two sessions from one factor. The
      * conditional WHERE clause ensures only one transaction commits;
      * the loser returns `failed` without touching the challenge so it
      * does not resurrect a key the winner is about to delete.
@@ -561,7 +561,7 @@ export class MfaService {
 
     /*
      * The challenge goes; the counter stays until its own TTL expires.
-     * Deleting the counter here would reopen the budget — submissions
+     * Deleting the counter here would reopen the budget: submissions
      * already in flight read the challenge before it vanished, and their
      * increments would start again from 1, handing a burst a second full
      * budget.

@@ -93,7 +93,7 @@ export interface IMessageResult {
  * What `requireAuth` puts on the request context.
  *
  * `credential` carries the token's own identity and lifetime so a handler
- * that outlives the request — an SSE stream, a long poll — can re-check
+ * that outlives the request, an SSE stream, a long poll, can re-check
  * them. The guard reads them once, at admission; a connection held open
  * for hours has to keep checking, or logout and expiry stop applying to it.
  */

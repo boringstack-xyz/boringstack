@@ -21,7 +21,7 @@ const WHSEC_PREFIX = "whsec_";
 
 /**
  * Read the three svix headers Resend signs each event with. Any missing
- * header is fatal — a Resend webhook always carries the trio.
+ * header is fatal: a Resend webhook always carries the trio.
  */
 export const extractResendHeaders = (
   headers: Record<string, string | undefined>

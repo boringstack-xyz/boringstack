@@ -1,5 +1,5 @@
 /**
- * F09c — the API enforces no features and no seat limits.
+ * F09c: the API enforces no features and no seat limits.
  *
  * The ACL layer exists, is exported, and is tested, and has no production
  * callers at all: `buildAbility` (`src/lib/acl/ability.ts:10`),
@@ -10,8 +10,8 @@
  * So the only `can_invite_team` gate in the system is client-side, in
  * `apps/ui/.../InvitationsPage.hooks.ts:33`, and `POST` to the invitation
  * route bypasses it. `max_seats` has no enforcement site anywhere.
- * `enforce-limit.ts:6-10` even documents the intended pattern — "typically
- * inside a transaction with `pg_advisory_xact_lock(hashtext(accountId))`" —
+ * `enforce-limit.ts:6-10` even documents the intended pattern: "typically
+ * inside a transaction with `pg_advisory_xact_lock(hashtext(accountId))`",
  * which no caller implements.
  *
  * These are driven over HTTP against real plan state rather than by reading
@@ -29,8 +29,8 @@
  * invitations while refusing the acceptance is equally correct.
  *
  * The invariant is that an account cannot grow past the seats it pays for, so
- * every case here drives a real seat-consuming operation — invitation
- * acceptance, join-request approval — and asserts the committed active
+ * every case here drives a real seat-consuming operation: invitation
+ * acceptance, join-request approval, and asserts the committed active
  * membership count. Both operations are covered because they are separate
  * write paths into the same table. If a future policy reserves a seat at
  * invitation time, that is an additional guarantee to specify here, not a
@@ -38,7 +38,7 @@
  *
  * POLICY (ROADMAP decision: server-side entitlement): this assumes feature enforcement belongs on the
  * server. If the flags are meant to be advisory display hints, that has to be
- * stated in the API contract — but the current position, flags that look like
+ * stated in the API contract, but the current position, flags that look like
  * entitlements and gate nothing, cannot stand either way.
  */
 import { beforeEach, describe, expect, test } from "bun:test";
@@ -98,8 +98,8 @@ interface IAccountFixture {
 }
 
 /*
- * `cleanDatabase` leaves `billing.plans` and `billing.plan_features` alone —
- * they are reference data — so a plan seeded by an earlier run survives. The
+ * `cleanDatabase` leaves `billing.plans` and `billing.plan_features` alone,
+ * they are reference data, so a plan seeded by an earlier run survives. The
  * feature values are therefore written with an upsert rather than
  * `onConflictDoNothing`: the earlier version silently kept whatever a
  * previous run had left, which is how a seat test can quietly start
@@ -218,7 +218,7 @@ const login = async (app: App, email: string): Promise<string> => {
  * A refusal only counts as quota enforcement if it is a domain refusal.
  *
  * 429 is the rate limiter and 5xx is a crash. 404 means the route or the row
- * was not found and 401 means the session never attached — a seat assertion
+ * was not found and 401 means the session never attached, a seat assertion
  * is trivially satisfied by an operation that never ran, so a fixture that
  * drifted into calling nothing would look like a passing cap check. All four
  * are raised as infrastructure, which the reconciler reports as a broken run
@@ -261,7 +261,7 @@ const invite = async (
  * implementation, and under it the fixture throws at capacity and the
  * acceptance case never reaches the operation it exists to test. Creation
  * policy has its own cases; this one has to present an invitation that is
- * already outstanding, however it got there — issued before a downgrade,
+ * already outstanding, however it got there, issued before a downgrade,
  * before a member was added, or under an older policy.
  *
  * The row is built from the same helpers `create` uses, so the token hash,
@@ -468,8 +468,8 @@ describe("F09c feature and seat enforcement", () => {
 
     /*
      * Approval has its own control because it has its own route and its own
-     * service. Without this, a route that 403s every approval — removed,
-     * misrouted, or broken in some future refactor — would satisfy the cap
+     * service. Without this, a route that 403s every approval, removed,
+     * misrouted, or broken in some future refactor, would satisfy the cap
      * case above while the acceptance control stayed green, and the suite
      * would report seat enforcement it had never exercised.
      */
@@ -496,7 +496,7 @@ describe("F09c feature and seat enforcement", () => {
      * needs) can survive a lucky run. Four claimants rather than two widens
      * the window; it does not close it.
      *
-     * Closing it needs what F12 does — a schedule imposed with a row lock —
+     * Closing it needs what F12 does, a schedule imposed with a row lock,
      * and that cannot be written until there is an implementation to
      * interleave with. Noted in the README's uncovered list so a green run
      * here is not read as proof the fix is race-free.
@@ -579,7 +579,7 @@ describe("F09c feature and seat enforcement", () => {
 
     /*
      * The allowed path. Without this, every seat assertion above could be
-     * satisfied by an implementation that refuses all acceptances — and the
+     * satisfied by an implementation that refuses all acceptances, and the
      * fixture would look correct while proving nothing.
      */
     expect(await activeSeats(fixture.accountId)).toBe(2);

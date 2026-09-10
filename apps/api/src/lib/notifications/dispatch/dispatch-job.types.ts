@@ -4,7 +4,7 @@ import type {
 } from "../notifications.types";
 
 /**
- * Job payload — kept structurally compatible with
+ * Job payload, kept structurally compatible with
  * `INotificationDispatchJobData` in `src/queues/notification-dispatch/`,
  * because both the BullMQ worker and the inline fallback path call
  * `runNotificationDispatch` with the same shape.

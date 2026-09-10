@@ -15,9 +15,9 @@ export type AuthJWTPayloadResult =
        */
       issuedAt: number | null;
       /**
-       * JWT-standard expiry (seconds since epoch). Long-lived consumers —
+       * JWT-standard expiry (seconds since epoch). Long-lived consumers,
        * anything that holds a connection open rather than answering one
-       * request — must re-check this themselves; the guard only reads it
+       * request, must re-check this themselves; the guard only reads it
        * once, when the request arrives.
        */
       expiresAt: number | null;

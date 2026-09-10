@@ -275,7 +275,7 @@ export class AccountsService {
 
   /**
    * Soft-revokes the calling user's own membership in the given
-   * account. Owner cannot leave — they must transfer ownership first,
+   * account. Owner cannot leave: they must transfer ownership first,
    * which prevents an account from ending up ownerless. Returns the
    * id of the revoked membership so the caller can audit/log.
    */
@@ -345,9 +345,9 @@ export class AccountsService {
    * Decides whether the new personal account should claim the user's
    * email domain. Off entirely when `ACCOUNT_DOMAIN_CLAIMING=false`.
    * Domains on the public-allowlist (gmail.com, etc.) always return
-   * null — those are never tenant-scoped. Throws `DomainClaimed` when
+   * null: those are never tenant-scoped. Throws `DomainClaimed` when
    * another active account already owns the domain so the verify /
-   * OAuth-callback handlers can render an actionable error.
+   * OAuth-callback handlers can render an error the user can act on.
    */
   private async resolveDomainClaim(
     userId: string,
@@ -381,7 +381,7 @@ export class AccountsService {
 
     if (claimed) {
       /*
-       * Domain is owned — file a pending join request so the existing owner
+       * Domain is owned: file a pending join request so the existing owner
        * can approve. The request is upserted (partial unique on pending
        * status), so retrying the verify-email flow never duplicates it.
        *

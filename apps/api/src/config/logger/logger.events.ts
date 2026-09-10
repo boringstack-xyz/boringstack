@@ -1,6 +1,6 @@
 /**
  * Every event name the API emits. Adding a new one here is the only path to
- * emitting it — `logger.{trace,debug,info,warn,error,fatal}` typechecks the
+ * emitting it: `logger.{trace,debug,info,warn,error,fatal}` typechecks the
  * context's `event` field against this union. Sorted to make conflicts on PR
  * rebase trivial.
  */

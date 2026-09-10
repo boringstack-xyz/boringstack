@@ -1,6 +1,6 @@
 /**
  * Resend webhook event shapes we react to. Resend emits many more event
- * types (delivery, opened, clicked, …) — we only care about the two
+ * types (delivery, opened, clicked, …): we only care about the two
  * deliverability signals that drive suppression.
  *
  * Reference: https://resend.com/docs/dashboard/webhooks/event-types

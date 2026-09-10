@@ -32,14 +32,14 @@ export const envSchema = t.Object({
    * a cache outage never blocks authentication, at the cost of honoring
    * revoked tokens until the cache returns or they expire (bounded by
    * the 15-minute JWT TTL). `true` fails closed: cache errors reject
-   * every authenticated request — strict revocation semantics for
+   * every authenticated request: strict revocation semantics for
    * deployments that prefer an auth outage over a revocation gap.
    */
   JWT_REVOCATION_FAIL_CLOSED: t.Boolean({ default: false }),
   /*
    * AES-256-GCM key used to encrypt TOTP secrets at rest. Base64-encoded
    * 32 random bytes. Generate with `openssl rand -base64 32`. Required
-   * once any user enables MFA — empty string is accepted at boot so a
+   * once any user enables MFA. Empty string is accepted at boot so a
    * fresh deploy with no MFA users keeps running, and the crypto util
    * throws a loud error the first time encryption is actually requested.
    */
@@ -78,14 +78,14 @@ export const envSchema = t.Object({
   TRUST_PROXY: t.Boolean({ default: false }),
 
   /*
-   * Error tracking — Sentry-compatible. Point at GlitchTip's project DSN for
+   * Error tracking: Sentry-compatible. Point at GlitchTip's project DSN for
    * self-hosted (see infra/compose/docs/glitchtip.md) or at
    * sentry.io for hosted. Empty DSN = Sentry is not initialized.
    */
   SENTRY_DSN: t.String({ default: "" }),
   /*
    * Default 0: OTel is the single source of trace data (shipped via OTLP to
-   * Tempo). Sentry is error-capture-only — events still carry `trace_id` from
+   * Tempo). Sentry is error-capture-only: events still carry `trace_id` from
    * the shared OTel context, so GlitchTip → Tempo click-through works. Flip
    * non-zero only if you want Sentry / GlitchTip to record transactions in
    * addition to errors; running both tracers concurrently double-instruments
@@ -178,7 +178,7 @@ export const envSchema = t.Object({
    * Domain claiming for B2B mode. When true, the first verified signup
    * with a non-public email domain (gmail.com / outlook.com / etc. are
    * excluded) claims that domain on its personal account. Subsequent
-   * signups from the same domain don't create a new account — they
+   * signups from the same domain don't create a new account: they
    * land in a `pending` join-request state against the existing one,
    * which the account owner approves or denies.
    *
@@ -202,7 +202,7 @@ export const envSchema = t.Object({
 
   /*
    * Web Push (VAPID). All three values come as a set: generate them once
-   * via `bun run vapid:generate`. Empty values disable the channel — the
+   * via `bun run vapid:generate`. Empty values disable the channel: the
    * `web-push` channel only registers when all three are present. Subject
    * is typically `mailto:notifications@<your-domain>`. validate.ts
    * enforces the all-or-nothing invariant.

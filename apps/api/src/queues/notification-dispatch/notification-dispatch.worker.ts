@@ -11,7 +11,7 @@ import type { INotificationDispatchJobData } from "./notification-dispatch.types
 
 /**
  * BullMQ adapter for the notifications dispatch pipeline. Job processing is
- * delegated to `runNotificationDispatch` — the same function the inline
+ * delegated to `runNotificationDispatch`, the same function the inline
  * fallback in `NotificationDispatcher` calls when `QUEUES_ENABLED=false`,
  * so the behaviour does not depend on topology.
  */

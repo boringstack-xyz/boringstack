@@ -48,7 +48,7 @@ class OAuthStateStore {
         this.client.disconnect();
       }
     } catch {
-      // ignore — connection may already be closing
+      // ignore: connection may already be closing
     }
 
     this.client = null;
@@ -68,7 +68,7 @@ class OAuthStateStore {
 
   /**
    * Read + delete the stored state. Returns `null` if absent (expired,
-   * forged, or already consumed) — and equally if the stored value is
+   * forged, or already consumed), and equally if the stored value is
    * not a JSON object: corrupted state must fail the flow, not pass as
    * a valid state with no extras. Read-and-delete makes replay
    * impossible.

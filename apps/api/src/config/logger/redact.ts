@@ -4,14 +4,14 @@
  * Everything logged crosses into Loki and the error tracker, so it needs a
  * boundary here: `error-handler.ts` passes generic error messages through
  * `getErrorMessage` untouched, and a Postgres error embeds the query
- * parameters — for an auth query, the credential itself.
+ * parameters: for an auth query, the credential itself.
  *
  * Two mechanisms, because one is not enough:
  *
  *   1. Key-based. A field whose NAME says it holds a credential is censored
  *      whatever its value looks like. Cheap, exact, and it covers the common
  *      `{ refreshToken }` / `{ passwordHash }` shapes.
- *   2. Value-based. A secret is often embedded in a legitimate field —
+ *   2. Value-based. A secret is often embedded in a legitimate field.
  *      `message` is the important one, since driver errors append
  *      `params: <every bound value>`. No key rule can catch that, so known
  *      secret-bearing shapes are scrubbed out of string values too.
@@ -62,7 +62,7 @@ const isSensitiveKey = (key: string): boolean => {
 
 /*
  * `params: a,b,c` is how `postgres`/Drizzle append bound values to a failed
- * query — every parameter of the statement, which for an auth query is the
+ * query: every parameter of the statement, which for an auth query is the
  * credential itself. The tail runs to end of line.
  */
 const QUERY_PARAMS = /(\bparams:)[^\n]*/giu;

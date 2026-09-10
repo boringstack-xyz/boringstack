@@ -12,11 +12,11 @@ export interface IAuditEventInput {
   userId: string | null;
   /** Canonical action name from `AUDIT_ACTIONS` (or a project-specific string). */
   action: AuditAction;
-  /** Optional resource identifier — e.g. `"user:7c3..."`. */
+  /** Optional resource identifier, e.g. `"user:7c3..."`. */
   resource?: string;
   /**
    * Tenant scope for `listForAccount`. Set on every account-scoped event
-   * whose `resource` is not already `account:{id}` — entity resources
+   * whose `resource` is not already `account:{id}`, entity resources
    * (`invitation:…`, `join_request:…`) are invisible to the account
    * audit trail without it.
    */

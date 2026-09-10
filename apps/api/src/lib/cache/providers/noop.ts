@@ -7,7 +7,7 @@ import type {
 /**
  * Always-miss cache used when `CACHE_ENABLED=false`. Lets callers stay
  * unconditional (`cache.wrap(...)`) without a runtime null check on the
- * cache instance — every call falls straight through to `factory()`.
+ * cache instance: every call falls straight through to `factory()`.
  *
  * All methods are genuinely synchronous; they return pre-resolved
  * promises only to satisfy the async `ICacheService` contract.
@@ -38,7 +38,7 @@ export class NoopCacheService implements ICacheService {
   /*
    * Always 1: nothing is stored, so every increment is the first. A caller
    * enforcing an attempt budget against this provider gets no enforcement
-   * at all — which is why production refuses `CACHE_ENABLED=false`
+   * at all, which is why production refuses `CACHE_ENABLED=false`
    * alongside fail-closed revocation (`config/env/validate.ts`,
    * `checkRevocationHasDurableStore`).
    */

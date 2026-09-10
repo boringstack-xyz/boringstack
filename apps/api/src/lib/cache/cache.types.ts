@@ -38,7 +38,7 @@ export interface ICacheService {
    * Read-through helper: returns the cached value when present, otherwise
    * runs `factory()`, caches the result, and returns it.
    *
-   * Concurrent callers may each invoke `factory` once — this is intentional
+   * Concurrent callers may each invoke `factory` once: this is intentional
    * to keep the implementation lock-free across multiple processes. Use a
    * dedicated lock if duplicate work would be expensive.
    */

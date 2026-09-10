@@ -10,7 +10,7 @@ import { metricsRegistry } from "./registry";
  * readable for operators who just want "requests per second by
  * method + status."
  *
- * Buckets target the typical web-API distribution — 50 ms to a few
+ * Buckets target the typical web-API distribution: 50 ms to a few
  * seconds. Anything past 10 s lands in the overflow bucket and is
  * usually a sign the request should be a job, not a sync call.
  */

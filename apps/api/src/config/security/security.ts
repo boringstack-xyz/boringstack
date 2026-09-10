@@ -10,7 +10,7 @@ import {
 } from "./security.constants";
 
 /**
- * CORS middleware — mounted only when ALLOWED_ORIGINS is non-empty. In the
+ * CORS middleware, mounted only when ALLOWED_ORIGINS is non-empty. In the
  * default same-origin deployment (BoringStack's Traefik path-routes /api/* on
  * the same host that serves the SPA), the browser never sends a cross-origin
  * preflight, so CORS is dead weight. Cross-origin deployments (SPA on a
@@ -34,7 +34,7 @@ export const buildCors = () => {
 
 /**
  * Rate-limit storage picker. The default `elysia-rate-limit` context is
- * an in-process Map — fine for single-replica deployments, broken once
+ * an in-process Map: fine for single-replica deployments, broken once
  * the same logical service runs on two boxes because each replica
  * enforces its own quota. When the deployment opts into the Valkey
  * cache provider, point the limiter at Valkey so the quota is shared.
@@ -61,7 +61,7 @@ const buildRateLimitContext = (
 
 /**
  * Rate-limit key generator. The plugin's default uses `server.requestIP`,
- * which behind a reverse proxy is the proxy's IP — every client shares
+ * which behind a reverse proxy is the proxy's IP: every client shares
  * one bucket and a single bad actor locks the whole deployment out.
  *
  * When `TRUST_PROXY=true`, prefer the leftmost entry of
@@ -77,7 +77,7 @@ interface IIpExtractionInput {
 /**
  * Picks the leftmost (client-closest) entry of `X-Forwarded-For` when
  * present, otherwise falls back to the socket peer address. Exported
- * for unit testing — production callers go through `buildKeyGenerator`
+ * for unit testing: production callers go through `buildKeyGenerator`
  * which gates on `TRUST_PROXY`.
  */
 export const extractTrustedClientIp = (input: IIpExtractionInput): string => {

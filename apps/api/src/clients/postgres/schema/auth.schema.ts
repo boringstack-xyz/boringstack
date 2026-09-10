@@ -37,9 +37,9 @@ export const users = auth.table(
      * or all three null (disabled): there is no in-between persisted on
      * the row. Mid-enrollment state lives in Valkey, not here.
      *
-     *   mfaEnabledAt        — non-null = TOTP required at login
-     *   mfaSecretEncrypted  — AES-256-GCM ciphertext of the TOTP secret
-     *   mfaLastTotpStep     — highest TOTP step accepted so far; rejects
+     *   mfaEnabledAt: non-null = TOTP required at login
+     *   mfaSecretEncrypted: AES-256-GCM ciphertext of the TOTP secret
+     *   mfaLastTotpStep: highest TOTP step accepted so far; rejects
      *                         replays inside the verification window
      */
     mfaEnabledAt: timestamp("mfa_enabled_at", {
@@ -172,13 +172,13 @@ export const mfaRecoveryCodes = auth.table(
  * which together detect a replay exactly one generation deep. This table
  * carries the rest of the chain, so a token captured any number of
  * rotations ago is still recognised as a replay: without it an attacker who
- * simply waits two rotations gets a generic "invalid session" — no family
+ * simply waits two rotations gets a generic "invalid session": no family
  * revocation, no audit event, and the live token still working.
  *
  * A table rather than an array column on the session row: the lineage is
  * looked up on every refresh, an array would be scanned linearly, and it
  * would grow the hot row itself (a long-lived session rotates thousands of
- * times). Rows here die with their family — the FK cascades on the session
+ * times). Rows here die with their family. The FK cascades on the session
  * delete that revocation already performs.
  */
 export const authSessionRetiredTokens = auth.table(

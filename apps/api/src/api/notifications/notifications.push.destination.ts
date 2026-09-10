@@ -100,8 +100,8 @@ const isAllowedHost = (host: string): boolean =>
 /**
  * Throws unless `endpoint` is an HTTPS URL on a known push service.
  *
- * An allowlist, not a denylist. A denylist of private ranges loses to DNS —
- * a public name that resolves to 127.0.0.1 passes every textual check — so
+ * An allowlist, not a denylist. A denylist of private ranges loses to DNS:
+ * a public name that resolves to 127.0.0.1 passes every textual check, so
  * the ranges below are a second line, not the boundary.
  */
 export const assertAllowedPushEndpoint = (endpoint: string): void => {

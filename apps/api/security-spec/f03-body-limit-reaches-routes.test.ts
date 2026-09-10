@@ -1,5 +1,5 @@
 /**
- * F03 — the configured request-body cap is ineffective.
+ * F03: the configured request-body cap is ineffective.
  *
  * `src/middleware/body-limit.ts:62` is `new Elysia().onParse(...)` with no
  * `{ as: "global" }`. Elysia defaults lifecycle hooks to `local`, which covers
@@ -14,7 +14,7 @@
  * There is no enforcement anywhere else either: `src/index.ts:64` is a bare
  * `createApp().listen(env.PORT)` with no `maxRequestBodySize`, and the
  * production Traefik labels attach only security-headers, compress and
- * ratelimit — no buffering middleware.
+ * ratelimit, no buffering middleware.
  *
  * Why the existing test does not catch it
  * ---------------------------------------
@@ -35,7 +35,7 @@ import { MAX_BODY_SIZE_BYTES } from "../src/middleware/body-limit";
 
 /*
  * A real route on the real composition. `/api/v1/auth/login` is a POST that
- * exists, is unauthenticated, and parses a JSON body — the cap must reject
+ * exists, is unauthenticated, and parses a JSON body: the cap must reject
  * the request before any of that matters.
  */
 const ROUTE = "http://localhost/api/v1/auth/login";

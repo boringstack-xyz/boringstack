@@ -1,5 +1,5 @@
 /**
- * F16 — push registration accepts arbitrary destinations.
+ * F16: push registration accepts arbitrary destinations.
  *
  * `notifications.push.schemas.ts:9` validates the destination as
  * `t.String({ minLength: 1, maxLength: 2048 })`. No URL format, no scheme
@@ -16,14 +16,14 @@
  * At the service boundary, not the TypeBox schema. Validating a destination
  * usually wants DNS resolution and an egress policy, which is asynchronous and
  * therefore cannot live in a synchronous schema. Asserting on the schema would
- * leave a correct service-level validator failing this suite — the test would
+ * leave a correct service-level validator failing this suite: the test would
  * be dictating where the check lives rather than that it exists.
  *
  * NO OUTBOUND REQUEST IS MADE. The point is that the destination is refused
  * before it is ever stored; proving it would be blocked at send time would
  * mean building the request, which is the thing that must not happen.
  *
- * Not covered here: delivery-time behaviour — DNS rebinding between
+ * Not covered here: delivery-time behaviour: DNS rebinding between
  * validation and send, and the missing request deadline. Those need tests at
  * the worker boundary.
  */

@@ -126,7 +126,7 @@ export const fetchJson = async (
   init: RequestInit
 ): Promise<unknown> => {
   /*
-   * Bounded budget — these calls sit on the OAuth callback request
+   * Bounded budget: these calls sit on the OAuth callback request
    * path; a hung IdP token endpoint must not pin the handler. Callers
    * may override via init.signal.
    */

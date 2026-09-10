@@ -20,7 +20,7 @@ import { toPublicPushSubscription } from "./notifications.push.utils";
  *
  * Upsert semantics on (user, endpoint) keep the row count bounded even
  * when a browser re-subscribes after permission flips. The hard cap of
- * `PUSH_SUBSCRIPTIONS_MAX_PER_USER` is a soft anti-abuse guard — exceeding
+ * `PUSH_SUBSCRIPTIONS_MAX_PER_USER` is a soft anti-abuse guard: exceeding
  * it returns 409 instead of silently dropping.
  */
 export class NotificationsPushService {

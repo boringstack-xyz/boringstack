@@ -19,7 +19,7 @@ export const rollupStatus = (statuses: ReadinessStatus[]): ReadinessStatus => {
 
 /**
  * Runs the supplied set of checks in parallel and rolls them up into a
- * single readiness report. Pure function — useful for unit tests with
+ * single readiness report. Pure function, useful for unit tests with
  * stubbed checks. The aggregator builds the env-dependent check list
  * and delegates here.
  */

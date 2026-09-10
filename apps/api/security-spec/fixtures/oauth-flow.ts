@@ -3,7 +3,7 @@
  *
  * Both F02 (browser binding) and F07 (MFA coverage) need to drive the real
  * callback to its conclusion and then ask whether a session was issued. That
- * requires standing in for Google's token and userinfo endpoints — otherwise
+ * requires standing in for Google's token and userinfo endpoints: otherwise
  * the tests depend on network behaviour and on an external service's error
  * mapping, neither of which is a property of this codebase.
  */

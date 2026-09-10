@@ -45,7 +45,7 @@ const RuntimeCapabilitiesSchema = t.Object({
 /*
  * `/me` is a probe endpoint: a logged-out browser hits it on every
  * initial paint to discover whether a session exists. The two states
- * are exposed as a `user`-discriminated union — anonymous responds 200
+ * are exposed as a `user`-discriminated union: anonymous responds 200
  * with `user: null` (everything else absent); authenticated responds
  * 200 with the full profile. A 401 from `/me` always means the cookie
  * was present but invalid, which the UI treats as forced-logout.

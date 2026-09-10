@@ -35,7 +35,7 @@ const buildAnthropic = (): IAIProvider | null => {
  * Selects the AI provider based on env. Mirrors the email/cache pattern:
  *
  *   AI_ENABLED=false           → NoopAIProvider
- *   AI_PROVIDER=openai         → OpenAIProvider (configurable baseURL —
+ *   AI_PROVIDER=openai         → OpenAIProvider (configurable baseURL,
  *                                works for OpenAI, OpenRouter, Ollama,
  *                                vLLM, LM Studio, Together, Groq, etc.)
  *   AI_PROVIDER=anthropic      → AnthropicProvider (native API)

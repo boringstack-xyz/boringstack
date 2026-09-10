@@ -71,7 +71,7 @@ export const completeOAuthCallback = async (
 ): Promise<{ profile: IOAuthProfile; linkUserId?: string }> => {
   /*
    * Resolve credentials BEFORE consuming state. When credentials aren't
-   * configured the provider can't possibly have issued this callback —
+   * configured the provider can't possibly have issued this callback,
    * surface 404 immediately instead of burning a state lookup against
    * Valkey (which may be unreachable in the same misconfigured deploys).
    */

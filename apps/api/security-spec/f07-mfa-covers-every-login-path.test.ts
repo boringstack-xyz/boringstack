@@ -1,5 +1,5 @@
 /**
- * F07 — MFA does not cover the OAuth login path.
+ * F07: MFA does not cover the OAuth login path.
  *
  * `mfaEnabledAt` is consulted on the password path only
  * (`auth.service.ts:258`). A repo-wide search finds it in the schema, the
@@ -22,7 +22,7 @@
  *
  * Not asserted here: that an OAuth-only user can enrol a factor at all.
  * `assertPasswordValid` (`mfa.service.ts:475-508`) fails closed for
- * password-less accounts, so today they cannot — which is what makes the F01b
+ * password-less accounts, so today they cannot, which is what makes the F01b
  * attack undefendable. But a safe fix may legitimately require a provider
  * step-up flow that does not exist yet, and any assertion written now would
  * be dictating that design. It is recorded in the README's uncovered list.
@@ -112,7 +112,7 @@ describe("F07 MFA covers every login path", () => {
     /*
      * Refusing the session is only half a fix. The challenge has to be
      * completable, or MFA-enabled users are simply locked out of OAuth
-     * sign-in — the callback is a redirect, so the challenge travels in an
+     * sign-in: the callback is a redirect, so the challenge travels in an
      * httpOnly cookie and the verify route reads it from there.
      */
     const handoff = res.headers

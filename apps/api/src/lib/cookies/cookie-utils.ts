@@ -10,7 +10,7 @@ export const REFRESH_COOKIE_NAME = "refresh_token";
  * State alone proves nothing about who is presenting it: an attacker can
  * begin a flow for their own identity and hand the unused callback URL to a
  * victim, whose browser then completes it and is logged in as the attacker
- * (RFC 9700, authorization-response CSRF). PKCE does not help — the server
+ * (RFC 9700, authorization-response CSRF). PKCE does not help: the server
  * takes the verifier from the same state the attacker supplied.
  *
  * The state itself stays in Valkey. Only a random nonce lives here, and the

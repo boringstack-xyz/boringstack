@@ -37,7 +37,7 @@ import {
 export class InvitationsService {
   /*
    * Fire-and-forget email dispatch. The acceptance flow is the email's
-   * delivery target — we never block the route on the email send. On
+   * delivery target: we never block the route on the email send. On
    * failure the invitation row is still persisted and the operator can
    * resend, so the user-facing API stays predictable.
    */

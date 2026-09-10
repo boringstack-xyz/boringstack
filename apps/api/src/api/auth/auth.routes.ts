@@ -57,7 +57,7 @@ import {
 /**
  * Hands the browser its half of the OAuth binding.
  *
- * Shared by both start routes — login and authenticated linking — because
+ * Shared by both start routes, login and authenticated linking, because
  * the callback requires the nonce unconditionally. A start route that omits
  * it produces a flow that can never complete: the state carries a hash of a
  * nonce the browser was never given.
@@ -111,7 +111,7 @@ const credentialingRoutes = new Elysia()
 
       if (result.mfaRequired) {
         /*
-         * Password ok but the user has MFA enabled — issue a short-lived
+         * Password ok but the user has MFA enabled: issue a short-lived
          * opaque challenge instead of the session cookies. The SPA
          * exchanges this for a real session via /auth/mfa/verify-login
          * (or /auth/mfa/verify-recovery). Cookies stay unset on purpose
@@ -364,7 +364,7 @@ const sessionAndOAuthRoutes = new Elysia()
        * Best-effort access-token revocation: parse the JWT cookie,
        * pull jti + exp, mark it dead in cache for its remaining life.
        * Failures (missing cookie, expired token, decode error) are
-       * swallowed — the cookies are still removed below, so the user
+       * swallowed: the cookies are still removed below, so the user
        * is logged out as far as the browser is concerned.
        */
       const authValue = auth?.value;
@@ -410,7 +410,7 @@ const sessionAndOAuthRoutes = new Elysia()
        * known-logged-out state instead of a 401 so the UI's initial
        * boot doesn't paint the browser console (and our telemetry)
        * with errors. A refresh cookie that IS present but doesn't
-       * verify still surfaces as 401 below — that's a real failure
+       * verify still surfaces as 401 below: that's a real failure
        * and the client should react to it.
        */
       if (typeof refreshValue !== "string" || refreshValue === "") {

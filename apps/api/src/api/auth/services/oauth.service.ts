@@ -101,7 +101,7 @@ export class OAuthAuthService {
 
       /*
        * Refuse to issue a session for a user the provider didn't
-       * verify — without this guard, an attacker who controls an
+       * verify: without this guard, an attacker who controls an
        * unverified-email account at an OAuth provider could grab a
        * BoringStack session for the same address. Keep the user row
        * and the link (so the next verified callback completes the
@@ -213,7 +213,7 @@ export class OAuthAuthService {
      * chosen, so it may well have been set by someone else: register with a
      * stranger's address, wait for them to sign in with Google, and the
      * account they just verified opens to your password. An empty hash is
-     * how `login` represents "no password credential" — the real owner can
+     * how `login` represents "no password credential": the real owner can
      * set one through password reset, which does prove inbox control.
      */
     await tx

@@ -67,7 +67,7 @@ export const toBool = (raw: string | undefined, name?: string): boolean => {
  * For booleans whose schema default is `true`. Calling `toBool` alone
  * silently flips an unset variable to `false`, drifting from the
  * documented schema. This helper threads the schema default through so
- * the resolved value matches what `schema.ts` declares — keeping the
+ * the resolved value matches what `schema.ts` declares, keeping the
  * env file, the schema, and validate.ts in lockstep.
  */
 export const toBoolWithDefault = (
@@ -283,7 +283,7 @@ const readBilling = (source: EnvSource) => ({
 const readBackground = (source: EnvSource) => ({
   /*
    * Schema defaults for QUEUES_ENABLED, CACHE_ENABLED, and
-   * NOTIFICATIONS_SSE_ENABLED are all `true` — see schema.ts. Calling
+   * NOTIFICATIONS_SSE_ENABLED are all `true`. See schema.ts. Calling
    * `toBool` alone would collapse an unset variable to `false`, silently
    * weakening JWT revocation (cache-backed) and SSE delivery for any
    * deploy that didn't explicitly set them. `toBoolWithDefault` keeps
@@ -406,7 +406,7 @@ const checkOrigins = (env: Env): string[] => {
 
   /*
    * Empty ALLOWED_ORIGINS is valid in production: it signals a same-origin
-   * deployment (BoringStack's default — Traefik path-routes /api/* on the
+   * deployment (BoringStack's default, Traefik path-routes /api/* on the
    * same host that serves the SPA). The CORS middleware is then not mounted.
    * If it IS set, every entry must be HTTPS and not a wildcard.
    */
@@ -435,7 +435,7 @@ const checkOrigins = (env: Env): string[] => {
  * Catches the most common deploy-day footgun: shipping the template's
  * placeholder sender domain to a real email provider. Every provider
  * rejects sends from unverified domains, but the rejection surfaces
- * deep in a queue worker — the validator stops the process before
+ * deep in a queue worker: the validator stops the process before
  * the first send instead.
  */
 const PLACEHOLDER_FROM_DOMAINS = [
@@ -721,7 +721,7 @@ const checkQueuesEnabledInProd = (env: Env): string[] => {
  * Production must back the cache with Valkey when caching is enabled.
  * JWT revocation (logout, password-reset session kill, per-jti blocklist)
  * keeps its state in cacheService; the in-memory provider is per-process,
- * so revocations vanish on restart and never propagate across replicas —
+ * so revocations vanish on restart and never propagate across replicas,
  * a logout on one instance would leave the token valid on every other.
  */
 const checkCacheProviderInProd = (env: Env): string[] => {
@@ -740,7 +740,7 @@ const checkCacheProviderInProd = (env: Env): string[] => {
  * Fail-closed revocation needs a store that can actually be consulted.
  *
  * `checkCacheProviderInProd` above returns early when `CACHE_ENABLED=false`,
- * so it cannot catch this pairing — disabling the cache skips the only
+ * so it cannot catch this pairing: disabling the cache skips the only
  * other rule that inspects it. And the pairing is worse than a plain
  * misconfiguration: the no-op provider answers every lookup with a miss and
  * never throws, while the fail-closed branches in

@@ -34,8 +34,8 @@ export const selectEffectiveFeatures = (
     /*
      * Delinquency ends entitlement immediately, per the security-review
      * decision. There is no grace period at a higher layer, and nothing
-     * sweeps these statuses — `account-maintenance` revokes `canceled`
-     * only — so treating them as paid grants a failed card indefinite
+     * sweeps these statuses: `account-maintenance` revokes `canceled`
+     * only, so treating them as paid grants a failed card indefinite
      * access. A grace period, if wanted, belongs in an explicit expiry the
      * resolver can read, not in an unenforced assumption.
      */
@@ -59,7 +59,7 @@ const KNOWN_STATUSES: readonly string[] = [
 
 /*
  * `account_plans.status` is a varchar, so the database can hold a value this
- * union does not know — a Stripe status newer than this code, or a
+ * union does not know: a Stripe status newer than this code, or a
  * hand-edited row. An unrecognised status must not entitle: failing open
  * there hands out paid features through the one path nobody considered.
  */
@@ -70,8 +70,8 @@ export const isKnownPlanStatus = (
 /**
  * Whether a plan row entitles its account right now.
  *
- * `expiresAt` is the administrative-grant deadline — the entire point of a
- * time-boxed grant, and a lapsed one must stop paying out.
+ * `expiresAt` is the administrative-grant deadline. A grant is time-boxed
+ * so that it stops paying out once it lapses.
  */
 export const isPlanEntitling = (
   status: string,
@@ -100,7 +100,7 @@ export const isPlanEntitling = (
 
 /*
  * Distinct empty arrays used purely as identity markers, so the predicate
- * above reuses the switch rather than restating it — two copies of a
+ * above reuses the switch rather than restating it: two copies of a
  * status-to-entitlement mapping is exactly how they drift apart.
  */
 const PAID_SENTINEL: readonly IPlanFeatureRow[] = [];

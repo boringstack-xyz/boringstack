@@ -1,5 +1,5 @@
 /**
- * Boot-time invariants — assertions that must hold by the time the
+ * Boot-time invariants: assertions that must hold by the time the
  * HTTP server starts listening.
  *
  * The env validator (src/config/env/validate.ts) enforces presence and
@@ -61,7 +61,7 @@ function checkMfaKeyDecodable(env: Env): string[] {
  * dangerous when paired with `NODE_ENV=production`. Today: the e2e
  * test-only auth helpers (force-verify a user, mint a raw reset token
  * bypassing email) must never be reachable in prod. The env schema
- * accepts the boolean on its own — without this gate, an operator who
+ * accepts the boolean on its own. Without this gate, an operator who
  * copy-pasted from a dev `.env` ships a prod with /__test endpoints
  * live. The list grows as new test/debug flags appear (any env var
  * named `*_TEST_*` or `*_DEBUG_*` should land here too).

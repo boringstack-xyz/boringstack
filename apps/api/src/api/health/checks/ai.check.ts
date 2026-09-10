@@ -3,7 +3,7 @@ import type { IReadinessCheck, IReadinessResult } from "../health.types";
 import { nowMs } from "../../../lib/time/now";
 
 /**
- * AI check is *configuration-only* — like the email check, we don't probe
+ * AI check is *configuration-only*: like the email check, we don't probe
  * the provider over the network. Live probes burn credits, can incur cost,
  * and a flaky 3rd party should not flip readiness when the API itself is
  * healthy.

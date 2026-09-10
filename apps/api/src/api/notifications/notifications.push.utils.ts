@@ -20,7 +20,7 @@ export const expirationToIso = (
 
 /**
  * Strip the cryptographic secret fields before sending a subscription back
- * to the UI. `p256dhKey` + `authKey` are write-only — the browser already
+ * to the UI. `p256dhKey` + `authKey` are write-only: the browser already
  * has them, the UI doesn't need to see them again.
  */
 export const toPublicPushSubscription = (

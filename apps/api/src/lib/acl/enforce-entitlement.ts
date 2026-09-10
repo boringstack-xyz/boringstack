@@ -13,8 +13,8 @@ import type { FeatureKey } from "./acl.types";
  * Server-side entitlement checks.
  *
  * This is where plan features stop being display hints and start being
- * gates. A `can_invite_team` check in the SPA is not one — a `POST` to the
- * route walks straight past it — and a `max_seats` number nothing consults
+ * gates. A `can_invite_team` check in the SPA is not one: a `POST` to the
+ * route walks straight past it, and a `max_seats` number nothing consults
  * is not a cap. Anything that reads like an entitlement has to be enforced
  * here, on the server, or it enforces nothing.
  */
@@ -39,7 +39,7 @@ export const requireFeature = async (
  * Refuses to add a member when the account is at its seat cap.
  *
  * Must run inside the same transaction as the membership insert, and takes
- * `pg_advisory_xact_lock` on the account first — the pattern
+ * `pg_advisory_xact_lock` on the account first: the pattern
  * `enforce-limit.ts` documents and that no caller implemented. Counting
  * without the lock is a check-then-act: concurrent acceptances each read a
  * count below the cap and each commit, so the cap is exceeded by however

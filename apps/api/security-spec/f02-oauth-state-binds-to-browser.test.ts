@@ -1,5 +1,5 @@
 /**
- * F02 — OAuth state is not bound to the initiating browser.
+ * F02: OAuth state is not bound to the initiating browser.
  *
  * `IStoredState` (oauth.types.ts:53-58) holds exactly two optional fields,
  * `codeVerifier` and `linkUserId`. `createAuthorizationURL`
@@ -17,7 +17,7 @@
  *
  * What these tests assert
  * -----------------------
- * The security outcome — whether a session is issued — rather than a status
+ * The security outcome, whether a session is issued, rather than a status
  * code. A status assertion can be satisfied by unrelated changes, such as
  * mapping a provider failure to 400, and would not mean the browser binding
  * exists. Issuing no `auth_token` to a browser that did not start the flow is
@@ -124,7 +124,7 @@ describe("F02 OAuth state binds to the initiating browser", () => {
      * Linking is a second start route onto the same callback, so it owes
      * the browser the same binding nonce. Without it the callback rejects
      * a flow the user started correctly and provider linking is simply
-     * broken — a binding that refuses the legitimate path is not a
+     * broken: a binding that refuses the legitimate path is not a
      * binding, it is an outage.
      */
     const { state, cookies } = await startFlow(app, {

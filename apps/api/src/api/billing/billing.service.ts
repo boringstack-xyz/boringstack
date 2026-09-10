@@ -78,7 +78,7 @@ export class BillingService {
     }
 
     /*
-     * Explicit budget — the SDK's implicit 80s default would hold
+     * Explicit budget: the SDK's implicit 80s default would hold
      * checkout/portal request handlers hostage to a slow Stripe API.
      * The SDK retries idempotent calls internally, so each attempt
      * gets this budget.
@@ -183,7 +183,7 @@ export class BillingService {
        * double-click into a single customer record. Without it, two
        * parallel checkout requests each see `stripeCustomerId === null`,
        * each `customers.create()` returns a *different* id, and the
-       * second DB write wins — the orphaned customer's future webhook
+       * second DB write wins: the orphaned customer's future webhook
        * deliveries don't resolve the account and the subscription
        * silently lands on the wrong tenant. Stripe holds the key for
        * 24h, which covers any plausible double-submit window.
@@ -199,7 +199,7 @@ export class BillingService {
       stripeCustomerId = customer.id;
 
       /*
-       * Conditional update — only write the customer id when the column
+       * Conditional update: only write the customer id when the column
        * is still empty. A concurrent request that beat us to the Stripe
        * API may have already filled it with the same value (idempotency
        * key collapse) or, in theory, raced past our row in a different
@@ -379,7 +379,7 @@ export class BillingService {
 
     /*
      * Re-derive the account from the verified Stripe customer rather than
-     * trusting session.metadata.accountId alone — the same cross-check
+     * trusting session.metadata.accountId alone: the same cross-check
      * handleSubscriptionUpsert already performs. The metadata rides inside
      * a signature-verified event, so this is defense-in-depth: it catches a
      * mis-set/reassigned customer→account mapping before we mutate plans.
@@ -422,7 +422,7 @@ export class BillingService {
      *
      * Status and plan are deliberately NOT written here. Checkout
      * completion means "the customer finished the hosted flow", which is
-     * not the same claim as "the subscription is active" — Stripe emits
+     * not the same claim as "the subscription is active": Stripe emits
      * both events with the same `created` second, so neither is skipped by
      * the ordering guard and whichever lands last wins. Writing `active`
      * from this side lets a checkout arriving after an `unpaid`,

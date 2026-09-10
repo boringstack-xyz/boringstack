@@ -17,7 +17,7 @@ import { runNotificationDispatch } from "./dispatch-job";
  *     payload: { ... },  // typed by `commentRepliedEvent.schema`
  *   });
  *
- * Fire-and-forget — mirrors the audit-log ergonomics already established in
+ * Fire-and-forget, mirrors the audit-log ergonomics already established in
  * this codebase. The dispatcher validates the payload synchronously so
  * malformed call sites fail fast, then either enqueues a BullMQ job
  * (`QUEUES_ENABLED=true`) or runs the dispatch inline. Both paths share the
@@ -31,7 +31,7 @@ export class NotificationDispatcher {
    * `send` rejects on schema validation and on inline dispatch failure, and
    * a bare `void send(...)` attaches no handler. The production
    * `unhandledRejection` handler calls `process.exit(1)`, so a Valkey blip
-   * behind an already-committed mutation would take the process down — the
+   * behind an already-committed mutation would take the process down: the
    * user's write has succeeded and the notification is the only thing that
    * failed.
    *

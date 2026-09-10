@@ -119,9 +119,8 @@ export const hardDeleteSoftDeletedAccountsJob = async (): Promise<{
  * configured grace window. FK cascades drop `auth.user_auth_providers`
  * and `auth.email_verification_tokens` rows; the `audit.audit_log`
  * trail is intentionally preserved (no FK cascade) so the registration
- * attempt remains traceable. No personal account exists to clean up —
- * the whole point of verify-before-account is that pending users never
- * had one.
+ * attempt remains traceable. No personal account exists to clean up:
+ * verify-before-account means a pending user never had one.
  */
 export const cleanStalePendingUsersJob = async (): Promise<{
   swept: number;

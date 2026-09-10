@@ -1,5 +1,5 @@
 /**
- * F11 — domain-claim onboarding rolls back its own join request.
+ * F11: domain-claim onboarding rolls back its own join request.
  *
  * `accounts.service.ts:377-389` files a pending join request and then throws:
  *
@@ -8,7 +8,7 @@
  *   throw ApiErrors.domainClaimed(claimed.name, { accountId: claimed.id, domain });
  *
  * `tx` is the enclosing transaction opened at `:44`, there is no savepoint,
- * and no caller catches `domainClaimed` — the callers are `oauth.service.ts:128`
+ * and no caller catches `domainClaimed`: the callers are `oauth.service.ts:128`
  * and `email-verification.service.ts:95,181`. The throw aborts the transaction
  * and discards the insert.
  *
@@ -27,7 +27,7 @@
  * Fixture note. The joining user is seeded UNPROVISIONED, so provisioning
  * is invoked exactly once, by the test. `seedVerifiedUser` calls
  * `provisionAfterVerification` itself, and with domain claiming enabled
- * that fails during setup — leaving the test red without ever reaching its
+ * that fails during setup, leaving the test red without ever reaching its
  * assertion, which is a fixture failure dressed as a proven finding.
  *
  * Requires ACCOUNT_DOMAIN_CLAIMING=true; `resolveDomainClaim` returns null

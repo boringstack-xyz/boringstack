@@ -5,7 +5,7 @@ import type { IQueueStats } from "../../queues";
 export class AdminService {
   /**
    * Snapshot of every BullMQ queue's job counts. Returns an empty array
-   * when queues are disabled — admins still get a 200 with `queues: []`
+   * when queues are disabled: admins still get a 200 with `queues: []`
    * rather than a confusing 503, so dashboards don't have to special-case
    * the off state.
    */

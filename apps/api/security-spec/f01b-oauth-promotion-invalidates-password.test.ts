@@ -1,16 +1,16 @@
 /**
- * F01b — a pre-registered password survives OAuth promotion.
+ * F01b: a pre-registered password survives OAuth promotion.
  *
  * Registration writes a password row for an unverified user
  * (`auth.service.ts:113-118`). When a verified OAuth login later matches that
  * email, the promotion path touches only `users.emailVerifiedAt`
  * (`oauth.service.ts:78-82`) and never the password row. The only writes to
  * `passwordHash` anywhere are register, rehash, change, reset and explicit
- * disconnect — none of them fire here.
+ * disconnect. None of them fire here.
  *
  * The attack: register with someone else's address and a password of your
  * choosing, and wait. When the real owner signs up through Google, their
- * email is marked verified — and the attacker's password now unlocks the
+ * email is marked verified, and the attacker's password now unlocks the
  * verified account, because the only remaining gate in `login` is
  * `emailVerifiedAt === null` (`auth.service.ts:244`), which the promotion
  * just cleared.

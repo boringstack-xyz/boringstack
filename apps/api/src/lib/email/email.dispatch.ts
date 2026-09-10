@@ -57,7 +57,7 @@ export const sendTemplateNow = async (
  *   - QUEUES_ENABLED=true  → enqueue a BullMQ job (returns `{ status: "queued" }`)
  *   - QUEUES_ENABLED=false → send inline via `sendTemplateNow`
  *
- * Request handlers should always use this — switching deployment topology
+ * Request handlers should always use this: switching deployment topology
  * never requires changing call sites.
  */
 export const sendTemplate = async (

@@ -1,5 +1,5 @@
 /**
- * F01c — GitHub email verification is inconsistent.
+ * F01c: GitHub email verification is inconsistent.
  *
  * The security review identified this inconsistency directly: "Fetching
  * `/user/emails` only when the public email is absent produces inconsistent
@@ -15,13 +15,13 @@
  *       : await this.fetchPrimaryEmail(accessToken);
  *
  * GitHub's `/user` response has no `email_verified` field, and `readBoolean`
- * (src/lib/oauth/oauth.utils.ts:88) is strict — `return obj[key] === true`, so
+ * (src/lib/oauth/oauth.utils.ts:88) is strict: `return obj[key] === true`, so
  * a missing key yields `false`. Every GitHub user with a public profile email
  * therefore arrives as unverified, trips the guard in
  * `oauth.service.ts:124`, and has their signup transaction rolled back.
  *
- * It fails CLOSED, not open. That makes it an availability bug — GitHub
- * signup is broken for public-email users — and it incidentally shuts the
+ * It fails CLOSED, not open. That makes it an availability bug: GitHub
+ * signup is broken for public-email users, and it incidentally shuts the
  * F01a takeover for GitHub specifically. Google and LinkedIn read genuine OIDC `email_verified`
  * and are where F01a is live.
  *

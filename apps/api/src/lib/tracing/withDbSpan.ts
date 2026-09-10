@@ -6,7 +6,7 @@ const tracer = trace.getTracer("boringstack-api/db");
 
 /*
  * Wrap a Drizzle query (or any async DB call) in an OpenTelemetry span
- * so the duration becomes a child of the current request span — visible
+ * so the duration becomes a child of the current request span: visible
  * as a row in the Tempo trace waterfall under the parent HTTP span.
  *
  * postgres-js has no upstream OTel auto-instrumentation, so DB query
@@ -24,7 +24,7 @@ const tracer = trace.getTracer("boringstack-api/db");
  *   );
  *
  * The `attributes` arg follows OTel's db.* semantic conventions
- * (https://opentelemetry.io/docs/specs/semconv/database/) — keep
+ * (https://opentelemetry.io/docs/specs/semconv/database/), keep
  * statements parameterised; never put PII or unbounded values in span
  * attributes.
  */

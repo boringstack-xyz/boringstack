@@ -135,7 +135,7 @@ export class JoinRequestsService {
 
       /*
        * Approval is a second write path into `account_memberships`, so it
-       * needs the same cap check as invitation acceptance — gating only the
+       * needs the same cap check as invitation acceptance: gating only the
        * invitation flow would leave a whole route through which an account
        * grows past its plan.
        */
@@ -222,7 +222,7 @@ export class JoinRequestsService {
    *
    * Kept off `createPending` on purpose. That runs inside the caller's
    * transaction, while `fireOwnerNotification` reads through `db` rather
-   * than `tx` — firing it there reads outside the transaction and can email
+   * than `tx`: firing it there reads outside the transaction and can email
    * a review link for a request id that is not committed yet, or that is
    * about to be rolled back.
    */

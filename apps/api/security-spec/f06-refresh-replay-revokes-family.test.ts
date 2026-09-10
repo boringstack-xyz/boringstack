@@ -1,5 +1,5 @@
 /**
- * F06 — refresh-token replay detection remembers only one predecessor.
+ * F06: refresh-token replay detection remembers only one predecessor.
  *
  * `auth_sessions` carries exactly two slots, `tokenHash` and
  * `previousTokenHash` (schema/auth.schema.ts:179, :186), and
@@ -15,7 +15,7 @@
  * `familyId` exists on the row and is only ever used as the deletion key, so
  * the lineage needed to detect this is not retained anywhere.
  *
- * The old token being refused is not the point — the point is that a proven
+ * The old token being refused is not the point: the point is that a proven
  * compromise of the family goes unnoticed and the live token survives.
  */
 import { beforeEach, describe, expect, test } from "bun:test";
@@ -39,7 +39,7 @@ const MIGRATION = join(
 /**
  * The backfill statement as the migration actually carries it, so removing
  * it from the migration fails this suite rather than a copy kept in step by
- * hand. Empty when the migration carries none — an assertion, not a
+ * hand. Empty when the migration carries none, an assertion, not a
  * precondition: a migration that leaves existing sessions behind is the
  * defect this case exists for.
  */

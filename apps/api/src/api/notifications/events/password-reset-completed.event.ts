@@ -4,7 +4,7 @@ import { defineNotificationEvent } from "../../../lib/notifications";
 
 /**
  * Notification event: the user's password was just reset via the
- * reset-token flow. Recipient is the user themselves — gives them an
+ * reset-token flow. Recipient is the user themselves: gives them an
  * in-app trail that matches the confirmation email already sent.
  *
  * If the user didn't initiate the reset, this is the alert that

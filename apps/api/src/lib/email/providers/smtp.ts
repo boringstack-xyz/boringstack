@@ -22,7 +22,7 @@ import {
  * at http://localhost:8025 without sending real emails.
  *
  * Also works as a production fallback for any RFC-5321 server (Postfix,
- * Postmark, SES via SMTP, etc.). Auth is optional — Mailpit accepts any.
+ * Postmark, SES via SMTP, etc.). Auth is optional: Mailpit accepts any.
  */
 export class SmtpEmailService implements IEmailService {
   public readonly providerName = "smtp" as const;

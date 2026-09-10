@@ -1,6 +1,6 @@
 /**
  * CORS policy values. Security headers (CSP, HSTS, X-Frame-Options, etc.) are
- * NOT set here — they come from Traefik in the production stack. See
+ * NOT set here: they come from Traefik in the production stack. See
  * `infra/compose/compose/docker-compose.production-labels.yml`
  * for the single source of truth.
  *
@@ -37,7 +37,7 @@ export const CORS_ALLOWED_HEADERS = [
  * Response headers the browser is allowed to expose to JS via
  * `response.headers.get(...)`. Same-origin reads them unconditionally;
  * cross-origin needs an explicit allowlist. `x-request-id` is the
- * forensic id our error toasts surface — without it, "ask support for
+ * forensic id our error toasts surface. Without it, "ask support for
  * request id X" breaks the moment the API runs on a different host.
  */
 export const CORS_EXPOSED_HEADERS = ["x-request-id"];

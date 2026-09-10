@@ -27,8 +27,8 @@ const toDate = (value: string | null): Date | null =>
  * "Current" means unrevoked AND entitling. Selecting on `revokedAt IS NULL`
  * alone is not enough: an unpaid subscription, a lapsed administrative
  * grant and a canceled plan past its paid period would all resolve to paid
- * features. Nothing downstream covers that — `account-maintenance` sweeps
- * `canceled` only — so `status`, `currentPeriodEnd` and `expiresAt` are
+ * features. Nothing downstream covers that: `account-maintenance` sweeps
+ * `canceled` only, so `status`, `currentPeriodEnd` and `expiresAt` are
  * consulted here, through the same `selectEffectiveFeatures` the billing
  * layer uses.
  */

@@ -12,7 +12,7 @@ import type {
 } from "./audit-log.types";
 
 /**
- * Append-only audit log writes. Fire-and-forget by design — a failed
+ * Append-only audit log writes. Fire-and-forget by design: a failed
  * insert is logged but never propagated to the caller, because losing an
  * audit row is strictly less bad than failing a real request because of
  * a flaky audit table. Callers should treat `record(...)` as best-effort

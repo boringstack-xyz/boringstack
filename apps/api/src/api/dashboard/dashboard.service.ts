@@ -9,7 +9,7 @@ import { formatActivityTitle } from "./dashboard.utils";
 export class DashboardService {
   /*
    * Tenant scope for the feed: the user's own events in the current
-   * account, plus their user-level events (null targetAccountId — logins,
+   * account, plus their user-level events (null targetAccountId, logins,
    * profile changes). Events targeting OTHER accounts the user belongs to
    * must never leak into this account's dashboard.
    */

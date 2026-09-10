@@ -11,7 +11,7 @@ class MembershipMemoStore {
    * keys never touched again would accumulate for the process lifetime
    * (one per (user, account) pair ever seen). The periodic sweep on
    * write bounds that: every N writes, expired entries are dropped in
-   * one O(size) pass — amortised O(1) per write.
+   * one O(size) pass, amortised O(1) per write.
    */
   private static readonly sweepEveryWrites = 1024;
 

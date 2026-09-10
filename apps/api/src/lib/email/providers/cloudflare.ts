@@ -22,7 +22,7 @@ import {
  * Requires a Workers Paid plan, a Cloudflare-managed sending domain, and an
  * API token with the "Email Sending: Edit" permission. Endpoint is scoped to
  * the account ID, so both CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_EMAIL_API_TOKEN
- * must be set in production — the env validator enforces this.
+ * must be set in production: the env validator enforces this.
  */
 
 const CLOUDFLARE_REQUEST_TIMEOUT_MS = 10_000;
@@ -111,7 +111,7 @@ export class CloudflareEmailService implements IEmailService {
            * referenced in apps/api/src/lib/email/CLAUDE.md). We
            * fingerprint by message string. A hit mirrors the verdict
            * into the local blocklist so the next caller skips the
-           * round-trip — the send still fails for this attempt.
+           * round-trip: the send still fails for this attempt.
            */
           if (isProviderSuppressionError(errBody)) {
             await mirrorProviderSuppression(

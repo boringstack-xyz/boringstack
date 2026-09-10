@@ -7,7 +7,7 @@ import {
  * Human-readable label per audit action. The dashboard feed renders
  * `${label} — ${resource}` so end users see "Signed in" instead of
  * "auth.login_success". New actions added to `AUDIT_ACTIONS` should
- * land in this map — the fallback derives a label from the action
+ * land in this map: the fallback derives a label from the action
  * key, which is readable for new events but never as polished.
  */
 const ACTIVITY_LABELS: Record<string, string> = {

@@ -1,5 +1,5 @@
 /**
- * F18 — dependency exceptions never expire.
+ * F18: dependency exceptions never expire.
  *
  * `osv-scanner.toml` carries `ignoreUntil = "2026-11-18T00:00:00Z"` on both
  * accepted-risk entries, and the file header instructs that each entry

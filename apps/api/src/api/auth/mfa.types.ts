@@ -52,7 +52,7 @@ export interface IMfaRecoveryRegenerationResult {
 /**
  * Shape of the value persisted in Valkey under
  * `MFA_CACHE_KEYS.setup(userId)`. The secret is already encrypted at
- * this point — Valkey never sees the plaintext TOTP secret.
+ * this point: Valkey never sees the plaintext TOTP secret.
  */
 export interface IMfaSetupCachePayload {
   secretEncrypted: string;

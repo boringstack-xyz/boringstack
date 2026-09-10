@@ -21,7 +21,7 @@ const buildHistory = (options: IAIChatOptions): IChatMessage[] => {
 };
 
 /**
- * Anthropic's Messages API rejects `system` inside the messages array —
+ * Anthropic's Messages API rejects `system` inside the messages array,
  * the system prompt is a top-level field. Drop any non-user/-assistant
  * roles here; the caller passes the system prompt separately.
  */

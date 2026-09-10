@@ -8,7 +8,7 @@ const METRICS_PATH = "/metrics";
  * Per-request Prometheus observer. Starts a timer in `onRequest` and
  * records the labelled outcome in `onAfterResponse`. Path is folded
  * to the matched route (`/api/v1/users/:id` instead of
- * `/api/v1/users/abc-123`) so the cardinality stays bounded — raw
+ * `/api/v1/users/abc-123`) so the cardinality stays bounded: raw
  * URIs would explode the metric series within minutes of real
  * traffic.
  *
@@ -24,7 +24,7 @@ export const metricsObserver = new Elysia({ name: "metrics-observer" })
     { as: "global" },
     ({ request, route, set, metricsStart }) => {
       /*
-       * Every guard returns silently — `onAfterResponse` runs on the
+       * Every guard returns silently: `onAfterResponse` runs on the
        * tail of the response and any throw here bubbles up as an
        * unhandled rejection that the bun test runner treats as a
        * "between tests" abort, killing the entire suite. The metrics

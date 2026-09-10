@@ -11,7 +11,7 @@ import { nowMs } from "../time/now";
 
 /**
  * Valkey-backed `Context` for elysia-rate-limit. Replace the default
- * in-memory context with this when running more than one replica —
+ * in-memory context with this when running more than one replica:
  * otherwise each replica enforces its own quota and a brute-force
  * attacker just rotates which instance they hit.
  *
@@ -24,8 +24,8 @@ import { nowMs } from "../time/now";
  *   - `reset(key?)`: drops one or all keys (only used by tests).
  *   - `kill()`: closes the ioredis client during graceful shutdown.
  *
- * The implementation deliberately keeps the network round-trip small —
- * one `MULTI` + `INCR` + `PEXPIRE` + `PTTL` per request — so a hot path
+ * The implementation deliberately keeps the network round-trip small:
+ * one `MULTI` + `INCR` + `PEXPIRE` + `PTTL` per request, so a hot path
  * costs a single pipelined call. We tolerate a Valkey blip by treating
  * the failure as "request allowed" instead of "request blocked": the
  * default is "more permissive on infra failure, not less" so a flaky
@@ -117,7 +117,7 @@ export class ValkeyRateLimitContext implements RateLimitContext {
 
     /*
      * A non-positive/missing duration makes every request take the
-     * permissive fallback path below — i.e. rate limiting is silently off.
+     * permissive fallback path below, i.e. rate limiting is silently off.
      * That is a misconfiguration, not an infra blip, so surface it loudly
      * instead of failing open without a trace.
      */

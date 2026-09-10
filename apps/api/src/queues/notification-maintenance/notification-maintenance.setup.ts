@@ -10,7 +10,7 @@ import { createNotificationMaintenanceWorker } from "./notification-maintenance.
 
 /**
  * Boots the maintenance queue + worker and registers the recurring dedup
- * cleanup as a BullMQ job scheduler. Scheduler IDs are idempotent — calling
+ * cleanup as a BullMQ job scheduler. Scheduler IDs are idempotent: calling
  * `upsertJobScheduler` on boot is safe even if a previous process left the
  * scheduler installed.
  */

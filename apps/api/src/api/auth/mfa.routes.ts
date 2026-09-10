@@ -33,7 +33,7 @@ import { mfaService, sessionService } from "./services";
 
 /**
  * Unauthenticated MFA endpoints. The opaque challenge token in the body
- * authenticates the request — the session cookie is not yet issued at
+ * authenticates the request: the session cookie is not yet issued at
  * this point in the flow.
  */
 const mfaUnauthenticatedRoutes = new Elysia()
@@ -243,7 +243,7 @@ const mfaAuthenticatedRoutes = requireAuth()
  * Two flows arrive here. Password login receives the challenge in a JSON
  * response and sends it back in the body. OAuth login ends in a browser
  * redirect with nowhere to put a body, so its challenge is handed over in
- * an httpOnly cookie — which also keeps it out of the URL, out of history
+ * an httpOnly cookie, which also keeps it out of the URL, out of history
  * and out of reach of script.
  */
 const resolveChallengeToken = (

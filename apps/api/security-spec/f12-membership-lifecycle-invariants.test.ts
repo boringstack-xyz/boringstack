@@ -1,5 +1,5 @@
 /**
- * F12 — an account can be left with no active owner.
+ * F12: an account can be left with no active owner.
  *
  * The partial unique index enforces at most one owner, never at least one:
  *
@@ -26,14 +26,14 @@
  * Reproducing it deterministically
  * ---------------------------------
  * The SELECT at `:185` does filter `isNull(revokedAt)`, so a revocation that
- * commits BEFORE accept begins is handled correctly — accept simply finds no
+ * commits BEFORE accept begins is handled correctly: accept simply finds no
  * target. The defect needs the revocation to land between accept's read and
  * its write, which scheduling alone does not arrange reliably.
  *
  * So the schedule is imposed with a row lock on a second connection:
  *
  *   1. hold `SELECT ... FOR UPDATE` on the successor's membership row
- *   2. call accept — its plain SELECT still sees an ACTIVE membership, then
+ *   2. call accept: its plain SELECT still sees an ACTIVE membership, then
  *      its promote UPDATE blocks on the lock
  *   3. revoke the membership from the lock holder and COMMIT
  *   4. accept's UPDATE unblocks, re-reads the row under READ COMMITTED, and

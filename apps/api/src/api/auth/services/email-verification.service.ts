@@ -78,7 +78,7 @@ export class EmailVerificationService {
       /*
        * Resend can leave a fresh token on a user that's already been
        * verified through a different link. Reject explicitly instead of
-       * silently re-running the provisioning path — the user-facing
+       * silently re-running the provisioning path: the user-facing
        * message ("Email already verified") is more informative than
        * "Invalid or expired" for the legitimate "I clicked the older
        * email" case.
@@ -154,7 +154,7 @@ export class EmailVerificationService {
   /**
    * Test-only seam used by the Playwright fixture to skip the email
    * round-trip when seeding accounts. Marks the user verified and
-   * provisions the personal account in one transaction — same effect
+   * provisions the personal account in one transaction: same effect
    * as a real `verify(token)` call, but keyed by email so the fixture
    * doesn't need to read the (hashed) token out of the DB.
    *

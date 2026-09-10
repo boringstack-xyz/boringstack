@@ -60,7 +60,7 @@ export class SessionService {
 
         /*
          * Not the live token. Before calling it unknown, check whether this
-         * family has already retired it — at ANY depth.
+         * family has already retired it, at ANY depth.
          *
          * The `previousTokenHash` slot remembers one generation only, so
          * without this lookup a token captured two rotations ago matches
@@ -77,7 +77,7 @@ export class SessionService {
            * The `previousTokenHash` slot is still consulted as a fallback.
            * The migration backfills it into the lineage table, but during a
            * rolling deploy an instance running the previous build rotates a
-           * token and writes only the slot — a replay of that token between
+           * token and writes only the slot: a replay of that token between
            * the two writes would otherwise read as unknown and leave the
            * family alive.
            */
@@ -235,7 +235,7 @@ export class SessionService {
      * Refresh sessions and access JWTs are coupled: a refresh session
      * lasts 30 days, an access JWT 15 min. Without this second call,
      * "revoke all sessions" would leave up to 15 min of pre-revocation
-     * access tokens alive — defeating the point. Bumping the per-user
+     * access tokens alive, defeating the point. Bumping the per-user
      * revoke-before-iat cutoff kills every previously issued access
      * token without enumerating their JTIs.
      */

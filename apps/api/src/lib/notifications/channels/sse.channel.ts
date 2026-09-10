@@ -28,7 +28,7 @@ import { userNotificationChannel } from "../pubsub/user-notification-channel";
  * pub/sub clients have to be dedicated subscribers (`subscribeToChannel`
  * opens a fresh ioredis client per SSE connection).
  *
- * The channel transitions its delivery row to `sent` after publish — there
+ * The channel transitions its delivery row to `sent` after publish: there
  * is no acknowledgement from the SSE subscriber, so "sent" here means
  * "broadcast to whoever was listening at this moment." It's lossy by
  * design; the in-app channel + persisted `notification` row are the

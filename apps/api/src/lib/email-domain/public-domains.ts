@@ -1,14 +1,14 @@
 /**
  * Hand-curated allowlist of public / consumer email domains. When
  * `ACCOUNT_DOMAIN_CLAIMING=true`, signups from these domains never
- * claim or join an existing claimed account — they always get a fresh
+ * claim or join an existing claimed account: they always get a fresh
  * personal account, because no one company owns `gmail.com`.
  *
  * Keep the list short. The cost of a false negative (corporate domain
  * miscategorized as public) is "the company gets multiple parallel
- * accounts" — recoverable. The cost of a false positive (consumer
+ * accounts", recoverable. The cost of a false positive (consumer
  * domain miscategorized as corporate) is "Gmail users all funnel into
- * one giant claimed account" — much worse.
+ * one giant claimed account", much worse.
  *
  * Operators forking the template can extend this list, but the
  * standard set covers ~98% of real-world consumer signups.

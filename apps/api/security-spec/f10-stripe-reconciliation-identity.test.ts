@@ -1,5 +1,5 @@
 /**
- * F10 — Stripe reconciliation ignores subscription identity.
+ * F10: Stripe reconciliation ignores subscription identity.
  *
  * F10a: `handleSubscriptionDeleted` (billing.service.ts:519-553) resolves the
  * account by CUSTOMER id and then cancels whatever plan is current:
@@ -9,7 +9,7 @@
  *
  * `subscription.id` is never read. The upsert path does persist it
  * (`:497 stripeSubscriptionId: subscription.id`), so the column exists and is
- * populated — the delete path simply declines to filter on it. A late
+ * populated, the delete path simply declines to filter on it. A late
  * `deleted` event for an old subscription therefore cancels the current one.
  * Stripe does not guarantee delivery order, and cancel-then-resubscribe
  * followed by a retry produces exactly this sequence.
@@ -19,7 +19,7 @@
  * `stripeSubscriptionCreatedAt`. Two consequences: `getSubscription` reports
  * `hasStripeSubscription: false`, and the hourly downgrade sweeper can never
  * revoke the row because it requires `isNotNull(currentPeriodEnd)`. The row
- * is permanently unsweepable. The write is also destructive — `:406-414`
+ * is permanently unsweepable. The write is also destructive: `:406-414`
  * revokes the existing plan first, so a late checkout event clobbers the
  * richer row written by `subscription.updated`.
  *
@@ -119,7 +119,7 @@ const seedBillingFixture = async (): Promise<IBillingFixture> => {
     .where(eq(accounts.id, account.id));
 
   /*
-   * `cleanDatabase` leaves `billing.plans` alone — it is reference data — so
+   * `cleanDatabase` leaves `billing.plans` alone, it is reference data, so
    * this has to tolerate a row left by an earlier test in the same file.
    */
   const [inserted] = await db
@@ -247,7 +247,7 @@ describe("F10 Stripe reconciliation is identity-aware", () => {
     /*
      * The session names its subscription, so a correct implementation has
      * everything it needs. Omitting it and then demanding the id back would
-     * make the assertion unreachable rather than merely unmet — no
+     * make the assertion unreachable rather than merely unmet: no
      * implementation could satisfy it.
      */
     await billing.handleWebhookEvent(
@@ -282,7 +282,7 @@ describe("F10 Stripe reconciliation is identity-aware", () => {
    * guard (`shouldSkipStaleStripeEvent`, `billing.service.ts:55-66`) is a
    * strict `>` that skips neither: both apply and the last one wins. Which
    * one is last is a delivery-order accident, so both orders have to be
-   * specified — asserting only the forward one would let a fix that merely
+   * specified, asserting only the forward one would let a fix that merely
    * retains the checkout's subscription id look complete while the reverse
    * order still erases the period and status written by the subscription
    * event.
@@ -359,7 +359,7 @@ describe("F10 Stripe reconciliation is identity-aware", () => {
   /*
    * Non-active states, the ones that matter. Checkout completion is not a
    * statement about whether the subscription is paid, so it must not
-   * promote a delinquent or ended subscription back to active — and the
+   * promote a delinquent or ended subscription back to active, and the
    * two events routinely share a `created` second, so which arrives last
    * is a delivery accident rather than a signal.
    */

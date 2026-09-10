@@ -4,7 +4,7 @@ import { validateEnv } from "./validate";
 const validated = validateEnv();
 
 /**
- * Frozen runtime configuration. Read-only — anything that needs to mutate
+ * Frozen runtime configuration. Read-only: anything that needs to mutate
  * at runtime belongs in a service, not env.
  */
 export const env: Env & {

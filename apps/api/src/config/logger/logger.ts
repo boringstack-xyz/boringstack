@@ -19,7 +19,7 @@ type ILogEventName = (typeof LOG_EVENTS)[number];
  * surfaced in Grafana can be pivoted to the matching Tempo trace
  * (trace_id), the matching GlitchTip event (trace_id / user.id), or
  * filtered to a single user's activity. Each field is a no-op when
- * its source isn't set — pre-init, unauthenticated requests, or
+ * its source isn't set: pre-init, unauthenticated requests, or
  * code that runs outside a span context.
  *
  * @opentelemetry/api is used rather than Sentry's getActiveSpan so a
@@ -51,7 +51,7 @@ const traceMixin = (): Record<string, string> => {
 };
 
 /*
- * JSON in every environment — Loki is the canonical log viewer and
+ * JSON in every environment: Loki is the canonical log viewer and
  * Promtail's Pino pipeline depends on structured output. For ad-hoc
  * tailing pipe through `bunx pino-pretty`.
  */
@@ -70,7 +70,7 @@ const baseLogger = pino({
   /*
    * `formatters.log` only sees the merged context object. The message and
    * any interpolation arguments travel beside it, and they are where a
-   * caught error's text lands — a driver error carrying `params: <bound
+   * caught error's text lands: a driver error carrying `params: <bound
    * values>`, or a stack embedding a bearer token. Scrubbing here catches
    * every level method, on the base logger and on children alike.
    */

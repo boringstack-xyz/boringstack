@@ -17,7 +17,7 @@ import type { IAuthCredential, IAuthenticatedContext } from "./auth.types";
 /**
  * Two-tier revocation lookup. Runs after signature/expiry verification
  * so a forged token has to clear signing before the cache is even hit.
- * Tokens that predate the revocation feature lack `jti` / `issuedAt` —
+ * Tokens that predate the revocation feature lack `jti` / `issuedAt`,
  * they flow through unchecked and expire on their 15-minute clock.
  */
 const assertJtiNotRevoked = async (jti: string | null): Promise<void> => {
@@ -150,7 +150,7 @@ const verifyAuthCookie = async (
 
 /**
  * Required-auth guard. Use on every endpoint where an anonymous caller
- * is a programming error or a security boundary — mutations, account
+ * is a programming error or a security boundary: mutations, account
  * management, billing, etc. The contract:
  *
  *  - missing cookie    → 401 `missing_session`
@@ -187,7 +187,7 @@ export const requireAuth = () =>
  * Best-effort auth guard. Resolves the session if one is presented and
  * valid; returns `{ user: null, accountId: null }` when no cookie is
  * presented at all. Still throws 401 when a cookie IS present but the
- * signature/payload doesn't verify — a forged or expired credential is
+ * signature/payload doesn't verify: a forged or expired credential is
  * a real failure even on a probe endpoint, and the client should treat
  * it as a forced-logout signal rather than rendering as "anonymous".
  *

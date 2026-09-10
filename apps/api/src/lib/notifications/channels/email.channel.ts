@@ -20,8 +20,8 @@ import type {
  * Email channel. Resolves the recipient's email, asks the event's
  * `render.email` for subject + template variables, then either enqueues an
  * `email-delivery` job (with the `notification_delivery` row id threaded
- * through so the email worker can settle it on completion) or — when
- * queues are disabled / not yet booted — sends inline and settles the row
+ * through so the email worker can settle it on completion) or, when
+ * queues are disabled / not yet booted, sends inline and settles the row
  * here.
  *
  * Events without an `email` render are skipped explicitly (the delivery row

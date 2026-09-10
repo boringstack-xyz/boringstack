@@ -31,13 +31,13 @@ export interface IAuthorizationURLResult {
    * the browser that began the flow.
    */
   bindingNonce: string;
-  /** PKCE verifier — present only for providers that support PKCE (Google). */
+  /** PKCE verifier: present only for providers that support PKCE (Google). */
   codeVerifier?: string;
 }
 
 /**
  * One implementation per provider. Each module owns the arctic client
- * construction, the default scopes, and the userinfo fetch+parse — the
+ * construction, the default scopes, and the userinfo fetch+parse: the
  * orchestration layer just dispatches.
  */
 export interface IOAuthProviderModule {

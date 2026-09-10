@@ -1,5 +1,5 @@
 /**
- * F14 — SSE streams outlive authentication.
+ * F14: SSE streams outlive authentication.
  *
  * `notifications.sse.ts` authenticates when the connection opens and then
  * loops on `while (!isAborted())` (`:88`), where `isAborted` reflects only

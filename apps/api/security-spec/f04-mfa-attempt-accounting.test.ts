@@ -1,5 +1,5 @@
 /**
- * F04 — MFA attempt accounting races under concurrency.
+ * F04: MFA attempt accounting races under concurrency.
  *
  * `recordFailedAttempt` (mfa.service.ts:510-549) reads the challenge, adds
  * one, and writes it back:
@@ -13,13 +13,13 @@
  * (MFA_MAX_CHALLENGE_ATTEMPTS) buys an attacker far more than five guesses
  * against a six-digit code.
  *
- * `ICacheService` exposes only get/set/del/has/wrap/close — no INCR, no CAS,
- * no Lua — so there is no atomic primitive available at this layer. INCR does
+ * `ICacheService` exposes only get/set/del/has/wrap/close: no INCR, no CAS,
+ * no Lua, so there is no atomic primitive available at this layer. INCR does
  * exist in the codebase, but only in the rate-limit modules, which the MFA
  * counter does not reach.
  *
  * Worth crediting the code: the two OTHER MFA races are closed properly with
- * Postgres compare-and-set — TOTP step reuse (`:250-265`) and recovery-code
+ * Postgres compare-and-set: TOTP step reuse (`:250-265`) and recovery-code
  * reuse (`:353-362`) both use conditional UPDATE ... RETURNING. The gap is
  * specific to the aggregate counter.
  *
@@ -118,7 +118,7 @@ describe("F04 MFA attempt accounting", () => {
      * nothing: every request that already read the challenge goes on to
      * evaluate its code, and a correct one among the surplus reaches the
      * success path without consulting the counter. The returned `kind`
-     * cannot see that — surplus submissions come back `locked_out` whether
+     * cannot see that: surplus submissions come back `locked_out` whether
      * their code was evaluated or refused at the door.
      *
      * The audit trail can. A submission admitted to evaluation and found

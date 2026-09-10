@@ -107,7 +107,7 @@ const isSendGridEventShape = (value: unknown): value is ISendGridEvent =>
  * Map a SendGrid event to a suppression reason. SendGrid splits hard
  * vs soft bounces via the `type` field on `event=bounce`. We also treat
  * `dropped` with reason `Bounced Address` (or `Invalid SMTPAPI header`)
- * as a permanent verdict — those rejections happen because SendGrid's
+ * as a permanent verdict: those rejections happen because SendGrid's
  * own suppression engine refused the send.
  */
 export const sendGridEventToReason = (

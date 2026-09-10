@@ -21,7 +21,7 @@ export type DbOrTx =
 export interface IProvisionAfterVerificationInput {
   readonly userId: string;
   /**
-   * Optional override. Production callers omit this — the name is
+   * Optional override. Production callers omit this: the name is
    * derived from the user row (firstName/lastName, falling back to
    * email). Tests pin a specific name for readable assertions.
    */
@@ -39,7 +39,7 @@ export interface ICreatePersonalAccountResult {
  * A discriminated result rather than an exception for the claimed-domain
  * case, because the two are not equivalent here. The claimed branch files a
  * pending join request so the existing owner can approve the newcomer, and
- * that insert shares the caller's transaction — a throw would abort it, and
+ * that insert shares the caller's transaction: a throw would abort it, and
  * the row the API promises the user ("an owner will review your request")
  * would not survive the response.
  *

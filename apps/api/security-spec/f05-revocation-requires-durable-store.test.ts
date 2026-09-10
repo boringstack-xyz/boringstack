@@ -1,5 +1,5 @@
 /**
- * F05 — session revocation depends on optional, best-effort cache state.
+ * F05: session revocation depends on optional, best-effort cache state.
  *
  * Production boot accepts `CACHE_ENABLED=false` together with
  * `JWT_REVOCATION_FAIL_CLOSED=true`. The operator has explicitly asked for
@@ -71,7 +71,7 @@ describe("F05 revocation requires a durable store", () => {
 
   /*
    * Control, not a finding. `checkCacheProviderInProd` already rejects this
-   * one, and it must keep doing so — it is the rule whose early return on
+   * one, and it must keep doing so: it is the rule whose early return on
    * `!CACHE_ENABLED` opens the hole above. If this ever starts passing, the
    * rule was weakened rather than extended.
    */

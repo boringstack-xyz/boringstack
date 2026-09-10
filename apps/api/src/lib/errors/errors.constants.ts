@@ -2,7 +2,7 @@ import type { ErrorCode } from "./errors.types";
 
 /**
  * Codes that Elysia's framework layer surfaces on the `code` field of its
- * `.onError` callback. These are NOT app-level error codes — they're the
+ * `.onError` callback. These are NOT app-level error codes: they're the
  * pre-handler-throw signals (404 from unmatched routes, validation failures
  * from TypeBox, cookie-signature mismatches, etc.). Map them to ApiErrors
  * in the central error handler.
