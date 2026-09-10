@@ -13,5 +13,5 @@ test("pre-push scripts preserve configured targets, failures and local state", (
 
   expect(
     output.split("\n").filter((line) => line.startsWith("PASS "))
-  ).toHaveLength(8);
+  ).toHaveLength(9);
 }, 35_000);

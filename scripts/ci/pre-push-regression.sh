@@ -12,7 +12,14 @@ cp "$ROOT/apps/api/scripts/ci/pre-push.sh" "$FIXTURE/apps/api/scripts/ci/pre-pus
 cat > "$FIXTURE/bin/bun" <<'STUB'
 #!/bin/bash
 set -eu
-if [[ "$1" == "-e" ]]; then exec "$REAL_BUN" "$@"; fi
+if [[ "$1" == "-e" ]]; then
+  if [[ "$2" == *'import postgres'* ]]; then
+    printf 'database-ready\n' >> "$FIXTURE/commands"
+    [[ -f "$FIXTURE/ready" && "${FAIL_DATABASE_READY:-0}" != 1 ]]
+    exit "$?"
+  fi
+  exec "$REAL_BUN" "$@"
+fi
 printf '%s|%s|%s\n' "$*" "$DATABASE_URL" "$TEST_DATABASE_URL" >> "$FIXTURE/commands"
 if [[ "$*" == 'run db:migrate' && "${FAIL_MIGRATION:-0}" == 1 ]]; then exit 1; fi
 STUB
@@ -31,6 +38,7 @@ printf '%s|%s|%s\n' "$*" "$POSTGRES_HOST_PORT" "$VALKEY_HOST_PORT" >> "$FIXTURE/
 touch "$FIXTURE/ready"
 STUB
 printf '#!/bin/bash\nexit 0\n' > "$FIXTURE/bin/osv-scanner"
+printf '#!/bin/bash\nexit 0\n' > "$FIXTURE/bin/sleep"
 chmod +x "$FIXTURE/bin/"* "$FIXTURE/infra/compose/compose/dev.sh"
 export PATH="$FIXTURE/bin:$PATH"
 export DATABASE_URL='postgresql://fixture:fixture@127.0.0.1:59999/wrong'
@@ -54,6 +62,11 @@ echo 'PASS configured endpoints and migration/test target agree'
 if FAIL_MIGRATION=1 run_gate; then exit 1; fi
 assert_absent "$FIXTURE/commands" 'run test|'
 echo 'PASS migration failure prevents tests'
+
+: > "$FIXTURE/commands"
+if FAIL_DATABASE_READY=1 run_gate; then exit 1; fi
+assert_absent "$FIXTURE/commands" 'run db:migrate|'
+echo 'PASS bound port without authenticated database readiness blocks migration'
 
 : > "$FIXTURE/commands"
 if TEST_DATABASE_URL=invalid run_gate; then exit 1; fi

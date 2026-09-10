@@ -116,6 +116,29 @@ else
   ok "test services ready"
 fi
 
+# A bound Docker port can accept TCP before Postgres finishes initialization.
+# Confirm a real authenticated query before running migrations.
+database_ready() {
+  bun -e '
+    import postgres from "postgres";
+    const sql = postgres(process.env.DATABASE_URL, { connect_timeout: 2, max: 1 });
+    try {
+      await sql.unsafe("SELECT 1");
+    } catch {
+      process.exitCode = 1;
+    } finally {
+      await sql.end({ timeout: 1 });
+    }
+  ' >/dev/null 2>&1
+}
+for _ in $(seq 1 30); do
+  if database_ready; then
+    break
+  fi
+  sleep 1
+done
+database_ready || fail "Configured test database did not become ready for authenticated queries"
+
 # Run the migration synchronously against the selected test database. A Compose
 # migration container can target a different database and detached startup does
 # not establish that the migration completed successfully.
