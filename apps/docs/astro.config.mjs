@@ -252,7 +252,7 @@ export default defineConfig({
          * reads llms.txt first, so the description below has to carry the
          * install command outright, not a link to it.
          *
-         * `rawContent: true` is load-bearing and must stay on. With it off the
+         * `rawContent: true` has to stay on. With it off the
          * plugin renders each page through Astro, and index.mdx mounts
          * `<LandingPage client:load />`, a React component the plugin's
          * render context has no renderer for, so the build dies with
@@ -274,7 +274,7 @@ export default defineConfig({
          * Note `exclude` applies to llms-small.txt ONLY, not llms-full.txt;
          * that asymmetry is upstream behaviour, not a mistake here. The small
          * tier is a deliberate curation: quickstart, architecture and the
-         * rules an agent must not break. Runbooks and per-topic deep dives
+         * rules an agent must not break. Runbooks and per-topic detail
          * stay in llms-full.txt where an agent can go looking on purpose.
          *
          * check:agent-surface asserts the size gap and the absence of MDX

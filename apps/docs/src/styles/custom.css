@@ -1335,7 +1335,7 @@ pre.mermaid svg .cluster rect,
   --bs-success: var(--success);
   --bs-code: var(--foreground);
   --bs-shadow: rgba(0, 0, 0, 0.3);
-  width: min(1360px, calc(100vw - 2rem));
+  width: min(1360px, 100%);
   margin-inline: auto;
   box-sizing: border-box;
 }

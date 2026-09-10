@@ -146,7 +146,7 @@ notes.push(
   `llms-small.txt ${smallBytes} bytes (${(ratio * 100).toFixed(1)}% of full, ceiling ${SMALL_MAX_BYTES})`,
 );
 
-/* MDX residue. `rawContent: true` is load-bearing (index.mdx mounts a React
+/* MDX residue. `rawContent: true` has to stay on (index.mdx mounts a React
  * component the plugin cannot render), so sanitize-llms.mjs cleans up after
  * it. This asserts that pass actually ran. Code fences are exempt: a sample
  * may legitimately contain an import line. */
@@ -289,7 +289,7 @@ if (landing.includes("gh repo create") && !/git clone/.test(landing)) {
 if (!/auth(entication)? is optional/i.test(landing)) {
   fail(
     "the homepage does not say GitHub auth is optional",
-    "add it to the agent tab caption in landingContent.ts",
+    "add it to the setup note in landingContent.ts",
   );
 }
 

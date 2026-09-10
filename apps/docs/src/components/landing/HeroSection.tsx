@@ -1,8 +1,7 @@
 import { useState } from "react";
 
-import { CodePreview } from "./CodePreview";
-import { agentPrompt, githubOrg } from "./landingContent";
-import { GitHubIcon } from "./LandingPrimitives";
+import { StackMachine } from "./StackMachine";
+import { agentPrompt } from "./landingContent";
 
 /* Sharp corners, 2.75rem tall, hairline border. tsforge's button shape. */
 const actionClass =
@@ -94,11 +93,14 @@ export function HeroSection() {
   return (
     <section
       aria-labelledby="bs-hero-title"
-      className="relative grid min-h-0 grid-cols-[minmax(0,1fr)] items-center gap-[2.4rem] overflow-hidden bg-transparent px-4 py-[3rem_1rem_3.25rem] min-[641px]:gap-[clamp(2rem,5vw,5rem)] min-[641px]:px-0 min-[641px]:py-[4.5rem_0_3.5rem] lg:min-h-[min(680px,calc(100vh-6rem))] lg:grid-cols-[minmax(0,0.86fr)_minmax(27rem,1fr)]"
+      className="relative grid min-h-0 grid-cols-[minmax(0,1fr)] items-center gap-[2.4rem] overflow-hidden bg-transparent px-4 pt-12 pb-13 min-[641px]:gap-[clamp(2rem,5vw,5rem)] min-[641px]:px-0 min-[641px]:pt-10 min-[641px]:pb-12 lg:min-h-[min(680px,calc(100vh-6rem))] lg:grid-cols-[minmax(0,0.86fr)_minmax(27rem,1fr)]"
     >
       {/* Graph-paper wash, faded into the page so it reads as texture rather
           than a table. pointer-events-none keeps it out of the way. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 grid-bg opacity-[0.35]" />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 grid-bg opacity-[0.35]"
+      />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,color-mix(in_oklch,var(--bs-bg)_35%,transparent),color-mix(in_oklch,var(--bs-bg)_70%,transparent),var(--bs-bg))]"
@@ -116,12 +118,14 @@ export function HeroSection() {
           id="bs-hero-title"
         >
           Point your agent at this{" "}
-          <span className="font-normal italic text-[var(--bs-accent)]">stack</span>.
+          <span className="font-normal italic text-[var(--bs-accent)]">
+            stack
+          </span>
+          .
         </h1>
         <p className="mt-[1.25rem] max-w-[34rem] text-pretty text-base leading-[1.55] text-[var(--bs-muted-strong)] min-[641px]:mt-[1.15rem] min-[641px]:text-[1.05rem]">
-          It ships production-grade, or it doesn&rsquo;t compile. Auth, billing,
-          queues and deploys are already wired. The architecture is enforced by
-          lint and CI, so what your agent writes either fits or fails the build.
+          Auth, billing, queues, and deploys are already wired. Your agent
+          builds the feature; lint and CI check that it fits the architecture.
         </p>
 
         {/*
@@ -134,7 +138,9 @@ export function HeroSection() {
           boxes.
         */}
         <div className="mt-9 w-full max-w-full min-[641px]:w-[min(100%,34rem)]">
-          <div className="mono-caps mb-2">Paste this into your coding agent</div>
+          <div className="mono-caps mb-2">
+            Paste this into your coding agent
+          </div>
           <div className="flex items-stretch border border-[var(--bs-line)] bg-[color-mix(in_oklch,var(--bs-panel)_60%,transparent)]">
             <div className="flex shrink-0 items-center gap-1.5 px-2.5 text-[var(--bs-muted)] hairline-r">
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--bs-accent)]" />
@@ -186,39 +192,17 @@ export function HeroSection() {
           >
             Read /agents.md
           </a>
-          <a
-            className={`${actionClass} min-[641px]:w-auto bg-transparent text-[var(--bs-muted)] hover:text-[var(--bs-text)]`}
-            href={githubOrg.url}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            <GitHubIcon className="h-[1.05rem] w-[1.05rem]" />
-            Star on GitHub
-          </a>
         </div>
 
-        <div
-          aria-label="BoringStack shape"
-          className="mt-8 grid grid-cols-1 gap-3 min-[641px]:mt-7 min-[641px]:flex min-[641px]:flex-wrap min-[641px]:gap-3"
-        >
-          {[
-            ["UI", "React + Vite"],
-            ["API", "Bun + Elysia"],
-            ["Infra", "Compose"],
-            ["MIT", "license"],
-          ].map(([value, label]) => (
-            <span
-              className="inline-flex min-h-8 w-full min-w-0 items-center gap-2 border border-[var(--bs-line)] bg-[color-mix(in_oklch,var(--bs-panel)_45%,transparent)] px-3 py-1 font-mono text-[0.76rem] leading-tight text-[var(--bs-muted)] min-[641px]:w-auto"
-              key={label}
-            >
-              <b className="font-medium text-[var(--bs-accent)]">{value}</b>
-              {label}
-            </span>
-          ))}
+        <div className="bs-hero-tech" aria-label="Built with">
+          <span>React + Vite</span>
+          <span>Bun + Elysia</span>
+          <span>Postgres</span>
+          <span>Compose</span>
         </div>
       </div>
 
-      <CodePreview />
+      <StackMachine />
 
       <div className="absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,transparent,var(--bs-line-strong),transparent)]" />
     </section>

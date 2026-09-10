@@ -141,7 +141,7 @@ export const accountInvitations = app.table(
     index("idx_account_invitations_token_hash").on(table.tokenHash),
     /*
      * Partial unique on (accountId, lowercased email) WHERE the invitation
-     * is still actionable. Prevents an account from accumulating multiple
+     * can still be accepted. Prevents an account from accumulating multiple
      * concurrent open invitations for the same recipient, either malicious
      * spam or a buggy "Invite again" UI. Once an invitation is accepted or
      * revoked, the row exits the partial index so a follow-up invitation

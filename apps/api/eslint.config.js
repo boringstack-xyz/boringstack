@@ -1036,7 +1036,7 @@ export default tseslint.config(
   },
   {
     // The env validator's own test legitimately mutates `process.env` to
-    // exercise schema-validation failures. That is the entire point of
+    // exercise schema-validation failures. That is what they are for,
     // the suite.
     files: ["tests/config/env/**/*.ts"],
     rules: {

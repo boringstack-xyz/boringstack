@@ -2,9 +2,10 @@ import { DocsGuide } from "./DocsGuide";
 import { GuardrailsSection } from "./GuardrailsSection";
 import { HeroSection } from "./HeroSection";
 import { OpenSourceSection } from "./OpenSourceSection";
-import { ProofSection } from "./ProofSection";
 import { StackFlowSection } from "./StackFlowSection";
 import { StackRibbon } from "./StackRibbon";
+import "./stack-machine.css";
+import "./landing-page.css";
 
 export default function LandingPage() {
   return (
@@ -22,10 +23,9 @@ export default function LandingPage() {
       <HeroSection />
       <StackRibbon />
       <GuardrailsSection />
-      <OpenSourceSection />
-      <DocsGuide />
       <StackFlowSection />
-      <ProofSection />
+      <DocsGuide />
+      <OpenSourceSection />
     </div>
   );
 }

@@ -103,7 +103,7 @@ describe("F09b effective-plan semantics are applied at resolution", () => {
     const features = await resolveAccountFeatures(accountId);
 
     /*
-     * `expiresAt` is the whole point of an administrative grant. A resolver
+     * `expiresAt` is what makes an administrative grant time-boxed. A resolver
      * that ignores it hands out paid features forever.
      */
     expect(features.can_export).toBe(false);

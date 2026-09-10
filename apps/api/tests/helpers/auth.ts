@@ -122,7 +122,7 @@ export const seedVerifiedUser = async (
 /**
  * Fixture for tests that exercise the pending-user state. Inserts the
  * user without `emailVerifiedAt` and a password-auth provider row.
- * No account or membership is created; that's the whole point.
+ * No account or membership is created, which is what this seeds.
  */
 export const seedPendingUser = async (
   input: ISeedPendingUserInput

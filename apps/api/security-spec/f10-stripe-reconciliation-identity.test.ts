@@ -104,7 +104,7 @@ interface IBillingFixture {
  * An account with a Stripe customer id, plus a plan carrying the price the
  * fixtures reference.
  *
- * Both halves are load-bearing. `handleSubscriptionUpsert` resolves the plan
+ * Both halves matter. `handleSubscriptionUpsert` resolves the plan
  * by `stripePriceId` and returns early when it finds none
  * (`billing.service.ts:469`), so without the plan row nothing is ever written
  * and every assertion below would fail against an empty table rather than

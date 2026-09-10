@@ -17,7 +17,7 @@ CREATE INDEX "idx_session_retired_tokens_family_id" ON "auth"."session_retired_t
  * lookup now goes through this table, so without this every credential
  * already retired before the upgrade becomes an unknown token: refused,
  * but no longer triggering family revocation or an audit event, which is
- * the whole point of detecting a replay.
+ * what detecting a replay is for.
  *
  * `ON CONFLICT DO NOTHING` because the hash is unique here and a session
  * could in principle share one with a row inserted after deploy.
