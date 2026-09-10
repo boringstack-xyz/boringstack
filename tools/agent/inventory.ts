@@ -23,9 +23,10 @@ function readAttribute(attributes: string, name: string): string {
 
 /** Keep duplicate identities: losing one repeated case must change the inventory. */
 export function identities(xml: string, root: string): string[] {
-  const structuralXml = xml
-    .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, "")
-    .replace(/<!--[\s\S]*?-->/g, "");
+  const structuralXml = xml.replace(
+    /<!\[CDATA\[[\s\S]*?\]\]>|<!--[\s\S]*?-->/g,
+    " "
+  );
   const matches = structuralXml.matchAll(/<testcase\b([^>]*?)(?:\/?>)/g);
   const cases: string[] = [];
 

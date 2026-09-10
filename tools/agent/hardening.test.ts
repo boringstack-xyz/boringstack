@@ -233,3 +233,12 @@ test("inventory observations cannot be accepted after source changes", () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("ignored XML content cannot create structural tags by joining fragments", () => {
+  for (const ignored of ["<!-- ignored -->", "<![CDATA[ignored]]>"]) {
+    const xml = `<testsuites><test${ignored}case file="a.ts" name="invented"/></testsuites>`;
+
+    expect(identities(xml, "/root")).toEqual([]);
+    expect(testEvidence("test", xml, 0).status).toBe("blocked");
+  }
+});

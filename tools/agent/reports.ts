@@ -8,9 +8,10 @@ export function testEvidence(
   runner: "bun" | "playwright" = "bun",
   completeGateFailure = false
 ): ICheckResult {
-  const structural = xml
-    .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, "")
-    .replace(/<!--[\s\S]*?-->/g, "");
+  const structural = xml.replace(
+    /<!\[CDATA\[[\s\S]*?\]\]>|<!--[\s\S]*?-->/g,
+    " "
+  );
   const safeXml = xml.replace(
     /<!\[CDATA\[([\s\S]*?)\]\]>/g,
     (_, text: string) =>
