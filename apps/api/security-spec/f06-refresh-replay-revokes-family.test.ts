@@ -253,7 +253,7 @@ describe("F06 refresh replay revokes the family", () => {
     );
 
     // Replay the token the rotation retired.
-    await app.handle(
+    const replay = await app.handle(
       new Request("http://localhost/api/v1/auth/refresh", {
         method: "POST",
         headers: { cookie: issued },
@@ -274,17 +274,43 @@ describe("F06 refresh replay revokes the family", () => {
     );
 
     /*
-     * What replay detection does and does not do. The family is gone, so
-     * no refresh token from it works again. The access JWT already in the
-     * browser is not consulted against it and stays good for the rest of
-     * its 15 minutes.
-     *
-     * Recorded rather than fixed here. Killing it means a user-wide
-     * revocation, which signs the user out of unrelated sessions, and that
-     * is a product decision rather than a bug fix. `docs/agents/
-     * authentication.md` carries the operational note.
+     * A throttled or broken request is not revocation. Without this, a 429
+     * from the credential limiter or a 500 from a failed write reads as
+     * "the family is gone" and the case passes while nothing was revoked
+     * at all.
      */
-    expect(refreshAgain.status).toBeGreaterThanOrEqual(400);
+    for (const [label, res] of [
+      ["replay", replay],
+      ["post-replay refresh", refreshAgain],
+      ["access-token probe", probe],
+    ] as const) {
+      specPrecondition(
+        res.status !== 429 && res.status < 500,
+        `${label} returned ${String(res.status)}, which is infrastructure ` +
+          `rather than an authorization decision`
+      );
+    }
+
+    /*
+     * What replay detection does. The replay itself is refused, the family
+     * row is gone, and the token the client rotated to is refused as
+     * well: all three, because any one of them alone is satisfiable
+     * without the other two.
+     */
+    expect(replay.status).toBe(401);
+    expect(await postgresClient`select id from auth.sessions`).toHaveLength(0);
+    expect(refreshAgain.status).toBe(401);
+
+    /*
+     * And what it does not do. The access JWT already in the browser is
+     * never checked against the refresh family, so it stays good for the
+     * rest of its 15 minutes.
+     *
+     * Recorded rather than fixed. Killing it means a user-wide revocation,
+     * which signs the user out of unrelated sessions, and that is a
+     * product decision rather than a bug fix.
+     * `docs/agents/authentication.md` carries the operational note.
+     */
     expect(probe.status).toBe(200);
   });
 
