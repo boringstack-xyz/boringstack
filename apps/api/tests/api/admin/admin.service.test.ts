@@ -25,7 +25,7 @@ describe("AdminService.getQueueStats", () => {
     }
 
     /*
-     * In the disabled-queues path no error is thrown — the test above covers
+     * In the disabled-queues path no error is thrown: the test above covers
      * that. This test documents the contract: if getQueueStats DID throw, it
      * would be an ApiError.
      */

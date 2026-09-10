@@ -13,7 +13,7 @@
  *       - block source writes unless frontmatter contains `status: approved`.
  *
  * Reads the hook payload from stdin, writes a JSON decision to stdout,
- * exits 0 either way. Failures fail open with a reason — never lock the
+ * exits 0 either way. Failures fail open with a reason, never locking the
  * user out because of a parse error.
  *
  * Tests live next to the Python original; this file's behavior is

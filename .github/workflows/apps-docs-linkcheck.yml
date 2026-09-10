@@ -38,7 +38,7 @@ on:
       - "apps/api/package.json"
       - "apps/ui/scripts/**"
       - "apps/ui/package.json"
-  # PR trigger has NO `paths:` filter — the `linkcheck` check is in
+  # PR trigger has NO `paths:` filter: the `linkcheck` check is in
   # branch protection's required-checks list, so the workflow must run
   # on every PR or branch protection will wait forever for a status
   # that never comes ("Expected — Waiting for status to be reported").
@@ -129,7 +129,7 @@ jobs:
         run: bun run check:docs-data
 
       # The full site build + lychee link check stay gated on docs changes
-      # only — a catalog-input change needs the freshness check above, not a
+      # only, a catalog-input change needs the freshness check above, not a
       # multi-minute rebuild of the whole site.
       - name: Build docs site
         if: steps.filter.outputs.docs == 'true'
@@ -165,7 +165,7 @@ jobs:
           #
           #   exclude self-repo Starlight renders an "Edit this page" link
           #                     (github.com/.../edit/main/<page>) on EVERY doc
-          #                     page — ~one github.com request per page. Plus
+          #                     page, ~one github.com request per page. Plus
           #                     the blob/tree source links. None are API-eligible,
           #                     so the token can't help them and they dominated
           #                     the throttling. They are auto-generated /
@@ -176,7 +176,7 @@ jobs:
           #                     org/repo-root in one pattern.
           #
           # Third-party github.com links (ripgrep, gitleaks, …) are still
-          # checked — the GITHUB_TOKEN below routes those parseable owner/repo
+          # checked, the GITHUB_TOKEN below routes those parseable owner/repo
           # URLs through api.github.com (5000 req/h), where they don't throttle.
           args: >-
             --no-progress

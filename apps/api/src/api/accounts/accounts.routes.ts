@@ -1,7 +1,7 @@
 import { t } from "elysia";
 
 import { env } from "../../config/env";
-import { isAdminRole, isOwnerRole } from "../../lib/acl";
+import { isAdminRole, isOwnerRole, requireFeature } from "../../lib/acl";
 import { auditLogService } from "../../lib/audit-log";
 import { AUTH_COOKIE_CONFIG, AUTH_COOKIE_NAME } from "../../lib/cookies";
 import { ApiErrors, createSuccessResponse } from "../../lib/errors";
@@ -99,6 +99,13 @@ const accountsRoutes = requireAuth()
           "email"
         );
       }
+
+      /*
+       * Entitlement, not just role. The owner has the role; the plan is what
+       * decides whether this account may invite at all. The SPA hides the
+       * button, which stops nobody from POSTing here.
+       */
+      await requireFeature(membership.accountId, "can_invite_team");
 
       const { invitation, rawToken } = await invitationsService.create(
         {

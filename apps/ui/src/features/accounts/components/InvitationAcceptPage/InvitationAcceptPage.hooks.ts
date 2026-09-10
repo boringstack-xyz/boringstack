@@ -22,7 +22,7 @@ import type {
  * Email-link landing page for invitations. Auto-fires the accept call
  * because the entire intent of the link is "accept this invitation."
  * The route is wrapped in ProtectedRoute, so the user is already
- * authenticated by the time this hook runs — anonymous clicks land on
+ * authenticated by the time this hook runs: anonymous clicks land on
  * /login first and come back here with the `?token=...` preserved.
  *
  * Mirrors VerifyEmailPage's "fire once per mount, no RTK retry" shape;

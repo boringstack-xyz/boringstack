@@ -10,13 +10,13 @@ export type IInvitationsPageProps = Record<string, never>;
 /**
  * Why the invite form is unavailable.
  *
- * - `"feature"` — the active plan doesn't include team invitations
+ * - `"feature"`: the active plan doesn't include team invitations
  *   (`can_invite_team` is off). The page shows an upgrade-to-Pro prompt
  *   with a link to billing.
- * - `"role"` — the plan does include invitations, but the current user's
+ * - `"role"`: the plan does include invitations, but the current user's
  *   role can't issue them (member/viewer can read teammates, only
  *   owner/admin can invite). The page shows an "ask an admin" message.
- * - `null` — the user can invite. The form renders.
+ * - `null`: the user can invite. The form renders.
  */
 export type IInvitationsLockedReason = "feature" | "role" | null;
 

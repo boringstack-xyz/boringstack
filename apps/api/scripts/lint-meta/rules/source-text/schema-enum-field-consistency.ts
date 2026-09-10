@@ -4,16 +4,16 @@ import type { IMetaRule, IViolation } from "../../types";
 
 /**
  * A fixed-value field (one typed as a `t.Union([t.Literal(...)])` in ANY schema in a
- * `*.schemas.ts` file) must be typed the SAME way in EVERY schema in that file — never
+ * `*.schemas.ts` file) must be typed the SAME way in EVERY schema in that file, never
  * widened to `t.String()` (e.g. in the response schema).
  *
  * Why this is a gate error, not a style nit: the response schema becomes the OpenAPI
- * spec, which `generate:api` turns into the UI's typed client — the single source of
+ * spec, which `generate:api` turns into the UI's typed client: the single source of
  * truth for the UI's API types. If a `status` field is `t.Union([t.Literal("todo"),…])`
  * on input but `t.String()` on the response, the generated client types the response
  * `status` as `string`. The UI (which expects the enum) then can't reconcile `string`
  * with `"todo"|"doing"|"done"`, and a weak model "fixes" the clash by reverting/stubbing
- * the feature instead of tightening the schema — the exact near-green oscillation this
+ * the feature instead of tightening the schema: the exact near-green oscillation this
  * rule prevents. Define the enum once and reuse it in create/update/response/query.
  */
 
@@ -38,7 +38,7 @@ function literalUnionFields(collapsed: string): Set<string> {
 /**
  * Field names given a bare `t.String(...)` type (optionally wrapped in `t.Optional`).
  *  Deliberately does NOT match `t.Union([t.String(), t.Null()])` (a nullable string is
- *  not an enum field) — the `t.String` must sit directly under the field or `t.Optional`.
+ *  not an enum field), the `t.String` must sit directly under the field or `t.Optional`.
  */
 function plainStringFields(collapsed: string): Set<string> {
   const out = new Set<string>();
@@ -55,7 +55,7 @@ function plainStringFields(collapsed: string): Set<string> {
 
 /**
  * Pure analyzer (no filesystem): the field names that are BOTH a literal-union enum and
- *  a bare t.String() somewhere in one schema source — i.e. inconsistently typed. Sorted
+ *  a bare t.String() somewhere in one schema source, i.e. inconsistently typed. Sorted
  *  for deterministic output. Exported for direct unit testing.
  */
 export function inconsistentEnumFields(src: string): string[] {

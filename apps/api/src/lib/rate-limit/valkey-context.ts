@@ -11,7 +11,7 @@ import { nowMs } from "../time/now";
 
 /**
  * Valkey-backed `Context` for elysia-rate-limit. Replace the default
- * in-memory context with this when running more than one replica —
+ * in-memory context with this when running more than one replica:
  * otherwise each replica enforces its own quota and a brute-force
  * attacker just rotates which instance they hit.
  *
@@ -24,8 +24,8 @@ import { nowMs } from "../time/now";
  *   - `reset(key?)`: drops one or all keys (only used by tests).
  *   - `kill()`: closes the ioredis client during graceful shutdown.
  *
- * The implementation deliberately keeps the network round-trip small —
- * one `MULTI` + `INCR` + `PEXPIRE` + `PTTL` per request — so a hot path
+ * The implementation deliberately keeps the network round-trip small:
+ * one `MULTI` + `INCR` + `PEXPIRE` + `PTTL` per request, so a hot path
  * costs a single pipelined call. We tolerate a Valkey blip by treating
  * the failure as "request allowed" instead of "request blocked": the
  * default is "more permissive on infra failure, not less" so a flaky
@@ -50,16 +50,43 @@ const RATE_LIMIT_KEY_PREFIX = "rl:";
  */
 const DISABLED_WARN_INTERVAL_MS = 60_000;
 
-const buildKey = (rawKey: string): string =>
-  `${RATE_LIMIT_KEY_PREFIX}${rawKey}`;
+/*
+ * The key carries a policy segment so each limiter owns its own counter.
+ * Sharing one key across policies means ten unrelated public requests
+ * exhaust the login budget, whichever policy touches the key first owns the
+ * TTL, and the general limiter's global `onError` refunds the failed logins
+ * that `countFailedRequest: true` exists to charge for.
+ *
+ * The segment must be STABLE across processes: a per-instance random id
+ * would give every replica its own budget and quietly multiply the
+ * effective limit by the replica count. It is the name the caller passes
+ * or, failing that, the policy's own shape.
+ */
+const DEFAULT_POLICY = "default";
+
+const policySegment = (
+  policy: string,
+  durationMs: number,
+  max: number
+): string =>
+  policy === DEFAULT_POLICY ? `${String(durationMs)}x${String(max)}` : policy;
+
+const buildKey = (namespace: string, rawKey: string): string =>
+  `${RATE_LIMIT_KEY_PREFIX}${namespace}:${rawKey}`;
 
 export class ValkeyRateLimitContext implements RateLimitContext {
   private readonly client: Redis;
+  private readonly policy: string;
+  private namespace = DEFAULT_POLICY;
   private durationMs = 0;
   private lastDisabledWarnMs = Number.NEGATIVE_INFINITY;
 
-  constructor(client: Redis = new Redis(getValkeyAppClientOptions())) {
+  constructor(
+    client: Redis = new Redis(getValkeyAppClientOptions()),
+    policy: string = DEFAULT_POLICY
+  ) {
     this.client = client;
+    this.policy = policy;
 
     this.client.on("error", (err: Error) => {
       logger.warn("Rate-limit Valkey client error", {
@@ -70,7 +97,17 @@ export class ValkeyRateLimitContext implements RateLimitContext {
   }
 
   init(options: Omit<RateLimitOptions, "context">): void {
-    const { duration } = options;
+    const { duration, max } = options;
+
+    /*
+     * Resolved here rather than in the constructor because an unnamed policy
+     * falls back to its own shape, and the shape only arrives with `init`.
+     */
+    this.namespace = policySegment(
+      this.policy,
+      typeof duration === "number" ? duration : 0,
+      typeof max === "number" ? max : 0
+    );
 
     if (typeof duration === "number" && duration > 0) {
       this.durationMs = duration;
@@ -80,7 +117,7 @@ export class ValkeyRateLimitContext implements RateLimitContext {
 
     /*
      * A non-positive/missing duration makes every request take the
-     * permissive fallback path below — i.e. rate limiting is silently off.
+     * permissive fallback path below, i.e. rate limiting is silently off.
      * That is a misconfiguration, not an infra blip, so surface it loudly
      * instead of failing open without a trace.
      */
@@ -99,7 +136,7 @@ export class ValkeyRateLimitContext implements RateLimitContext {
     duration?: number,
     requestTime?: number
   ): Promise<IIncrementResult> {
-    const fullKey = buildKey(key);
+    const fullKey = buildKey(this.namespace, key);
     const now = requestTime ?? nowMs();
     const durationMs = duration ?? this.durationMs;
 
@@ -161,7 +198,7 @@ export class ValkeyRateLimitContext implements RateLimitContext {
 
   async decrement(key: string): Promise<void> {
     try {
-      await this.client.decr(buildKey(key));
+      await this.client.decr(buildKey(this.namespace, key));
     } catch (error: unknown) {
       logger.warn("Rate-limit Valkey decrement failed", {
         event: "cache_valkey_error",
@@ -172,7 +209,7 @@ export class ValkeyRateLimitContext implements RateLimitContext {
 
   async reset(key?: string): Promise<void> {
     if (key !== undefined) {
-      await this.client.del(buildKey(key));
+      await this.client.del(buildKey(this.namespace, key));
 
       return;
     }

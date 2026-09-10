@@ -85,7 +85,7 @@ else
   ok "dev stack ready"
 fi
 
-# Always migrate — a reachable :5432 does NOT guarantee a migrated schema. A
+# Always migrate: a reachable :5432 does NOT guarantee a migrated schema. A
 # sibling stack's `down -v` (e.g. the smoke gate) can drop the volume out from
 # under a still-listening Postgres, leaving tests to hit "relation
 # audit.audit_log does not exist". The api-migrate-dev one-shot is idempotent

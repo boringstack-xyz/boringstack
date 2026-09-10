@@ -13,12 +13,35 @@ import { afterAll } from "bun:test";
  * tests that each register + login a user. Raising the cap to a number
  * unreachable from a single suite keeps the rate limit "on" (still
  * counts) without it failing legitimate test flows. Production keeps
- * the real defaults — see src/config/env/schema.ts.
+ * the real defaults. See src/config/env/schema.ts.
  *
  * `??=` so explicit overrides in .env or CI still win.
  */
 process.env.AUTH_RATE_LIMIT_MAX ??= "100000";
 process.env.RATE_LIMIT_MAX ??= "100000";
+
+/*
+ * `security-spec/` pins the caps instead of defaulting them.
+ *
+ * The `??=` above loses to `.env`, which ships `RATE_LIMIT_MAX=100`. That is
+ * harmless in the default lane: the memory provider gives every limiter its
+ * own LRU, so the budget is per-limiter and per-process. Under
+ * `CACHE_PROVIDER=valkey` it is not. F15 is the finding that every limiter
+ * writes the same `rl:<ip>` key, and under `app.handle` there is no client
+ * address, so the entire suite shares one counter whose 60-second TTL
+ * outlives the process. Once a run crosses 100 requests, unrelated files
+ * start seeing 429 on login and their positive controls fail, and whether
+ * that happens depends on how recently the suite last ran. An expected-red
+ * baseline cannot tolerate an outcome that depends on run history.
+ *
+ * Nothing that asserts on rate limiting reads these: F15 constructs its own
+ * `ValkeyRateLimitContext` pair with explicit caps and its own client key,
+ * and F04 asserts on MFA attempt counting rather than on limiter budgets.
+ */
+if (process.env.SECURITY_SPEC === "true") {
+  process.env.AUTH_RATE_LIMIT_MAX = "1000000";
+  process.env.RATE_LIMIT_MAX = "1000000";
+}
 
 /*
  * Bun loads .env before this preload. In a plain unit run, force the
@@ -40,12 +63,12 @@ if (process.env.TEST_DATABASE_URL !== undefined) {
  * Force billing on for the test process so HTTP-level route tests can
  * hit the live mount. Bun reads `.env` before this preload runs, so a
  * developer-set `BILLING_ENABLED=false` would otherwise win the `??=`
- * race — straight assignment guarantees tests see the same flag
+ * race: straight assignment guarantees tests see the same flag
  * regardless of local `.env`.
  *
  * The env validator exempts the STRIPE_* required-check under
  * `NODE_ENV=test`, and `BillingService` only constructs when a key is
- * non-empty — fake values keep the singleton happy without touching
+ * non-empty: fake values keep the singleton happy without touching
  * Stripe. Real Stripe interactions are covered by unit tests that
  * stub the SDK.
  *
@@ -65,7 +88,7 @@ process.env.STRIPE_PRICE_ID_PRO = "price_test_pro";
  * Email webhook secrets. The Resend signing secret is a constant whsec
  * value the resend webhook utils (and route tests) can build signatures
  * against. The SendGrid signed-event webhook needs an ECDSA P-256
- * key pair — generated at preload and the matching private key stashed
+ * key pair, generated at preload and the matching private key stashed
  * on `globalThis` for sendgrid route tests to sign with.
  */
 process.env.RESEND_WEBHOOK_SECRET = `whsec_${Buffer.from(
@@ -88,11 +111,28 @@ Reflect.set(
 /*
  * Force the in-process memory cache provider so unit tests can round-trip
  * keys through the real `buildCacheService()` factory. The same straight-
- * assignment pattern as `BILLING_ENABLED` above — Bun reads `.env`
+ * assignment pattern as `BILLING_ENABLED` above: Bun reads `.env`
  * (`CACHE_ENABLED=false`) before this preload, so `??=` would not win.
  */
 process.env.CACHE_ENABLED = "true";
-process.env.CACHE_PROVIDER = "memory";
+
+/*
+ * `security-spec/` opts out of the memory provider.
+ *
+ * In memory mode every `rateLimit()` call builds its own `DefaultContext`
+ * LRU, so the limiter buckets are naturally separate. The shared-key
+ * collision in `src/lib/rate-limit/valkey-context.ts` therefore CANNOT
+ * reproduce here, and a test asserting on it would pass against broken
+ * code. The security spec suite needs the provider it actually ships with.
+ *
+ * Straight assignment for the default path, because Bun reads `.env`
+ * before this preload and `??=` would not win. The opt-in is explicit and
+ * affects nothing else.
+ */
+process.env.CACHE_PROVIDER =
+  process.env.SECURITY_SPEC === "true"
+    ? (process.env.CACHE_PROVIDER ?? "valkey")
+    : "memory";
 
 /*
  * Keep default unit runs hermetic. Valkey-backed tests remain available
@@ -101,7 +141,15 @@ process.env.CACHE_PROVIDER = "memory";
  * configured in .env.
  */
 process.env.QUEUES_ENABLED = "false";
-process.env.NOTIFICATIONS_SSE_ENABLED = "false";
+
+/*
+ * SSE stays off by default, but F14 is a finding about stream lifetime and
+ * cannot be observed with the feature disabled.
+ */
+process.env.NOTIFICATIONS_SSE_ENABLED =
+  process.env.SECURITY_SPEC === "true"
+    ? (process.env.NOTIFICATIONS_SSE_ENABLED ?? "true")
+    : "false";
 process.env.RUN_VALKEY_NETWORK_TESTS ??= "false";
 process.env.VALKEY_HOST = "127.0.0.1";
 process.env.LOG_LEVEL ??= "error";

@@ -183,7 +183,7 @@ export const ${filePrefix}Relations = relations(${filePrefix}, ({ one }) => ({
     /*
      * Capture the `usersRelations` block body so we can insert a new
      * `many: many(...)` line just before the closing `}));`. The body
-     * uses `[\s\S]*?` rather than the earlier `(?:[^}]*\n)*?` — a
+     * uses `[\s\S]*?` rather than the earlier `(?:[^}]*\n)*?`: a
      * quantifier-inside-a-quantifier pattern that CodeQL flags as
      * ReDoS-prone on input with many bare newlines. Single lazy
      * quantifier = linear scan, no backtracking blowup.

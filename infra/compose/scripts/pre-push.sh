@@ -7,7 +7,7 @@
 #   2. shellcheck     : compose/dev.sh + scripts/*.sh
 #   3. yamllint       : compose/*.yml + workflows
 #
-# full-stack-smoke is intentionally NOT run here — it's a 3–5 minute end-to-end
+# full-stack-smoke is intentionally NOT run here, it's a 3–5 minute end-to-end
 # stack boot. CI runs it on push. Run it locally with `compose/dev.sh up -d`
 # and `curl http://localhost:7330/health` if you want the full e2e signal.
 #
@@ -85,7 +85,7 @@ if ! command -v yamllint >/dev/null 2>&1; then
 else
   # Single-source the version from the CI workflow (same idiom as the
   # gitleaks check in scripts/ci/pre-push-security.sh): warn when the
-  # local yamllint diverges from the CI pin — rulesets change between
+  # local yamllint diverges from the CI pin, rulesets change between
   # releases, so a version gap means lint results can differ from CI.
   YAMLLINT_WORKFLOW="$ROOT/.github/workflows/infra-compose-validate-compose.yml"
   EXPECTED_YAMLLINT_VERSION="$(grep -m1 'YAMLLINT_VERSION:' "$YAMLLINT_WORKFLOW" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)"
@@ -94,7 +94,7 @@ else
     c_blue "  ⚠ local yamllint ${LOCAL_YAMLLINT_VERSION:-unknown} != CI-pinned ${EXPECTED_YAMLLINT_VERSION} — lint results may differ from CI (brew upgrade yamllint)."
   fi
   # Mirror CI exactly (validate-compose.yml yamllint job): same relaxed
-  # config, same targets. Workflows live at the repo root — the old
+  # config, same targets. Workflows live at the repo root, the old
   # $INFRA_ROOT/.github/workflows glob matched nothing, so workflow YAML
   # was silently unlinted locally.
   yamllint -d "{extends: relaxed, rules: {line-length: disable}}" \

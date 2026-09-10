@@ -140,11 +140,11 @@ export class PasswordResetService {
 
     const record = await db.transaction(async (tx) => {
       /*
-       * Atomic token claim — see email-verification.service.ts for the
+       * Atomic token claim. See email-verification.service.ts for the
        * full rationale. The pre-hash bcrypt cost runs outside the tx so
        * a duplicate submission still pays it, but only one call gets
        * past the DELETE...RETURNING. The loser sees an empty result
-       * and surfaces "Invalid or expired" — the user already-completed
+       * and surfaces "Invalid or expired": the user already-completed
        * state stays consistent because nothing past the claim runs
        * twice.
        */
@@ -213,7 +213,7 @@ export class PasswordResetService {
       action: AUDIT_ACTIONS.AUTH_PASSWORD_RESET_COMPLETED,
     });
 
-    void notifications.send(passwordResetCompletedEvent, {
+    notifications.detach(passwordResetCompletedEvent, {
       recipientUserId: record.userId,
       payload: {
         securityUrl: `${env.FRONTEND_URL}/account/settings`,

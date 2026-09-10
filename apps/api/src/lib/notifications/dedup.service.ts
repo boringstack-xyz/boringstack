@@ -12,7 +12,7 @@ import { getErrorMessage } from "../errors";
  * event has already fired inside the configured window and the current
  * dispatch must be skipped.
  *
- * Errors are surfaced (not swallowed) — a flaky dedup table would otherwise
+ * Errors are surfaced (not swallowed): a flaky dedup table would otherwise
  * be invisible and let duplicates through silently. The worker decides how
  * to react (BullMQ's retry envelope wraps it).
  */

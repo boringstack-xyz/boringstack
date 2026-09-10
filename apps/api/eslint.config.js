@@ -41,7 +41,7 @@ import pluginTestConventions from "@boring-stack-pkg/eslint-plugin-test-conventi
 //   - unchecked switch exhaustiveness
 //   - implicit string coercion in template literals
 //
-// Adjust per-project if a rule fights real intent — but the default bar is
+// Adjust per-project if a rule fights real intent, but the default bar is
 // high so the agent can self-correct without a human in the loop.
 
 export default tseslint.config(
@@ -61,7 +61,12 @@ export default tseslint.config(
     ],
   },
   {
-    files: ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.ts"],
+    files: [
+      "src/**/*.ts",
+      "tests/**/*.ts",
+      "security-spec/**/*.ts",
+      "scripts/**/*.ts",
+    ],
     extends: [
       pluginJs.configs.recommended,
       ...tseslint.configs.strictTypeChecked,
@@ -128,7 +133,7 @@ export default tseslint.config(
       "multiline-comment-style": ["error", "starred-block"],
 
       // ---------------------------------------------------------------------
-      // Hard bans — things an AI agent must never write
+      // Hard bans: things an AI agent must never write
       // ---------------------------------------------------------------------
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unsafe-assignment": "error",
@@ -147,7 +152,7 @@ export default tseslint.config(
       "@typescript-eslint/no-useless-template-literals": "off",
 
       // ---------------------------------------------------------------------
-      // Async correctness — async bugs are the #1 silent agent failure
+      // Async correctness: async bugs are the #1 silent agent failure
       // ---------------------------------------------------------------------
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": "error",
@@ -169,7 +174,7 @@ export default tseslint.config(
         {
           allowString: false,
           allowNumber: false,
-          // Allow `if (user)` for `T | undefined | null` — this is the
+          // Allow `if (user)` for `T | undefined | null`: this is the
           // standard Drizzle/ORM pattern and rejecting it forces noisy
           // `=== undefined` boilerplate everywhere.
           allowNullableObject: true,
@@ -183,7 +188,7 @@ export default tseslint.config(
         "error",
         {
           // Webhook handlers etc. switch on third-party unions with hundreds
-          // of variants — a `default:` arm is the right pattern there.
+          // of variants: a `default:` arm is the right pattern there.
           considerDefaultExhaustiveForUnions: true,
         },
       ],
@@ -249,7 +254,7 @@ export default tseslint.config(
         },
         {
           /*
-           * Bare `new Date().toISOString()` only — i.e. no constructor
+           * Bare `new Date().toISOString()` only, i.e. no constructor
            * arguments. `new Date(x).toISOString()` is intentional (often
            * expiry / TTL math) and stays in place.
            */
@@ -272,8 +277,8 @@ export default tseslint.config(
         },
         {
           /*
-           * Equality / inequality checks against an enum-shaped literal —
-           * `code === "NOT_FOUND"`, `status !== "ACTIVE"` — share the
+           * Equality / inequality checks against an enum-shaped literal:
+           * `code === "NOT_FOUND"`, `status !== "ACTIVE"`, share the
            * same smell. Reference the const.
            */
           selector:
@@ -284,7 +289,7 @@ export default tseslint.config(
       ],
 
       // ---------------------------------------------------------------------
-      // Naming conventions — enforces the AGENTS.md identifier shape
+      // Naming conventions: enforces the AGENTS.md identifier shape
       // ---------------------------------------------------------------------
       "@typescript-eslint/naming-convention": [
         "error",
@@ -294,8 +299,8 @@ export default tseslint.config(
           format: ["PascalCase"],
           prefix: ["I"],
         },
-        // Type aliases — PascalCase, no enforced prefix (allows `OAuthProvider`,
-        // `IAIChatOptions`, etc. — interface-like aliases keep the I-prefix
+        // Type aliases, PascalCase, no enforced prefix (allows `OAuthProvider`,
+        // `IAIChatOptions`, etc., interface-like aliases keep the I-prefix
         // when they shape a contract).
         {
           selector: "typeAlias",
@@ -312,24 +317,24 @@ export default tseslint.config(
           selector: "enumMember",
           format: ["UPPER_CASE"],
         },
-        // Variables — camelCase by default, UPPER_CASE for module-level
+        // Variables: camelCase by default, UPPER_CASE for module-level
         // `const` literals (top-level constants).
         {
           selector: "variable",
           format: ["camelCase", "UPPER_CASE", "PascalCase"],
           leadingUnderscore: "allow",
           // `__dirname` is the canonical Node shim built from
-          // `fileURLToPath(import.meta.url)` — pre-approved.
+          // `fileURLToPath(import.meta.url)`: pre-approved.
           filter: { regex: "^__dirname$", match: false },
         },
-        // Class / abstract members — camelCase methods + properties.
+        // Class / abstract members: camelCase methods + properties.
         {
           selector: "memberLike",
           modifiers: ["private"],
           format: ["camelCase"],
           leadingUnderscore: "allow",
         },
-        // Functions — camelCase or PascalCase (PascalCase for factories /
+        // Functions: camelCase or PascalCase (PascalCase for factories /
         // class-like factory functions).
         {
           selector: "function",
@@ -344,7 +349,7 @@ export default tseslint.config(
       ],
 
       /*
-       * Identifier length floor — applied via per-path override below
+       * Identifier length floor: applied via per-path override below
        * (production `src/` only). Tests + scripts use shorthand fixture
        * names (`a, b` for two distinct accounts in an isolation test)
        * that benefit from being short rather than verbose. Loop indexes
@@ -352,7 +357,7 @@ export default tseslint.config(
        */
 
       // ---------------------------------------------------------------------
-      // Import hygiene — sorted, deduped, no circular cycles
+      // Import hygiene: sorted, deduped, no circular cycles
       // ---------------------------------------------------------------------
       "import/no-duplicates": "error",
       "import/no-self-import": "error",
@@ -373,7 +378,7 @@ export default tseslint.config(
         //
         // Imports first: separate the cluster from code, but allow tight
         // packing inside the cluster (and let Prettier's import-sorter
-        // group them by category — those gaps don't count as "missing").
+        // group them by category, those gaps don't count as "missing").
         { blankLine: "always", prev: "import", next: "*" },
         { blankLine: "any", prev: "import", next: "import" },
         // Always blank line before a return.
@@ -416,7 +421,7 @@ export default tseslint.config(
       "sonarjs/prefer-single-boolean-return": "error",
 
       // ---------------------------------------------------------------------
-      // Modern JS hygiene (unicorn — only the rules that match our style)
+      // Modern JS hygiene (unicorn, only the rules that match our style)
       // ---------------------------------------------------------------------
       "unicorn/better-regex": "error",
       "unicorn/error-message": "error",
@@ -444,7 +449,7 @@ export default tseslint.config(
         "error",
         {
           // Health probes (liveness/readiness) and the root index are
-          // intentionally schemaless — orchestrators just need 200/503.
+          // intentionally schemaless, orchestrators just need 200/503.
           ignorePathPattern: "^/(health|ready)?$",
         },
       ],
@@ -489,6 +494,13 @@ export default tseslint.config(
             "**/tests/**",
             "**/__tests__/**",
             "**/src/clients/postgres/schema/**",
+            /*
+             * `pg_advisory_xact_lock` has no query-builder equivalent, and
+             * the seat cap needs it: counting members and inserting one
+             * without the lock is a check-then-act that concurrent
+             * acceptances walk straight through.
+             */
+            "**/src/lib/acl/enforce-entitlement.ts",
           ],
         },
       ],
@@ -496,7 +508,7 @@ export default tseslint.config(
       "drizzle-conventions/schema-files-must-only-export-schema": "error",
       "drizzle-conventions/schema-files-must-not-import-driver": "error",
       /*
-       * Account-scoped tables — every query must filter by `accountId`.
+       * Account-scoped tables: every query must filter by `accountId`.
        * Keep this list in sync with the `// @account-scoped accountId`
        * tagged tables in src/clients/postgres/schema/*. Adding a new
        * tenant-bound table without listing it here is a tenant-isolation
@@ -504,10 +516,10 @@ export default tseslint.config(
        *
        * `alternateScopeColumns` whitelists narrower-than-accountId scopes
        * that are still safe:
-       *   - userId on accountMemberships — a per-user membership listing
+       *   - userId on accountMemberships, a per-user membership listing
        *     (powers the account switcher) is bounded by the requesting
        *     user; cross-tenant by design.
-       *   - tokenHash on accountInvitations — cryptographically unique;
+       *   - tokenHash on accountInvitations, cryptographically unique;
        *     the row IS the scope (powers the accept-invitation flow).
        *
        * `allowFiles` covers files whose entire purpose is operating
@@ -551,7 +563,7 @@ export default tseslint.config(
        * `verifySendGridWebhook` (ECDSA), so both names are added to
        * the recognised construct/verify list. The Stripe-flavoured
        * `whsec_` signature-source check is scoped to Stripe paths via
-       * an override below — email providers manage their own keying.
+       * an override below, email providers manage their own keying.
        */
       "stripe-webhooks/handler-must-verify-signature": [
         "error",
@@ -595,7 +607,7 @@ export default tseslint.config(
       "resource-architecture/pluggable-providers-must-have-noop": [
         "error",
         {
-          // OAuth providers don't fit the noop-fallback pattern — when
+          // OAuth providers don't fit the noop-fallback pattern: when
           // credentials are missing, the route returns 404 rather than
           // falling through to a no-op provider.
           excludeProviderDirs: ["src/lib/oauth/providers"],
@@ -610,7 +622,7 @@ export default tseslint.config(
           // Strict: types, constants, and utils must each live in their
           // own file (auth.types.ts / auth.constants.ts / auth.utils.ts
           // pattern). Override the plugin's default `["type","constant"]`
-          // allowance — we don't ship "domain primitive" combo files.
+          // allowance, we don't ship "domain primitive" combo files.
           allow: [
             ["type", "constant"],
             ["constant", "function"],
@@ -625,7 +637,7 @@ export default tseslint.config(
       ],
 
       // ---------------------------------------------------------------------
-      // Structured logging — required `event:` field, masked PII, no
+      // Structured logging: required `event:` field, masked PII, no
       // stringified errors. The template's getErrorMessage() walks the
       // cause chain; the plugin autofixes `String(error)` → that.
       // ---------------------------------------------------------------------
@@ -657,14 +669,14 @@ export default tseslint.config(
       ],
 
       // ---------------------------------------------------------------------
-      // Test conventions — no .only / fdescribe in committed code, tests
+      // Test conventions: no .only / fdescribe in committed code, tests
       // route DB through helpers, every test mirrors a source file.
       // ---------------------------------------------------------------------
       "test-conventions/no-focused-tests": "error",
       "test-conventions/no-direct-db-in-tests": [
         "error",
         {
-          testFiles: ["tests/**/*.ts", "**/*.test.ts"],
+          testFiles: ["tests/**/*.ts", "security-spec/**/*.ts", "**/*.test.ts"],
           forbiddenPaths: ["**/clients/postgres/**", "drizzle-orm"],
           helpersPath: "tests/helpers/db",
         },
@@ -672,7 +684,7 @@ export default tseslint.config(
       "test-conventions/test-file-mirrors-source": "error",
 
       // ---------------------------------------------------------------------
-      // Env access — every read goes through src/config/env, every key
+      // Env access: every read goes through src/config/env, every key
       // must exist in the schema file.
       // ---------------------------------------------------------------------
       "env-access/no-direct-process-env": [
@@ -715,7 +727,7 @@ export default tseslint.config(
       "jwt-cookies/bcrypt-rounds-min": ["error", { minRounds: 12 }],
 
       // ---------------------------------------------------------------------
-      // Cache layer — TTL required, prefixed keys, helper-built keys.
+      // Cache layer: TTL required, prefixed keys, helper-built keys.
       // ---------------------------------------------------------------------
       "cache-keys/cache-set-must-have-ttl": "error",
       "cache-keys/cache-key-must-be-prefixed": [
@@ -731,18 +743,18 @@ export default tseslint.config(
           ],
         },
       ],
-      // Opt-in helper rule — wire helpers as the template adds them.
+      // Opt-in helper rule: wire helpers as the template adds them.
       "cache-keys/cache-key-from-helper": "off",
 
       // ---------------------------------------------------------------------
-      // DB transactions — multi-write functions must be transactional;
+      // DB transactions: multi-write functions must be transactional;
       // inside a tx, writes use `tx`, not the outer `db`.
       // ---------------------------------------------------------------------
       "db-transactions/multi-write-must-be-transactional": "error",
       "db-transactions/transaction-uses-tx-not-db": "error",
 
       // ---------------------------------------------------------------------
-      // Audit log — mutating service methods must record an audit event,
+      // Audit log: mutating service methods must record an audit event,
       // audit writes must be fire-and-forget, no PII in metadata.
       // ---------------------------------------------------------------------
       "audit-log/mutating-service-must-audit": [
@@ -762,12 +774,14 @@ export default tseslint.config(
       ],
       "audit-log/audit-write-must-be-fire-and-forget": [
         "error",
-        { allowAwaitInsidePatterns: ["tests/**/*.ts"] },
+        {
+          allowAwaitInsidePatterns: ["tests/**/*.ts", "security-spec/**/*.ts"],
+        },
       ],
       "audit-log/audit-metadata-no-pii": "error",
 
       // ---------------------------------------------------------------------
-      // OAuth security — Redis-backed state, PKCE for OIDC, bounded TTL.
+      // OAuth security: Redis-backed state, PKCE for OIDC, bounded TTL.
       // ---------------------------------------------------------------------
       "oauth-security/state-must-be-redis-backed": "error",
       "oauth-security/pkce-required-for-oidc": "error",
@@ -775,7 +789,7 @@ export default tseslint.config(
     },
   },
   // -------------------------------------------------------------------------
-  // AGENTS.md — resource layer imports (schemas / types / service / routes)
+  // AGENTS.md: resource layer imports (schemas / types / service / routes)
   // -------------------------------------------------------------------------
   {
     files: ["src/api/**/*.schemas.ts"],
@@ -954,7 +968,7 @@ export default tseslint.config(
   },
   /*
    * src/** gets the full no-restricted-syntax stack plus the role-literal ban.
-   * acl.constants.ts is excluded above — see comment on that override.
+   * acl.constants.ts is excluded above, see comment on that override.
    */
   {
     files: ["src/**/*.ts"],
@@ -996,15 +1010,15 @@ export default tseslint.config(
     // Tests can be a touch looser. Console is fine for diagnostics,
     // `no-restricted-syntax` for enums isn't useful here, and tests
     // legitimately throw `new Error(...)` to simulate retry/error paths
-    // — `ApiErrors.*` would obscure the test's intent.
-    files: ["tests/**/*.ts"],
+    // `ApiErrors.*` would obscure the test's intent.
+    files: ["tests/**/*.ts", "security-spec/**/*.ts"],
     rules: {
       "no-console": "off",
       "elysia/no-direct-error-throw": "off",
       // Tests log free-form messages for diagnostics; the `event:`
       // requirement is for production observability.
       "structured-logging/require-event-field": "off",
-      // Same reason — test logger calls don't go through LOG_EVENTS.
+      // Same reason, test logger calls don't go through LOG_EVENTS.
       "structured-logging/typed-event-names": "off",
       // Tests only audit the system under test; recording an audit event
       // from a fixture would muddy the assertions.
@@ -1015,14 +1029,14 @@ export default tseslint.config(
       // shell, not the validated boot schema, by design.
       "env-access/no-direct-process-env": "off",
       // Tests measure elapsed time, verify clock behaviour, and stamp
-      // fixture timestamps — direct `Date.now()` / `new Date()` is the
+      // fixture timestamps, direct `Date.now()` / `new Date()` is the
       // right tool here. Production code routes through `nowMs()`.
       "code-flow/no-bare-date-now": "off",
     },
   },
   {
     // The env validator's own test legitimately mutates `process.env` to
-    // exercise schema-validation failures. That is the entire point of
+    // exercise schema-validation failures. That is what they are for,
     // the suite.
     files: ["tests/config/env/**/*.ts"],
     rules: {
@@ -1051,7 +1065,7 @@ export default tseslint.config(
   },
   {
     // Cross-cutting parity tests + integration tests don't mirror a
-    // single source file by design — they verify invariants that span
+    // single source file by design, they verify invariants that span
     // multiple modules.
     files: [
       "tests/health.test.ts",
@@ -1067,6 +1081,10 @@ export default tseslint.config(
       "tests/lint-meta/lint-meta.test.ts",
       // Mirrors scripts/codegen/acl-scaffold/edit-tuple.ts, not src/.
       "tests/scripts/acl-scaffold.test.ts",
+      // Mirrors scripts/quality/security-manifest-lib.ts, not src/.
+      "tests/scripts/security-manifest.test.ts",
+      // Mirrors scripts/codegen/new-finding-lib.ts, not src/.
+      "tests/scripts/new-finding.test.ts",
     ],
     rules: {
       "test-conventions/test-file-mirrors-source": "off",
@@ -1083,7 +1101,7 @@ export default tseslint.config(
     },
   },
   {
-    // CLI scripts (scaffolders, build helpers) — console is the whole point.
+    // CLI scripts (scaffolders, build helpers): console is their output.
     // They also throw plain `new Error(...)` for boot-time validation,
     // never reaching Elysia's onError handler.
     files: ["scripts/**/*.ts"],
@@ -1099,7 +1117,7 @@ export default tseslint.config(
   {
     /*
      * Email-deliverability webhooks (Resend / SendGrid) use their own
-     * signature schemes — svix HMAC and ECDSA P-256 respectively — not
+     * signature schemes, svix HMAC and ECDSA P-256 respectively, not
      * Stripe's `whsec_*` prefix or `stripe-signature` header. The
      * Stripe-webhook rule family encodes Stripe-specific verification
      * shape (constructEvent call inside the handler, the `whsec_`
@@ -1131,7 +1149,7 @@ export default tseslint.config(
   },
   {
     /*
-     * Email template build/preview tools — standalone one-shot CLIs that run
+     * Email template build/preview tools: standalone one-shot CLIs that run
      * outside the request lifecycle. They print to console for human output,
      * read PREVIEW_PORT directly (a dev-only knob, not a production env var
      * that belongs in the boot-validated singleton), and stringify raw errors
@@ -1148,7 +1166,7 @@ export default tseslint.config(
   },
   {
     // Boot-time validation + email-template build/preview tools. These
-    // throws never reach the request-error handler — they crash the
+    // throws never reach the request-error handler, they crash the
     // process before Elysia is even constructed. Wrapping them in
     // `ApiErrors.*` would be misleading semantically.
     files: [
@@ -1164,7 +1182,7 @@ export default tseslint.config(
     // BillingService instantiates Stripe at construction. Eager
     // singleton would crash at import-time when BILLING_ENABLED=false
     // (no Stripe key). The lazy `getBillingService()` factory is the
-    // correct pattern for env-gated services — but it surfaces as
+    // correct pattern for env-gated services, but it surfaces as
     // class + module-scoped instance variable + factory function, which
     // the strict per-service-file `single-semantic-module` rejects.
     // Allow that specific combo here only.

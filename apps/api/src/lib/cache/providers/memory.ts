@@ -8,7 +8,7 @@ import type {
 /**
  * Process-local cache used in development, tests, and as the default
  * fallback when `CACHE_ENABLED=false`. Not safe across multiple processes
- * — use the Valkey provider in production deployments with > 1 replica.
+ *use the Valkey provider in production deployments with > 1 replica.
  */
 export class MemoryCacheService implements ICacheService {
   public readonly providerName: CacheProviderName = "memory";
@@ -62,6 +62,35 @@ export class MemoryCacheService implements ICacheService {
 
   async has(key: string): Promise<boolean> {
     return (await this.get(key)) !== null;
+  }
+
+  /*
+   * Expiry, read and write happen in one synchronous run, with no `await`
+   * between them. The runtime is single-threaded, so that makes the
+   * read-modify-write atomic within the process; yielding even once: an
+   * `await this.get(key)`, lets a second caller read the same value and
+   * both write the same increment, which for a lockout counter is a free
+   * extra guess per concurrent request.
+   *
+   * Across processes it is still not atomic, which is the caveat the rest
+   * of this provider carries.
+   */
+  increment(key: string, ttlSeconds?: number): Promise<number> {
+    const entry = this.store.get(key);
+    const live =
+      entry !== undefined && !this.isExpired(entry) ? entry : undefined;
+
+    // Incrementing must not extend an existing window.
+    const expiresAt =
+      live === undefined && ttlSeconds !== undefined
+        ? nowMs() + ttlSeconds * 1000
+        : (live?.expiresAt ?? null);
+
+    const next = (typeof live?.value === "number" ? live.value : 0) + 1;
+
+    this.store.set(key, { value: next, expiresAt });
+
+    return Promise.resolve(next);
   }
 
   async wrap<T>(

@@ -7,7 +7,7 @@ const SHA_REGEX = /^[0-9a-f]{40}$/u;
 const ID_TOKEN_WRITE_REGEX = /^[ \t]*id-token:[ \t]*write\b/mu;
 
 /*
- * `id-token: write` only does anything when a step exchanges the OIDC token —
+ * `id-token: write` only does anything when a step exchanges the OIDC token,
  * keyless signing (cosign/sigstore) or cloud OIDC auth. Granting it with no
  * consumer hands every step in the job a needless token-minting capability.
  * This allowlist names the consumers we recognise; extend it when adding a new
@@ -156,7 +156,7 @@ async function verifyActionSha(
         return true;
       }
     } catch {
-      // network glitch — try the other endpoint
+      // network glitch: try the other endpoint
     }
   }
 

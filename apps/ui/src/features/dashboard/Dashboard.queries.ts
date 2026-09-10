@@ -56,7 +56,7 @@ export function useDashboardUnreadCount(): UseQueryResult<number> {
 
 /*
  * ----------------------------------------------------------------------------
- * Plain query — read once, cache, refetch on mount.
+ * Plain query: read once, cache, refetch on mount.
  * ----------------------------------------------------------------------------
  */
 
@@ -77,7 +77,7 @@ export function useDashboardSummary(): UseQueryResult<IDashboardSummary> {
 
 /*
  * ----------------------------------------------------------------------------
- * Infinite query — canonical pagination pattern.
+ * Infinite query: canonical pagination pattern.
  *
  * Backend contract: GET /api/v1/dashboard/activity?cursor=<x>&limit=<n>
  *   → { items: ActivityItem[]; nextCursor: string | null }

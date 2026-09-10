@@ -39,7 +39,7 @@ describe("membershipMemo sweep", () => {
     membershipMemo.write("stale-2", "a", makeMembership("a"), staleAt);
 
     /*
-     * Fill up to one write below the sweep threshold — the two stale
+     * Fill up to one write below the sweep threshold: the two stale
      * entries must still be present (no sweep yet), then the next
      * write crosses the threshold and sweeps them.
      */

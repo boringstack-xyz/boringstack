@@ -12,7 +12,7 @@ import { expirationToIso } from "./notifications.push.utils";
 
 /**
  * Mounted under `/api/v1/notifications/push` (see notifications.routes.ts).
- * All three endpoints require the standard auth cookie — the public VAPID
+ * All three endpoints require the standard auth cookie: the public VAPID
  * key is exposed to the UI via the `VITE_VAPID_PUBLIC_KEY` build-time env,
  * not a runtime endpoint here.
  */

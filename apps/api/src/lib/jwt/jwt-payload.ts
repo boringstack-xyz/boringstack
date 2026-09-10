@@ -24,5 +24,10 @@ export const parseAuthJWTPayload = (raw: unknown): AuthJWTPayloadResult => {
       ? raw.iat
       : null;
 
-  return { kind: "ok", userId: id, accountId: aid, jti, issuedAt };
+  const expiresAt =
+    "exp" in raw && typeof raw.exp === "number" && Number.isFinite(raw.exp)
+      ? raw.exp
+      : null;
+
+  return { kind: "ok", userId: id, accountId: aid, jti, issuedAt, expiresAt };
 };

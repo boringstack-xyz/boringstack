@@ -9,7 +9,7 @@ import {
 } from "../../clients/postgres/schema";
 import { env } from "../../config/env";
 import { logger } from "../../config/logger";
-import { ROLE } from "../../lib/acl";
+import { ROLE, enforceSeatAvailable } from "../../lib/acl";
 import { AUDIT_ACTIONS, auditLogService } from "../../lib/audit-log";
 import { ApiErrors, getErrorMessage } from "../../lib/errors";
 import { now } from "../../lib/time/now";
@@ -65,16 +65,6 @@ export class JoinRequestsService {
         targetAccountId: input.accountId,
         metadata: { accountId: input.accountId },
       });
-
-      this.fireOwnerNotification(input.accountId, inserted.id).catch(
-        (error: unknown) => {
-          logger.warn("Join request owner notification failed", {
-            event: "accounts.join_request.email_failed",
-            requestId: inserted.id,
-            error: getErrorMessage(error),
-          });
-        }
-      );
 
       return { id: inserted.id, isNew: true };
     }
@@ -142,6 +132,14 @@ export class JoinRequestsService {
       if (!request) {
         throw ApiErrors.notFound("Join request");
       }
+
+      /*
+       * Approval is a second write path into `account_memberships`, so it
+       * needs the same cap check as invitation acceptance: gating only the
+       * invitation flow would leave a whole route through which an account
+       * grows past its plan.
+       */
+      await enforceSeatAvailable(tx, request.accountId);
 
       await tx.insert(accountMemberships).values({
         accountId: request.accountId,
@@ -216,6 +214,31 @@ export class JoinRequestsService {
     });
 
     return toJoinRequest(updated);
+  }
+
+  /**
+   * Emails the owner about a pending request. Call this AFTER the
+   * transaction that created the request has committed.
+   *
+   * Kept off `createPending` on purpose. That runs inside the caller's
+   * transaction, while `fireOwnerNotification` reads through `db` rather
+   * than `tx`: firing it there reads outside the transaction and can email
+   * a review link for a request id that is not committed yet, or that is
+   * about to be rolled back.
+   */
+  async notifyOwnerOfPendingRequest(
+    accountId: string,
+    requestId: string
+  ): Promise<void> {
+    await this.fireOwnerNotification(accountId, requestId).catch(
+      (error: unknown) => {
+        logger.warn("Join request owner notification failed", {
+          event: "accounts.join_request.email_failed",
+          requestId,
+          error: getErrorMessage(error),
+        });
+      }
+    );
   }
 
   private async fireOwnerNotification(

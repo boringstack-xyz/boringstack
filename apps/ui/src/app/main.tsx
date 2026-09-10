@@ -18,7 +18,7 @@ if (env.VITE_SENTRY_DSN !== "") {
     /*
      * 0 keeps Sentry error-capture-only on the browser side. `browserTracingIntegration`
      * stays loaded because it's what writes the W3C `traceparent` header on
-     * outbound `/api/*` fetches — the API's OpenTelemetry SDK reads that
+     * outbound `/api/*` fetches: the API's OpenTelemetry SDK reads that
      * header to continue the trace server-side and ship spans to Tempo. With
      * rate 0 the browser doesn't send transactions to GlitchTip but still
      * generates trace ids, so a browser-raised error event still carries
@@ -53,7 +53,7 @@ logger.info({ event: "app.bootstrapped", mode: env.MODE });
 
 /*
  * Register the Web Push service worker. Best-effort: failure here doesn't
- * block the app — the SettingsPage reports "not supported" / "blocked" via
+ * block the app: the SettingsPage reports "not supported" / "blocked" via
  * the useWebPush hook. Only attempt registration in browsers that support
  * service workers (Safari < 16 doesn't ship Push API + VAPID).
  */

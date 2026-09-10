@@ -3,7 +3,7 @@ import type { IReadinessCheck, IReadinessResult } from "../health.types";
 import { nowMs } from "../../../lib/time/now";
 
 /**
- * Email check is *configuration-only* — we don't probe the provider over
+ * Email check is *configuration-only*: we don't probe the provider over
  * the network. Live probes burn provider rate limits, can incur cost, and
  * a flaky 3rd party should not flip our readiness probe (and remove us
  * from the LB) when the API itself is healthy.

@@ -1,4 +1,4 @@
-// k6 load test — golden-path API smoke at sustained load.
+// k6 load test: golden-path API smoke at sustained load.
 //
 // Exercises register → force-verify → login → dashboard summary
 // create → list, all over the SPA's Vite proxy at :7331 (same path your
@@ -6,7 +6,7 @@
 //
 //   ./scripts/loadtest/run.sh
 //
-// The thresholds at the top of this file are the merge gate — when one
+// The thresholds at the top of this file are the merge gate: when one
 // trips, k6 exits non-zero. Tune for your hardware: a single Hetzner cx32
 // happily serves the default 50 VUs; a laptop running everything in
 // docker may need RPS dialed back.
@@ -37,7 +37,7 @@ export const options = {
     },
   },
   thresholds: {
-    // p95 budgets — see findings 14 + 15 in the 1.0 audit. Tighten as
+    // p95 budgets. See findings 14 + 15 in the 1.0 audit. Tighten as
     // the workload allows.
     "http_req_duration{status:200}": ["p(95)<800"],
     "http_req_failed": ["rate<0.02"],

@@ -285,7 +285,7 @@ describe("MfaService", () => {
       expect(lastOutcome?.kind).toBe("locked_out");
 
       /*
-       * The challenge is now gone — a follow-up call returns 401 from
+       * The challenge is now gone: a follow-up call returns 401 from
        * the missing-challenge branch, not "failed".
        */
       let caught: unknown;
@@ -524,7 +524,7 @@ describe("MfaService", () => {
       /*
        * Test isolation, not a security relaxation: the setup verify
        * bumped mfaLastTotpStep to the current step, which would block
-       * every call below with same-step replay protection — masking
+       * every call below with same-step replay protection, masking
        * the race we want to measure.
        */
       await db

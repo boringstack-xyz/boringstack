@@ -3,11 +3,11 @@
  * One-command opt-in for the spec loop. Three things get wired so the
  * forker doesn't have to copy files by hand:
  *
- *   1. `.specs/next.md` — the live spec, copied from the vendored
+ *   1. `.specs/next.md`: the live spec, copied from the vendored
  *      template at tools/spec-loop/templates/next.md.
- *   2. `.claude/commands/spec.md` — the slash command, copied from
+ *   2. `.claude/commands/spec.md`: the slash command, copied from
  *      tools/spec-loop/commands/spec.md so /spec works in this project.
- *   3. `.claude/settings.json` + `.cursor/hooks.json` — PreToolUse hook
+ *   3. `.claude/settings.json` + `.cursor/hooks.json`: PreToolUse hook
  *      that runs `bun tools/spec-loop/hooks/gate.ts` and blocks source
  *      writes until the current slice is approved.
  *

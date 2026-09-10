@@ -1,6 +1,6 @@
 /*
  * Every event name the UI emits. Adding a new one here is the only path to
- * emitting it — `logger.{debug,info,warn,error}` typechecks the `event` field
+ * emitting it: `logger.{debug,info,warn,error}` typechecks the `event` field
  * against this union. Sorted to make conflicts during PR rebase trivial.
  */
 export const LOG_EVENTS = [

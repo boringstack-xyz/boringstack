@@ -12,11 +12,12 @@ import {
   parseAuthJWTPayload,
 } from "../../lib/jwt";
 import type { IUser } from "../users/users.types";
+import type { IAuthCredential, IAuthenticatedContext } from "./auth.types";
 
 /**
  * Two-tier revocation lookup. Runs after signature/expiry verification
  * so a forged token has to clear signing before the cache is even hit.
- * Tokens that predate the revocation feature lack `jti` / `issuedAt` —
+ * Tokens that predate the revocation feature lack `jti` / `issuedAt`,
  * they flow through unchecked and expire on their 15-minute clock.
  */
 const assertJtiNotRevoked = async (jti: string | null): Promise<void> => {
@@ -97,7 +98,7 @@ const translateJwtError = (err: unknown): never => {
 const verifyAuthCookie = async (
   jwt: { verify: (token: string) => Promise<unknown> },
   cookieValue: unknown
-): Promise<{ user: IUser; accountId: string } | null> => {
+): Promise<IAuthenticatedContext | null> => {
   if (cookieValue === undefined) {
     return null;
   }
@@ -133,7 +134,15 @@ const verifyAuthCookie = async (
      */
     Sentry.setUser({ id: user.id, email: user.email });
 
-    return { user, accountId: parsed.accountId };
+    return {
+      user,
+      accountId: parsed.accountId,
+      credential: {
+        jti: parsed.jti,
+        issuedAt: parsed.issuedAt,
+        expiresAt: parsed.expiresAt,
+      },
+    };
   } catch (err: unknown) {
     return translateJwtError(err);
   }
@@ -141,7 +150,7 @@ const verifyAuthCookie = async (
 
 /**
  * Required-auth guard. Use on every endpoint where an anonymous caller
- * is a programming error or a security boundary — mutations, account
+ * is a programming error or a security boundary: mutations, account
  * management, billing, etc. The contract:
  *
  *  - missing cookie    → 401 `missing_session`
@@ -152,31 +161,33 @@ const verifyAuthCookie = async (
  * `/refresh`, `/mfa/status`), reach for `tryAuth` instead.
  */
 export const requireAuth = () =>
-  new Elysia()
-    .use(createJWTConfig())
-    .derive(
-      async ({
-        jwt: jwtPlugin,
-        cookie,
-      }): Promise<{ user: IUser; accountId: string }> => {
-        const session = await verifyAuthCookie(
-          jwtPlugin,
-          cookie[AUTH_COOKIE_NAME]?.value
-        );
+  new Elysia().use(createJWTConfig()).derive(
+    async ({
+      jwt: jwtPlugin,
+      cookie,
+    }): Promise<{
+      user: IUser;
+      accountId: string;
+      credential: IAuthCredential;
+    }> => {
+      const session = await verifyAuthCookie(
+        jwtPlugin,
+        cookie[AUTH_COOKIE_NAME]?.value
+      );
 
-        if (session === null) {
-          throw ApiErrors.unauthorized("Missing authentication cookie");
-        }
-
-        return session;
+      if (session === null) {
+        throw ApiErrors.unauthorized("Missing authentication cookie");
       }
-    );
+
+      return session;
+    }
+  );
 
 /**
  * Best-effort auth guard. Resolves the session if one is presented and
  * valid; returns `{ user: null, accountId: null }` when no cookie is
  * presented at all. Still throws 401 when a cookie IS present but the
- * signature/payload doesn't verify — a forged or expired credential is
+ * signature/payload doesn't verify: a forged or expired credential is
  * a real failure even on a probe endpoint, and the client should treat
  * it as a forced-logout signal rather than rendering as "anonymous".
  *

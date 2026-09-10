@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
+import { expectProvisioned } from "../../helpers/auth";
 
 import { accountsService } from "../../../src/api/accounts/accounts.service";
 import { adminBillingService } from "../../../src/api/admin/admin-billing.service";
@@ -65,11 +66,12 @@ describe("adminBillingService.grantFeature", () => {
 
     const operatorId = await seedUser("op@example.com");
     const customerId = await seedUser("cust@example.com");
-    const { account, membership } =
+    const { account, membership } = expectProvisioned(
       await accountsService.provisionAfterVerification({
         userId: customerId,
         name: "Cust",
-      });
+      })
+    );
 
     const result = await adminBillingService.grantFeature({
       accountId: account.id,
@@ -120,11 +122,12 @@ describe("adminBillingService.grantFeature", () => {
 
     const operatorId = await seedUser("op2@example.com");
     const customerId = await seedUser("cust2@example.com");
-    const { account, membership } =
+    const { account, membership } = expectProvisioned(
       await accountsService.provisionAfterVerification({
         userId: customerId,
         name: "Cust",
-      });
+      })
+    );
 
     await adminBillingService.grantFeature({
       accountId: account.id,
@@ -178,11 +181,12 @@ describe("adminBillingService.revokeFeature", () => {
 
     const operatorId = await seedUser("op3@example.com");
     const customerId = await seedUser("cust3@example.com");
-    const { account, membership } =
+    const { account, membership } = expectProvisioned(
       await accountsService.provisionAfterVerification({
         userId: customerId,
         name: "Cust",
-      });
+      })
+    );
 
     const { id } = await adminBillingService.grantFeature({
       accountId: account.id,
@@ -217,11 +221,12 @@ describe("adminBillingService.revokeFeature", () => {
 
     const operatorId = await seedUser("op5@example.com");
     const customerId = await seedUser("cust5@example.com");
-    const { account, membership } =
+    const { account, membership } = expectProvisioned(
       await accountsService.provisionAfterVerification({
         userId: customerId,
         name: "Cust",
-      });
+      })
+    );
 
     const { id } = await adminBillingService.grantFeature({
       accountId: account.id,
@@ -272,10 +277,12 @@ describe("adminBillingService.grantPlan", () => {
 
     const operatorId = await seedUser("op4@example.com");
     const customerId = await seedUser("cust4@example.com");
-    const { account } = await accountsService.provisionAfterVerification({
-      userId: customerId,
-      name: "Cust",
-    });
+    const { account } = expectProvisioned(
+      await accountsService.provisionAfterVerification({
+        userId: customerId,
+        name: "Cust",
+      })
+    );
     const { free, pro } = await ensurePlans();
 
     // Seed a baseline Free plan first
@@ -316,10 +323,12 @@ describe("adminBillingService.grantPlan", () => {
 
     const operatorId = await seedUser("op5@example.com");
     const customerId = await seedUser("cust5@example.com");
-    const { account } = await accountsService.provisionAfterVerification({
-      userId: customerId,
-      name: "Cust",
-    });
+    const { account } = expectProvisioned(
+      await accountsService.provisionAfterVerification({
+        userId: customerId,
+        name: "Cust",
+      })
+    );
     const { pro } = await ensurePlans();
 
     await adminBillingService.grantPlan({

@@ -6,6 +6,7 @@ import {
   type ITestUser,
   authedContext,
   fetchActiveAccountId,
+  grantTeamPlan,
   registerAndVerify,
   uniqueEmail
 } from "./fixtures/helpers";
@@ -32,7 +33,7 @@ test.describe("Account switcher", () => {
 
     /*
      * Distinct first/last names per user so the personal account
-     * names (which derive from "FirstName LastName") differ — that
+     * names (which derive from "FirstName LastName") differ, that
      * lets us locate the non-active row in the switcher by label.
      */
     await registerAndVerify(userA, "Alpha", "Owner");
@@ -40,6 +41,9 @@ test.describe("Account switcher", () => {
 
     const ctxA = await authedContext(userA);
     const accountA = await fetchActiveAccountId(ctxA);
+
+    // A second member is a paid feature, and a seat has to exist for them.
+    await grantTeamPlan(ctxA);
 
     const inviteRes = await ctxA.post(
       `/api/v1/accounts/${accountA}/invitations`,
@@ -88,7 +92,7 @@ test.describe("Account switcher", () => {
 
     /*
      * Capture the active account label before switching so we can
-     * assert the trigger label changes after click — independent of
+     * assert the trigger label changes after click, independent of
      * which order the SPA renders the memberships in.
      */
     const labelBefore = (await trigger.textContent())?.trim() ?? "";

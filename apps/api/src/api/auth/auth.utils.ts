@@ -16,7 +16,7 @@ export const toPublicUser = (user: IUser): IPublicUser => ({
  * Resolves the active account for JWT issuance. Picks the user's
  * first active membership in joined-at order; the JWT-claimed account
  * can be switched at runtime via the account-switch endpoint. Throws
- * when the user has no active memberships — that's an invariant break
+ * when the user has no active memberships: that's an invariant break
  * (signup always creates a personal account).
  */
 export const resolveActiveAccountId = async (

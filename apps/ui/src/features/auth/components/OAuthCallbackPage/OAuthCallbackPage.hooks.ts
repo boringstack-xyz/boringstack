@@ -57,7 +57,7 @@ export function useOAuthCallbackPage(): IOAuthCallbackPageView {
       /*
        * The OAuth callback redirect lands with the session cookie
        * already set. Pre-fetch /me with short retries so the post-
-       * navigation ProtectedRoute is a cache hit, not a refetch —
+       * navigation ProtectedRoute is a cache hit, not a refetch,
        * the same cookie-commit lag that hits the password login also
        * hits the post-redirect callback. See Auth.session.sync.ts.
        */

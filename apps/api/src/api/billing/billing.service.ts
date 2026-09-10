@@ -78,7 +78,7 @@ export class BillingService {
     }
 
     /*
-     * Explicit budget — the SDK's implicit 80s default would hold
+     * Explicit budget: the SDK's implicit 80s default would hold
      * checkout/portal request handlers hostage to a slow Stripe API.
      * The SDK retries idempotent calls internally, so each attempt
      * gets this budget.
@@ -183,7 +183,7 @@ export class BillingService {
        * double-click into a single customer record. Without it, two
        * parallel checkout requests each see `stripeCustomerId === null`,
        * each `customers.create()` returns a *different* id, and the
-       * second DB write wins — the orphaned customer's future webhook
+       * second DB write wins: the orphaned customer's future webhook
        * deliveries don't resolve the account and the subscription
        * silently lands on the wrong tenant. Stripe holds the key for
        * 24h, which covers any plausible double-submit window.
@@ -199,7 +199,7 @@ export class BillingService {
       stripeCustomerId = customer.id;
 
       /*
-       * Conditional update — only write the customer id when the column
+       * Conditional update: only write the customer id when the column
        * is still empty. A concurrent request that beat us to the Stripe
        * API may have already filled it with the same value (idempotency
        * key collapse) or, in theory, raced past our row in a different
@@ -379,7 +379,7 @@ export class BillingService {
 
     /*
      * Re-derive the account from the verified Stripe customer rather than
-     * trusting session.metadata.accountId alone — the same cross-check
+     * trusting session.metadata.accountId alone: the same cross-check
      * handleSubscriptionUpsert already performs. The metadata rides inside
      * a signature-verified event, so this is defense-in-depth: it catches a
      * mis-set/reassigned customer→account mapping before we mutate plans.
@@ -403,6 +403,58 @@ export class BillingService {
       return;
     }
 
+    const subscriptionId =
+      typeof session.subscription === "string"
+        ? session.subscription
+        : (session.subscription?.id ?? null);
+
+    const current = await tx.query.accountPlans.findFirst({
+      where: and(
+        eq(accountPlans.accountId, accountId),
+        isNull(accountPlans.revokedAt)
+      ),
+    });
+
+    /*
+     * A row for this same subscription is already materialized, so
+     * `customer.subscription.*` is the authority on it and checkout only
+     * records that it saw the event.
+     *
+     * Status and plan are deliberately NOT written here. Checkout
+     * completion means "the customer finished the hosted flow", which is
+     * not the same claim as "the subscription is active": Stripe emits
+     * both events with the same `created` second, so neither is skipped by
+     * the ordering guard and whichever lands last wins. Writing `active`
+     * from this side lets a checkout arriving after an `unpaid`,
+     * `past_due`, `canceled` or `trialing` update silently restore paid
+     * entitlement to a delinquent account.
+     *
+     * Revoking the row and inserting a replacement is worse still: it
+     * discards the period, and a row without `currentPeriodEnd` is
+     * permanently unsweepable, since the downgrade job filters on
+     * `isNotNull(currentPeriodEnd)`.
+     */
+    if (
+      current !== undefined &&
+      subscriptionId !== null &&
+      current.stripeSubscriptionId === subscriptionId
+    ) {
+      await tx
+        .update(accountPlans)
+        .set({
+          lastStripeEventId: details.eventId,
+          lastStripeEventAt: stripeEventOccurredAt(details.eventCreated),
+        })
+        .where(
+          and(
+            eq(accountPlans.id, current.id),
+            eq(accountPlans.accountId, accountId)
+          )
+        );
+
+      return;
+    }
+
     await tx
       .update(accountPlans)
       .set({ revokedAt: now() })
@@ -418,6 +470,14 @@ export class BillingService {
       planId,
       status: "active",
       source: "stripe",
+      /*
+       * The session names its subscription. Dropping it makes
+       * `getSubscription` report `hasStripeSubscription: false` for an
+       * account that has just paid, and leaves the row with nothing for a
+       * later subscription event to match on.
+       */
+      stripeSubscriptionId: subscriptionId,
+      currentPeriodEnd: current?.currentPeriodEnd ?? null,
       lastStripeEventId: details.eventId,
       lastStripeEventAt: stripeEventOccurredAt(details.eventCreated),
     });
@@ -538,6 +598,12 @@ export class BillingService {
       return;
     }
 
+    /*
+     * Scoped to the subscription the event names. Cancelling "whatever is
+     * current" lets a late `deleted` for an OLD subscription cancel the NEW
+     * one, and cancel-then-resubscribe followed by a webhook retry produces
+     * exactly that order. Stripe does not guarantee delivery order.
+     */
     await tx
       .update(accountPlans)
       .set({
@@ -548,6 +614,7 @@ export class BillingService {
       .where(
         and(
           eq(accountPlans.accountId, account.id),
+          eq(accountPlans.stripeSubscriptionId, subscription.id),
           isNull(accountPlans.revokedAt)
         )
       );

@@ -49,7 +49,7 @@ function headlineFor(error: unknown, t: (key: string) => string): string {
  * layout so the rest of the app shell stays interactive.
  *
  * The global `<ErrorBoundaryProvider>` (in `src/app/providers/`) is a final
- * fallback for catastrophic errors that escape the router — it should rarely
+ * fallback for catastrophic errors that escape the router, it should rarely
  * fire in practice.
  */
 export const RouteErrorBoundary: FC = () => {
@@ -79,7 +79,7 @@ export const RouteErrorBoundary: FC = () => {
 
   const handleRetry = useCallback((): void => {
     /*
-     * A full reload of the current route — re-runs the queryFn and rebuilds
+     * A full reload of the current route: re-runs the queryFn and rebuilds
      * the React tree from scratch. Cheaper than `window.location.reload`
      * because the JS bundle and CSS stay warm in the browser cache.
      */

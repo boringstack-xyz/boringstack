@@ -329,7 +329,7 @@ const router = createBrowserRouter([
   {
     /*
      * Email-link landing for ownership transfers. Renders Accept and
-     * Decline buttons — never auto-fires, because either path mutates
+     * Decline buttons: never auto-fires, because either path mutates
      * account roles. Authenticated only; the API also enforces that
      * the recipient JWT matches the offer's `toUserId`.
      */

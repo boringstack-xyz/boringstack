@@ -4,7 +4,7 @@
  * `require-active-membership.test.ts` integration suite (which calls
  * `resolveActiveMembership` / `resolveFreshMembership` and observes the
  * same DB query path). This file exists to satisfy lint:meta's
- * "every `*.service.ts` ships with a test" floor — the lookup function
+ * "every `*.service.ts` ships with a test" floor: the lookup function
  * has no behaviour worth re-asserting in isolation. If the lookup
  * grows logic that's NOT covered by the integration tests, add a focused
  * case here.

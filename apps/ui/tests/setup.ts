@@ -42,7 +42,7 @@ if (typeof globalThis.EventSource === "undefined") {
 
 /*
  * lottie-web touches the canvas API at module load, which crashes jsdom.
- * Stub it across the test suite — components that pass animationData=null
+ * Stub it across the test suite: components that pass animationData=null
  * never render the player anyway.
  */
 vi.mock("lottie-react", () => ({

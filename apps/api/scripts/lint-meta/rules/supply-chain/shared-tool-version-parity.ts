@@ -6,7 +6,7 @@ import type { IMetaRule, IViolation } from "../../types";
 
 /*
  * Dev tooling that must stay in lockstep across every app that declares it.
- * Drift here means two apps lint/format/typecheck with different rule sets —
+ * Drift here means two apps lint/format/typecheck with different rule sets:
  * a class of defect that has bitten this repo before. Only apps that actually
  * declare a tool are compared, so an app legitimately omitting one (e.g. the
  * static docs site has no ESLint) is never forced to add it.

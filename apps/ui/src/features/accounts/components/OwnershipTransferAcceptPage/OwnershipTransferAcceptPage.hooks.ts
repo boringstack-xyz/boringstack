@@ -16,7 +16,7 @@ import type {
 
 /**
  * Email-link landing for ownership transfers. Unlike invitations we
- * DON'T auto-fire — accepting transfers ownership of a whole account,
+ * DON'T auto-fire: accepting transfers ownership of a whole account,
  * so a stray click on the email shouldn't perform it. The page renders
  * Accept / Decline buttons and only acts on explicit user input.
  */

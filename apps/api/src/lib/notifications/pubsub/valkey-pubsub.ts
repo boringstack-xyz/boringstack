@@ -9,14 +9,14 @@ import type { IPubSubSubscriber } from "./valkey-pubsub.types";
 
 /**
  * Dedicated Valkey pub/sub primitives. Pub/sub clients can't share a
- * connection with anything else — when a client is in subscriber mode the
+ * connection with anything else: when a client is in subscriber mode the
  * server rejects every other command. BullMQ's own connection is therefore
  * unusable for notifications fan-out, so this class opens separate ioredis
  * clients: one long-lived publisher (shared across PUBLISH calls) and a
  * fresh subscriber per SSE connection.
  *
  * Wrapped as a class so the publisher state lives on an instance instead of
- * a module-scope variable, keeping this file single-concern (one class —
+ * a module-scope variable, keeping this file single-concern (one class,
  * no mixed const/function categories).
  */
 export class ValkeyPubSub {
@@ -24,7 +24,7 @@ export class ValkeyPubSub {
 
   async publish(channel: string, message: string): Promise<void> {
     /*
-     * Publisher is a one-shot command — failing fast keeps a slow
+     * Publisher is a one-shot command: failing fast keeps a slow
      * Valkey from stalling the request that is publishing.
      */
     this.publisher ??= new Redis(getValkeyAppClientOptions());
@@ -44,7 +44,7 @@ export class ValkeyPubSub {
 
   /**
    * Build a subscriber client bound to a single channel. The caller is
-   * responsible for calling `disconnect()` when done — typically inside the
+   * responsible for calling `disconnect()` when done, typically inside the
    * SSE handler's `finally` block when the client disconnects.
    *
    * The `onMessage` callback receives raw string payloads; parsing is the
@@ -58,7 +58,7 @@ export class ValkeyPubSub {
     /*
      * Subscriber holds a long-lived SUBSCRIBE session. ioredis must
      * keep retrying on transient errors and queue commands while the
-     * connection comes up — exactly what `getValkeyConnectionOptions`
+     * connection comes up, exactly what `getValkeyConnectionOptions`
      * (BullMQ-style, `maxRetriesPerRequest: null`) provides. The
      * fail-fast profile breaks `subscribe()` because the first command
      * races the connection.

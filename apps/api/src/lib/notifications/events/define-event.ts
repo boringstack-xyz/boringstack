@@ -87,7 +87,7 @@ export const defineNotificationEvent = <TSchemaShape extends TSchema>(
   };
 
   /*
-   * The phantom payload brand is type-only — adding it returns the
+   * The phantom payload brand is type-only: adding it returns the
    * intersection `IRegisteredEvent & IPayloadBrand<TPayload>` without
    * introducing any runtime field, since `__payload` is optional.
    */

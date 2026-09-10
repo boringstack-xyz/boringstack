@@ -96,12 +96,30 @@ export const ApiErrors = {
       details
     ),
 
+  /*
+   * 413, not 400. A size rejection has to be distinguishable from a
+   * malformed body: both are client errors, but only one means "the cap
+   * fired", and a test or an operator cannot tell an absent cap from a
+   * fussy JSON parser when the two share a status.
+   */
+  payloadTooLarge: (
+    message: string,
+    details?: Record<string, unknown>
+  ): ApiError =>
+    new ApiError(
+      ErrorCodes.PAYLOAD_TOO_LARGE,
+      message,
+      413,
+      undefined,
+      details
+    ),
+
   rateLimit: (
     message: string = ErrorMessages[ErrorCodes.RATE_LIMIT_EXCEEDED]
   ): ApiError => new ApiError(ErrorCodes.RATE_LIMIT_EXCEEDED, message, 429),
 
   /*
-   * Plan-limit errors don't carry per-field validation — the `feature`
+   * Plan-limit errors don't carry per-field validation: the `feature`
    * surfaces in `details` so the UI's pricing/upgrade prompt can read
    * it without trying to interpret it as a form field.
    */

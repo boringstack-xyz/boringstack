@@ -3,6 +3,7 @@ import { Elysia, t } from "elysia";
 import {
   AUTH_COOKIE_CONFIG,
   AUTH_COOKIE_NAME,
+  MFA_CHALLENGE_COOKIE_NAME,
   REFRESH_COOKIE_CONFIG,
   REFRESH_COOKIE_NAME,
 } from "../../lib/cookies";
@@ -32,7 +33,7 @@ import { mfaService, sessionService } from "./services";
 
 /**
  * Unauthenticated MFA endpoints. The opaque challenge token in the body
- * authenticates the request — the session cookie is not yet issued at
+ * authenticates the request: the session cookie is not yet issued at
  * this point in the flow.
  */
 const mfaUnauthenticatedRoutes = new Elysia()
@@ -44,7 +45,7 @@ const mfaUnauthenticatedRoutes = new Elysia()
     "/mfa/verify-login",
     async ({ body, jwt, cookie }) => {
       const outcome = await mfaService.verifyTotpLogin(
-        body.challengeToken,
+        resolveChallengeToken(body.challengeToken, cookie),
         body.code
       );
 
@@ -66,6 +67,7 @@ const mfaUnauthenticatedRoutes = new Elysia()
         await buildJWTPayload(outcome.user.id, outcome.user.email, accountId)
       );
 
+      cookie[MFA_CHALLENGE_COOKIE_NAME]?.remove();
       cookie[AUTH_COOKIE_NAME]?.set({ value: token, ...AUTH_COOKIE_CONFIG });
       cookie[REFRESH_COOKIE_NAME]?.set({
         value: session.token,
@@ -87,7 +89,7 @@ const mfaUnauthenticatedRoutes = new Elysia()
     "/mfa/verify-recovery",
     async ({ body, jwt, cookie }) => {
       const outcome = await mfaService.verifyRecoveryLogin(
-        body.challengeToken,
+        resolveChallengeToken(body.challengeToken, cookie),
         body.code
       );
 
@@ -109,6 +111,7 @@ const mfaUnauthenticatedRoutes = new Elysia()
         await buildJWTPayload(outcome.user.id, outcome.user.email, accountId)
       );
 
+      cookie[MFA_CHALLENGE_COOKIE_NAME]?.remove();
       cookie[AUTH_COOKIE_NAME]?.set({ value: token, ...AUTH_COOKIE_CONFIG });
       cookie[REFRESH_COOKIE_NAME]?.set({
         value: session.token,
@@ -233,6 +236,32 @@ const mfaAuthenticatedRoutes = requireAuth()
       },
     }
   );
+
+/**
+ * The challenge this request is completing.
+ *
+ * Two flows arrive here. Password login receives the challenge in a JSON
+ * response and sends it back in the body. OAuth login ends in a browser
+ * redirect with nowhere to put a body, so its challenge is handed over in
+ * an httpOnly cookie, which also keeps it out of the URL, out of history
+ * and out of reach of script.
+ */
+const resolveChallengeToken = (
+  fromBody: string | undefined,
+  cookie: Record<string, { value?: unknown }>
+): string => {
+  if (fromBody !== undefined && fromBody !== "") {
+    return fromBody;
+  }
+
+  const handoff = cookie[MFA_CHALLENGE_COOKIE_NAME]?.value;
+
+  if (typeof handoff === "string" && handoff !== "") {
+    return handoff;
+  }
+
+  throw ApiErrors.unauthorized("MFA challenge has expired. Sign in again.");
+};
 
 const mfaRoutes = new Elysia()
   .use(mfaUnauthenticatedRoutes)

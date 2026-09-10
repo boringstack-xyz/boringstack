@@ -463,7 +463,7 @@ site-search kbd {
 
 /* ── Remaining green traces ───────────────────────────────────────────────
    custom.css defines its whole palette as literal emerald hex values across
-   four token families. Overriding the families here is the leverage point:
+   four token families. Overriding the families here is the one place that matters:
    every downstream rule (asides, diagram labels, syntax highlighting, code
    frames, the sidebar) follows without touching custom.css itself.
 

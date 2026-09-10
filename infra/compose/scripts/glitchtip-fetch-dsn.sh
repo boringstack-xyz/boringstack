@@ -4,19 +4,19 @@
 # What it does:
 #   1. Waits for the `glitchtip-web` container to be healthy.
 #   2. Pulls the DSN for the auto-created `API` and `Frontend` projects
-#      via `manage.py shell` (no API auth dance — talks to Django direct).
+#      via `manage.py shell` (no API auth dance, talks to Django direct).
 #   3. Writes / updates SENTRY_DSN and VITE_SENTRY_DSN in compose/.env.
 #   4. Restarts api-dev + ui-dev so they pick up the new env on next request.
 #
 # Idempotent: skips writing if the .env values already match the live DSNs.
-# Safe to invoke from dev.sh on every `up` — does nothing on subsequent
+# Safe to invoke from dev.sh on every `up`, does nothing on subsequent
 # runs once .env is wired.
 #
 # Usage:
 #   ./scripts/glitchtip-fetch-dsn.sh         # foreground, verbose
 #   ./scripts/glitchtip-fetch-dsn.sh --quiet # background-friendly, less output
 #
-# DSNs are public keys (they ship in the browser bundle), not secrets — safe
+# DSNs are public keys (they ship in the browser bundle), not secrets, safe
 # to write to compose/.env even if that file is committed.
 
 set -euo pipefail
@@ -43,7 +43,7 @@ warn() {
 cd "$COMPOSE_DIR"
 
 # Project name is fixed via docker-compose.yml's top-level `name:` directive.
-# Don't hard-code that string — `docker compose config` is the source of
+# Don't hard-code that string, `docker compose config` is the source of
 # truth (also handles COMPOSE_PROJECT_NAME overrides). Falls back to the
 # directory name if config is unparseable for some reason.
 PROJECT_NAME="$(docker compose config --format json 2>/dev/null \
@@ -54,7 +54,7 @@ PROJECT_NAME="${PROJECT_NAME:-$(basename "$COMPOSE_DIR")}"
 
 # Resolve glitchtip-web by Docker compose labels rather than `docker compose
 # ps -q`, because `ps` validates the service against the *loaded* compose
-# files and the base docker-compose.yml doesn't define glitchtip-web — the
+# files and the base docker-compose.yml doesn't define glitchtip-web, the
 # overlay does. Label lookup is project-scoped and overlay-agnostic.
 WEB_CONTAINER="$(docker ps -q \
   --filter "label=com.docker.compose.project=${PROJECT_NAME}" \
@@ -67,7 +67,7 @@ if [[ -z "$WEB_CONTAINER" ]]; then
 fi
 
 # GlitchTip Celery/Django boot takes ~30–60s on a cold start. Poll the
-# container's `manage.py check --database default` until it succeeds — that
+# container's `manage.py check --database default` until it succeeds, that
 # proves migrations have applied and the ORM is reachable.
 log "Waiting for glitchtip-web to be ready..."
 DEADLINE=$(( $(date +%s) + 180 ))
@@ -87,7 +87,7 @@ fi
 # Fetch DSNs via the Django ORM. Two import paths are tried because GlitchTip
 # moved its `projects` app between releases. The shell script prints
 # `<ProjectName>=<dsn>` lines or `__missing__=<ProjectName>` if a project
-# doesn't exist yet (it usually does — GLITCHTIP_DEFAULT_PROJECTS creates
+# doesn't exist yet (it usually does, GLITCHTIP_DEFAULT_PROJECTS creates
 # `API` and `Frontend` on first boot of an empty DB).
 log "Fetching project DSNs from GlitchTip..."
 PYTHON_PROBE=$(cat <<'PYEOF'
@@ -145,7 +145,7 @@ if [[ -z "$API_DSN" || -z "$UI_DSN" ]]; then
 fi
 
 # Policy: only write when the .env value is currently empty / missing. A
-# non-empty existing value is the operator's choice — they may have pointed
+# non-empty existing value is the operator's choice, they may have pointed
 # the stack at hosted Sentry or a different GlitchTip instance, and the
 # auto-wire shouldn't silently overwrite that. The trade-off: once a DSN is
 # in place, this script never touches it again, even if it has gone stale
@@ -163,7 +163,7 @@ upsert_env_if_empty() {
     return
   fi
   if grep -qE "^${key}=" "$file"; then
-    # Key is present but empty — replace the empty value in-place.
+    # Key is present but empty, replace the empty value in-place.
     awk -v k="$key" -v v="$value" 'BEGIN{FS=OFS="="} $1==k {$0=k"="v} {print}' "$file" > "${file}.tmp" \
       && mv "${file}.tmp" "$file"
   else
@@ -188,7 +188,7 @@ fi
 # the env at recreate time.
 #
 # Both services live in the base docker-compose.yml (profiles [dev] /
-# [dev, smoke]), so no overlay is needed — `--profile dev` is enough.
+# [dev, smoke]), so no overlay is needed, `--profile dev` is enough.
 RECREATABLE=()
 for svc in api-dev ui-dev; do
   cid="$(docker ps -q \

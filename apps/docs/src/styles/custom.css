@@ -1357,7 +1357,7 @@ pre.mermaid svg .cluster rect,
  * The landing page renders inside .sl-markdown-content, so Starlight's inline
  * `code` styling applies to it: background, border, padding and a radius. Any
  * landing component that puts a `<code>` inside its own bordered panel gets a
- * box drawn inside a box — which is exactly what happened to the hero's agent
+ * box drawn inside a box, which is exactly what happened to the hero's agent
  * prompt. Landing components own their own presentation; reset the inherited
  * chrome and let Tailwind classes do the work.
  *

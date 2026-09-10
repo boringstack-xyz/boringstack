@@ -10,7 +10,7 @@ import type { IWebPushCardView } from "./WebPushCard.types";
 
 /**
  * Maps the Web Push hook state machine into a single view-object for the
- * Settings page card. The card always renders — the state label changes
+ * Settings page card. The card always renders: the state label changes
  * with what's actually possible:
  *
  *   unsupported    → "This browser doesn't support Web Push." (no button)

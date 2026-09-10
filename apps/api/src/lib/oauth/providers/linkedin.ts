@@ -9,7 +9,7 @@ import type {
 import { fetchJson, readBoolean, readString } from "../oauth.utils";
 
 /*
- * "Sign In with LinkedIn using OpenID Connect" — same userinfo shape as
+ * "Sign In with LinkedIn using OpenID Connect", same userinfo shape as
  * any OIDC provider (sub / email / given_name / family_name).
  * https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/sign-in-with-linkedin-v2
  */

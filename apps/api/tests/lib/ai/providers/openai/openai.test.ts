@@ -3,7 +3,7 @@ import { OpenAIProvider } from "../../../../../src/lib/ai";
 
 /**
  * Smoke test for the OpenAI-compatible adapter. We're not making real
- * network calls — we're verifying the provider can be constructed with
+ * network calls: we're verifying the provider can be constructed with
  * any baseURL (OpenRouter, Ollama, vLLM, LM Studio, etc.) and any
  * default headers without throwing.
  *

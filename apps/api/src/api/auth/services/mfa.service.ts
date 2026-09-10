@@ -179,7 +179,7 @@ export class MfaService {
    */
   async issueChallenge(userId: string): Promise<IMfaChallenge> {
     const challengeToken = generateOpaqueToken();
-    const payload: IMfaChallengeCachePayload = { userId, attempts: 0 };
+    const payload: IMfaChallengeCachePayload = { userId };
 
     await cacheService.set(
       MFA_CACHE_KEYS.challenge(hashOpaqueToken(challengeToken)),
@@ -194,9 +194,9 @@ export class MfaService {
     challengeToken: string,
     code: string
   ): Promise<IMfaVerifyOutcome> {
-    const challengeKey = MFA_CACHE_KEYS.challenge(
-      hashOpaqueToken(challengeToken)
-    );
+    const tokenHash = hashOpaqueToken(challengeToken);
+    const challengeKey = MFA_CACHE_KEYS.challenge(tokenHash);
+    const attemptsKey = MFA_CACHE_KEYS.challengeAttempts(tokenHash);
     const challenge =
       await cacheService.get<IMfaChallengeCachePayload>(challengeKey);
 
@@ -216,12 +216,22 @@ export class MfaService {
       throw ApiErrors.unauthorized("MFA is not configured");
     }
 
+    /*
+     * Spend the guess first. Everything below evaluates the submitted code,
+     * so admission has to be decided before it runs.
+     */
+    const reservation = await this.reserveAttempt(challengeKey, attemptsKey);
+
+    if (!reservation.granted) {
+      return this.lockedOut(user.id);
+    }
+
     const secretBase32 = decryptString(user.mfaSecretEncrypted);
     const totp = buildTotp(secretBase32, user.email);
     const delta = totp.validate({ token: code, window: MFA_TOTP_WINDOW });
 
     if (delta === null) {
-      return this.recordFailedAttempt(challengeKey, challenge, user.id);
+      return this.recordFailedAttempt(challengeKey, user.id, reservation.spent);
     }
 
     const matchedStep = currentTotpStep() + delta;
@@ -233,13 +243,13 @@ export class MfaService {
         userId: user.id,
       });
 
-      return this.recordFailedAttempt(challengeKey, challenge, user.id);
+      return this.recordFailedAttempt(challengeKey, user.id, reservation.spent);
     }
 
     /*
      * Atomic consume. Two concurrent verifies with the same valid TOTP
      * code would otherwise both clear the in-memory replay check and
-     * both UPDATE — issuing two sessions from one factor. The
+     * both UPDATE, issuing two sessions from one factor. The
      * conditional WHERE clause ensures only one transaction commits;
      * the loser returns `failed` without touching the challenge so it
      * does not resurrect a key the winner is about to delete.
@@ -267,7 +277,7 @@ export class MfaService {
       return { kind: "failed", attemptsRemaining: 0 };
     }
 
-    await cacheService.del(challengeKey);
+    await cacheService.del([challengeKey, attemptsKey]);
 
     void auditLogService.record({
       userId: user.id,
@@ -286,14 +296,24 @@ export class MfaService {
     challengeToken: string,
     code: string
   ): Promise<IMfaVerifyOutcome> {
-    const challengeKey = MFA_CACHE_KEYS.challenge(
-      hashOpaqueToken(challengeToken)
-    );
+    const tokenHash = hashOpaqueToken(challengeToken);
+    const challengeKey = MFA_CACHE_KEYS.challenge(tokenHash);
+    const attemptsKey = MFA_CACHE_KEYS.challengeAttempts(tokenHash);
     const challenge =
       await cacheService.get<IMfaChallengeCachePayload>(challengeKey);
 
     if (challenge === null) {
       throw ApiErrors.unauthorized("MFA challenge has expired. Sign in again.");
+    }
+
+    /*
+     * Same rule as the TOTP path: the guess is spent before the code is
+     * compared against anything.
+     */
+    const reservation = await this.reserveAttempt(challengeKey, attemptsKey);
+
+    if (!reservation.granted) {
+      return this.lockedOut(challenge.userId);
     }
 
     const rows = await db
@@ -328,8 +348,8 @@ export class MfaService {
 
       return this.recordFailedAttempt(
         challengeKey,
-        challenge,
-        challenge.userId
+        challenge.userId,
+        reservation.spent
       );
     }
 
@@ -370,7 +390,7 @@ export class MfaService {
       return { kind: "failed", attemptsRemaining: 0 };
     }
 
-    await cacheService.del(challengeKey);
+    await cacheService.del([challengeKey, attemptsKey]);
 
     void auditLogService.record({
       userId: challenge.userId,
@@ -507,20 +527,63 @@ export class MfaService {
     return row.user;
   }
 
+  /**
+   * Claims one guess against the challenge budget BEFORE the factor is
+   * evaluated.
+   *
+   * Charging only on failure does not bound anything: every request that has
+   * already read the challenge goes on to evaluate its code, so a burst of
+   * eight submissions runs the validator eight times against a budget of
+   * five, and a correct code among the surplus takes the success path
+   * without ever consulting the counter. The budget has to be spent to enter
+   * the door, not to leave it.
+   *
+   * The counter is a dedicated key driven by an atomic increment, never a
+   * field re-written from a payload read earlier in the request: concurrent
+   * submissions would all read the same value and all write back value+1.
+   *
+   * The challenge TTL is NOT renewed here. Re-setting it on every attempt
+   * lets a slow trickle of guesses hold a challenge open indefinitely,
+   * instead of it expiring five minutes after issue.
+   */
+  private async reserveAttempt(
+    challengeKey: string,
+    attemptsKey: string
+  ): Promise<{ granted: boolean; spent: number }> {
+    const spent = await cacheService.increment(
+      attemptsKey,
+      MFA_CHALLENGE_TTL_SECONDS
+    );
+
+    if (spent <= MFA_MAX_CHALLENGE_ATTEMPTS) {
+      return { granted: true, spent };
+    }
+
+    /*
+     * The challenge goes; the counter stays until its own TTL expires.
+     * Deleting the counter here would reopen the budget: submissions
+     * already in flight read the challenge before it vanished, and their
+     * increments would start again from 1, handing a burst a second full
+     * budget.
+     */
+    await cacheService.del(challengeKey);
+
+    return { granted: false, spent };
+  }
+
+  /** Records a spent-but-wrong guess. The attempt is already charged. */
   private async recordFailedAttempt(
     challengeKey: string,
-    current: IMfaChallengeCachePayload,
-    userId: string
+    userId: string,
+    spent: number
   ): Promise<IMfaVerifyOutcome> {
-    const attempts = current.attempts + 1;
-
     void auditLogService.record({
       userId,
       action: AUDIT_ACTIONS.AUTH_MFA_LOGIN_FAILED,
-      metadata: { attempts },
+      metadata: { attempts: spent },
     });
 
-    if (attempts >= MFA_MAX_CHALLENGE_ATTEMPTS) {
+    if (spent >= MFA_MAX_CHALLENGE_ATTEMPTS) {
       await cacheService.del(challengeKey);
 
       void auditLogService.record({
@@ -536,16 +599,25 @@ export class MfaService {
       return { kind: "locked_out" };
     }
 
-    await cacheService.set(
-      challengeKey,
-      { userId: current.userId, attempts },
-      { ttlSeconds: MFA_CHALLENGE_TTL_SECONDS }
-    );
-
     return {
       kind: "failed",
-      attemptsRemaining: MFA_MAX_CHALLENGE_ATTEMPTS - attempts,
+      attemptsRemaining: MFA_MAX_CHALLENGE_ATTEMPTS - spent,
     };
+  }
+
+  /** Refuses a submission that arrived with the budget already spent. */
+  private lockedOut(userId: string): IMfaVerifyOutcome {
+    void auditLogService.record({
+      userId,
+      action: AUDIT_ACTIONS.AUTH_MFA_LOGIN_LOCKED_OUT,
+    });
+
+    logger.warn("MFA challenge locked out", {
+      event: "auth.mfa.challenge_locked_out",
+      userId,
+    });
+
+    return { kind: "locked_out" };
   }
 
   private sendLifecycleEmail(

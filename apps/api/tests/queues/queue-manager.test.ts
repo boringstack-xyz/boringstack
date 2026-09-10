@@ -21,7 +21,7 @@ import {
 /*
  * QueueManager only sees the structural surface it declares
  * (IManagedQueue / IEnqueueableQueue / IManagedWorker), so plain stubs
- * exercise the full lifecycle without a Valkey connection — these tests
+ * exercise the full lifecycle without a Valkey connection: these tests
  * run everywhere, including coverage runs with no local stack.
  */
 
@@ -265,7 +265,7 @@ describe("QueueManager.close", () => {
     expect(fixture.workers.emailDelivery.wasClosed()).toBe(true);
     expect(fixture.workers.notificationDispatch.wasClosed()).toBe(true);
     expect(fixture.workers.notificationMaintenance.wasClosed()).toBe(true);
-    // not configured — must not be touched
+    // not configured: must not be touched
     expect(fixture.webPushDelivery.wasClosed()).toBe(false);
     expect(fixture.workers.webPushDelivery.wasClosed()).toBe(false);
   });

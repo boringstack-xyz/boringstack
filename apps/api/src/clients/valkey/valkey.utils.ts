@@ -5,7 +5,7 @@ import { env } from "../../config/env";
  * Two Valkey client profiles, one source of truth.
  *
  * - `getValkeyConnectionOptions()`        → BullMQ queues & workers.
- *   `maxRetriesPerRequest: null` is REQUIRED by BullMQ — its blocking
+ *   `maxRetriesPerRequest: null` is REQUIRED by BullMQ. Its blocking
  *   `BRPOPLPUSH` commands run for minutes and must never bail. The trade
  *   is that BullMQ owns connection health and we don't.
  *
@@ -46,7 +46,7 @@ export const getValkeyAppClientOptions = (
    * `lazyConnect` opens the socket on first command, capped by
    * `connectTimeout`. We KEEP `enableOfflineQueue` at its default (true)
    * so the first command waits for the in-flight lazy connect to
-   * resolve instead of racing it — combining the two breaks the
+   * resolve instead of racing it. Combining the two breaks the
    * publisher / cache / OAuth state on their very first call. The
    * `connectTimeout` is what bounds the wait; `maxRetriesPerRequest: 1`
    * bounds the retry loop. Together those give fail-fast semantics

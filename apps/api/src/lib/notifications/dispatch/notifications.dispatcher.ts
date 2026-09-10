@@ -12,12 +12,12 @@ import { runNotificationDispatch } from "./dispatch-job";
 /**
  * The public notifications API. Callers do:
  *
- *   void notifications.send(commentRepliedEvent, {
+ *   notifications.detach(commentRepliedEvent, {
  *     recipientUserId,
  *     payload: { ... },  // typed by `commentRepliedEvent.schema`
  *   });
  *
- * Fire-and-forget — mirrors the audit-log ergonomics already established in
+ * Fire-and-forget, mirrors the audit-log ergonomics already established in
  * this codebase. The dispatcher validates the payload synchronously so
  * malformed call sites fail fast, then either enqueues a BullMQ job
  * (`QUEUES_ENABLED=true`) or runs the dispatch inline. Both paths share the
@@ -26,11 +26,36 @@ import { runNotificationDispatch } from "./dispatch-job";
  */
 export class NotificationDispatcher {
   /**
+   * Fire-and-forget dispatch that cannot escape as an unhandled rejection.
+   *
+   * `send` rejects on schema validation and on inline dispatch failure, and
+   * a bare `void send(...)` attaches no handler. The production
+   * `unhandledRejection` handler calls `process.exit(1)`, so a Valkey blip
+   * behind an already-committed mutation would take the process down: the
+   * user's write has succeeded and the notification is the only thing that
+   * failed.
+   *
+   * Every request-path dispatch goes through here. Delivery is best-effort
+   * by design; losing one must degrade to a log line, never to an outage.
+   */
+  detach<TPayload>(
+    event: INotificationEvent<TPayload>,
+    args: INotificationSendInput<TPayload>
+  ): void {
+    this.send(event, args).catch((error: unknown) => {
+      logger.error("Detached notification dispatch failed", {
+        event: "notifications.send.detached_failed",
+        eventType: event.type,
+        error: getErrorMessage(error),
+      });
+    });
+  }
+
+  /**
    * Validates `payload` against the event's schema, then enqueues or runs
    * inline. Resolves once the work is durably enqueued (BullMQ) or
-   * completed (inline). Tests typically `await`; production call sites are
-   * `void`-prefixed because notification delivery should never block a
-   * request.
+   * completed (inline). Tests `await` it; request paths call `detach`,
+   * which handles the rejection.
    */
   async send<TPayload>(
     event: INotificationEvent<TPayload>,

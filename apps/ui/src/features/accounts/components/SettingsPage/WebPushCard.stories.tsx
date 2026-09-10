@@ -13,7 +13,7 @@ import WebPushCard from "./WebPushCard";
 /*
  * The card reads two server-driven facts: `capabilities.features.notifications.webPush`
  * and the browser env (`VITE_VAPID_PUBLIC_KEY`). The browser-side `useWebPush()` hook
- * inspects `window.Notification`, `navigator.serviceWorker`, `PushManager` — all of
+ * inspects `window.Notification`, `navigator.serviceWorker`, `PushManager`, all of
  * which exist in Storybook's Vite dev server, so `isSupported` is naturally `true`.
  *
  * What we can drive from the story:
@@ -23,7 +23,7 @@ import WebPushCard from "./WebPushCard";
  *   - "Subscribed" state (needs a registered service worker).
  *   - "Blocked" state (needs `Notification.permission === "denied"`).
  *   - "Unsupported" state (needs `Notification`/`PushManager` removed from the
- *     global window — possible via story decorator but invasive).
+ *     global window, possible via story decorator but invasive).
  *
  * The two stories below cover the realistic dev paths: server hasn't shipped web
  * push (default) and server-side ready but the operator hasn't subscribed yet.

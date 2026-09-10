@@ -27,7 +27,7 @@ export function useMfaVerifyLogin(): UseMutationResult<
     },
     onSuccess: async () => {
       /*
-       * Same cookie-commit race as the password login path — see
+       * Same cookie-commit race as the password login path: see
        * Auth.session.sync.ts. MFA verify establishes the session
        * cookies; the consumer then navigates to /dashboard. Pre-fetch
        * /me with short retries so the post-navigation ProtectedRoute

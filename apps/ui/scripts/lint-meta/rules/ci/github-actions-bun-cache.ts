@@ -4,7 +4,7 @@ import type { IMetaRule, IViolation } from "../../types";
 
 /*
  * Every `bun install` in CI re-downloads the dependency tree unless
- * ~/.bun/install/cache is restored — 30-90s wasted per run, multiplied
+ * ~/.bun/install/cache is restored: 30-90s wasted per run, multiplied
  * across workflows and pushes. One workflow carried the cache step and
  * seven didn't; this pins the convention: bun install ⇒ actions/cache.
  */

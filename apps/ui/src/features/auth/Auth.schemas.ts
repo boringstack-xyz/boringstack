@@ -74,8 +74,14 @@ export const mfaVerifySetupInputSchema = z.object({
   code: z.string().regex(/^\d{6}$/u, "Enter the 6-digit code from your app.")
 });
 
+/*
+ * `challengeToken` is optional. Password login receives it in the login
+ * response and sends it back; the OAuth path ends in a redirect with no
+ * response body to carry it, so the server holds that challenge in an
+ * httpOnly cookie and reads it from there.
+ */
 export const mfaVerifyChallengeInputSchema = z.object({
-  challengeToken: z.string().min(16),
+  challengeToken: z.string().min(16).optional(),
   code: z.string().min(6).max(10)
 });
 

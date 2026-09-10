@@ -1,10 +1,10 @@
-# GlitchTip prod overlay — adds the HTTPS routers + Basic Auth for the UI
+# GlitchTip prod overlay: adds the HTTPS routers + Basic Auth for the UI
 # and CORS for the SDK ingest endpoint. Merged when STACK=prod and GlitchTip
 # is on (default; set WITH_GLITCHTIP=0 to skip).
 #
 # Requires in compose/.env:
-#   GLITCHTIP_PUBLIC_HOST       — public DNS name (ACME certs)
-#   GLITCHTIP_BASIC_AUTH_USERS  — htpasswd output (escape $ → $$ in .env)
+#   GLITCHTIP_PUBLIC_HOST: public DNS name (ACME certs)
+#   GLITCHTIP_BASIC_AUTH_USERS: htpasswd output (escape $ → $$ in .env)
 
 services:
   glitchtip-web:
@@ -12,7 +12,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=backend"
       - "traefik.http.services.glitchtip-web.loadbalancer.server.port=8000"
-      # /api: SDK ingest — open + CORS, higher priority so it wins over the UI router.
+      # /api: SDK ingest: open + CORS, higher priority so it wins over the UI router.
       - "traefik.http.routers.glitchtip-api.rule=Host(`${GLITCHTIP_PUBLIC_HOST}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.glitchtip-api.entrypoints=websecure"
       - "traefik.http.routers.glitchtip-api.tls=true"
@@ -23,7 +23,7 @@ services:
       - "traefik.http.middlewares.glitchtip-cors.headers.accesscontrolalloworiginlist=*"
       - "traefik.http.middlewares.glitchtip-cors.headers.accesscontrolallowmethods=GET,POST,OPTIONS"
       - "traefik.http.middlewares.glitchtip-cors.headers.accesscontrolallowheaders=*"
-      # /: web UI — Basic Auth (required).
+      # /: web UI: Basic Auth (required).
       - "traefik.http.routers.glitchtip-web.rule=Host(`${GLITCHTIP_PUBLIC_HOST}`)"
       - "traefik.http.routers.glitchtip-web.entrypoints=websecure"
       - "traefik.http.routers.glitchtip-web.tls=true"

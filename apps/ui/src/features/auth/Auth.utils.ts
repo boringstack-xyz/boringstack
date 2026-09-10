@@ -15,7 +15,7 @@ export function applyServerErrors<TForm extends FieldValues>(
     /*
      * Match the server key against the form's own path list. `find` yields a
      * real `Path<TForm>` element (or nothing), so setError stays type-sound
-     * with no assertion — Path<TForm> has no runtime witness to cast to.
+     * with no assertion: Path<TForm> has no runtime witness to cast to.
      * Server keys that aren't form fields are ignored.
      */
     const path = fields.find((candidate) => candidate === field);

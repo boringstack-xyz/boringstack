@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
+import { expectProvisioned } from "../../helpers/auth";
 
 import { accountsService } from "../../../src/api/accounts/accounts.service";
 import { ownershipTransfersService } from "../../../src/api/accounts/ownership-transfers.service";
@@ -42,10 +43,12 @@ const seedOwnerAndTarget = async (): Promise<{
     throw new Error("seed owner");
   }
 
-  const { account } = await accountsService.provisionAfterVerification({
-    userId: ownerUser.id,
-    name: "acme",
-  });
+  const { account } = expectProvisioned(
+    await accountsService.provisionAfterVerification({
+      userId: ownerUser.id,
+      name: "acme",
+    })
+  );
 
   const [targetUser] = await db
     .insert(users)

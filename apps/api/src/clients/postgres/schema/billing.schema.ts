@@ -70,7 +70,7 @@ export const planFeatures = billing.table(
  * Per-account subscription state. Stripe webhook is the source of
  * truth for paid status; admin grants land here with
  * `source = 'admin_grant'` and a populated `expiresAt`. Partial unique
- * index enforces "at most one current row per account" — superseded
+ * index enforces "at most one current row per account": superseded
  * rows are preserved with `revokedAt` set so the plan history can be
  * audited.
  *

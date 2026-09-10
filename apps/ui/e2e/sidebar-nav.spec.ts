@@ -60,7 +60,7 @@ test.describe("Sidebar navigation", () => {
     /*
      * Two AppSidebar nodes always exist in the DOM (desktop rail + Sheet
      * portal). The desktop rail is hidden via Tailwind's `md:flex`, so
-     * Playwright's visibility check filters it out — `.first()` matches
+     * Playwright's visibility check filters it out: `.first()` matches
      * whichever wrapper is currently visible.
      */
     await expect(page.getByLabel(/open menu/i)).toBeVisible();

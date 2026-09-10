@@ -4,7 +4,7 @@
  *
  * This repo gates 21 bundle budgets, 83 repo-level lint rules and a coverage
  * ratchet. The files an agent reads first should not be the one unguarded
- * thing — especially since every defect this check covers was live in
+ * thing, especially since every defect this check covers was live in
  * production at some point:
  *
  *   - llms-small.txt was 412,756 bytes against llms-full.txt's 414,104
@@ -146,7 +146,7 @@ notes.push(
   `llms-small.txt ${smallBytes} bytes (${(ratio * 100).toFixed(1)}% of full, ceiling ${SMALL_MAX_BYTES})`,
 );
 
-/* MDX residue. `rawContent: true` is load-bearing (index.mdx mounts a React
+/* MDX residue. `rawContent: true` has to stay on (index.mdx mounts a React
  * component the plugin cannot render), so sanitize-llms.mjs cleans up after
  * it. This asserts that pass actually ran. Code fences are exempt: a sample
  * may legitimately contain an import line. */

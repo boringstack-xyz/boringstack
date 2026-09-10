@@ -52,7 +52,7 @@ export interface IMfaRecoveryRegenerationResult {
 /**
  * Shape of the value persisted in Valkey under
  * `MFA_CACHE_KEYS.setup(userId)`. The secret is already encrypted at
- * this point — Valkey never sees the plaintext TOTP secret.
+ * this point: Valkey never sees the plaintext TOTP secret.
  */
 export interface IMfaSetupCachePayload {
   secretEncrypted: string;
@@ -62,8 +62,13 @@ export interface IMfaSetupCachePayload {
 /**
  * Shape of the value persisted in Valkey under
  * `MFA_CACHE_KEYS.challenge(tokenHash)`.
+ *
+ * The failed-attempt count deliberately does NOT live here. It sits in its
+ * own key (`MFA_CACHE_KEYS.challengeAttempts`) so it can be driven by an
+ * atomic increment: counting inside this payload is a read-modify-write,
+ * where concurrent wrong codes all read the same value and all write back
+ * the same value+1.
  */
 export interface IMfaChallengeCachePayload {
   userId: string;
-  attempts: number;
 }

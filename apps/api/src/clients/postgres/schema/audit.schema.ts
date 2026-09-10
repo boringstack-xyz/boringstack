@@ -13,7 +13,7 @@ import { audit } from "./pg-schemas";
 
 /**
  * Append-only event log of significant actions. Writes are fire-and-forget
- * from the application — `AuditLogService` swallows write errors so a
+ * from the application. `AuditLogService` swallows write errors so a
  * flaky audit table can never break a real request flow. `userId` is
  * nullable because system-initiated events (cron jobs, webhook handlers)
  * don't have an actor.

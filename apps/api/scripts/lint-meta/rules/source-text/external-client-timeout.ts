@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import type { IMetaRule, IViolation } from "../../types";
 
 /*
- * Every external client gets an explicit time budget — implicit SDK
+ * Every external client gets an explicit time budget: implicit SDK
  * defaults range from 80s (Stripe) to 10min (Anthropic), and a raw
  * fetch without a signal waits for the socket. A hung upstream must
  * never pin a request worker. Three checks:

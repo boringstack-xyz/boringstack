@@ -19,8 +19,11 @@
 [extend]
 useDefault = true
 
-[allowlist]
+# One allowlist per exemption shape. `[allowlist]` (singular) is deprecated in
+# gitleaks 8.30 and cannot be mixed with these.
+[[allowlists]]
 description = "Test fixtures and placeholder lookup tables that the env validator rejects in production are never real secrets."
+condition = "OR"
 paths = [
   '''apps/api/tests/api/notifications/notifications\.push\.utils\.test\.ts''',
   '''apps/api/tests/api/notifications/notifications\.push\.service\.test\.ts''',
@@ -42,7 +45,7 @@ paths = [
   # it declares which env-var *names* each AI provider requires (e.g.
   # OPENAI_API_KEY, ANTHROPIC_API_KEY) and their non-secret defaults. The
   # `generic-api-key` rule flags the provider/secret-keyword proximity,
-  # but the file holds only key names and placeholder config — no values.
+  # but the file holds only key names and placeholder config, no values.
   '''\.tsforge/scaffold-manifest\.json''',
   # apps/docs publishes that manifest byte-identically at
   # boringstack.xyz/scaffold-manifest.json (generate:scaffold-manifest, drift-
@@ -55,12 +58,12 @@ paths = [
 # `<set-from-your-secret-manager>` as the example value for secret-valued
 # env vars (e.g. MEILI_MASTER_KEY in the Meilisearch compose recipe).
 # Gitleaks's `generic-api-key` heuristic flags the angle-bracket placeholder
-# as a leaked key. Matched by regex against the whole line — not a commit
-# fingerprint — so the allowlist survives history rewrites.
+# as a leaked key. Matched by regex against the whole line, not a commit
+# fingerprint, so the allowlist survives history rewrites.
 regexTarget = "line"
 regexes = [
   '''<set-from-your-secret-manager>''',
-  # The well-known dev/test MFA encryption key placeholder — base64 of
+  # The well-known dev/test MFA encryption key placeholder: base64 of
   # the literal string "0123456789abcdef0123456789abcdef". It ships in
   # docker-compose.yml as the api-dev fallback, the env validator
   # rejects it in production, and CI guardrail steps reference it as a
@@ -68,4 +71,26 @@ regexes = [
   '''MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=''',
   # Gitleaks also decodes the base64 and re-flags the decoded literal.
   '''0123456789abcdef0123456789abcdef''',
+]
+
+# The security spec's redaction fixture (F17) pushes synthetic credentials
+# through the logger and asserts none of them come out. They are shaped like
+# the real things on purpose, or a rule matching the literal word "password"
+# would pass the test while a real leak walked through.
+#
+# Its own allowlist, not an entry in the block above, because that block sets
+# `regexTarget = "line"`: a prefix match there would suppress any unrelated
+# secret that happened to share a line with a sentinel, anywhere in the repo.
+# Here the regex is matched against the detected secret and anchored to the
+# exact value, so it exempts those two strings and nothing else.
+#
+# No `paths` entry. A path in a gitleaks allowlist skips the whole file
+# whatever `condition` says, which would exempt any real credential that later
+# landed in that fixture. Two known synthetic strings is the narrower rule.
+[[allowlists]]
+description = "F17 log-redaction sentinels: two exact synthetic values, nothing else."
+regexTarget = "secret"
+regexes = [
+  '''^sp3c-P4ssw0rd-Sentinel$''',
+  '''^sp3c_tok_5f4dcc3b5aa765d61d83$''',
 ]

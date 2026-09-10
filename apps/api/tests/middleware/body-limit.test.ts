@@ -32,10 +32,18 @@ describe("enforceBodyLimit — pure guard", () => {
     }).not.toThrow();
   });
 
-  test("rejects bodied requests missing Content-Length (closes chunked bypass)", () => {
+  test("passes through a bodied request with no Content-Length", () => {
+    /*
+     * A chunked request advertises no length, so there is nothing for a
+     * header check to compare. The bound on an unmeasurable body is the
+     * server's `maxRequestBodySize` (src/index.ts), which applies while the
+     * body streams. Rejecting here instead refused legitimate chunked
+     * clients while still letting a lying header through to an unbounded
+     * read.
+     */
     expect(() => {
       enforceBodyLimit({ method: "POST", contentLength: null });
-    }).toThrow(/Content-Length header is required/);
+    }).not.toThrow();
   });
 
   test("rejects bodied requests with a non-numeric Content-Length", () => {
@@ -87,8 +95,16 @@ describe("bodyLimit middleware — integration", () => {
     expect(res.status).toBe(200);
   });
 
-  test("rejects when Content-Length advertises >1 MB", async () => {
+  test("rejects a VALID over-cap body with 413", async () => {
     const app = buildApp();
+
+    /*
+     * Valid JSON on purpose. An unparseable body asserted against
+     * `status === 400` proves nothing: the JSON parser produces that 400 on
+     * its own, so the assertion holds whether or not the cap exists. A size
+     * rejection has its own status, and this asserts on that.
+     */
+    const payload = JSON.stringify({ data: "x" });
     const res = await app.handle(
       new Request(ECHO_URL, {
         method: "POST",
@@ -96,17 +112,47 @@ describe("bodyLimit middleware — integration", () => {
           "content-type": "application/json",
           "content-length": String(MAX_BODY_SIZE_BYTES + 1),
         },
-        body: "ignored — the cap fires before parse",
+        body: payload,
       })
     );
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(413);
 
     const body: unknown = await res.json();
 
     if (body === null || typeof body !== "object" || !("error" in body)) {
       throw new Error("expected an error envelope");
     }
+  });
+
+  test("covers a route registered on the parent, not just the plugin", async () => {
+    /*
+     * The shape that was broken: hooks are `local` by default, so the cap
+     * did not apply to routes the parent registered after `use`ing it.
+     */
+    const parent = new Elysia()
+      .onError(({ code, error, set }) =>
+        errorHandler({ code: String(code), error, set })
+      )
+      .use(bodyLimit)
+      .post("/sibling", () => ({ ok: true }), {
+        body: t.Unknown(),
+        response: t.Object({ ok: t.Boolean() }),
+        detail: { tags: ["Test"] },
+      });
+
+    const res = await parent.handle(
+      new Request("http://localhost/sibling", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "content-length": String(MAX_BODY_SIZE_BYTES + 1),
+        },
+        body: JSON.stringify({ data: "x" }),
+      })
+    );
+
+    expect(res.status).toBe(413);
   });
 
   test("GET requests pass through untouched (no body required)", async () => {

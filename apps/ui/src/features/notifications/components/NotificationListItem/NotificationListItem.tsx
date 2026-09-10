@@ -45,7 +45,7 @@ const NotificationListItem: FC<INotificationListItemProps> = (props) => {
           <Button asChild type='button' variant='link' size='sm'>
             {/*
              * sanitizeTargetPath collapses off-origin / malformed CTA URLs
-             * to "/" — same allowlist the web-push service worker uses, so
+             * to "/", same allowlist the web-push service worker uses, so
              * push and in-app render paths can't drift apart.
              */}
             <Link

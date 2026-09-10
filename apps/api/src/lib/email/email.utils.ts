@@ -34,7 +34,7 @@ export const isValidEmail = (email: string): boolean => {
  * trailing whitespace.
  *
  * This is the ONE definition. Re-deriving it inside auth services,
- * suppression code, or tests is forbidden — see the
+ * suppression code, or tests is forbidden. See the
  * `no-duplicate-canonical-helpers` lint-meta rule.
  */
 export const normalizeEmail = (email: string): string =>
@@ -172,7 +172,7 @@ export const withEmailTimeout = async <T>(
 
 /**
  * Retry an async function with exponential backoff. Only transient errors
- * (network, timeout, 429, 503) are retried — permanent failures throw on
+ * (network, timeout, 429, 503) are retried: permanent failures throw on
  * the first attempt so the caller can react quickly.
  */
 export const retryWithBackoff = async <T>(

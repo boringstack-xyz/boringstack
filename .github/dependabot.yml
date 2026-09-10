@@ -19,7 +19,7 @@ updates:
     # not named fell through as its own PR, so a normal week produced ~20
     # single-package PRs (four separate @opentelemetry/* ones, `knip` once per
     # app, and so on) and the named list needed extending for every new dep.
-    # Matching "*" by dependency-type caps this at two PRs per app — runtime
+    # Matching "*" by dependency-type caps this at two PRs per app: runtime
     # deps kept separate from tooling so review risk stays distinguishable.
     groups:
       production-dependencies:
@@ -32,7 +32,7 @@ updates:
       - dependency-name: "elysia"
         update-types: ["version-update:semver-major"]
       # elysia-rate-limit 5.x requires `elysia >= 2.0.0`, but Elysia has no
-      # stable 2.0.0 — the 2.x line exists only under the `next`/`experimental`
+      # stable 2.0.0: the 2.x line exists only under the `next`/`experimental`
       # dist-tags, and `elysia` itself is major-ignored just above. Stay on
       # 4.6.2 (peer `elysia >= 1.0.0`) until Elysia 2 ships stable and we do
       # that upgrade deliberately.
@@ -65,7 +65,7 @@ updates:
       include: scope
     cooldown:
       default-days: 7
-    # Catch-all grouping — see the rationale on the apps/api block above.
+    # Catch-all grouping, see the rationale on the apps/api block above.
     # Note this keeps React's own pins together: react, react-dom and
     # react-router-dom are production, while @types/react and
     # @types/react-dom are development, so they land in sibling PRs. The

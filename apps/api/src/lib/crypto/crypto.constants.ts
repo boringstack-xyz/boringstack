@@ -1,5 +1,5 @@
 /**
- * Length of an AES-256 key in bytes. The cipher name is informational —
+ * Length of an AES-256 key in bytes. The cipher name is informational:
  * the value is fixed by the algorithm and lives here as a single source
  * of truth so the validator and the cipher both agree.
  */
@@ -12,8 +12,8 @@ export const AES_256_KEY_BYTES = 32;
 export const AES_GCM_IV_BYTES = 12;
 
 /**
- * GCM authentication tag length. Fixed at 16 bytes (128 bits) — the
- * maximum the algorithm provides — for the strongest forgery resistance.
+ * GCM authentication tag length. Fixed at 16 bytes (128 bits), the
+ * maximum the algorithm provides, for the strongest forgery resistance.
  */
 export const AES_GCM_TAG_BYTES = 16;
 

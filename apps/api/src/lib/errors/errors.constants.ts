@@ -2,7 +2,7 @@ import type { ErrorCode } from "./errors.types";
 
 /**
  * Codes that Elysia's framework layer surfaces on the `code` field of its
- * `.onError` callback. These are NOT app-level error codes — they're the
+ * `.onError` callback. These are NOT app-level error codes: they're the
  * pre-handler-throw signals (404 from unmatched routes, validation failures
  * from TypeBox, cookie-signature mismatches, etc.). Map them to ApiErrors
  * in the central error handler.
@@ -36,6 +36,8 @@ export const ErrorCodes = {
   RESOURCE_EXISTS: "RESOURCE_EXISTS",
   DOMAIN_CLAIMED: "DOMAIN_CLAIMED",
 
+  PAYLOAD_TOO_LARGE: "PAYLOAD_TOO_LARGE",
+
   RATE_LIMIT_EXCEEDED: "RATE_LIMIT_EXCEEDED",
   LIMIT_EXCEEDED: "LIMIT_EXCEEDED",
 
@@ -62,6 +64,7 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCodes.RESOURCE_EXISTS]: "Resource already exists",
   [ErrorCodes.DOMAIN_CLAIMED]:
     "Your email domain is already in use by another account. Ask an admin to invite you.",
+  [ErrorCodes.PAYLOAD_TOO_LARGE]: "Request body is too large",
   [ErrorCodes.RATE_LIMIT_EXCEEDED]: "Too many requests",
   [ErrorCodes.LIMIT_EXCEEDED]: "Plan limit reached",
   [ErrorCodes.INTERNAL_SERVER_ERROR]: "An internal error occurred",

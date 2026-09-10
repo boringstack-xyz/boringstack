@@ -5,7 +5,7 @@ import { env } from "../../src/config/env";
 /*
  * Test-only fixture builders. Round-trip a JSON payload through Stripe's
  * own `generateTestHeaderStringAsync` + `constructEventAsync` so the
- * returned value IS a real `Stripe.Event` — no type assertions, no
+ * returned value IS a real `Stripe.Event`: no type assertions, no
  * partial-shape casts. The signature/verify pair is also exercised on
  * the way through, which is the same code path production uses.
  */
@@ -41,7 +41,12 @@ const buildTestEvent = async (
 /** Minimal fields the billing service reads from `checkout.session.completed`. */
 export const checkoutSessionCompletedEvent = (
   id: string,
-  session: { customer: string; metadata?: Record<string, string> },
+  session: {
+    customer: string;
+    metadata?: Record<string, string>;
+    /** The subscription the completed checkout created, when there is one. */
+    subscription?: string;
+  },
   eventCreated?: number
 ): Promise<Stripe.Event> =>
   buildTestEvent(id, "checkout.session.completed", session, eventCreated);
@@ -66,6 +71,30 @@ export const customerSubscriptionUpdatedEvent = (
   buildTestEvent(
     id,
     "customer.subscription.updated",
+    subscription,
+    eventCreated
+  );
+
+/** Minimal fields the billing service reads from `customer.subscription.deleted`. */
+export const customerSubscriptionDeletedEvent = (
+  id: string,
+  subscription: {
+    id: string;
+    customer: string;
+    status: Stripe.Subscription.Status;
+    created: number;
+    items: {
+      data: {
+        price: { id: string };
+        current_period_end: number;
+      }[];
+    };
+  },
+  eventCreated?: number
+): Promise<Stripe.Event> =>
+  buildTestEvent(
+    id,
+    "customer.subscription.deleted",
     subscription,
     eventCreated
   );

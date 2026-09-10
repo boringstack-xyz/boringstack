@@ -42,7 +42,7 @@ test.describe("Sign-up flow", () => {
     await signup.goto();
     await signup.fill({
       email: signupEmail,
-      // gitleaks:allow — synthetic test fixture, not a real credential
+      // gitleaks:allow: synthetic test fixture, not a real credential
       password: "Strong-test-pass-1A",
       firstName: "Ada",
       lastName: "Lovelace"

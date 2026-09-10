@@ -41,7 +41,7 @@ datasources:
     jsonData:
       # `tracesToLogsV2` lets a Tempo span (in the trace timeline view)
       # link out to the matching Loki log lines for the same trace_id.
-      # Filters by `compose_service` for the api containers — the only
+      # Filters by `compose_service` for the api containers: the only
       # services we currently emit trace_id on.
       tracesToLogsV2:
         datasourceUid: loki
@@ -55,7 +55,7 @@ datasources:
             value: compose_service
       # `tracesToMetrics` lets you jump from a span to the matching
       # Prometheus exemplar (request rate, latency histogram). Disabled
-      # by default — we don't emit exemplars yet, but the wiring is
+      # by default, we don't emit exemplars yet, but the wiring is
       # here for when we do.
       tracesToMetrics:
         datasourceUid: prometheus

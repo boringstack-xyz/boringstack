@@ -1,7 +1,7 @@
 import { collectDefaultMetrics, Registry } from "prom-client";
 
 /**
- * Global Prometheus registry. One instance per process — every metric
+ * Global Prometheus registry. One instance per process: every metric
  * we define attaches itself to this registry, and `/metrics` exposes
  * its full contents on each scrape.
  *

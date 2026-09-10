@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run `bun audit` honoring osv-scanner.toml IgnoredVulns (GHSA ids).
 # osv-scanner and bun audit otherwise diverge: osv reads the toml allowlist,
-# bun audit does not — so CI would fail on accepted-risk findings.
+# bun audit does not, so CI would fail on accepted-risk findings.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"

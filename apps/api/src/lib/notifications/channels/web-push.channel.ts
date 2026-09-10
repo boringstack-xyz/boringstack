@@ -30,7 +30,7 @@ import type {
  *     channel only ships as queued delivery because per-subscription HTTP
  *     fan-out doesn't belong on the request thread.
  *
- * The channel only registers when all three VAPID env vars are set — see
+ * The channel only registers when all three VAPID env vars are set, see
  * `setup-notifications.ts`. Once registered, it participates in the
  * normal dispatcher fan-out alongside in-app, email, and sse.
  */

@@ -57,7 +57,7 @@ export const encryptString = (plaintext: string): string => {
   const key = decodeKey(env.MFA_ENCRYPTION_KEY);
   const iv = randomBytes(AES_GCM_IV_BYTES);
   /*
-   * Pinning `authTagLength` matters on decrypt — a missing option lets
+   * Pinning `authTagLength` matters on decrypt: a missing option lets
    * Node accept a shorter-than-expected tag, which an attacker could
    * use to forge ciphertext. We pass it on encrypt too so the value
    * the cipher emits and the value the decipher will verify are the
@@ -82,7 +82,7 @@ export const encryptString = (plaintext: string): string => {
 
 /**
  * Inverse of `encryptString`. Throws on any failure (bad version,
- * truncated payload, wrong key, tampered ciphertext) — every failure
+ * truncated payload, wrong key, tampered ciphertext): every failure
  * mode is a configuration or attack signal, not a recoverable runtime
  * branch.
  */

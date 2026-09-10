@@ -160,7 +160,7 @@ const renderInApp = (
   }
 
   /*
-   * Fallback for events that only render to email — UI still needs *some*
+   * Fallback for events that only render to email: UI still needs *some*
    * strings if a row lands in the in-app list later.
    */
   return {
@@ -293,7 +293,7 @@ const fanOutToChannels = async (input: IFanOutInput): Promise<void> => {
   );
 
   /*
-   * Log rejected promises but never re-throw — a single failing channel
+   * Log rejected promises but never re-throw: a single failing channel
    * (e.g. email provider down) must not break others.
    */
   results.forEach((result, idx) => {

@@ -11,7 +11,7 @@ import type { IJoinRequestsPageView } from "./JoinRequestsPage.types";
 
 /**
  * Reviewer-side join-request inbox. The account id comes from the
- * active membership in `/me` — the API enforces role on every
+ * active membership in `/me`: the API enforces role on every
  * mutation, so we don't gate the page in the hook; the empty state
  * just renders for accounts where the user isn't an owner/admin.
  */

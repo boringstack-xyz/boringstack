@@ -91,7 +91,7 @@ describe("AuthService.register", () => {
     });
 
     /*
-     * No throw, identical return shape, and no second user row — the
+     * No throw, identical return shape, and no second user row: the
      * existing owner gets a notice email instead, so the service is
      * no oracle for which emails hold accounts.
      */

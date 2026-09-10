@@ -12,7 +12,7 @@ import type { INotificationMaintenanceJobData } from "./notification-maintenance
 
 /**
  * Worker for periodic notifications maintenance routines. Branches on
- * `job.name` so a single worker covers every maintenance task — adding
+ * `job.name` so a single worker covers every maintenance task: adding
  * new routines (archive purges, stats rollups) is just an extra case here.
  */
 export class NotificationMaintenanceWorker {

@@ -14,7 +14,7 @@ import { getQueueManager } from "../setup";
  * Shutdown stops the HTTP listener BEFORE tearing down the data layer so
  * we don't drain Postgres / Valkey out from under in-flight requests.
  *
- * `IRunningApp` is structurally typed — Elysia's `stop()` carries a deep
+ * `IRunningApp` is structurally typed: Elysia's `stop()` carries a deep
  * generic surface we don't need here, so we narrow to the only method
  * shutdown actually calls.
  */

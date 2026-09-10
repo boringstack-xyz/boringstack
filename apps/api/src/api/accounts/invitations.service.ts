@@ -8,6 +8,7 @@ import {
 } from "../../clients/postgres/schema";
 import { env } from "../../config/env";
 import { logger } from "../../config/logger";
+import { enforceSeatAvailable } from "../../lib/acl";
 import { AUDIT_ACTIONS, auditLogService } from "../../lib/audit-log";
 import { sendTemplate } from "../../lib/email";
 import { ApiErrors, getErrorMessage } from "../../lib/errors";
@@ -36,7 +37,7 @@ import {
 export class InvitationsService {
   /*
    * Fire-and-forget email dispatch. The acceptance flow is the email's
-   * delivery target — we never block the route on the email send. On
+   * delivery target: we never block the route on the email send. On
    * failure the invitation row is still persisted and the operator can
    * resend, so the user-facing API stays predictable.
    */
@@ -272,6 +273,15 @@ export class InvitationsService {
         throw ApiErrors.database("Failed to mark invitation accepted");
       }
 
+      /*
+       * The seat cap is checked here, at the moment the membership is
+       * committed, and under an advisory lock on the account. Checking at
+       * invitation time instead would miss both the concurrent case (two
+       * invitees accepting the last seat) and the downgrade case (an
+       * invitation outstanding when the plan shrinks).
+       */
+      await enforceSeatAvailable(tx, invitation.accountId);
+
       await tx.insert(accountMemberships).values({
         accountId: invitation.accountId,
         userId,
@@ -321,7 +331,7 @@ export class InvitationsService {
           .where(eq(accounts.id, invitation.accountId))
           .limit(1);
 
-        void notifications.send(accountInvitationAcceptedEvent, {
+        notifications.detach(accountInvitationAcceptedEvent, {
           recipientUserId: inviterUserId,
           payload: {
             accountId: invitation.accountId,

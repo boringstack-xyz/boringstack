@@ -2,7 +2,7 @@ name: openapi-drift
 
 # Catch apps/ui schema drift in the apps/api PR that introduced it.
 # Before this job, drift only surfaced in infra/compose's
-# full-stack-smoke workflow — which runs only on infra pushes, so drift
+# full-stack-smoke workflow, which runs only on infra pushes, so drift
 # would sit on apps/api main until someone touched infra.
 
 on:

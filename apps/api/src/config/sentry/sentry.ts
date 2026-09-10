@@ -5,10 +5,10 @@ import { logger } from "../logger";
 /**
  * Initialize Sentry-compatible error tracking. Points at GlitchTip in the
  * default infra (see infra/compose/docs/glitchtip.md) or at
- * sentry.io for hosted — same wire protocol, same DSN format. No-op when
+ * sentry.io for hosted, same wire protocol, same DSN format. No-op when
  * `SENTRY_DSN` is empty, so dev/test stays clean.
  *
- * Called once, early in `src/index.ts` — before the Elysia app is built so
+ * Called once, early in `src/index.ts`, before the Elysia app is built so
  * any error during bootstrap is captured.
  */
 export const initializeSentry = (): void => {
@@ -22,7 +22,7 @@ export const initializeSentry = (): void => {
     /*
      * `@sentry/bun` v10+ is built on `@sentry/opentelemetry`, so any
      * sample rate > 0 registers a second tracer alongside the
-     * OpenTelemetry SDK in `config/otel/otel.ts` — both then instrument
+     * OpenTelemetry SDK in `config/otel/otel.ts`, both then instrument
      * HTTP / fetch / ioredis. Default is 0 (env-tunable): OTel ships
      * spans to Tempo, Sentry stays error-capture-only. Error events
      * still pick up `trace_id` from the shared OTel context, so
@@ -47,7 +47,7 @@ const SENTRY_FLUSH_TIMEOUT_MS = 2000;
  * from custom error handlers when the default Sentry instrumentation can't
  * see the failure (background workers, queue jobs, fatal handlers about to
  * `process.exit`). Awaiting the returned promise is what guarantees the
- * event actually leaves the process — `captureException` alone only
+ * event actually leaves the process: `captureException` alone only
  * enqueues to the in-memory transport.
  */
 export const captureError = async (

@@ -56,6 +56,8 @@ import {
   checkTofuBootstrapHardening,
   checkDocsNoRetiredCredentials,
   checkLintMetaRulesSelfCovered,
+  checkSecuritySpecNoSilentBail,
+  checkSecuritySpecRequiresControl,
   checkSkippedTestsHaveTracking,
 } from "../../scripts/lint-meta/cli";
 
@@ -1156,7 +1158,7 @@ const PKG_JSON = "package.json";
 describe("schema-enum-field-consistency", () => {
   /*
    * The exact shape of the real regression: status/priority are literal-union enums on
-   * input but t.String() on the response — the generated client widens them to `string`
+   * input but t.String() on the response, the generated client widens them to `string`
    * and the UI enum can't reconcile.
    */
   const DRIFT = `import { t } from "elysia";
@@ -2435,5 +2437,214 @@ describe("RULES.md catalog", () => {
     );
 
     expect(readFileSync(rulesPath, "utf8")).toBe(renderRulesMd());
+  });
+});
+
+describe("checkSecuritySpecNoSilentBail", () => {
+  const write = (body: string): string => {
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
+
+    mkdirSync(join(root, "security-spec"), { recursive: true });
+    writeFileSync(join(root, "security-spec", "f01-example.test.ts"), body);
+
+    return root;
+  };
+
+  test("flags a bailing guard that would turn a missing database into a pass", () => {
+    const root = write(
+      'import { requireDb } from "../tests/helpers/db";\n' +
+        "beforeEach(async () => {\n" +
+        "  if (!(await requireDb())) {\n" +
+        "    return;\n" +
+        "  }\n" +
+        "});\n"
+    );
+
+    try {
+      const violations = checkSecuritySpecNoSilentBail(root);
+
+      expect(violations.map((row) => row.rule)).toContain(
+        "security-spec-no-silent-bail"
+      );
+      expect(violations[0]?.message).toContain("requireDbOrFail");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags a skipped case, which is indistinguishable from a fixed finding", () => {
+    const root = write('test.skip("later", () => {});\n');
+
+    try {
+      expect(checkSecuritySpecNoSilentBail(root)).not.toBeEmpty();
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("accepts the throwing harness and ignores guard names in prose", () => {
+    const root = write(
+      "/* requireDb() returns false here, which is why harness.ts exists. */\n" +
+        'import { requireDbOrFail } from "./harness";\n' +
+        "beforeEach(async () => {\n" +
+        "  await requireDbOrFail();\n" +
+        "});\n"
+    );
+
+    try {
+      expect(checkSecuritySpecNoSilentBail(root)).toBeEmpty();
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkSecuritySpecRequiresControl", () => {
+  const OUTER = 'describe("F02 the thing is bound", () => {\n';
+  const DEFECT = '  test("the binding is enforced", () => {});\n';
+  const CONTROL =
+    '  test("control: the ordinary flow still works", () => {});\n';
+  const CLOSE = "});\n";
+  const NO_CONTROL = "no positive control of its own";
+
+  const write = (body: string): string => {
+    const root = mkdtempSync(join(tmpdir(), GUARD_TMP_PREFIX));
+
+    mkdirSync(join(root, "security-spec"), { recursive: true });
+    writeFileSync(join(root, "security-spec", "f02-example.test.ts"), body);
+
+    return root;
+  };
+
+  const check = (body: string): string[] => {
+    const root = write(body);
+
+    try {
+      return checkSecuritySpecRequiresControl(root).map((row) => row.message);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  };
+
+  test("flags a describe block with cases but no positive control", () => {
+    const messages = check(OUTER + DEFECT + CLOSE);
+
+    expect(messages.join("\n")).toContain(NO_CONTROL);
+  });
+
+  test("accepts a describe block that carries a control", () => {
+    expect(check(OUTER + DEFECT + CONTROL + CLOSE)).toBeEmpty();
+  });
+
+  test("flags a spec file with no describe block at all", () => {
+    expect(check('test("orphan", () => {});\n').join("\n")).toContain(
+      "no `describe` block"
+    );
+  });
+
+  /* ------------- the three false negatives of the line-scanning version */
+
+  test("does not accept a control that only exists inside a block comment", () => {
+    /*
+     * The commented-out control keeps its ordinary indentation: no leading
+     * `*`, because that is what makes it a bypass. A line-scanning rule
+     * matching /^\s*test\s*\(/ reads it as a real declaration; prefixing it
+     * with a JSDoc-style `*` would defeat that regex too, and the case would
+     * then pass against the very implementation it exists to reject.
+     */
+    const messages = check(
+      OUTER + DEFECT + "  /*\n" + CONTROL + "  */\n" + CLOSE
+    );
+
+    expect(messages.join("\n")).toContain(NO_CONTROL);
+  });
+
+  test("does not credit a nested describe with its parent's later control", () => {
+    const messages = check(
+      'describe("F02 outer", () => {\n' +
+        '  describe("F02 inner", () => {\n' +
+        '    test("the binding is enforced", () => {});\n' +
+        "  });\n" +
+        CONTROL +
+        "});\n"
+    );
+
+    expect(messages.join("\n")).toContain('describe("F02 inner")');
+  });
+
+  test("sees a case written as a multiline call", () => {
+    const messages = check(
+      OUTER +
+        "  test(\n" +
+        '    "the binding is enforced",\n' +
+        "    async () => {}\n" +
+        "  );\n" +
+        "});\n"
+    );
+
+    expect(messages.join("\n")).toContain("declares 1 case(s)");
+  });
+
+  test("accepts a nested suite when each level controls its own cases", () => {
+    expect(
+      check(
+        'describe("F02 outer", () => {\n' +
+          '  describe("F02 inner", () => {\n' +
+          '    test("the binding is enforced", () => {});\n' +
+          '    test("control: the inner fixture works", () => {});\n' +
+          "  });\n" +
+          '  test("an outer case", () => {});\n' +
+          '  test("control: the outer fixture works", () => {});\n' +
+          "});\n"
+      )
+    ).toBeEmpty();
+  });
+
+  test("accepts a parent describe that only groups nested suites", () => {
+    expect(
+      check(
+        'describe("F02 outer", () => {\n' +
+          '  describe("F02 inner", () => {\n' +
+          '    test("the binding is enforced", () => {});\n' +
+          '    test("control: the inner fixture works", () => {});\n' +
+          "  });\n" +
+          "});\n"
+      )
+    ).toBeEmpty();
+  });
+
+  test("counts a table-driven case site with a dynamic title", () => {
+    /*
+     * The suite has real cases built from a static list (f09a, f16). They
+     * must not be flagged, but they still owe a control.
+     */
+    const messages = check(
+      OUTER +
+        '  for (const kind of ["a", "b"]) {\n' +
+        "    test(`rejects ${kind}`, () => {});\n" +
+        "  }\n" +
+        CLOSE
+    );
+
+    expect(messages.join("\n")).toContain("declares 1 case(s)");
+  });
+
+  test("accepts a table-driven suite that also declares a control", () => {
+    expect(
+      check(
+        OUTER +
+          '  for (const kind of ["a", "b"]) {\n' +
+          "    test(`rejects ${kind}`, () => {});\n" +
+          "  }\n" +
+          CONTROL +
+          CLOSE
+      )
+    ).toBeEmpty();
+  });
+
+  test("reports a describe with no callback rather than passing it", () => {
+    expect(check('describe("F02 the thing is bound");\n').join("\n")).toContain(
+      "no callback"
+    );
   });
 });

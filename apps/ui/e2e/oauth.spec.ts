@@ -24,7 +24,7 @@ async function mockOAuthCapabilities(page: Page): Promise<void> {
 }
 
 /**
- * OAuth flow E2E — server-side flow.
+ * OAuth flow E2E: server-side flow.
  *
  * The API owns the full OAuth dance (PKCE, IdP exchange, cookie). The SPA's
  * only responsibility is to redirect the browser to `/api/v1/auth/oauth/{provider}`
@@ -45,14 +45,14 @@ test.describe("OAuth flow", () => {
     await login.goto();
 
     /*
-     * Intercept the API redirect — the SPA does window.location.assign, so
+     * Intercept the API redirect: the SPA does window.location.assign, so
      * Playwright sees a top-level navigation. We block it from following
      * through to the (unreachable in test) IdP.
      */
     await page.route("**/api/v1/auth/oauth/google", (route) => {
       /*
        * Stub with a real HTML body, not 204. Chromium treats 204 on a
-       * top-level navigation as a no-op — the URL never commits — and
+       * top-level navigation as a no-op, the URL never commits, and
        * page.waitForURL hangs. A 200 with an empty document commits
        * the navigation; the SPA never sees this page because the test
        * checks the URL and ends here.
@@ -88,7 +88,7 @@ test.describe("OAuth flow", () => {
     await page.route("**/api/v1/auth/oauth/github", (route) => {
       /*
        * Stub with a real HTML body, not 204. Chromium treats 204 on a
-       * top-level navigation as a no-op — the URL never commits — and
+       * top-level navigation as a no-op, the URL never commits, and
        * page.waitForURL hangs. A 200 with an empty document commits
        * the navigation; the SPA never sees this page because the test
        * checks the URL and ends here.
@@ -118,7 +118,7 @@ test.describe("OAuth flow", () => {
     await page.route("**/api/v1/auth/oauth/linkedin", (route) => {
       /*
        * Stub with a real HTML body, not 204. Chromium treats 204 on a
-       * top-level navigation as a no-op — the URL never commits — and
+       * top-level navigation as a no-op, the URL never commits, and
        * page.waitForURL hangs. A 200 with an empty document commits
        * the navigation; the SPA never sees this page because the test
        * checks the URL and ends here.

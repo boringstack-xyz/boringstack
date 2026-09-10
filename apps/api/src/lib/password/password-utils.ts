@@ -47,7 +47,7 @@ class PasswordService {
   }
 
   /**
-   * Returns true when `hash` is not the current canonical algorithm —
+   * Returns true when `hash` is not the current canonical algorithm,
    * callers should re-hash with `hash()` after a successful verify and
    * persist the new value. Lazy migration with zero forced resets.
    */

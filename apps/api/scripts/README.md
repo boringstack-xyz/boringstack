@@ -37,7 +37,11 @@ When you add a `package.json` script that runs a file under `scripts/`, update t
 | `bun run new:role`           | `codegen/new-role.ts`                          |
 | `bun run new:subject`        | `codegen/new-subject.ts`                       |
 | `bun run new:notification-event` | `codegen/new-notification-event.ts`        |
+| `bun run new:finding`        | `codegen/new-finding.ts`                       |
 | `bun run loadtest`           | `loadtest/run.sh` (k6 golden-path)             |
+| `bun run test:security`      | `quality/run-tests-clean.ts security-spec`     |
+| `bun run check:security-manifest` | `quality/check-security-manifest.ts`      |
+| `bun run write:security-manifest` | `quality/write-security-manifest.ts`      |
 
 ## Maintainer
 

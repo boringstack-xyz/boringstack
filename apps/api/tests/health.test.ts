@@ -15,7 +15,7 @@ const isApiReachable = async (): Promise<boolean> => {
 
     /*
      * Strict content-type check so unrelated processes on the same port
-     * (Vite, nginx, etc. — common during local dev when the API isn't
+     * (Vite, nginx, etc.; common during local dev when the API isn't
      * running) don't pass as "reachable" and crash the JSON parser below.
      */
     const contentType = res.headers.get("content-type") ?? "";
@@ -29,7 +29,7 @@ const isApiReachable = async (): Promise<boolean> => {
 test("GET /health returns status ok", async () => {
   if (!(await isApiReachable())) {
     /*
-     * Integration test — silently passes when the dev server isn't running
+     * Integration test: silently passes when the dev server isn't running
      * so unit suites stay green in CI without a live API.
      */
     return;

@@ -2,17 +2,17 @@
 # Security pre-push gate. Closes the parity hole between the local
 # `bun run validate` and the GitHub Actions security-* workflows. Runs
 # the same scanners CI runs, with the same configs, against the same
-# files — so anything that would red-flag in CI red-flags on the dev
+# files, so anything that would red-flag in CI red-flags on the dev
 # machine before the push leaves.
 #
 # Three scanners:
 #
-#   1. gitleaks (.gitleaks.toml)           — secret-shaped strings in
+#   1. gitleaks (.gitleaks.toml): secret-shaped strings in
 #      any commit on this branch, anywhere in the tree.
-#   2. semgrep  (.semgrep/<app>.yml + p/*) — SAST against changed apps
+#   2. semgrep  (.semgrep/<app>.yml + p/*): SAST against changed apps
 #      only (running on every push is too slow; path-scoping mirrors
 #      the CI dorny/paths-filter step).
-#   3. osv-scanner (osv-scanner.toml)      — dependency vulns against
+#   3. osv-scanner (osv-scanner.toml): dependency vulns against
 #      apps/<app>/bun.lock when the lockfile changed.
 #
 # Hard fail on missing tools. Silent skip is exactly how the last two
@@ -83,7 +83,7 @@ ok "gitleaks clean"
 # ─── 2. semgrep ────────────────────────────────────────────────────────────
 # Matches the two security-sast workflows: apps-api-security-sast.yml +
 # apps-ui-security-sast.yml. Configs are kept in lockstep with those
-# files — if you change a --config flag in either workflow, mirror it
+# files, if you change a --config flag in either workflow, mirror it
 # here too.
 
 run_semgrep_for_app() {
@@ -114,7 +114,7 @@ fi
 # Parity warning: CI runs semgrep from a pinned container image (its ruleset).
 # A local version that drifts can miss a finding CI would catch (or vice
 # versa). Read the pin straight from the workflow so this never goes stale
-# against a CI bump; warn only — the host binary legitimately differs from
+# against a CI bump; warn only: the host binary legitimately differs from
 # the container digest.
 if [[ $API_TOUCHED -eq 1 || $UI_TOUCHED -eq 1 ]] && command -v semgrep >/dev/null 2>&1; then
   SEMGREP_WORKFLOW=".github/workflows/apps-api-security-sast.yml"
@@ -149,7 +149,7 @@ fi
 
 # ─── 3. osv-scanner ────────────────────────────────────────────────────────
 # Matches apps-{api,ui,docs}-security-deps.yml. Only runs against the
-# apps whose bun.lock actually changed — repeating a clean scan adds
+# apps whose bun.lock actually changed: repeating a clean scan adds
 # nothing.
 
 run_osv_for_app() {

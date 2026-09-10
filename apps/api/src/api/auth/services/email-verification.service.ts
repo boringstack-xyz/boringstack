@@ -17,7 +17,7 @@ import { ApiErrors, getErrorMessage } from "../../../lib/errors";
 import { notifications } from "../../../lib/notifications";
 import { now, nowMs } from "../../../lib/time/now";
 import { generateOpaqueToken, hashOpaqueToken } from "../../../lib/tokens";
-import { accountsService } from "../../accounts";
+import { accountsService, joinRequestsService } from "../../accounts";
 import { authWelcomeEvent } from "../../notifications/events";
 import {
   EMAIL_SUBJECTS,
@@ -78,7 +78,7 @@ export class EmailVerificationService {
       /*
        * Resend can leave a fresh token on a user that's already been
        * verified through a different link. Reject explicitly instead of
-       * silently re-running the provisioning path — the user-facing
+       * silently re-running the provisioning path: the user-facing
        * message ("Email already verified") is more informative than
        * "Invalid or expired" for the legitimate "I clicked the older
        * email" case.
@@ -106,6 +106,24 @@ export class EmailVerificationService {
      * prior signup attempt bounced before the user fixed the mailbox),
      * clear it so transactional mail starts flowing immediately.
      */
+    /*
+     * Raised after the transaction has committed, so the pending join
+     * request the claimed branch filed survives. A throw from inside the
+     * transaction would roll it back and leave the owner-approval flow the
+     * API promises with nothing to approve.
+     */
+    if (provisioned.kind === "domain_claimed") {
+      await joinRequestsService.notifyOwnerOfPendingRequest(
+        provisioned.accountId,
+        provisioned.joinRequestId
+      );
+
+      throw ApiErrors.domainClaimed(provisioned.accountName, {
+        accountId: provisioned.accountId,
+        domain: provisioned.domain,
+      });
+    }
+
     void emailSuppressionService.clear(user.email);
 
     void auditLogService.record({
@@ -119,7 +137,7 @@ export class EmailVerificationService {
       resource: `account:${provisioned.account.id}`,
     });
 
-    void notifications.send(authWelcomeEvent, {
+    notifications.detach(authWelcomeEvent, {
       recipientUserId: user.id,
       payload: {
         firstName: user.firstName,
@@ -136,7 +154,7 @@ export class EmailVerificationService {
   /**
    * Test-only seam used by the Playwright fixture to skip the email
    * round-trip when seeding accounts. Marks the user verified and
-   * provisions the personal account in one transaction — same effect
+   * provisions the personal account in one transaction: same effect
    * as a real `verify(token)` call, but keyed by email so the fixture
    * doesn't need to read the (hashed) token out of the DB.
    *
@@ -183,6 +201,17 @@ export class EmailVerificationService {
         tx
       );
     });
+
+    /*
+     * The test seam mirrors the real flow: raise the refusal only after the
+     * transaction that filed the join request has committed.
+     */
+    if (provisioned.kind === "domain_claimed") {
+      throw ApiErrors.domainClaimed(provisioned.accountName, {
+        accountId: provisioned.accountId,
+        domain: provisioned.domain,
+      });
+    }
 
     return {
       user: toPublicUser({ ...user, emailVerifiedAt: verifiedAt }),

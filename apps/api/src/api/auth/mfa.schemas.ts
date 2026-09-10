@@ -35,8 +35,14 @@ export const MfaVerifySetupRequestSchema = t.Object({
   code: TotpCodeSchema,
 });
 
+/*
+ * `challengeToken` is optional because the OAuth path cannot put it in a
+ * response body: that flow ends in a browser redirect, so the challenge is
+ * handed over in an httpOnly cookie instead and the SPA never sees it. The
+ * password path still sends it explicitly.
+ */
 export const MfaVerifyLoginRequestSchema = t.Object({
-  challengeToken: ChallengeTokenSchema,
+  challengeToken: t.Optional(ChallengeTokenSchema),
   code: TotpCodeSchema,
 });
 

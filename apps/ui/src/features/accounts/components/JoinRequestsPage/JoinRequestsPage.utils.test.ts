@@ -7,7 +7,7 @@ describe("formatRequestedAt", () => {
     const result = formatRequestedAt("2026-06-01T00:00:00Z");
 
     /*
-     * Locale isn't pinned — just assert the formatter ran and returned
+     * Locale isn't pinned: just assert the formatter ran and returned
      * a non-empty string different from the raw ISO.
      */
     expect(result).not.toBe("");

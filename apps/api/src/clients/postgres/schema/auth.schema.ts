@@ -37,9 +37,9 @@ export const users = auth.table(
      * or all three null (disabled): there is no in-between persisted on
      * the row. Mid-enrollment state lives in Valkey, not here.
      *
-     *   mfaEnabledAt        — non-null = TOTP required at login
-     *   mfaSecretEncrypted  — AES-256-GCM ciphertext of the TOTP secret
-     *   mfaLastTotpStep     — highest TOTP step accepted so far; rejects
+     *   mfaEnabledAt: non-null = TOTP required at login
+     *   mfaSecretEncrypted: AES-256-GCM ciphertext of the TOTP secret
+     *   mfaLastTotpStep: highest TOTP step accepted so far; rejects
      *                         replays inside the verification window
      */
     mfaEnabledAt: timestamp("mfa_enabled_at", {
@@ -165,6 +165,47 @@ export const mfaRecoveryCodes = auth.table(
   ]
 );
 
+/**
+ * Every refresh-token hash a family has already retired.
+ *
+ * `auth.sessions` keeps two slots, `token_hash` and `previous_token_hash`,
+ * which together detect a replay exactly one generation deep. This table
+ * carries the rest of the chain, so a token captured any number of
+ * rotations ago is still recognised as a replay: without it an attacker who
+ * simply waits two rotations gets a generic "invalid session": no family
+ * revocation, no audit event, and the live token still working.
+ *
+ * A table rather than an array column on the session row: the lineage is
+ * looked up on every refresh, an array would be scanned linearly, and it
+ * would grow the hot row itself (a long-lived session rotates thousands of
+ * times). Rows here die with their family. The FK cascades on the session
+ * delete that revocation already performs.
+ */
+export const authSessionRetiredTokens = auth.table(
+  "session_retired_tokens",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    sessionId: uuid("session_id").notNull(),
+    familyId: uuid("family_id").notNull(),
+    tokenHash: varchar("token_hash", { length: 64 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("idx_session_retired_tokens_hash_unique").on(table.tokenHash),
+    index("idx_session_retired_tokens_family_id").on(table.familyId),
+    foreignKey({
+      columns: [table.sessionId],
+      foreignColumns: [authSessions.id],
+      name: "session_retired_tokens_session_id_fkey",
+    }).onDelete("cascade"),
+  ]
+);
+
 export const authSessions = auth.table(
   "sessions",
   {
@@ -178,10 +219,11 @@ export const authSessions = auth.table(
     familyId: uuid("family_id").defaultRandom().notNull(),
     tokenHash: varchar("token_hash", { length: 64 }).notNull(),
     /*
-     * Hash of the immediately preceding token in the rotation chain. A
-     * refresh request whose hash matches `previousTokenHash` (not
-     * `tokenHash`) is a replay of an already-rotated token; the server
-     * revokes the whole family.
+     * Hash of the immediately preceding token in the rotation chain.
+     * `session_retired_tokens` is the lookup replay detection reads, and it
+     * covers every generation; this slot is the one-generation fallback
+     * that keeps detection working through a rolling deploy, where an
+     * instance on the previous build rotates a token and writes only here.
      */
     previousTokenHash: varchar("previous_token_hash", { length: 64 }),
     expiresAt: timestamp("expires_at", {

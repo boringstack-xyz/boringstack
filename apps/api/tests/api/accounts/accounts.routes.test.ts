@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { invitationsService } from "../../../src/api/accounts/invitations.service";
 import { createApp } from "../../../src/config/app";
 import { AUTH_COOKIE_NAME } from "../../../src/lib/cookies";
-import { seedVerifiedUser } from "../../helpers/auth";
+import { grantTeamPlan, seedVerifiedUser } from "../../helpers/auth";
 import {
   accountMemberships,
   and,
@@ -282,6 +282,14 @@ describe("POST /api/v1/accounts/:id/invitations", () => {
     const { account, password } = await seedVerifiedUser({
       email: "owner-invite@example.com",
     });
+
+    /*
+     * `can_invite_team` is a plan feature and defaults to false, so the
+     * account has to be on a plan that grants it. This case is about the
+     * route and the owner role, not about entitlement.
+     */
+    await grantTeamPlan({ accountId: account.id });
+
     const app = createApp();
     const cookie = await loginCookie(app, "owner-invite@example.com", password);
 
@@ -329,6 +337,17 @@ describe("POST /api/v1/accounts/:id/invitations", () => {
         seedVerifiedUser({
           email: uniqueEmail(`invite-owner-rate-limit-${String(index)}`),
         })
+      )
+    );
+
+    /*
+     * Every one of these owners has to be entitled to invite; the rate
+     * limiter is what this case is about, and it only fires on requests
+     * that get past the entitlement gate.
+     */
+    await Promise.all(
+      owners.map(async (owner) =>
+        grantTeamPlan({ accountId: owner.account.id })
       )
     );
 
@@ -465,6 +484,13 @@ describe("POST /api/v1/invitations/accept", () => {
     const { account, membership } = await seedVerifiedUser({
       email: "host@example.com",
     });
+
+    /*
+     * `max_seats` defaults to 1, the owner, so acceptance needs a plan
+     * with room. This case is about the accept route, not the cap.
+     */
+    await grantTeamPlan({ accountId: account.id });
+
     const { user: invitee, password } = await seedVerifiedUser({
       email: "invitee@example.com",
     });
@@ -783,7 +809,7 @@ describe("POST /api/v1/accounts/:id/transfer-ownership", () => {
     expect(res.status).toBe(200);
 
     /*
-     * The endpoint initiates a two-step transfer — the target user
+     * The endpoint initiates a two-step transfer: the target user
      * must accept via /accept-ownership-transfer before the role
      * flip lands. The route response carries the new transfer's
      * metadata (id + expiry); roles in `account_memberships` stay

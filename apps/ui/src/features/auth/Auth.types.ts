@@ -52,7 +52,7 @@ export type IMfaStatusResponse = z.infer<typeof mfaStatusResponseSchema>;
  * anonymous callers and the full session payload otherwise. Shape is
  * pulled from the OpenAPI operation rather than restated in Zod because
  * the server owns the contract. `IMe` extracts the authenticated branch
- * — the `null` branch is handled at the query layer (see
+ * the `null` branch is handled at the query layer (see
  * `useMe()` in `Auth.queries.ts`).
  */
 type MeResponse =

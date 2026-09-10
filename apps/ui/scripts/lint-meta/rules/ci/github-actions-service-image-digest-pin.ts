@@ -8,8 +8,8 @@ const IMAGE_LINE_REGEX = /^\s+image:\s*(?<image>[^\s#]+)/u;
  * Line-based scan (same pragmatic idiom as github-actions-timeout-required):
  * `image:` keys in workflow files only appear on service containers and
  * job-level `container:` blocks, both of which pull from a registry on every
- * CI run. A mutable tag re-resolves each time — the same supply-chain hole
- * dockerfile-base-image-sha-pin closes for Dockerfiles — so require a
+ * CI run. A mutable tag re-resolves each time: the same supply-chain hole
+ * dockerfile-base-image-sha-pin closes for Dockerfiles, so require a
  * @sha256 digest, and reject `latest@sha256` (the digest wins, but the tag
  * misdocuments what is pinned and invites copy-paste without the digest).
  */

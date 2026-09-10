@@ -24,13 +24,13 @@ export const createApp = () => {
   /*
    * Security headers (CSP, HSTS, X-Frame-Options, etc.) are set by Traefik in
    * front of this service, not here. The api container is meant to run behind
-   * a Traefik instance — running it standalone leaves it without those headers.
+   * a Traefik instance. Running it standalone leaves it without those headers.
    * See infra/compose/compose/docker-compose.production-labels.yml.
    */
   /*
    * App-level catch-all error handler. Route-level `.onError` covers
    * thrown errors INSIDE a matched route, but Elysia's NOT_FOUND for
-   * an unmatched path (or method mismatch) never reaches a route — so
+   * an unmatched path (or method mismatch) never reaches a route, so
    * without this handler the client got a plain-text Elysia default
    * response instead of the canonical JSON envelope. With it, every
    * unknown route also returns `{ success: false, error: { code,

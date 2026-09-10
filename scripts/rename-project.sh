@@ -17,7 +17,7 @@
 # Coverage is inventory-driven (every file matching the identifiers, minus
 # the exclude list below) and self-verified: the script fails if any
 # upstream identifier survives the rewrite. Bare example.com docstring URLs
-# are untouched — only noreply@/demo@ mailbox forms are rewritten.
+# are untouched: only noreply@/demo@ mailbox forms are rewritten.
 #
 # Idempotent: re-running with the same names is a no-op.
 #
@@ -113,15 +113,15 @@ echo
 # Inventory-driven: rewrite EVERY file that carries an upstream identifier,
 # minus an explicit exclude list. The previous static allowlist silently
 # missed new files (metrics labels, tracer names, dev.sh project names);
-# with an inventory the failure mode is gone — and the zero-hits assertion
+# with an inventory the failure mode is gone, and the zero-hits assertion
 # at the end proves it on every run.
 #
 # Exclusions:
 #   - .git / generated trees (node_modules, dist, build, coverage, .astro,
-#     .wrangler, .audit) — regenerated or never shipped.
-#   - bun.lock — rerun `bun install` after the rename instead.
-#   - CHANGELOG.md — history stays history.
-#   - LICENSE — the MIT copyright line keeps the original attribution.
+#     .wrangler, .audit), regenerated or never shipped.
+#   - bun.lock: rerun `bun install` after the rename instead.
+#   - CHANGELOG.md: history stays history.
+#   - LICENSE: the MIT copyright line keeps the original attribution.
 #   - this script itself (it must keep the upstream literals to find them).
 IDENTIFIER_PATTERN='boringstack|BoringStack|API Template|noreply@example\.com|demo@example\.com'
 GREP_EXCLUDES=(
@@ -146,7 +146,7 @@ inventory_files() {
 
 # Apply the substitutions to a single file in-place. We orchestrate
 # multiple sed expressions because BSD/macOS and GNU sed both accept this
-# layout. The order matters — longer matches first so "boringstack-api"
+# layout. The order matters: longer matches first so "boringstack-api"
 # isn't truncated to "<project>-api" via the bare "boringstack" rule.
 apply_to_file() {
   local file="$1"
@@ -193,7 +193,7 @@ if [[ "$DRY_RUN" == "1" ]]; then
 fi
 
 # Self-verification: after a real run, no upstream identifier may survive
-# outside the excluded paths. If one does, the rename has a coverage bug —
+# outside the excluded paths. If one does, the rename has a coverage bug:
 # fail loudly instead of shipping a half-branded fork.
 leftover="$(inventory_files)"
 if [[ -n "$leftover" ]]; then

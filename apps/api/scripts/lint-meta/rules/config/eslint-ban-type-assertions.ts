@@ -15,7 +15,7 @@ const EXEMPTION_MARKER = "eslint-meta-allow-assertion-exemption";
 
 /*
  * `assertionStyle: "as" | "angle-bracket"` only enforces *which syntax* an
- * assertion uses — it still permits them. Only "never" bans `as` outright.
+ * assertion uses, it still permits them. Only "never" bans `as` outright.
  * A config that drifts to "as" silently re-opens the hole (this is the exact
  * bug that once let casts ship: the UI rule was set to "as", not "never").
  */

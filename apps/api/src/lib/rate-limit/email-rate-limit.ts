@@ -1,6 +1,6 @@
 /**
  * Per-email rate limiter for endpoints that trigger external email delivery
- * (resend-verification, forgot-password) — caps inbox-spam attacks from
+ * (resend-verification, forgot-password): caps inbox-spam attacks from
  * distributed IPs.
  *
  * Two backends, selected by config (mirroring `security.ts`'s rate-limit
@@ -8,10 +8,10 @@
  *
  *   - **Valkey** when `CACHE_ENABLED && CACHE_PROVIDER === "valkey"`: a shared
  *     counter so the quota holds across replicas. A per-process limiter is
- *     bypassable under horizontal scale — an attacker just rotates which
+ *     bypassable under horizontal scale: an attacker just rotates which
  *     replica they hit, multiplying the real cap by the replica count.
  *   - **In-memory** otherwise (the single-process default of this template),
- *     and as the fallback when a Valkey call fails — so a cache blip degrades
+ *     and as the fallback when a Valkey call fails, so a cache blip degrades
  *     to per-process enforcement rather than no enforcement at all.
  */
 import { Redis } from "ioredis";

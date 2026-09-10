@@ -1,4 +1,4 @@
-# Tempo — distributed-trace backend. Receives OTLP spans from the API and
+# Tempo: distributed-trace backend. Receives OTLP spans from the API and
 # stores them locally. Grafana queries Tempo by trace_id for the Explore
 # tab and for the data-link click-through from Loki log lines.
 #
@@ -13,7 +13,7 @@ server:
   http_listen_port: 3200
   log_level: info
 
-# OTLP receivers — what the API ships traces to.
+# OTLP receivers: what the API ships traces to.
 distributor:
   receivers:
     otlp:
@@ -33,7 +33,7 @@ ingester:
 compactor:
   compaction:
     # 24h retention is reasonable for a dev box. Tune in prod if
-    # storage budget allows — traces are cheaper than logs per unit
+    # storage budget allows, traces are cheaper than logs per unit
     # debugging value, so 48h–7d is common in production.
     block_retention: 24h
 

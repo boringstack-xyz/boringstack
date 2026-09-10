@@ -2,7 +2,7 @@
 # Restore a Postgres backup produced by backup-wrapper.example.sh.
 #
 # Copy to `restore-from-backup.sh`, chmod +x, customize $COMPOSE_DIR.
-# This script is the partner to backup-wrapper.example.sh — a backup
+# This script is the partner to backup-wrapper.example.sh, a backup
 # that has never been restored is a guess, not a backup. Run a dry
 # restore at least monthly against a scratch database to prove the
 # pipeline still works.
@@ -16,14 +16,14 @@
 #      check is one line.
 #
 # Promoting the restored DB to live is a separate manual step (rename
-# the databases, restart api containers) — kept manual on purpose so
+# the databases, restart api containers), kept manual on purpose so
 # the operator confirms the intent before the swap.
 #
 # Env (sourced from compose/.env if present):
-#   POSTGRES_USER, POSTGRES_DB             — required
-#   RCLONE_REMOTE_NAME, RCLONE_REMOTE_PATH — required
-#   RESTORE_DB                             — optional override of the target DB
-#   RESTORE_DRY_RUN=1                      — print the steps without executing
+#   POSTGRES_USER, POSTGRES_DB: required
+#   RCLONE_REMOTE_NAME, RCLONE_REMOTE_PATH: required
+#   RESTORE_DB: optional override of the target DB
+#   RESTORE_DRY_RUN=1: print the steps without executing
 #
 # Usage:
 #   restore-from-backup.sh                       # list available backups

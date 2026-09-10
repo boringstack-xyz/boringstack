@@ -125,7 +125,7 @@ export function useSettingsPage(): ISettingsPageView {
   const isDeleteDisabled =
     !canDeleteAccount || !isDeleteConfirmationMatch || deleteAccount.isPending;
   /*
-   * Owner cannot leave — the API rejects it because an account must
+   * Owner cannot leave: the API rejects it because an account must
    * always have an owner. Owner uses the delete + transfer flows
    * instead.
    */

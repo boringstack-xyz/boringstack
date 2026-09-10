@@ -23,10 +23,22 @@ export interface ICacheService {
   has: (key: string) => Promise<boolean>;
 
   /**
+   * Atomically adds one to a counter and returns the new value, setting
+   * `ttlSeconds` only when the counter is created.
+   *
+   * Read-modify-write through `get` + `set` is not equivalent, and the
+   * difference is a security boundary: concurrent callers all read the same
+   * value and all write value+1, so an N-attempt budget enforced that way
+   * yields far more than N attempts under load. The TTL applies on creation
+   * only, so incrementing a counter cannot hold its window open.
+   */
+  increment: (key: string, ttlSeconds?: number) => Promise<number>;
+
+  /**
    * Read-through helper: returns the cached value when present, otherwise
    * runs `factory()`, caches the result, and returns it.
    *
-   * Concurrent callers may each invoke `factory` once — this is intentional
+   * Concurrent callers may each invoke `factory` once: this is intentional
    * to keep the implementation lock-free across multiple processes. Use a
    * dedicated lock if duplicate work would be expensive.
    */

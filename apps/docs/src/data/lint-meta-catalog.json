@@ -471,6 +471,18 @@
       "description": "Skipped tests (.skip/.only/xit/xdescribe) must carry an issue URL or TODO(@owner) so the debt has a tracked owner."
     },
     {
+      "id": "security-spec-no-silent-bail",
+      "category": "testing",
+      "ciCritical": false,
+      "description": "security-spec tests must fail when a dependency is missing: no silent-bail guards (requireDb/requireValkey/isDbAvailable/isValkeyReachable) and no skipped cases."
+    },
+    {
+      "id": "security-spec-requires-control",
+      "category": "testing",
+      "ciCritical": false,
+      "description": "Every describe block in security-spec must declare its own `control:` case that passes, so an expected failure is distinguishable from a broken fixture."
+    },
+    {
       "id": "touch-tests-too",
       "category": "testing",
       "ciCritical": false,

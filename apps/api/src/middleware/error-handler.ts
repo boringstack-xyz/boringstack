@@ -14,7 +14,7 @@ import type { IErrorHandlerArgs } from "./error-handler.types";
  * Elysia surfaces TypeBox validation failures by embedding the entire
  * submitted body (passwords, tokens, anything) in `error.message`.
  * Reproducing that string in either the response OR the structured log
- * leaks user input to clients and observability — so we only ever
+ * leaks user input to clients and observability, so we only ever
  * surface the field name (a schema-defined symbol the client already
  * knows about). The user-facing message stays generic; the developer
  * still gets the raw framework message in dev via the stack field.
@@ -44,7 +44,7 @@ const FRAMEWORK_SAFE_MESSAGES: Record<string, string> = {
  * structured log. Framework-originated errors (VALIDATION, PARSE) have
  * the submitted body embedded in `error.message`; both response and
  * log must collapse to a generic constant. All other paths keep the
- * raw message — they don't carry user input, just operator-visible
+ * raw message: they don't carry user input, just operator-visible
  * detail (SQL error, route name, etc.), which is fine in logs and
  * already canonicalised in the response (ApiError.toResponse).
  */
@@ -68,7 +68,7 @@ const isClientErrorCode = (code: string): boolean =>
  * Application-thrown `ApiError`s carry their own statusCode and reach
  * this handler before Elysia gets to tag them with an error code. Any
  * 4xx from the app layer is by definition client-driven (bad input,
- * missing auth, forbidden, conflict) — log at `warn` so it doesn't
+ * missing auth, forbidden, conflict): log at `warn` so it doesn't
  * pollute the error stream alongside genuine 5xx bugs. 5xx still logs
  * at `error`.
  */
@@ -155,7 +155,7 @@ export const errorHandler = ({
       /*
        * Elysia's cookie middleware throws this BEFORE auth-route derive
        * code runs when a signed cookie's signature is missing or wrong
-       * — i.e. when an attacker sends a tampered or guessed auth cookie.
+       *i.e. when an attacker sends a tampered or guessed auth cookie.
        * It's untrusted user input, not an internal error.
        */
       apiError = ApiErrors.unauthorized();

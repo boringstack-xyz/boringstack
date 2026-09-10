@@ -2,7 +2,7 @@ import type { Queue } from "bullmq";
 import type { NotificationMaintenanceWorker } from "./notification-maintenance.worker";
 
 /**
- * Maintenance jobs are name-discriminated (no opaque payload) — the worker
+ * Maintenance jobs are name-discriminated (no opaque payload): the worker
  * branches on `job.name` to pick the right routine. Right now only
  * `dedup-cleanup` exists, but archive purges, stats rollups, etc. can land
  * in the same queue as the surface grows.

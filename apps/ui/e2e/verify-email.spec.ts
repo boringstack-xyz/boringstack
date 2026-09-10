@@ -11,7 +11,7 @@ interface IPendingUser {
 }
 
 /*
- * Registers a user but stops short of verifying them — the API's new
+ * Registers a user but stops short of verifying them: the API's new
  * verify-before-account contract leaves the user pending, unable to
  * log in, and the UI should expose a resend prompt. Returns the
  * credentials so the test can drive the LoginPage.

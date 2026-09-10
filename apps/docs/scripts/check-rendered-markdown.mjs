@@ -35,7 +35,7 @@ function walkHtml(dir) {
 
 /* Reduce a page to its visible prose so we only test real rendered text.
  * Order matters: drop code blocks (where literal table syntax is a legitimate
- * example) first, then strip every remaining tag — this also removes attribute
+ * example) first, then strip every remaining tag: this also removes attribute
  * payloads like Expressive Code's `data-code="…"` copy-button cache, which
  * mirrors the code sample and would otherwise read as a false positive. */
 function toProse(html) {

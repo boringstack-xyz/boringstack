@@ -58,6 +58,8 @@ import {
   checkSchemaEnumFieldConsistency,
   inconsistentEnumFields,
 } from "./rules/source-text/schema-enum-field-consistency";
+import { checkSecuritySpecNoSilentBail } from "./rules/security-spec/no-silent-bail";
+import { checkSecuritySpecRequiresControl } from "./rules/security-spec/requires-control";
 import { checkLintMetaRulesSelfCovered } from "./rules/testing/lint-meta-rules-self-covered";
 import { checkLogicFilesHaveTests } from "./rules/testing/logic-files-require-test-sibling";
 import { checkRouteFilesHaveTests } from "./rules/testing/routes-require-test-sibling";
@@ -144,6 +146,8 @@ export {
   checkPrePushScannerParity,
   checkRouteFilesHaveTests,
   checkSecurityScannerVersionParity,
+  checkSecuritySpecNoSilentBail,
+  checkSecuritySpecRequiresControl,
   checkSharedToolVersionParity,
   checkSkippedTestsHaveTracking,
   checkTofuBootstrapHardening,

@@ -7,7 +7,7 @@ import { oauthStateStore } from "../../../src/lib/oauth/oauth.state";
 
 /*
  * Seeds raw values under the OAuth state prefix to exercise consume()'s
- * handling of corrupted store contents — something store() can never
+ * handling of corrupted store contents: something store() can never
  * produce, so it needs a direct client.
  */
 const seedClient = new Redis(

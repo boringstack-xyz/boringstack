@@ -67,7 +67,7 @@ export function createForbiddenTextPatterns(
     {
       /*
        * Casting a value to an inline object type (`x as { … }`) skips
-       * runtime validation — the classic footgun is asserting the shape of
+       * runtime validation: the classic footgun is asserting the shape of
        * a parsed JSON / API response body and trusting it. The merge bar is
        * "only `as const`"; ESLint's consistent-type-assertions only bans
        * object-literal *expressions* (`{} as T`), not assertions *to* an
@@ -92,7 +92,7 @@ export function createForbiddenTextPatterns(
     {
       /*
        * Shared factories and e2e code run against wall-clock-sensitive
-       * consumers — a literal ISO timestamp ages out (relative-time
+       * consumers: a literal ISO timestamp ages out (relative-time
        * assertions drift, servers reject stale consent/validity windows).
        * Generate with now() from @/lib/time/now instead. Inline literals
        * in colocated unit tests stay allowed: deterministic fixtures

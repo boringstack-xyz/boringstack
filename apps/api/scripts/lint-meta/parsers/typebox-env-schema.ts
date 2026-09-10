@@ -9,7 +9,7 @@ export interface IEnvSchemaKey {
  * The env schema is hand-written TypeBox of the shape
  *   KEY: t.<kind>(... default: ...),
  * each on its own line (multi-line `t.Union([...], { default: X })` blocks
- * span several lines — we detect those by tracking the brace depth and
+ * span several lines, we detect those by tracking the brace depth and
  * scanning until the closing `)`).
  */
 export function parseTypeboxEnvSchemaKeys(

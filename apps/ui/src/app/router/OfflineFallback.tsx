@@ -11,7 +11,7 @@ interface IOfflineFallbackProps {
 
 /*
  * Rendered by `ProtectedRoute` when `useMe()` errors with anything
- * other than 401/403 — the session cookie is still valid, the API is
+ * other than 401/403: the session cookie is still valid, the API is
  * unreachable, the user retries instead of being redirected through
  * /login. The body reflects that contract: no re-authentication ask.
  */

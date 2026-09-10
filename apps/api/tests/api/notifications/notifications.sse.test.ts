@@ -6,12 +6,27 @@ import { ApiError } from "../../../src/lib/errors/api-error";
 
 interface ISseTestCtx {
   user: { id: string };
+  credential: {
+    jti: string | null;
+    issuedAt: number | null;
+    expiresAt: number | null;
+  };
   set: { headers: Record<string, string | number> };
   request: Request;
 }
 
 const makeCtx = (): ISseTestCtx => ({
   user: { id: "u-1" },
+  /*
+   * A live credential. The stream re-checks expiry and revocation on every
+   * tick, so it needs the token's own `jti`, `iat` and `exp` rather than
+   * just a user id.
+   */
+  credential: {
+    jti: "jti-1",
+    issuedAt: Math.floor(Date.now() / 1000),
+    expiresAt: Math.floor(Date.now() / 1000) + 900,
+  },
   set: { headers: {} },
   request: new Request("http://localhost/sse"),
 });

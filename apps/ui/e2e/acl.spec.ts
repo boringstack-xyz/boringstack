@@ -33,7 +33,7 @@ test.describe("ACL — multi-tenant golden paths", () => {
      * Proves: routing wired, AppShell wraps, /me resolves, page mounts.
      * The invite form itself is feature-gated (can_invite_team) and the
      * Free-plan default disables that gate, so we don't assert the
-     * form is visible here — that's the next test's job.
+     * form is visible here: that's the next test's job.
      */
     const invitations = new InvitationsPage(page);
 

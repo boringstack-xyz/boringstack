@@ -11,10 +11,10 @@ const PIP_INSTALL_REGEX = /\bpip3?\s+install\s+(?<args>[^#]*)/u;
  * published last night: a linter's ruleset (yamllint, semgrep, …) can
  * change between CI runs with zero repo diff, flipping the gate without
  * a commit to blame. Every other version in this repo is exact-pinned
- * (deps, actions by SHA, scanner versions) — job-time pip installs get
+ * (deps, actions by SHA, scanner versions): job-time pip installs get
  * the same bar. Flags, requirement files, and local paths/URLs are out
  * of scope; bare package names must carry `==<version>` (a `${VAR}`
- * interpolation counts — the pin then lives in an env var the local
+ * interpolation counts: the pin then lives in an env var the local
  * pre-push gate can read, like GITLEAKS_VERSION).
  */
 export function checkWorkflowPipInstallPinned(file: string): IViolation[] {

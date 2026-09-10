@@ -48,9 +48,11 @@ class GithubProvider implements IOAuthProviderModule {
    * `/user/emails` (granted by the `user:email` scope) always exposes the
    * primary one + its verification status.
    */
-  private async fetchPrimaryEmail(
-    accessToken: string
-  ): Promise<{ email: string; verified: boolean }> {
+  private async fetchPrimaryEmail(accessToken: string): Promise<{
+    email: string;
+    verified: boolean;
+    all: readonly unknown[];
+  }> {
     const emails = await fetchJson(GithubProvider.emailsUrl, {
       headers: this.headers(accessToken),
     });
@@ -67,7 +69,26 @@ class GithubProvider implements IOAuthProviderModule {
       throw ApiErrors.externalService("GitHub account has no primary email");
     }
 
-    return { email: primary.email, verified: primary.verified };
+    return {
+      email: primary.email,
+      verified: primary.verified,
+      all: emails,
+    };
+  }
+
+  /**
+   * Whether `address` appears in the account's verified email list.
+   *
+   * A public profile email need not be the primary one, and the primary
+   * entry's `verified` flag says nothing about a different address.
+   */
+  private isVerifiedAddress(address: string, all: readonly unknown[]): boolean {
+    return all.some(
+      (entry) =>
+        isRecord(entry) &&
+        readString(entry, "email").toLowerCase() === address.toLowerCase() &&
+        readBoolean(entry, "verified")
+    );
   }
 
   private extractProviderUserId(profile: unknown): string {
@@ -119,14 +140,27 @@ class GithubProvider implements IOAuthProviderModule {
       throw ApiErrors.externalService("GitHub /user response missing id");
     }
 
+    /*
+     * Verification always comes from `/user/emails`, whether or not the
+     * profile exposes a public email.
+     *
+     * GitHub's `/user` response carries no `email_verified` field at all,
+     * so reading one from it yields `false` for every user with a public
+     * profile email, and those signups are then refused as unverified.
+     * `/user/emails` is the documented source of verification state.
+     * https://docs.github.com/en/rest/users/emails
+     *
+     * The public email still wins as the ADDRESS when present, so the
+     * identity a user sees does not change; only its verification is
+     * resolved properly.
+     */
     const directEmail = readString(profile, "email");
-    const { email, verified } =
-      directEmail !== ""
-        ? {
-            email: directEmail,
-            verified: readBoolean(profile, "email_verified"),
-          }
-        : await this.fetchPrimaryEmail(accessToken);
+    const primary = await this.fetchPrimaryEmail(accessToken);
+    const email = directEmail !== "" ? directEmail : primary.email;
+    const verified =
+      directEmail === "" || directEmail === primary.email
+        ? primary.verified
+        : this.isVerifiedAddress(directEmail, primary.all);
 
     const { firstName, lastName } = splitDisplayName(
       readString(profile, "name")

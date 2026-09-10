@@ -18,7 +18,7 @@ describe("LOG_EVENTS", () => {
 
   /*
    * The file documents that the list is sorted "to make conflicts during PR
-   * rebase trivial" — lock that invariant in so it cannot silently drift.
+   * rebase trivial", lock that invariant in so it cannot silently drift.
    */
   it("stays sorted", () => {
     const sorted = [...LOG_EVENTS].sort();

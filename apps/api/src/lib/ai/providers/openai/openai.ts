@@ -13,7 +13,7 @@ import { toOpenAIMessages } from "./openai.utils";
 
 /**
  * OpenAI Chat Completions client. Works against any provider that speaks
- * the OpenAI v1 wire format — point `baseURL` at OpenRouter, Ollama, vLLM,
+ * the OpenAI v1 wire format: point `baseURL` at OpenRouter, Ollama, vLLM,
  * Together, Groq, LM Studio, etc. and it just works.
  */
 const AI_REQUEST_TIMEOUT_MS = 60_000;
@@ -25,7 +25,7 @@ export class OpenAIProvider implements IAIProvider {
   constructor(options: IOpenAIProviderOptions) {
     this.client = new OpenAI({
       apiKey: options.apiKey,
-      // The SDK default is 600s — far past any request budget.
+      // The SDK default is 600s, far past any request budget.
       timeout: AI_REQUEST_TIMEOUT_MS,
       baseURL: options.baseURL ?? OPENAI_DEFAULT_BASE_URL,
       ...(options.defaultHeaders !== undefined && {

@@ -1,5 +1,5 @@
 /**
- * OAuth static data only — no provider modules — so provider files can
+ * OAuth static data only, no provider modules, so provider files can
  * import helpers from oauth.utils without circular initialization with
  * oauth.constants / oauth.registry.
  */

@@ -2,7 +2,7 @@
 #
 # Diff this repo's GitHub settings against the desired-state file. Prints
 # fully copy-pasteable `gh api ...` commands for every drift. No auto-apply
-# — the operator runs the printed commands. Exit 0 if clean, 1 if any drift.
+# the operator runs the printed commands. Exit 0 if clean, 1 if any drift.
 #
 # Required: gh (authenticated), jq.
 

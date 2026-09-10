@@ -219,7 +219,7 @@ export default defineConfig(({ mode }) => {
     }
     // No explicit minifier options: Vite 8 uses oxc by default, and the
     // `no-console` lint rule already prevents `console.*` from reaching
-    // source code (see eslint.config.mjs) — so we don't need a build-time
+    // source code (see eslint.config.mjs), so we don't need a build-time
     // drop step. Keep this config small.
   };
 });

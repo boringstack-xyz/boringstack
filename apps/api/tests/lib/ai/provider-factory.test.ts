@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { aiProvider } from "../../../src/lib/ai/provider-factory";
 
 /**
- * The factory reads the *frozen* `env` singleton at module load — we can't
+ * The factory reads the *frozen* `env` singleton at module load: we can't
  * mutate it per test. With the test seed (AI_ENABLED unset), the factory
  * always returns the noop provider. These tests cover what the wired-up
  * factory returns under the test-mode env.

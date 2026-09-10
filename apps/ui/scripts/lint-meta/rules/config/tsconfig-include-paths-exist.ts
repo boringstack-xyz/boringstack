@@ -48,7 +48,7 @@ function readLiteralEntries(tsconfigPath: string): string[] {
 
       /*
        * Entries under hidden directories (.astro/types.d.ts, …) are
-       * build-generated and legitimately absent on a fresh clone —
+       * build-generated and legitimately absent on a fresh clone,
        * only hand-authored paths are checked.
        */
       if (item.replace(/^\.\//u, "").startsWith(".")) {
@@ -85,7 +85,7 @@ function checkOneTsconfig(tsconfigPath: string): IViolation[] {
  * `include` entries, so a stale reference (e.g. an abandoned
  * worker-configuration.d.ts) lives on forever, misdocumenting the
  * deploy model. Checks this app plus every sibling app's root
- * tsconfig.json — siblings without their own lint-meta (apps/docs) are
+ * tsconfig.json, siblings without their own lint-meta (apps/docs) are
  * otherwise unguarded.
  */
 export function checkTsconfigIncludePathsExist(root: string): IViolation[] {

@@ -26,7 +26,7 @@ import type {
  * the right copy so the user can request a fresh link.
  *
  * The verify call is deliberately not wired through TanStack Query's
- * `useMutation` — this page fires exactly once per mount, and any
+ * `useMutation`: this page fires exactly once per mount, and any
  * retry should be the user clicking "send another link," not a silent
  * RTK retry.
  */

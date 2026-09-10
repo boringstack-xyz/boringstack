@@ -7,7 +7,7 @@ export type NotificationStatus = "unread" | "read" | "archived";
 
 /**
  * Shape returned to the UI: pre-rendered strings + identification + status.
- * Payload is omitted on purpose — the UI consumes `rendered` not `payload`,
+ * Payload is omitted on purpose: the UI consumes `rendered` not `payload`,
  * and exposing the raw payload would leak internal event-shape details.
  */
 export interface IPublicNotification {

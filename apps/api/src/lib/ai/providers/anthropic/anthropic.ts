@@ -24,7 +24,7 @@ export class AnthropicProvider implements IAIProvider {
       return;
     }
 
-    // The SDK default is 10 minutes — far past any request budget.
+    // The SDK default is 10 minutes, far past any request budget.
     const client = new Anthropic({ apiKey, timeout: AI_REQUEST_TIMEOUT_MS });
 
     this.messages = {

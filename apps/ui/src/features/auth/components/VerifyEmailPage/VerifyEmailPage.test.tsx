@@ -79,7 +79,7 @@ describe("VerifyEmailPage", () => {
     expect(screen.getByRole("alert", { hidden: false })).toBeInTheDocument();
     /*
      * Tests render without an i18n provider, so the raw translation key
-     * shows up as visible text — `verifyEmail.missingToken`.
+     * shows up as visible text: `verifyEmail.missingToken`.
      */
     expect(
       screen.getByText("auth.verifyEmail.missingToken")

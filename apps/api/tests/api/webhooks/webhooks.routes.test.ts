@@ -13,7 +13,7 @@ describe("Webhook route barrel mount", () => {
     );
 
     /*
-     * 400 (missing svix headers) — proves the route exists and the handler
+     * 400 (missing svix headers): proves the route exists and the handler
      * executed. 404 would mean the mount is broken.
      */
     expect(res.status).not.toBe(404);

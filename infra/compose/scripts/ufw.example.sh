@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # UFW (Uncomplicated Firewall) hardening for a single-host deployment
 # behind Cloudflare. Restricts ingress on 80 + 443 to Cloudflare's IP
-# ranges only — any direct hit from a non-Cloudflare IP is blocked.
+# ranges only, any direct hit from a non-Cloudflare IP is blocked.
 #
 # THIS IS AN EXAMPLE. READ BEFORE RUNNING.
 #   - It resets your UFW config (with confirmation).
-#   - It allows SSH on port 22 by default — change SSH_PORT below if you
+#   - It allows SSH on port 22 by default, change SSH_PORT below if you
 #     run SSH on a non-standard port.
 #   - It is NOT idempotent across Cloudflare IP-range changes: re-run it
 #     after Cloudflare publishes new ranges (rare; semi-annual).

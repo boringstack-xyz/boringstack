@@ -12,7 +12,7 @@ const BASE_URL = env.VITE_API_URL.replace(/\/$/, "");
 
 /*
  * ----------------------------------------------------------------------------
- * Token refresh — silent retry on 401.
+ * Token refresh: silent retry on 401.
  *
  * Why this exists: HTTP-only session cookies expire. Without this, every
  * expired-token API call kicks the user back to /login mid-task. With this,
@@ -25,7 +25,7 @@ const BASE_URL = env.VITE_API_URL.replace(/\/$/, "");
  *
  * Concurrency: multiple requests can hit 401 at the same time (e.g. dashboard
  * loads 4 queries in parallel). `inFlightRefresh` is a module-level promise
- * so all of them join the same refresh — not 4 parallel refreshes.
+ * so all of them join the same refresh, not 4 parallel refreshes.
  * ----------------------------------------------------------------------------
  */
 
@@ -145,7 +145,7 @@ const tokenRefresh: Middleware = {
 
 /*
  * ----------------------------------------------------------------------------
- * Throw-on-error — bridges openapi-fetch's `{ data, error, response }` shape
+ * Throw-on-error: bridges openapi-fetch's `{ data, error, response }` shape
  * to TanStack Query's "throw to signal failure" expectation. Runs AFTER
  * `tokenRefresh` so a transparent retry has a chance first.
  * ----------------------------------------------------------------------------
@@ -155,10 +155,10 @@ const tokenRefresh: Middleware = {
  * The api always envelopes errors as `{ success: false, error: { code,
  * message, fieldErrors?, timestamp } }`. The flat `IApiErrorBody` shape
  * (no envelope) is retained as a fallback for any non-enveloped 4xx that
- * slips through — opaque proxy errors, 502s from edge, etc. — so the
+ * slips through, opaque proxy errors, 502s from edge, etc., so the
  * caller always sees a usable code/message instead of `undefined`.
  */
-/* Keep only string-valued entries — fieldErrors is `Record<string, string>`. */
+/* Keep only string-valued entries, fieldErrors is `Record<string, string>`. */
 const toStringRecord = (value: unknown): Record<string, string> | undefined => {
   if (typeof value !== "object" || value === null) {
     return undefined;
@@ -258,7 +258,7 @@ const throwOnError: Middleware = {
 };
 
 /**
- * The typed OpenAPI client. All HTTP goes through this — components and hooks
+ * The typed OpenAPI client. All HTTP goes through this: components and hooks
  * call typed methods that match the spec.
  *
  *   const { data } = await openapi.GET("/api/v1/users/me");
@@ -285,7 +285,7 @@ openapi.use(tokenRefresh);
 
 /*
  * Web Push subscription endpoints. Same auth + refresh + ApiError pipeline
- * as the rest of the typed openapi client — the helpers are thin wrappers
+ * as the rest of the typed openapi client, the helpers are thin wrappers
  * over `openapi.POST` / `openapi.DELETE` that exist purely so callers can
  * stay in domain types (IWebPushSubscribeBody) instead of repeating the
  * full `paths` lookup at each call site.

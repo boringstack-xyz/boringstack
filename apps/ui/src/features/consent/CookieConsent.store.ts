@@ -32,7 +32,7 @@ export interface ICookieConsentStore extends ICookieConsentState {
 /**
  * Why a custom store instead of pulling in cookiebot / iubenda /
  * similar: vendor banners are heavyweight (300-700 KB blocking JS,
- * external network calls before consent is granted — itself a
+ * external network calls before consent is granted, itself a
  * regulatory grey area), they require a per-domain account, and they
  * can't be lint-gated. A 100-line store + a banner component does the
  * same job at ~2 KB without sending anything to a third party.

@@ -4,11 +4,11 @@
  *
  * Renders a 1200x630 BoringStack-branded PNG to `public/og-image.png`.
  * The image is what LinkedIn / Twitter / Slack / iMessage scrape when
- * the URL is shared — without it the preview is the bare title and
+ * the URL is shared: without it the preview is the bare title and
  * description, which reads as "nothing made this".
  *
  * Lead with VALUE, not stack components. People scrolling a feed need
- * to know "what is this for me" in one glance — the framework list
+ * to know "what is this for me" in one glance: the framework list
  * goes on the site, not on the share card.
  */
 import { mkdir, writeFile } from "node:fs/promises";

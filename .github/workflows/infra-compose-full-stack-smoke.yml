@@ -5,7 +5,7 @@ name: full-stack-smoke
 # (compose service wiring, Vite/nginx → API proxy, Postgres + Valkey
 # readiness, auth cookie path) on every PR within a few minutes.
 #
-# Deliberately curl-only — the browser E2E surface lives in a separate
+# Deliberately curl-only: the browser E2E surface lives in a separate
 # advisory workflow (`infra-compose-playwright-e2e.yml`) so a Playwright
 # flake or browser quirk doesn't block PR merges through this required
 # check.
@@ -20,7 +20,7 @@ on:
       - ".github/workflows/infra-compose-full-stack-smoke.yml"
   # Intentionally no `paths:` filter on pull_request: this job is a required
   # check in branch protection, and a path-filtered workflow that never runs
-  # never reports a status — leaving docs-only PRs perpetually blocked. The
+  # never reports a status, leaving docs-only PRs perpetually blocked. The
   # body uses dorny/paths-filter and gates every real step on
   # `if: steps.filter.outputs.code == 'true'`, so a docs-only PR runs just
   # the checkout + filter (~30s) and exits success with the required check

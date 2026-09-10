@@ -16,7 +16,7 @@ import { notifications } from "./pg-schemas";
 /**
  * Per-recipient notification record. One row per `(recipientUserId, eventType,
  * deduped-window)`. The `rendered` JSON is the pre-rendered in-app payload
- * the UI consumes verbatim — the backend owns the strings so the UI never
+ * the UI consumes verbatim. The backend owns the strings so the UI never
  * needs to know about event types.
  */
 export const notification = notifications.table(
@@ -112,8 +112,8 @@ export const notificationDelivery = notifications.table(
 );
 
 /**
- * Browser Web Push subscriptions per user. One row per (user, endpoint) —
- * the same user can subscribe from multiple devices/browsers. The
+ * Browser Web Push subscriptions per user. One row per (user, endpoint).
+ * The same user can subscribe from multiple devices/browsers. The
  * `web-push` channel reads this table at delivery time to fan out a
  * notification to every live subscription. Rows are deleted lazily when
  * the push service returns 410 Gone (subscription expired) or eagerly via
@@ -207,7 +207,7 @@ export const notificationPreference = notifications.table(
  *     skip the round-trip on the next send)
  *   - Manual operator action (reason = `manual`)
  *
- * The `email` column is the unique key — once an address is
+ * The `email` column is the unique key. Once an address is
  * suppressed by any provider, every provider treats it as suppressed.
  * Cleared when a user verifies a new primary email address.
  */

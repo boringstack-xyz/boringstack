@@ -6,7 +6,7 @@
 # drops the rendered compose/.env into infra/compose, and pulls the API + UI
 # images from GHCR.
 #
-# No on-box app builds — images come from the monorepo release workflows.
+# No on-box app builds: images come from the monorepo release workflows.
 #
 # Idempotent: re-running re-pulls the monorepo, pulls fresh images, and
 # brings the stack back up.
@@ -104,7 +104,7 @@ if [[ "$BACKUPS_ENABLED" == "true" ]]; then
   require_value backup_retention_days "$BACKUP_RETENTION_DAYS"
 
   log "Configuring nightly Postgres backups (rclone remote: $RCLONE_REMOTE_NAME)..."
-  # Install rclone if missing, from the distro's GPG-signed apt repo — never
+  # Install rclone if missing, from the distro's GPG-signed apt repo, never
   # pipe a remote installer straight into a root shell.
   if ! command -v rclone >/dev/null 2>&1; then
     DEBIAN_FRONTEND=noninteractive apt-get update -y

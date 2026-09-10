@@ -160,12 +160,18 @@ describe("OAuthAuthService.loginOrRegisterFromProfile", () => {
       email: "already-verified@example.com",
     });
 
+    /*
+     * `emailVerified: true`. An unverified provider identity may not attach
+     * itself to an existing user: anyone able to create an account at the
+     * provider under someone else's address would inherit that account. The
+     * refusal has its own case below.
+     */
     const result = await oauthAuthService.loginOrRegisterFromProfile(
       "github",
       profile({
         providerUserId: "gh-1",
         email: "already-verified@example.com",
-        emailVerified: false,
+        emailVerified: true,
       })
     );
 
@@ -175,6 +181,38 @@ describe("OAuthAuthService.loginOrRegisterFromProfile", () => {
     const accountRows = await db.select().from(accounts);
 
     expect(accountRows).toHaveLength(1);
+  });
+
+  test("refuses to auto-link an UNVERIFIED provider identity to an existing user", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const { user: existing } = await seedVerifiedUser({
+      email: "takeover-target@example.com",
+    });
+
+    const outcome = await oauthAuthService
+      .loginOrRegisterFromProfile(
+        "github",
+        profile({
+          providerUserId: "gh-attacker",
+          email: "takeover-target@example.com",
+          emailVerified: false,
+        })
+      )
+      .then(() => "linked")
+      .catch(() => "refused");
+
+    expect(outcome).toBe("refused");
+
+    /* The link must not survive the refusal, or a later callback completes it. */
+    const links = await db
+      .select()
+      .from(userAuthProviders)
+      .where(eq(userAuthProviders.userId, existing.id));
+
+    expect(links.map((link) => link.provider)).toEqual(["email"]);
   });
 
   test("refuses to issue a session when the IdP says NOT verified and the user wasn't verified yet — throws EMAIL_NOT_VERIFIED, rolls back link", async () => {

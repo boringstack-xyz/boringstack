@@ -3,7 +3,7 @@
 # container is already up. The container bind-mounts the apps/api
 # tree into /app, so a host-side dev process and a container-side one
 # both writing to the same node_modules / .cache directories races and
-# corrupts both. Pick one: host or container — never both.
+# corrupts both. Pick one: host or container, never both.
 set -euo pipefail
 
 if ! command -v docker >/dev/null 2>&1; then

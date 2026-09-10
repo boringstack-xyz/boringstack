@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 
 import { accountsService } from "../../../src/api/accounts/accounts.service";
 import { joinRequestsService } from "../../../src/api/accounts/join-requests.service";
+import { expectProvisioned, grantTeamPlan } from "../../helpers/auth";
 import {
   accountJoinRequests,
   accountMemberships,
@@ -29,10 +30,19 @@ const seedUserAndAccount = async (
     throw new Error("seed user");
   }
 
-  const { account } = await accountsService.provisionAfterVerification({
-    userId: user.id,
-    name: email,
-  });
+  const { account } = expectProvisioned(
+    await accountsService.provisionAfterVerification({
+      userId: user.id,
+      name: email,
+    })
+  );
+
+  /*
+   * Approving a join request consumes a seat, and `max_seats` defaults to 1,
+   * the owner. These cases exercise the approval flow rather than the cap,
+   * so the account runs on a plan with room.
+   */
+  await grantTeamPlan({ accountId: account.id });
 
   return { userId: user.id, accountId: account.id };
 };

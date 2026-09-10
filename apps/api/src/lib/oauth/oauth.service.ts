@@ -2,6 +2,7 @@ import { generateState } from "arctic";
 import { logger } from "../../config/logger";
 import { AUDIT_ACTIONS, auditLogService } from "../audit-log";
 import { ApiErrors, getErrorMessage } from "../errors";
+import { generateOpaqueToken, hashOpaqueToken } from "../tokens";
 import { oauthStateStore } from "./oauth.state";
 import type {
   IAuthorizationURLResult,
@@ -30,7 +31,12 @@ export const createAuthorizationURL = async (
     scopes
   );
 
-  const stored: IStoredState = {};
+  /*
+   * The browser-binding nonce. Only its hash is stored, so a Valkey snapshot
+   * cannot be replayed as a browser.
+   */
+  const bindingNonce = generateOpaqueToken();
+  const stored: IStoredState = { bindingHash: hashOpaqueToken(bindingNonce) };
 
   if (codeVerifier !== undefined) {
     stored.codeVerifier = codeVerifier;
@@ -49,8 +55,8 @@ export const createAuthorizationURL = async (
   });
 
   return codeVerifier !== undefined
-    ? { url, state, codeVerifier }
-    : { url, state };
+    ? { url, state, bindingNonce, codeVerifier }
+    : { url, state, bindingNonce };
 };
 
 /**
@@ -60,11 +66,12 @@ export const createAuthorizationURL = async (
 export const completeOAuthCallback = async (
   provider: OAuthProvider,
   code: string,
-  state: string
+  state: string,
+  bindingNonce: string
 ): Promise<{ profile: IOAuthProfile; linkUserId?: string }> => {
   /*
    * Resolve credentials BEFORE consuming state. When credentials aren't
-   * configured the provider can't possibly have issued this callback —
+   * configured the provider can't possibly have issued this callback,
    * surface 404 immediately instead of burning a state lookup against
    * Valkey (which may be unreachable in the same misconfigured deploys).
    */
@@ -75,6 +82,36 @@ export const completeOAuthCallback = async (
 
   if (stored === null) {
     throw ApiErrors.unauthorized("Invalid or expired OAuth state");
+  }
+
+  /*
+   * The browser presenting this callback must be the one that started the
+   * flow. Without that, holding a valid state is enough: an attacker begins
+   * authorization for their own identity and hands the callback URL to a
+   * victim, whose browser completes it and ends up signed in as the
+   * attacker.
+   *
+   * State with no stored hash is refused rather than waved through. Treating
+   * a missing hash as "nothing to check" reinstates the whole attack for any
+   * state an attacker can get written without one, and every state this
+   * build writes carries a hash. A state issued by an older build is refused
+   * too: the user restarts sign-in, which costs a redirect.
+   *
+   * Checked before the code is exchanged, so a rejected callback never
+   * reaches the provider. State is consumed above either way, so a failed
+   * binding burns it rather than leaving it for a retry.
+   */
+  const boundHash = stored.bindingHash;
+
+  if (
+    boundHash === undefined ||
+    boundHash === "" ||
+    bindingNonce === "" ||
+    hashOpaqueToken(bindingNonce) !== boundHash
+  ) {
+    throw ApiErrors.unauthorized(
+      "This sign-in was not started in this browser"
+    );
   }
 
   try {

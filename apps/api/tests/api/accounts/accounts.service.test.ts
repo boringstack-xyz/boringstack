@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 
 import { accountsService } from "../../../src/api/accounts/accounts.service";
+import type { ICreatePersonalAccountResult } from "../../../src/api/accounts/accounts.types";
+import { expectProvisioned } from "../../helpers/auth";
 import { now } from "../../../src/lib/time/now";
 import {
   accountMemberships,
@@ -26,6 +28,20 @@ const seedUser = async (email: string): Promise<string> => {
   return row.id;
 };
 
+/**
+ * Provisioning that must succeed.
+ *
+ * `provisionAfterVerification` returns a discriminated outcome so the
+ * claimed-domain branch can commit its pending join request instead of
+ * aborting the transaction. Every case in this file is on an open domain,
+ * so they assert they got an account.
+ */
+const provision = async (input: {
+  userId: string;
+  name?: string;
+}): Promise<ICreatePersonalAccountResult> =>
+  expectProvisioned(await accountsService.provisionAfterVerification(input));
+
 describe("accountsService.provisionAfterVerification", () => {
   beforeEach(async () => {
     if (!(await requireDb())) {
@@ -42,7 +58,7 @@ describe("accountsService.provisionAfterVerification", () => {
 
     const userId = await seedUser("solo@example.com");
 
-    const result = await accountsService.provisionAfterVerification({
+    const result = await provision({
       userId,
       name: "Solo Tester",
     });
@@ -73,7 +89,7 @@ describe("accountsService.provisionAfterVerification", () => {
 
     const userId = await seedUser("owner@example.com");
 
-    const { account } = await accountsService.provisionAfterVerification({
+    const { account } = await provision({
       userId,
       name: "Account",
     });
@@ -102,7 +118,7 @@ describe("accountsService.provisionAfterVerification", () => {
 
     const userId = await seedUser("dupe@example.com");
 
-    const { account } = await accountsService.provisionAfterVerification({
+    const { account } = await provision({
       userId,
       name: "Account",
     });
@@ -129,11 +145,11 @@ describe("accountsService.provisionAfterVerification", () => {
 
     const userId = await seedUser("idem@example.com");
 
-    const first = await accountsService.provisionAfterVerification({
+    const first = await provision({
       userId,
       name: "Idem Account",
     });
-    const second = await accountsService.provisionAfterVerification({
+    const second = await provision({
       userId,
       name: "Different Name (should be ignored)",
     });
@@ -172,7 +188,7 @@ describe("accountsService.provisionAfterVerification", () => {
       throw new Error("seed user failed");
     }
 
-    const result = await accountsService.provisionAfterVerification({
+    const result = await provision({
       userId: row.id,
     });
 
@@ -186,7 +202,7 @@ describe("accountsService.provisionAfterVerification", () => {
 
     const userId = await seedUser("anon@example.com");
 
-    const result = await accountsService.provisionAfterVerification({
+    const result = await provision({
       userId,
     });
 
@@ -200,11 +216,10 @@ describe("accountsService.provisionAfterVerification", () => {
 
     const userId = await seedUser("rejoin@example.com");
 
-    const { account, membership } =
-      await accountsService.provisionAfterVerification({
-        userId,
-        name: "Account",
-      });
+    const { account, membership } = await provision({
+      userId,
+      name: "Account",
+    });
 
     await db
       .update(accountMemberships)
@@ -243,13 +258,13 @@ describe("accountsService.getMembershipsForUser", () => {
 
     const userId = await seedUser("multi@example.com");
 
-    const first = await accountsService.provisionAfterVerification({
+    const first = await provision({
       userId,
       name: "Personal",
     });
 
     const otherOwnerId = await seedUser("co@example.com");
-    const second = await accountsService.provisionAfterVerification({
+    const second = await provision({
       userId: otherOwnerId,
       name: "Co",
     });
@@ -275,7 +290,7 @@ describe("accountsService.getMembershipsForUser", () => {
 
     const userId = await seedUser("revoked@example.com");
 
-    const { membership } = await accountsService.provisionAfterVerification({
+    const { membership } = await provision({
       userId,
       name: "Personal",
     });
@@ -300,7 +315,7 @@ describe("accountsService.getMembershipsForUser", () => {
 
     const userId = await seedUser("deleted-account-member@example.com");
 
-    const { account } = await accountsService.provisionAfterVerification({
+    const { account } = await provision({
       userId,
       name: "Deleted Account",
     });
@@ -328,7 +343,7 @@ describe("accountsService — owner lifecycle", () => {
     }
 
     const aliceId = await seedUser("a@example.com");
-    const { account } = await accountsService.provisionAfterVerification({
+    const { account } = await provision({
       userId: aliceId,
       name: "Alice's Account",
     });
@@ -366,7 +381,7 @@ describe("accountsService — owner lifecycle", () => {
     }
 
     const aliceId = await seedUser("a2@example.com");
-    const { account } = await accountsService.provisionAfterVerification({
+    const { account } = await provision({
       userId: aliceId,
       name: "Acc",
     });
@@ -395,7 +410,7 @@ describe("accountsService — owner lifecycle", () => {
     }
 
     const aliceId = await seedUser("a3@example.com");
-    const { account } = await accountsService.provisionAfterVerification({
+    const { account } = await provision({
       userId: aliceId,
       name: "Acc",
     });
@@ -425,16 +440,14 @@ describe("accountsService — owner lifecycle", () => {
 
     const aliceId = await seedUser("switch-alice@example.com");
     const bobId = await seedUser("switch-bob@example.com");
-    const { account: aliceAcc } =
-      await accountsService.provisionAfterVerification({
-        userId: aliceId,
-        name: "Alice",
-      });
-    const { account: bobAcc } =
-      await accountsService.provisionAfterVerification({
-        userId: bobId,
-        name: "Bob",
-      });
+    const { account: aliceAcc } = await provision({
+      userId: aliceId,
+      name: "Alice",
+    });
+    const { account: bobAcc } = await provision({
+      userId: bobId,
+      name: "Bob",
+    });
 
     const ownMembership = await accountsService.switchAccount(
       aliceId,
@@ -461,7 +474,7 @@ describe("accountsService — owner lifecycle", () => {
     }
 
     const userId = await seedUser("switch-deleted@example.com");
-    const { account } = await accountsService.provisionAfterVerification({
+    const { account } = await provision({
       userId,
       name: "Deleted",
     });
@@ -485,7 +498,7 @@ describe("accountsService — owner lifecycle", () => {
     }
 
     const aliceId = await seedUser("a4@example.com");
-    const { account } = await accountsService.provisionAfterVerification({
+    const { account } = await provision({
       userId: aliceId,
       name: "Acc",
     });
@@ -520,7 +533,7 @@ describe("provisionAfterVerification — domain claiming OFF (default)", () => {
 
     const userId = await seedUser("alice@microsoft.com");
 
-    const result = await accountsService.provisionAfterVerification({ userId });
+    const result = await provision({ userId });
 
     expect(result.account.claimedDomain).toBeNull();
   });

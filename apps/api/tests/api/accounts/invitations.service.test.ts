@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 
 import { accountsService } from "../../../src/api/accounts/accounts.service";
 import { invitationsService } from "../../../src/api/accounts/invitations.service";
+import { expectProvisioned, grantTeamPlan } from "../../helpers/auth";
 import {
   accountInvitations,
   accountMemberships,
@@ -26,11 +27,20 @@ const seedUserAndAccount = async (
     throw new Error("seed user");
   }
 
-  const { account, membership } =
+  const { account, membership } = expectProvisioned(
     await accountsService.provisionAfterVerification({
       userId: user.id,
       name: email,
-    });
+    })
+  );
+
+  /*
+   * Entitlement is enforced server-side: `can_invite_team` defaults to false
+   * and `max_seats` to 1, so an account with no plan row cannot invite and
+   * has no room for a second member. These cases exercise invitation
+   * mechanics, not entitlement, so they run on a plan that permits both.
+   */
+  await grantTeamPlan({ accountId: account.id });
 
   return {
     userId: user.id,

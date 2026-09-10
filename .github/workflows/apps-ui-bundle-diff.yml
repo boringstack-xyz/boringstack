@@ -1,7 +1,7 @@
 name: bundle-diff
 
 on:
-  # No top-level `paths:` filter — the `size-diff` check is in branch
+  # No top-level `paths:` filter: the `size-diff` check is in branch
   # protection's required-checks list, so the workflow must report a
   # status on every PR or branch protection sits in "Expected — Waiting"
   # forever. The expensive build + size-limit steps are gated on the

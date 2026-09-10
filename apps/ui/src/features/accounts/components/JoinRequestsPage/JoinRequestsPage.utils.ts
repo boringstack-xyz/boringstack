@@ -1,5 +1,5 @@
 /**
- * Curried handler factory — `makeIdHandler(onApprove)(row.id)` returns
+ * Curried handler factory: `makeIdHandler(onApprove)(row.id)` returns
  * a stable `() => onApprove(row.id)` closure that the row Button can
  * reference without rebuilding an inline arrow inside the JSX.
  */
@@ -16,7 +16,7 @@ export function formatRequestedAt(iso: string): string {
     const date = new Date(iso);
 
     /*
-     * Locale-aware short date — the underlying ISO is the source of
+     * Locale-aware short date: the underlying ISO is the source of
      * truth, this is purely a display aid. `toLocaleDateString` with
      * no locale arg honours the browser's preference.
      */

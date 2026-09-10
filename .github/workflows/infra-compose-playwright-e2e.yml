@@ -4,7 +4,7 @@ name: playwright-e2e
 # `full-stack-smoke`, then runs the apps/ui Playwright Chromium suite
 # against it.
 #
-# NOT a required check in branch protection — intentionally advisory.
+# NOT a required check in branch protection: intentionally advisory.
 # The Playwright surface flakes occasionally (browser timing, animation,
 # transient network) and forcing every PR to wait on a re-run is more
 # friction than the signal is worth. The fast curl smoke

@@ -34,7 +34,7 @@ const userRevokeKey = (userId: string): string =>
   `${USER_KEY_PREFIX}${userId}${USER_KEY_SUFFIX}`;
 
 /**
- * Blocks a specific JWT by ID until it naturally expires. Idempotent —
+ * Blocks a specific JWT by ID until it naturally expires. Idempotent:
  * repeat calls extend the TTL to the latest exp. Cache failures are
  * logged and swallowed: revocation is a security improvement, not a
  * correctness one, so a cache outage must not break logout.
@@ -82,7 +82,7 @@ const revokeAllForUser = async (userId: string): Promise<void> => {
 
 /**
  * Whether the given JTI has been blocklisted. On cache errors the
- * result follows JWT_REVOCATION_FAIL_CLOSED — see module comment.
+ * result follows JWT_REVOCATION_FAIL_CLOSED. See the module comment.
  */
 const isJtiRevoked = async (jti: string): Promise<boolean> => {
   try {
@@ -102,7 +102,7 @@ const isJtiRevoked = async (jti: string): Promise<boolean> => {
 /**
  * Whether the token (identified by its `iat`) was issued before the
  * user's revoke-before cutoff. On cache errors the result follows
- * JWT_REVOCATION_FAIL_CLOSED — see module comment.
+ * JWT_REVOCATION_FAIL_CLOSED. See the module comment.
  */
 const isUserRevokedSince = async (
   userId: string,
@@ -134,7 +134,7 @@ const isUserRevokedSince = async (
  * time so a freshly minted token's `iat` can be lifted past a recent
  * cutoff. Without this, a password-reset that revokes all sessions
  * (cutoff = floor(now) + 1) would kill any login completing in the same
- * wall-clock second — `iat < cutoff` rejects the brand-new token.
+ * wall-clock second: `iat < cutoff` rejects the brand-new token.
  */
 const getUserRevokeCutoff = async (userId: string): Promise<number> => {
   try {

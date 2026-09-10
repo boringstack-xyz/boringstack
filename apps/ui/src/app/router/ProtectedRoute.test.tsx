@@ -35,7 +35,7 @@ function renderWithRoutes(initialEntries: string[]) {
 }
 
 /*
- * The mock returns a partial UseQueryResult — only the fields
+ * The mock returns a partial UseQueryResult: only the fields
  * ProtectedRoute reads. Every test case has to include `error`,
  * `isFetching`, and `refetch` so the destructure in the component
  * doesn't see `undefined` and confuse `resolveAuthStatus`.

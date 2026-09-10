@@ -5,7 +5,7 @@ export type IPushSubscriptionRow = InferSelectModel<typeof pushSubscription>;
 
 /**
  * Public shape returned to the UI. The raw `p256dhKey` + `authKey` are
- * never echoed back — they're write-only secrets from the browser's
+ * never echoed back: they're write-only secrets from the browser's
  * perspective. `endpoint` is exposed so the UI can render a "Devices"
  * list and let the user revoke a specific one.
  */

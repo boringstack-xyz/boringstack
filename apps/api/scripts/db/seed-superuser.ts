@@ -15,7 +15,7 @@ import { now } from "../../src/lib/time/now";
  * password-reset flow, not this script.
  *
  * Schema note: passwords live in `auth.user_auth_providers` (one row per
- * provider — "email", "google", etc.), not on the user record itself.
+ * provider, "email", "google", etc.), not on the user record itself.
  */
 import { eq } from "drizzle-orm";
 

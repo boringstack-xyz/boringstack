@@ -472,6 +472,23 @@ export interface paths {
         patch: operations["patchApiV1UsersMe"];
         trace?: never;
     };
+    "/api/v1/billing/__test/grant-team-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** TEST ONLY. Attaches a seated team plan to the active account. Returns 404 unless NODE_ENV=test or E2E_TEST_ENDPOINTS_ENABLED=true. */
+        post: operations["postApiV1Billing__testGrant-team-plan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/billing/plans": {
         parameters: {
             query?: never;
@@ -2026,19 +2043,19 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @description Opaque token returned by /auth/login when MFA is required */
-                    challengeToken: string;
+                    challengeToken?: string;
                     /** @description 6-digit TOTP code or recovery code */
                     code: string;
                 };
                 "multipart/form-data": {
                     /** @description Opaque token returned by /auth/login when MFA is required */
-                    challengeToken: string;
+                    challengeToken?: string;
                     /** @description 6-digit TOTP code or recovery code */
                     code: string;
                 };
                 "text/plain": {
                     /** @description Opaque token returned by /auth/login when MFA is required */
-                    challengeToken: string;
+                    challengeToken?: string;
                     /** @description 6-digit TOTP code or recovery code */
                     code: string;
                 };
@@ -2104,19 +2121,19 @@ export interface operations {
             content: {
                 "application/json": {
                     /** @description Opaque token returned by /auth/login when MFA is required */
-                    challengeToken: string;
+                    challengeToken?: string;
                     /** @description 6-digit TOTP code or recovery code */
                     code: string;
                 };
                 "multipart/form-data": {
                     /** @description Opaque token returned by /auth/login when MFA is required */
-                    challengeToken: string;
+                    challengeToken?: string;
                     /** @description 6-digit TOTP code or recovery code */
                     code: string;
                 };
                 "text/plain": {
                     /** @description Opaque token returned by /auth/login when MFA is required */
-                    challengeToken: string;
+                    challengeToken?: string;
                     /** @description 6-digit TOTP code or recovery code */
                     code: string;
                 };
@@ -2610,6 +2627,69 @@ export interface operations {
                         emailVerified: boolean;
                         createdAt: string;
                         updatedAt: string;
+                    };
+                };
+            };
+        };
+    };
+    "postApiV1Billing__testGrant-team-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        success: true;
+                        data: {
+                            granted: boolean;
+                        };
+                    } | {
+                        /** @constant */
+                        success: false;
+                        error: {
+                            code: string;
+                            message: string;
+                            timestamp: string;
+                        };
+                    };
+                    "multipart/form-data": {
+                        /** @constant */
+                        success: true;
+                        data: {
+                            granted: boolean;
+                        };
+                    } | {
+                        /** @constant */
+                        success: false;
+                        error: {
+                            code: string;
+                            message: string;
+                            timestamp: string;
+                        };
+                    };
+                    "text/plain": {
+                        /** @constant */
+                        success: true;
+                        data: {
+                            granted: boolean;
+                        };
+                    } | {
+                        /** @constant */
+                        success: false;
+                        error: {
+                            code: string;
+                            message: string;
+                            timestamp: string;
+                        };
                     };
                 };
             };

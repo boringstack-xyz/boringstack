@@ -11,7 +11,7 @@
  *   WEB_PUSH_VAPID_SUBJECT=mailto:notifications@example.com
  *
  * Rotation: same script. Old VAPID keys keep working for already-subscribed
- * browsers until the browser refreshes its subscription — coordinate
+ * browsers until the browser refreshes its subscription, coordinate
  * server + UI VITE_VAPID_PUBLIC_KEY together when you rotate.
  */
 import webPush from "web-push";

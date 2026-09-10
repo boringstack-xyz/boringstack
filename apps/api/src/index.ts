@@ -15,6 +15,7 @@ import {
 import { logStartup } from "./config/logger";
 import { initializeSentry } from "./config/sentry";
 import { setupNotifications, setupQueues } from "./config/setup";
+import { MAX_BODY_SIZE_BYTES } from "./middleware/body-limit";
 
 // Initialize Sentry after OTel so error events pick up the OTel trace context.
 initializeSentry();
@@ -35,7 +36,7 @@ try {
 }
 
 /*
- * Notifications boot is unconditional — channels + events power the inline
+ * Notifications boot is unconditional: channels + events power the inline
  * dispatch path even when QUEUES_ENABLED is false.
  */
 setupNotifications();
@@ -46,7 +47,7 @@ setupNotifications();
  * QUEUES_ENABLED=true but a null QueueManager, falls through to inline
  * email send, and the operator gets unexplained latency spikes during
  * deploys. Boot order: env invariants → notifications + queues →
- * listen. setupQueues is allowed to throw — failure aborts the boot
+ * listen. setupQueues is allowed to throw. Failure aborts the boot
  * via `abortBootstrap`, the listener never opens.
  */
 if (env.QUEUES_ENABLED) {
@@ -61,7 +62,17 @@ if (env.QUEUES_ENABLED) {
   }
 }
 
-const app = createApp().listen(env.PORT);
+/*
+ * The real body cap. `middleware/body-limit.ts` rejects a request that
+ * ADVERTISES an over-cap Content-Length, which is cheap and happens before
+ * parsing, but a header is a claim, and a chunked request makes no claim at
+ * all. `maxRequestBodySize` is enforced by the server as the body streams, so
+ * it is what actually bounds memory. Both exist on purpose.
+ */
+const app = createApp().listen({
+  port: env.PORT,
+  maxRequestBodySize: MAX_BODY_SIZE_BYTES,
+});
 
 initializeErrorHandlers(app);
 

@@ -8,7 +8,7 @@ interface ICanProps {
   readonly I: Action;
   /** Subject to check the action against, e.g. `"Site"`. */
   readonly a: Subject;
-  /** Invert the check — render when the ability *denies* the action. */
+  /** Invert the check: render when the ability *denies* the action. */
   readonly not?: boolean;
   /** Render children regardless; only meaningful with a render-prop child. */
   readonly passThrough?: boolean;
@@ -24,7 +24,7 @@ interface ICanProps {
  * (so a pre-`/me` tree denies everything), so binding `Can` to that context
  * here is all that's needed.
  *
- * Render-gating only — the server enforces every action independently.
+ * Render-gating only: the server enforces every action independently.
  */
 export function Can({
   I,

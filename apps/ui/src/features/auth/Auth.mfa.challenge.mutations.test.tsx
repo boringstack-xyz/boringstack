@@ -35,7 +35,7 @@ function makeWrapper() {
 
 /*
  * MFA verify mutations now call `syncMeAfterSessionEstablished` on
- * success — fires GET /me with retries. Stub the follow-up call so
+ * success: fires GET /me with retries. Stub the follow-up call so
  * the helper resolves on the first attempt.
  */
 const stubMeAuthed = () => {

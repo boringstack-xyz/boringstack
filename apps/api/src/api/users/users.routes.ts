@@ -11,7 +11,7 @@ import {
 import { usersService } from "./users.service";
 
 /*
- * GET /me is a probe — every anonymous boot of the SPA hits it. It
+ * GET /me is a probe: every anonymous boot of the SPA hits it. It
  * uses `tryAuth` so a missing cookie resolves to `{ user: null }`
  * (200) rather than a noisy 401. A cookie that's present but invalid
  * still throws and surfaces as 401 `invalid_session`, which the UI

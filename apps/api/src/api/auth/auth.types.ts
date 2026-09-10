@@ -1,3 +1,5 @@
+import type { IUser } from "../users/users.types";
+
 /**
  * User shape returned by `/login`, `/verify-email`, and `/oauth/...`
  * to the SPA. Platform-admin status is deliberately NOT part of this
@@ -87,8 +89,37 @@ export interface IMessageResult {
   message: string;
 }
 
+/**
+ * What `requireAuth` puts on the request context.
+ *
+ * `credential` carries the token's own identity and lifetime so a handler
+ * that outlives the request, an SSE stream, a long poll, can re-check
+ * them. The guard reads them once, at admission; a connection held open
+ * for hours has to keep checking, or logout and expiry stop applying to it.
+ */
+export interface IAuthenticatedContext {
+  user: IUser;
+  accountId: string;
+  credential: IAuthCredential;
+}
+
+export interface IAuthCredential {
+  /** Per-issuance id, revoked individually by logout. Null on legacy tokens. */
+  readonly jti: string | null;
+  /** Issued-at, compared against the user-wide revoke-before cutoff. */
+  readonly issuedAt: number | null;
+  /** Expiry. A stream must close when its own credential lapses. */
+  readonly expiresAt: number | null;
+}
+
 export interface IOAuthLoginResult {
   user: IPublicUser;
   accountId: string;
   isNew: boolean;
+  /**
+   * Whether the account requires a second factor. MFA is a property of the
+   * account rather than of one login route, so the OAuth callback has to
+   * make the same decision the password route does.
+   */
+  mfaRequired: boolean;
 }

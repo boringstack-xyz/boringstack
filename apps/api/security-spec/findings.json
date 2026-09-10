@@ -1,0 +1,311 @@
+{
+  "$comment": "One row per finding from the 2026-09-09 API security review. `status` is the EXPECTED state of the finding's tests: `proven` means at least one test must FAIL (the defect is live), `fixed` means all of its tests must PASS, `refuted` means verification did not support the claim and no test exists. scripts/quality/check-security-manifest.ts asserts this file matches an actual run, so a finding that gets fixed is surfaced rather than going unnoticed.",
+  "reviewedCommit": "84acce843d7e7095ac68f23f723a6219d7a49842",
+  "findings": [
+    {
+      "id": "F01a",
+      "severity": "high",
+      "status": "fixed",
+      "file": "f01a-oauth-auto-link-requires-proof.test.ts",
+      "title": "OAuth auto-link does not check who proved the email",
+      "cases": {
+        "an unverified provider identity cannot attach to a verified user": "pass",
+        "control: a verified provider identity is accepted": "pass"
+      }
+    },
+    {
+      "id": "F01b",
+      "severity": "high",
+      "status": "fixed",
+      "file": "f01b-oauth-promotion-invalidates-password.test.ts",
+      "title": "Pre-registered password survives OAuth promotion",
+      "cases": {
+        "the pre-registration password cannot unlock the promoted account": "pass",
+        "control: an ordinary verified registration can still sign in": "pass"
+      }
+    },
+    {
+      "id": "F01c",
+      "severity": "medium",
+      "status": "fixed",
+      "file": "f01c-github-email-verification.test.ts",
+      "title": "GitHub public-email signups fail closed (review had the direction inverted)",
+      "cases": {
+        "a public profile email is verified via the email endpoint": "pass",
+        "an unverified primary email stays unverified": "pass",
+        "control: the no-public-email path already works": "pass"
+      }
+    },
+    {
+      "id": "F02",
+      "severity": "high",
+      "status": "fixed",
+      "file": "f02-oauth-state-binds-to-browser.test.ts",
+      "title": "OAuth state is not bound to the initiating browser",
+      "cases": {
+        "a callback replayed in another browser issues no session": "pass",
+        "control: the initiating browser completes the flow": "pass",
+        "control: an authenticated link flow completes in the same browser": "pass",
+        "state stored without a binding hash is refused, cookie or not": "pass",
+        "control: the same unbound state completes once it carries a hash": "pass",
+        "a bound state is refused when the browser's nonce is wrong": "pass",
+        "a refused callback never reaches the provider": "pass",
+        "control: the initiating browser does reach the provider": "pass",
+        "control: state is consumed exactly once": "pass"
+      }
+    },
+    {
+      "id": "F03",
+      "severity": "high",
+      "status": "fixed",
+      "file": "f03-body-limit-reaches-routes.test.ts",
+      "title": "Body cap never reaches real routes",
+      "cases": {
+        "a valid over-cap body is rejected with 413": "pass",
+        "an absurd Content-Length is rejected before the handler": "pass",
+        "control: a normal body still reaches the route": "pass"
+      }
+    },
+    {
+      "id": "F04",
+      "severity": "high",
+      "status": "fixed",
+      "file": "f04-mfa-attempt-accounting.test.ts",
+      "title": "MFA attempt counter races; failures slide the TTL",
+      "cases": {
+        "no more than the budget of guesses is ever evaluated": "pass",
+        "a correct code cannot win a race once the budget is spent": "pass",
+        "concurrent wrong codes each consume an attempt": "pass",
+        "a failed attempt does not extend the challenge lifetime": "pass",
+        "control: sequential wrong codes are counted one at a time": "pass"
+      }
+    },
+    {
+      "id": "F05",
+      "severity": "high",
+      "status": "fixed",
+      "file": "f05-revocation-requires-durable-store.test.ts",
+      "title": "Fail-closed revocation accepted with the cache disabled",
+      "cases": {
+        "production rejects fail-closed revocation with the cache disabled": "pass",
+        "control: production already rejects a non-valkey provider": "pass",
+        "the supported production combination still boots": "pass"
+      }
+    },
+    {
+      "id": "F06",
+      "severity": "medium",
+      "status": "fixed",
+      "file": "f06-refresh-replay-revokes-family.test.ts",
+      "title": "Refresh replay detection remembers one predecessor",
+      "cases": {
+        "replaying a two-generations-old token kills the live token": "pass",
+        "control: depth-1 replay is already detected": "pass",
+        "a token retired before the lineage table existed is still evidence": "pass",
+        "a rotation on the new build keeps evidence an old replica left": "pass",
+        "deleting the family kills its retired tokens too": "pass",
+        "an access token issued before a replay outlives it": "pass",
+        "control: ordinary rotation keeps working": "pass"
+      }
+    },
+    {
+      "id": "F07",
+      "severity": "medium",
+      "status": "fixed",
+      "file": "f07-mfa-covers-every-login-path.test.ts",
+      "title": "OAuth bypasses MFA; OAuth-only users cannot enrol",
+      "cases": {
+        "an OAuth login for an MFA-enabled user issues no session": "pass",
+        "control: the OAuth challenge can be completed with a valid factor": "pass",
+        "control: OAuth login without MFA does issue a session": "pass",
+        "control: password login for an MFA-enabled user requires the factor": "pass"
+      }
+    },
+    {
+      "id": "F08",
+      "severity": "medium",
+      "status": "fixed",
+      "file": "f08-tenant-authorization-is-live.test.ts",
+      "title": "Billing read trusts the token without live membership",
+      "cases": {
+        "a removed member cannot read the account subscription": "pass",
+        "control: a current member can read it": "pass"
+      }
+    },
+    {
+      "id": "F09a",
+      "severity": "high",
+      "status": "fixed",
+      "file": "f09a-entitlements-honour-status.test.ts",
+      "title": "Feature resolver ignores subscription status",
+      "cases": {
+        "a 'unpaid' subscription does not grant paid features": "pass",
+        "a 'past_due' subscription does not grant paid features": "pass",
+        "a 'incomplete' subscription does not grant paid features": "pass",
+        "a 'paused' subscription does not grant paid features": "pass",
+        "control: an active subscription does grant them": "pass"
+      }
+    },
+    {
+      "id": "F09b",
+      "severity": "high",
+      "status": "fixed",
+      "file": "f09b-effective-plan-helper-is-wired.test.ts",
+      "title": "Effective-plan helper is tested but never called",
+      "cases": {
+        "an administrative grant past its expiry grants nothing": "pass",
+        "a canceled subscription past its paid period grants nothing": "pass",
+        "control: a live grant inside its window still grants": "pass"
+      }
+    },
+    {
+      "id": "F09c",
+      "severity": "high",
+      "status": "fixed",
+      "file": "f09c-feature-and-seat-enforcement.test.ts",
+      "title": "Entire ACL enforcement layer has no production callers",
+      "cases": {
+        "inviting is refused when the plan withholds can_invite_team": "pass",
+        "control: inviting succeeds when the plan grants it": "pass",
+        "accepting an invitation cannot take the account past max_seats": "pass",
+        "approving a join request cannot take the account past max_seats": "pass",
+        "control: an approval within the cap admits the joiner": "pass",
+        "acceptances racing for the last seat cannot all win": "pass",
+        "an invitation issued before a downgrade cannot exceed the new cap": "pass",
+        "control: an acceptance within the cap consumes a seat": "pass",
+        "the account plan actually carries the seeded features": "pass"
+      }
+    },
+    {
+      "id": "F10",
+      "severity": "high",
+      "status": "fixed",
+      "file": "f10-stripe-reconciliation-identity.test.ts",
+      "title": "Stripe reconciliation ignores subscription identity",
+      "cases": {
+        "deleting an OLD subscription leaves the current one active": "pass",
+        "control: deleting the CURRENT subscription cancels it": "pass",
+        "checkout completion records the subscription it was given": "pass",
+        "a checkout row converges once the subscription event arrives": "pass",
+        "a same-second checkout does not erase the subscription event before it": "pass",
+        "a same-second checkout does not overturn a 'unpaid' subscription": "pass",
+        "a same-second checkout does not overturn a 'past_due' subscription": "pass",
+        "a same-second checkout does not overturn a 'canceled' subscription": "pass",
+        "a same-second checkout does not overturn a 'trialing' subscription": "pass",
+        "a delayed checkout does not erase newer subscription state": "pass"
+      }
+    },
+    {
+      "id": "F11",
+      "severity": "medium",
+      "status": "fixed",
+      "file": "f11-domain-claim-persists-join-request.test.ts",
+      "title": "Domain-claim signup rolls back its own join request",
+      "cases": {
+        "a rejected domain-claim signup leaves exactly one pending request": "pass",
+        "control: a public-domain signup still provisions its own account": "pass"
+      }
+    },
+    {
+      "id": "F12",
+      "severity": "medium",
+      "status": "fixed",
+      "file": "f12-membership-lifecycle-invariants.test.ts",
+      "title": "Account can be left ownerless; rotated invite token accepted",
+      "cases": {
+        "a membership revoked mid-accept is not promoted to owner": "pass",
+        "control: an ordinary transfer still moves ownership": "pass",
+        "control: a rotated invitation token is refused": "pass"
+      }
+    },
+    {
+      "id": "F13",
+      "severity": "medium",
+      "status": "fixed",
+      "file": "f13-detached-side-effects.test.ts",
+      "title": "Detached notifications can terminate the production process",
+      "cases": {
+        "a failing notification does not escape as an unhandled rejection": "pass",
+        "control: a healthy dispatch leaves nothing loose": "pass",
+        "no notification dispatch is left without a rejection handler": "pass"
+      }
+    },
+    {
+      "id": "F14",
+      "severity": "medium",
+      "status": "fixed",
+      "file": "f14-sse-stream-lifetime.test.ts",
+      "title": "SSE streams outlive authentication",
+      "cases": {
+        "revoking the session ends an open stream": "pass",
+        "an ordinary logout ends an open stream": "pass",
+        "a revoked credential stops a buffered backlog": "pass",
+        "an expiry reached while suspended stops a buffered backlog": "pass",
+        "control: a valid credential receives the whole backlog": "pass",
+        "control: an authenticated stream opens": "pass"
+      }
+    },
+    {
+      "id": "F15",
+      "severity": "medium",
+      "status": "fixed",
+      "file": "f15-rate-limit-namespacing.test.ts",
+      "title": "Credential and global limiters share one Valkey counter",
+      "cases": {
+        "public traffic does not consume the credential budget": "pass",
+        "the two limiters keep independent windows": "pass",
+        "control: a limiter counts its own traffic": "pass"
+      }
+    },
+    {
+      "id": "F16",
+      "severity": "medium",
+      "status": "fixed",
+      "file": "f16-push-endpoint-destinations.test.ts",
+      "title": "Push registration accepts arbitrary destinations",
+      "cases": {
+        "rejects loopback v4": "pass",
+        "rejects loopback name": "pass",
+        "rejects loopback v6": "pass",
+        "rejects private 10/8": "pass",
+        "rejects private 172.16/12": "pass",
+        "rejects private 192.168/16": "pass",
+        "rejects link-local v4": "pass",
+        "rejects link-local v6": "pass",
+        "rejects unique local v6": "pass",
+        "rejects plaintext scheme": "pass",
+        "rejects non-http scheme": "pass",
+        "rejects not a url at all": "pass",
+        "control: a real push service origin is accepted": "pass"
+      }
+    },
+    {
+      "id": "F17",
+      "severity": "medium",
+      "status": "fixed",
+      "file": "f17-log-redaction-boundary.test.ts",
+      "title": "No sensitive-data boundary on error logging",
+      "cases": {
+        "a database error carrying query parameters is redacted": "pass",
+        "token material handed to the logger does not reach the output": "pass",
+        "a credential hash does not reach the output": "pass",
+        "a secret in the message text does not reach the output": "pass",
+        "a child logger's bindings are redacted on every line": "pass",
+        "a subtree below the walk's depth limit is not emitted": "pass",
+        "control: ordinary diagnostic context is still logged": "pass"
+      }
+    },
+    {
+      "id": "F18",
+      "severity": "medium",
+      "status": "fixed",
+      "file": "f18-audit-exceptions-expire.test.ts",
+      "title": "Dependency audit exceptions never expire",
+      "cases": {
+        "an expired ignoreUntil no longer suppresses the advisory": "pass",
+        "control: a future ignoreUntil still suppresses": "pass",
+        "an entry with no ignoreUntil at all is not silently honoured": "pass"
+      }
+    }
+  ]
+}

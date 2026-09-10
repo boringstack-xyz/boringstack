@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
+import { expectProvisioned } from "../../helpers/auth";
 
 import { accountsService } from "../../../src/api/accounts/accounts.service";
 import { invitationsService } from "../../../src/api/accounts/invitations.service";
@@ -56,11 +57,12 @@ describe("expireFeatureOverridesJob", () => {
 
     const op = await seedUser("op@example.com");
     const cust = await seedUser("c@example.com");
-    const { account, membership } =
+    const { account, membership } = expectProvisioned(
       await accountsService.provisionAfterVerification({
         userId: cust,
         name: "C",
-      });
+      })
+    );
 
     const { id } = await adminBillingService.grantFeature({
       accountId: account.id,
@@ -107,10 +109,12 @@ describe("expireAdminPlansJob", () => {
 
     const op = await seedUser("op2@example.com");
     const cust = await seedUser("c2@example.com");
-    const { account } = await accountsService.provisionAfterVerification({
-      userId: cust,
-      name: "C",
-    });
+    const { account } = expectProvisioned(
+      await accountsService.provisionAfterVerification({
+        userId: cust,
+        name: "C",
+      })
+    );
 
     const [pro] = await db
       .insert(plans)
@@ -151,10 +155,12 @@ describe("hardDeleteSoftDeletedAccountsJob", () => {
     }
 
     const userId = await seedUser("expired@example.com");
-    const { account } = await accountsService.provisionAfterVerification({
-      userId,
-      name: "Old",
-    });
+    const { account } = expectProvisioned(
+      await accountsService.provisionAfterVerification({
+        userId,
+        name: "Old",
+      })
+    );
 
     await db
       .update(accounts)
@@ -179,10 +185,12 @@ describe("hardDeleteSoftDeletedAccountsJob", () => {
     }
 
     const userId = await seedUser("recent@example.com");
-    const { account } = await accountsService.provisionAfterVerification({
-      userId,
-      name: "Recent",
-    });
+    const { account } = expectProvisioned(
+      await accountsService.provisionAfterVerification({
+        userId,
+        name: "Recent",
+      })
+    );
 
     await db
       .update(accounts)
@@ -217,11 +225,12 @@ describe("cleanExpiredInvitationsJob", () => {
     }
 
     const ownerId = await seedUser("o@example.com");
-    const { account, membership } =
+    const { account, membership } = expectProvisioned(
       await accountsService.provisionAfterVerification({
         userId: ownerId,
         name: "O",
-      });
+      })
+    );
 
     const { invitation } = await invitationsService.create(
       {

@@ -1,6 +1,6 @@
 /**
  * Every event name the API emits. Adding a new one here is the only path to
- * emitting it — `logger.{trace,debug,info,warn,error,fatal}` typechecks the
+ * emitting it: `logger.{trace,debug,info,warn,error,fatal}` typechecks the
  * context's `event` field against this union. Sorted to make conflicts on PR
  * rebase trivial.
  */
@@ -131,6 +131,7 @@ export const LOG_EVENTS = [
   "notifications.pubsub.publish_failed",
   "notifications.pubsub.subscribe_error",
   "notifications.pubsub.unsubscribe_failed",
+  "notifications.send.detached_failed",
   "notifications.send.inline_failed",
   "notifications.send.invalid_payload",
   "notifications.send.queue_fallback_inline",
@@ -138,7 +139,9 @@ export const LOG_EVENTS = [
   "notifications.sse.closed",
   "notifications.sse.errored",
   "notifications.sse.opened",
+  "notifications.sse.revoked",
   "notifications.web_push.delivery_failed",
+  "notifications.web_push.destination_rejected",
   "notifications.web_push.job_completed",
   "notifications.web_push.job_failed",
   "notifications.web_push.subscription_expired",

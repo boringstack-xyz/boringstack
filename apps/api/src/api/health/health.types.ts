@@ -9,7 +9,7 @@ export interface IReadinessResult {
 
 export interface IReadinessCheck {
   name: string;
-  /** Run the check; never throws — failure is encoded as `status: "down"`. */
+  /** Run the check; never throws: failure is encoded as `status: "down"`. */
   run: () => Promise<IReadinessResult>;
 }
 

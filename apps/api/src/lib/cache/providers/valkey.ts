@@ -101,6 +101,27 @@ export class ValkeyCacheService implements ICacheService {
     return exists === 1;
   }
 
+  async increment(key: string, ttlSeconds?: number): Promise<number> {
+    const full = this.buildKey(key);
+
+    /*
+     * INCR is atomic server-side, so concurrent callers get distinct values.
+     * The expiry uses `NX`: set when the counter is created, never extended
+     * by a later increment, so spending a budget cannot hold its window
+     * open.
+     */
+    const pipeline = this.getClient().multi().incr(full);
+
+    if (ttlSeconds !== undefined) {
+      pipeline.expire(full, ttlSeconds, "NX");
+    }
+
+    const results = await pipeline.exec();
+    const value = results?.[0]?.[1];
+
+    return typeof value === "number" ? value : Number(value ?? 0);
+  }
+
   async wrap<T>(
     key: string,
     factory: () => Promise<T>,

@@ -20,7 +20,7 @@ import {
 /*
  * Structural views of the BullMQ surface the manager actually touches.
  * Real `Queue` / worker-class instances satisfy these implicitly; tests
- * satisfy them with plain stubs — no Valkey connection required.
+ * satisfy them with plain stubs, no Valkey connection required.
  */
 export interface IManagedWorker {
   close: () => Promise<void>;
@@ -78,7 +78,7 @@ const fetchQueueCounts = async (
  * app. New queues should be added here so graceful shutdown,
  * application-level enqueue helpers, and admin stats stay in one place.
  *
- * The Web Push pair is nullable — the queue + worker are only constructed
+ * The Web Push pair is nullable: the queue + worker are only constructed
  * when all three VAPID env vars are present. Callers handle the null case
  * by treating Web Push as a no-op (see `enqueueWebPushDelivery`).
  */

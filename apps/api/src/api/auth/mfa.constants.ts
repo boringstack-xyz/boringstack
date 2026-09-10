@@ -12,7 +12,7 @@ export const MFA_TOTP_DIGITS = 6;
 
 /**
  * Validation window in steps. `1` means "accept the previous, current,
- * and next step" — three 30-second windows total. Tight enough to keep
+ * and next step": three 30-second windows total. Tight enough to keep
  * the attack surface small, lenient enough to absorb realistic client
  * clock drift.
  */
@@ -56,7 +56,7 @@ export const MFA_RECOVERY_CODE_BYTES = 5;
 /**
  * TOTP issuer label embedded in the otpauth:// URI. Visible to the user
  * inside their authenticator app, so it should match the product name.
- * Pulled from APP_NAME at issuance — this constant is the fallback when
+ * Pulled from APP_NAME at issuance: this constant is the fallback when
  * env is unavailable (tests).
  */
 export const MFA_DEFAULT_ISSUER = "BoringStack";
@@ -70,10 +70,19 @@ export const MFA_CACHE_KEYS = {
   setup: (userId: string): string => `mfa:setup:${userId}`,
   /**
    * Active TOTP challenge. Keyed by the HMAC hash of the opaque
-   * challenge token — not the token itself, so a Valkey snapshot leak
+   * challenge token, not the token itself, so a Valkey snapshot leak
    * cannot be replayed against the API.
    */
   challenge: (tokenHash: string): string => `mfa:challenge:${tokenHash}`,
+  /**
+   * Failed-attempt counter for a challenge. Separate from the payload so it
+   * can be driven by an atomic INCR: counting inside the payload is a
+   * read-modify-write, where concurrent wrong codes all read the same value
+   * and all write value+1, and a 5-attempt budget buys far more than five
+   * guesses at a six-digit code.
+   */
+  challengeAttempts: (tokenHash: string): string =>
+    `mfa:challenge:${tokenHash}:attempts`,
 } as const;
 
 /**

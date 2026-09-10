@@ -6,8 +6,8 @@ const EXPRESSION_OPENER = "${{";
 const EXPRESSION_CLOSER = "}}";
 
 /*
- * GitHub lexes every expression opener in a workflow file — including
- * ones inside run-block heredocs, embedded Python, or comments — as the
+ * GitHub lexes every expression opener in a workflow file, including
+ * ones inside run-block heredocs, embedded Python, or comments, as the
  * start of an Actions expression. A stray opener (e.g. an f-string
  * emitting one) fails that lexing and invalidates the ENTIRE workflow:
  * runs fail in 0s with no jobs, and required PR checks hang at
@@ -52,7 +52,7 @@ export function checkWorkflowExpressionSyntax(file: string): IViolation[] {
 
 /**
  * One malformed expression opener anywhere in a workflow file makes the
- * whole workflow unparseable — runs fail instantly with zero jobs.
+ * whole workflow unparseable: runs fail instantly with zero jobs.
  */
 export const githubActionsExpressionSyntaxRule: IMetaRule = {
   id: "github-actions-expression-syntax",

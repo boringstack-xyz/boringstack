@@ -10,7 +10,7 @@ const RULE_ID = "engine-pin-parity";
 /*
  * In a monorepo checkout the root package.json runs scripts of its own
  * (postinstall hooks, stack-check.sh), so its engines pin must not drift
- * from the app's. Standalone checkouts have no parent manifest — the
+ * from the app's. Standalone checkouts have no parent manifest: the
  * check no-ops there.
  */
 function findParentPackageJsonDir(root: string): string | null {

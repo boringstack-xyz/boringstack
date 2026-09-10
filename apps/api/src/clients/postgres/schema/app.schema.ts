@@ -30,7 +30,7 @@ export const accounts = app.table(
     /*
      * Set when `ACCOUNT_DOMAIN_CLAIMING=true` and the founding user's
      * email had a non-public domain. Partial unique index below
-     * enforces "one active account per claimed domain" — soft-deleted
+     * enforces "one active account per claimed domain": soft-deleted
      * accounts release their claim, so a fresh signup after a delete
      * gets the domain again.
      */
@@ -57,7 +57,7 @@ export const accounts = app.table(
 );
 
 /*
- * Outstanding "your domain is already claimed — join the existing
+ * Outstanding "your domain is already claimed, join the existing
  * account?" requests. Created at verify-email time when domain
  * claiming is on and the founder's domain matches an existing
  * account. Owner approves → the request becomes an active membership;
@@ -141,8 +141,8 @@ export const accountInvitations = app.table(
     index("idx_account_invitations_token_hash").on(table.tokenHash),
     /*
      * Partial unique on (accountId, lowercased email) WHERE the invitation
-     * is still actionable. Prevents an account from accumulating multiple
-     * concurrent open invitations for the same recipient — either malicious
+     * can still be accepted. Prevents an account from accumulating multiple
+     * concurrent open invitations for the same recipient, either malicious
      * spam or a buggy "Invite again" UI. Once an invitation is accepted or
      * revoked, the row exits the partial index so a follow-up invitation
      * is allowed.
@@ -221,7 +221,7 @@ export const accountFeatureOverrides = app.table(
  * single-use, and TTL-bounded.
  *
  * Partial unique on (account_id) WHERE pending enforces at-most-one
- * outstanding offer per account — a follow-up "transfer again" surfaces
+ * outstanding offer per account. A follow-up "transfer again" surfaces
  * the existing offer instead of stacking.
  */
 export const accountOwnershipTransfers = app.table(

@@ -2,7 +2,7 @@
 #
 # The monorepo ships separate coverage uploads per app (api / ui) using
 # flags. Each app's CI job points `codecov-action` at its own lcov.info
-# and tags the upload with its flag — Codecov tracks coverage trends
+# and tags the upload with its flag, so Codecov tracks coverage trends
 # per-flag rather than blending them into a meaningless monorepo
 # average. Documentation site is excluded (no executable code).
 

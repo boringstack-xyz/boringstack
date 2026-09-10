@@ -108,7 +108,7 @@ jobs:
 
       - name: Apply DB migrations
         if: steps.filter.outputs.code == 'true'
-        # `db:migrate` applies the committed migrations in drizzle/ —
+        # `db:migrate` applies the committed migrations in drizzle/,
         # non-interactive, deterministic, and creates every schema
         # (auth / billing / app / audit) the test suite expects.
         # `db:push` is dev-only and prompts on a TTY, which CI doesn't have.

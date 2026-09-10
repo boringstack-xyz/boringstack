@@ -20,7 +20,7 @@ const LoginPage: FC<ILoginPageProps> = (props) => {
         </title>
       </Helmet>
 
-      {view.mfaChallengeToken === null ? (
+      {!view.mfaPending ? (
         <LoginCredentialsForm
           register={view.register}
           errors={view.errors}

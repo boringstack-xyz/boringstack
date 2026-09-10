@@ -1,6 +1,6 @@
 /**
  * Discriminator types for the `/auth/login` response. Two envelopes
- * arrive on the same path — `{ user }` after a non-MFA login, or
+ * arrive on the same path: `{ user }` after a non-MFA login, or
  * `{ mfaRequired, challengeToken }` when the user has TOTP enabled.
  */
 export interface IMfaRequiredEnvelope {

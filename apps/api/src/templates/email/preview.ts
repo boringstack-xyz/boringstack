@@ -292,7 +292,7 @@ const generateIndex = (templates: ITemplateMetadata[]): void => {
  * user input).
  *
  * This shape is the one CodeQL's `js/path-injection` query recognises
- * as safe — none of the earlier `path.resolve` + `startsWith(PREVIEW_DIR)`
+ * as safe: none of the earlier `path.resolve` + `startsWith(PREVIEW_DIR)`
  * variants satisfied it because the read site still received a string
  * derived from `req.url`.
  */
@@ -334,7 +334,7 @@ const startServer = (port: number): void => {
   /*
    * Re-resolved each request so the index page picked up after
    * `generateIndex()` ran is reachable. Generation happens before
-   * `startServer`, so the initial enumeration already contains it —
+   * `startServer`, so the initial enumeration already contains it,
    * but keeping the read fresh-on-each-request makes the watch-mode
    * story honest, with no measurable cost on a dev-only server.
    */
@@ -425,7 +425,7 @@ const main = (): void => {
   /*
    * PREVIEW_PORT: dev-only override for this template-preview server's port
    * (defaults to 3002). Read directly rather than via the validated env schema
-   * because it never runs in the deployed app — only `bun run preview:templates`.
+   * because it never runs in the deployed app, only `bun run preview:templates`.
    */
   const portEnv = process.env.PREVIEW_PORT;
   const port =

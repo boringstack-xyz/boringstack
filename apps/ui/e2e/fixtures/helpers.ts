@@ -6,7 +6,7 @@ import { parseBody } from "./parse";
 /**
  * API-driven setup helpers shared by the e2e specs. Specs drive the
  * real API for user provisioning so each test stays focused on its UI
- * flow — and every spec uses THIS module instead of a local copy (the
+ * flow, and every spec uses THIS module instead of a local copy (the
  * canonical-helpers-single-home lint-meta rule enforces it).
  */
 export interface ITestUser {
@@ -78,6 +78,25 @@ export async function authedContext(
   }
 
   return ctx;
+}
+
+/**
+ * Attaches a seated team plan to the caller's active account.
+ *
+ * Inviting a second member needs `can_invite_team` and a free seat, and
+ * the free plan grants neither. A spec that wants two members in one
+ * account has to buy the plan the product would make a real customer buy;
+ * writing the membership row straight into Postgres would skip the policy
+ * the invitation route exists to apply.
+ */
+export async function grantTeamPlan(ctx: APIRequestContext): Promise<void> {
+  const res = await ctx.post("/api/v1/billing/__test/grant-team-plan");
+
+  if (!res.ok()) {
+    throw new Error(
+      `grant-team-plan failed (${String(res.status())}): ${await res.text()}`
+    );
+  }
 }
 
 /** The session's active account id from /users/me (schema-parsed). */

@@ -11,7 +11,7 @@ const ESLINT_CONFIG_NAMES = [
 ];
 
 /*
- * Literal (non-glob) test-file paths quoted in eslint.config.* — the shape
+ * Literal (non-glob) test-file paths quoted in eslint.config.*, the shape
  * used by per-file rule overrides. Glob patterns are skipped; they match
  * zero-or-more files by design.
  */
