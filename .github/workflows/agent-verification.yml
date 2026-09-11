@@ -7,6 +7,7 @@ on:
     paths:
       - "tools/**"
       - "scripts/ci/**"
+      - "scripts/stack-check.sh"
       - "infra/compose/compose/dev.sh"
       - "infra/compose/scripts/pre-push.sh"
       - "apps/api/**"
@@ -24,7 +25,7 @@ jobs:
   verify:
     name: agent verification contract
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -34,6 +35,7 @@ jobs:
             tooling:
               - 'tools/**'
               - 'scripts/ci/**'
+              - 'scripts/stack-check.sh'
               - 'infra/compose/compose/dev.sh'
               - 'infra/compose/scripts/pre-push.sh'
               - 'apps/api/**'

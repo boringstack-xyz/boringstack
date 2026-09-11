@@ -22,8 +22,7 @@ async function evaluateBrowser(
   const browserReport = join(evidenceDir, "browser.xml");
   const browser = await runProcess(
     [
-      process.execPath,
-      NO_ENV_FILE,
+      "node",
       "node_modules/@playwright/test/cli.js",
       "test",
       "projects.spec.ts",
@@ -37,6 +36,12 @@ async function evaluateBrowser(
       timeoutMs: 180000,
     }
   );
+
+  if (browser.code !== 0) {
+    console.error(
+      `Browser runner failed (exit=${String(browser.code)}): ${browser.stderr.slice(-4000)}\n${browser.stdout.slice(-8000)}`
+    );
+  }
 
   results.push(
     testEvidence(

@@ -59,7 +59,7 @@ bun run agent:resource Projects --scope=account --policy=team-read-admin-write -
 bun run agent:resource Projects --scope=account --policy=team-read-admin-write --json
 ```
 
-The new opt-in mode generates schema, relations, explicit owner/admin write and member/viewer read permissions, fresh-membership service authorization, tenant predicates, request ownership rejection, routes, audit events and real HTTP tests. It checks every patch target before writing and refuses ambiguous anchors, conflicts and symlink targets. A generator lease coordinates simultaneous invocations, and each file is replaced atomically. On failure it restores its own unchanged writes; it preserves subsequent editor changes. If a process is killed during generation, inspect the diff for partial edits. `bun run agent:recover -- generator --acknowledge-partial-writes` and the equivalent `checkout` command remove only locks whose PID is dead; live or malformed locks are refused. Recovery never rolls back edits blindly. Review the dry-run path list. The legacy app-local user-scoped invocation remains available. Account generation is dispatched at the root; the API app does not import root tooling.
+The new opt-in mode generates schema, relations, explicit owner/admin write and member/viewer read permissions, fresh-membership service authorization, tenant predicates, request ownership rejection, routes, audit events and real HTTP tests. It checks every patch target before writing and refuses ambiguous anchors, conflicts and symlink targets. Before writing, the account-resource CLI typechecks the full prospective API program using an in-memory overlay of the generated files and the real API tsconfig. Missing imports and semantic errors block both generation and dry runs without touching the checkout. Existing API type errors must also be fixed first. The full application check remains required for lint and other contracts. A generator lease coordinates simultaneous invocations, and each file is replaced atomically. On failure it restores its own unchanged writes; it preserves subsequent editor changes. If a process is killed during generation, inspect the diff for partial edits. `bun run agent:recover -- generator --acknowledge-partial-writes` and the equivalent `checkout` command remove only locks whose PID is dead; live or malformed locks are refused. Recovery never rolls back edits blindly. Review the dry-run path list. The legacy app-local user-scoped invocation remains available. Account generation is dispatched at the root; the API app does not import root tooling.
 
 Generate SQL with the existing `db:generate` command; apply it through an owned verification sandbox. Run `bun run agent:sync -- --sandbox=<id> --json` from the root to apply the committed migrations, build test templates and regenerate ACL/OpenAPI through this checkout’s private runtime. This explicit write command reports the contract paths to review; verification itself remains read-only for committed contracts. The list has a deliberate 100-record bound; choose a pagination contract before growing it. Audit writes retain the stack's existing best-effort convention; this does not add a durable outbox. Naming supports simple plural PascalCase, not English inflection.
 
@@ -80,9 +80,9 @@ Task prompts for Projects, a description migration, and a tenant fix are in `too
 
 `agent:check` covers protocol failures, real OpenAPI generation, subprocess deadlines, recipe drift, patch conflicts and repeat generation. `agent:check:docker` proves isolation and scoped cleanup. The always-reporting PR workflow runs tooling tests and deterministic integration checks when relevant paths change. Existing API/UI/security gates remain separate.
 
-`bun run check` keeps its lightweight compatibility behavior but says `check incomplete` when OpenAPI was skipped. It cannot substitute for `agent:verify --profile=release-local` or the complete GitHub checks.
+`bun run check` returns 2 (incomplete) when required OpenAPI verification is unavailable, 1 when a check fails, and 0 only when all checks in its declared scope complete. Start the API or set `OPENAPI_URL` before rerunning. It still cannot substitute for `agent:verify --profile=release-local` or the complete GitHub checks.
 
-To review an independently implemented Projects checkout, run `bun run agent:eval -- --candidate=/absolute/path/to/checkout`. The reviewer copies only the declared production integration files and appended Drizzle artifacts into its own fixture. Existing migration history must match. Candidate tests, scripts, CI and evaluator files are excluded; candidate files must be regular files within that checkout. Candidate mode does not generate missing SQL for the submission. Dependencies are copied into each fixture (copy-on-write where supported), not symlinked into the reviewer checkout. Evidence is written to a separate private temporary directory. These reduce accidental interference; same-user hostile code still requires an OS sandbox. Candidate mode runs acceptance against arbitrary implementations, while the separate deterministic run validates the judge against deliberate defects. It runs the same named API/UI/browser acceptance and generated-checkout API/UI static checks; the broader security and release profiles remain required separately. Alternate resource names and arbitrary task schemas are not accepted by this first concrete judge.
+To review an independently implemented Projects checkout, run `bun run agent:eval -- --candidate=/absolute/path/to/checkout`. The reviewer copies only the declared production integration files and appended Drizzle artifacts into its own fixture. Existing migration history must match. Candidate tests, scripts, CI and evaluator files are excluded; candidate files must be regular files within that checkout. Candidate mode does not generate missing SQL for the submission. Dependencies are copied into each fixture (copy-on-write where supported), not symlinked into the reviewer checkout. Evidence is written to a separate private temporary directory. Candidate execution runs in a non-root Docker container with a read-only root, no host mounts, no Docker socket, no inherited host credentials and no external network. Disposable Postgres and Valkey share only its loopback network namespace. CPU, memory, process and temporary-storage limits apply. Image preparation installs the reviewer’s locked dependencies before any candidate source enters the runtime. The controller removes its containers and image tag after completion or failure. Container isolation protects the host; it does not make a same-process test runner tamper-proof against application code. Review the candidate and evidence independently. Candidate mode runs acceptance against arbitrary implementations, while the separate deterministic run validates the judge against deliberate defects. It runs the same named API/UI/browser acceptance and generated-checkout API/UI static checks; the broader security and release profiles remain required separately. Alternate resource names and arbitrary task schemas are not accepted by this first concrete judge.
 
 The desired repository settings list `agent verification contract` as required. This change does not apply GitHub settings remotely; let the new workflow report before reconciling those settings.
 
@@ -100,12 +100,22 @@ observation even if its inventory disagrees. Then explicitly run:
 bun run agent:inventory -- api.tests ui.tests ui.e2e
 ```
 
-The command accepts only observations from the current unchanged checkout. Review
-the resulting added/removed case identities against the test changes, then rerun
-verification. It does not declare its own update verified. If only one lane changed,
-name only that lane. If several changed, update them together; each update changes
-the source fingerprint. Never accept an unexpected shrink merely to make CI green.
+This first command is a preview: it prints exact added/removed identities and a
+review token without updating files. Approve the same diff explicitly:
+
+```sh
+bun run agent:inventory -- api.tests ui.tests ui.e2e --accept=<token>
+```
+
+If any cases are removed (including one occurrence of a duplicate or a same-count
+replacement), also supply `--allow-removals=<token>`. This acknowledges the exact
+removals already displayed; it is not a blanket permission for future reductions.
+The token binds the checkout, old baseline and fresh observation. Any change
+invalidates approval. Choose only changed lanes, approve them together, review the
+committed diff, then rerun verification. Approval never declares the update verified.
 
 Owned browser invocations disable retries. A retry attachment is blocked if fed
 back as evidence. Coverage/forbidden-warning gate failures are reported as failures
 when the complete test inventory agrees; missing or crashed execution stays blocked.
+
+The owned API uses Bun; the owned Vite server uses Node, matching Vite’s CLI runtime. Install Node compatible with the UI package’s engine requirements alongside Bun. Both servers bind to IPv4 loopback, and readiness checks report transport/HTTP failures separately from process exits.

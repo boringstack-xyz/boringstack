@@ -3,7 +3,7 @@ import { constants, cpSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 /** Copy reviewed source, never ignored env/credentials or existing runtime state. */
-export function copyFixture(root: string, destination: string): void {
+export function copySource(root: string, destination: string): void {
   mkdirSync(destination, { recursive: true });
   const files = execFileSync(
     "git",
@@ -39,6 +39,10 @@ export function copyFixture(root: string, destination: string): void {
     mkdirSync(dirname(join(destination, path)), { recursive: true });
     cpSync(source, join(destination, path), { dereference: false });
   }
+}
+
+export function copyFixture(root: string, destination: string): void {
+  copySource(root, destination);
 
   for (const app of ["api", "ui"]) {
     cpSync(

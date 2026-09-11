@@ -71,7 +71,8 @@ fi
 
 if ((${#SKIPPED[@]} > 0)); then
   c_yellow "check incomplete: ${#SKIPPED[@]} check(s) skipped (${SKIPPED[*]})"
-  c_yellow "Legacy exit status retained; use agent:verify for strict OpenAPI evidence."
+  c_yellow "Start the API or set OPENAPI_URL, then rerun check."
+  exit 2
 else
   c_green "check passed (declared scope only; not the complete CI gate)"
 fi

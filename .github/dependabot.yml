@@ -207,6 +207,26 @@ updates:
       - dependency-name: "traefik"
         update-types: ["version-update:semver-major"]
 
+  - package-ecosystem: docker
+    directory: /tools/agent-evals/isolated
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 4
+    labels: ["dependencies", "docker"]
+    commit-message:
+      prefix: "chore(docker)"
+    groups:
+      docker-images:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "oven/bun"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "mcr.microsoft.com/playwright"
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: terraform
     directory: /infra/bootstrap
     schedule:

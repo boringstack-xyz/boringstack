@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { planAccountResource } from "./account-resource";
 import { formatEdits } from "./format";
+import { validateGeneratedTypes } from "./typecheck";
 import { apply } from "./patch";
 
 const root = fileURLToPath(new URL("../../../", import.meta.url));
@@ -31,6 +32,7 @@ try {
     planAccountResource(root, name, policy)
   );
 
+  validateGeneratedTypes(root, edits);
   apply(root, edits, args.includes("--dry-run"));
   console.log(
     JSON.stringify({
