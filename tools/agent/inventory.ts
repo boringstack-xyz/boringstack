@@ -1,7 +1,18 @@
-import { lstatSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 import { identifyCheckout } from "./checkout";
+import {
+  inventoryChange,
+  inventoryReview,
+  type IInventoryReview,
+} from "./inventory-review";
 import type { IInventory, InventoryLane } from "./inventory.types";
 import type { ICheckResult } from "./result";
 import { isRecord, isStringArray, parseRecord } from "./validation";
@@ -157,16 +168,53 @@ function readFreshObservation(
   return readInventory(path);
 }
 
-/** Validate the entire batch before writes; verification never enrolls its own expectations. */
-export function acceptInventories(
+/** Preview exact additions and removals without changing the committed baseline. */
+export function reviewInventories(
   root: string,
   lanes: readonly InventoryLane[]
-): void {
+): IInventoryReview {
   const checkout = identifyCheckout(root);
-  const observations = lanes.map((lane) => ({
-    lane,
-    inventory: readFreshObservation(root, lane, checkout.fingerprint),
-  }));
+
+  assertSafePath(join(root, "tools/agent/inventories"));
+
+  const changes = lanes.map((lane) => {
+    const observation = readFreshObservation(root, lane, checkout.fingerprint);
+    const path = join(root, "tools/agent/inventories", `${lane}.json`);
+
+    if (existsSync(path)) {
+      assertSafePath(path);
+    }
+
+    const before = existsSync(path) ? readInventory(path).cases : [];
+
+    return inventoryChange(lane, before, observation.cases);
+  });
+
+  return inventoryReview(checkout.fingerprint, changes);
+}
+
+/** Approvals bind the exact checkout and case diff; removals require a second explicit acknowledgement. */
+export function acceptInventories(
+  root: string,
+  lanes: readonly InventoryLane[],
+  token: string,
+  removalToken?: string
+): void {
+  const review = reviewInventories(root, lanes);
+
+  if (token !== review.token) {
+    throw new Error(
+      "Inventory review changed; preview and approve the current diff"
+    );
+  }
+
+  if (
+    review.changes.some((change) => change.removed.length > 0) &&
+    removalToken !== review.token
+  ) {
+    throw new Error("Test removals require --allow-removals=<review token>");
+  }
+
   const directory = join(root, "tools/agent/inventories");
 
   assertSafePath(directory);
@@ -177,10 +225,10 @@ export function acceptInventories(
 
   mkdirSync(directory, { recursive: true });
 
-  for (const { lane, inventory } of observations) {
+  for (const change of review.changes) {
     writeFileSync(
-      join(directory, `${lane}.json`),
-      `${JSON.stringify(inventory, null, 2)}\n`
+      join(directory, `${change.lane}.json`),
+      `${JSON.stringify({ schemaVersion: 1, cases: change.after }, null, 2)}\n`
     );
   }
 }

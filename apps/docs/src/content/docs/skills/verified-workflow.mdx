@@ -67,13 +67,15 @@ This applies committed migrations to the owned sandbox, builds test templates an
 
 The ordinary API, UI and browser suites compare observed test identities, including multiplicity, with `tools/agent/inventories/*.json`. This rejects missing or substituted tests even when the reported total looks plausible.
 
-A complete passing underlying suite records an observation even when new tests cause an inventory mismatch. After reviewing the intended additions/removals, accept only the changed lanes:
+A complete passing underlying suite records an observation even when new tests cause an inventory mismatch. Preview only the changed lanes:
 
 ```sh
 bun run agent:inventory -- api.tests ui.tests ui.e2e
 ```
 
-Name fewer lanes when appropriate. Observations must belong to the unchanged checkout. Accept multiple changed lanes together, review the inventory diff against the actual tests, then rerun verification. Do not accept an unexpected shrink to obtain a green result. The security suite has its own [per-case manifest](/topics/security-spec/).
+The preview prints exact additions/removals and a review token without writing. Apply the reviewed diff with `--accept=<token>`. If it removes any case, also pass `--allow-removals=<token>`; this includes duplicate removal and same-count substitutions. Both approvals bind that exact checkout and diff, so changed observations or source invalidate them.
+
+Name fewer lanes when appropriate. Approve multiple changed lanes together, review the committed diff against the actual tests, then rerun verification. Do not approve an unexpected shrink to obtain a green result. The security suite has its own [per-case manifest](/topics/security-spec/).
 
 ## Tooling maintenance and boundaries
 
@@ -90,3 +92,9 @@ These tools execute reviewed source locally. Disposable databases do not isolate
 - [Add an account-owned resource](/recipes/add-account-resource/)
 - [Evaluate the tooling](/reference/agent-evaluation/)
 - [Executable security specification](/topics/security-spec/)
+
+## Root check completion
+
+`bun run check` exits 2 when required OpenAPI verification cannot run, 1 when a check fails, and 0 only when all declared checks complete. Start the API or set `OPENAPI_URL` and retry an incomplete check. Its declared scope is still smaller than the full release profile and GitHub gates.
+
+The owned API runs under Bun; Vite runs under Node with the UI package's supported Node version. Both bind to IPv4 loopback; readiness probes use IPv4 directly. The browser uses a localhost origin so secure development cookies work.

@@ -364,6 +364,12 @@ export function sandboxEnv(state: ISandbox): Record<string, string> {
 
   return {
     AGENT_SANDBOX: "1",
+    ...(hostEnvironment().PLAYWRIGHT_BROWSERS_PATH === undefined
+      ? {}
+      : {
+          PLAYWRIGHT_BROWSERS_PATH:
+            hostEnvironment().PLAYWRIGHT_BROWSERS_PATH ?? "",
+        }),
     PATH: hostEnvironment().PATH ?? "",
     HOME: hostEnvironment().HOME ?? "",
     NODE_ENV: "test",

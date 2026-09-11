@@ -26,6 +26,8 @@ The output includes schema, relations, service authorization using fresh members
 
 ## Complete the product behavior
 
+Before writing, the generator typechecks the complete prospective API program against its real tsconfig in memory. Both dry runs and generation reject semantic errors, missing imports and existing API type errors without writing generated files. Application lint and the remaining checks still run afterward.
+
 Generated scaffolding is a starting point. Add the approved fields and validation, then generate and review Drizzle SQL with `bun run db:generate` from `apps/api`. Use the [owned sandbox and sync command](/skills/verified-workflow/#regenerate-contracts-explicitly) to apply the migration and regenerate ACL/OpenAPI.
 
 Implement the UI using existing feature/component conventions and the generated API types:

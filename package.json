@@ -16,7 +16,7 @@
     "sandbox:down": "bun tools/agent/sandbox/cli.ts down",
     "sandbox:inspect": "bun tools/agent/sandbox/cli.ts inspect",
     "agent:inspect": "bun tools/agent/inspect-cli.ts",
-    "agent:check:docker": "AGENT_DOCKER_TESTS=true bun test tools/agent/sandbox/lifecycle.test.ts",
+    "agent:check:docker": "AGENT_DOCKER_TESTS=true bun test tools/agent/sandbox/lifecycle.test.ts tools/agent/isolated.test.ts",
     "agent:eval": "bun tools/agent-evals/run.ts",
     "agent:sync": "bun tools/agent/sync-cli.ts",
     "agent:resource": "bun tools/agent/generate/cli.ts",

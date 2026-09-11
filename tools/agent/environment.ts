@@ -1,6 +1,10 @@
 /** Only host executable locations and the explicit verification switches are read. */
 export function hostEnvironment(): Record<string, string | undefined> {
-  return { PATH: process.env.PATH, HOME: process.env.HOME };
+  return {
+    PATH: process.env.PATH,
+    HOME: process.env.HOME,
+    PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH,
+  };
 }
 
 export function openApiUrl(): string {

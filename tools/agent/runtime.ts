@@ -73,14 +73,19 @@ export async function startRuntime(
   const launch = (
     args: string[],
     cwd: string,
-    env: Record<string, string>
+    env: Record<string, string>,
+    runtime: "bun" | "node" = "bun"
   ): ChildProcess => {
-    const child = spawn(process.execPath, ["--no-env-file", ...args], {
-      cwd,
-      env,
-      detached: true,
-      stdio: "ignore",
-    });
+    const child = spawn(
+      runtime === "bun" ? process.execPath : "node",
+      runtime === "bun" ? ["--no-env-file", ...args] : args,
+      {
+        cwd,
+        env,
+        detached: true,
+        stdio: "ignore",
+      }
+    );
 
     child.on("error", () => {
       failedChildren.add(child);
@@ -186,8 +191,11 @@ await Bun.write(
         "--strictPort",
       ],
       join(root, "apps/ui"),
-      fullEnv
+      fullEnv,
+      "node"
     );
+
+    let readiness = "not probed";
 
     for (let i = 0; ; i++) {
       if (
@@ -196,19 +204,26 @@ await Bun.write(
         failedChildren.has(ui) ||
         isAborted(signal)
       ) {
-        throw new Error("UI startup failed");
+        throw new Error(
+          `UI startup failed (${readiness}; exit=${String(ui.exitCode)})`
+        );
       }
 
       try {
-        const response = await fetch(`${uiUrl}/api/v1/capabilities`, {
-          signal: AbortSignal.timeout(1000),
-        });
+        const response = await fetch(
+          `http://127.0.0.1:${uiPort}/api/v1/capabilities`,
+          {
+            signal: AbortSignal.timeout(1000),
+          }
+        );
+
+        readiness = `HTTP ${String(response.status)}`;
 
         if (response.ok) {
           break;
         }
-      } catch {
-        /* Startup still in progress. */
+      } catch (error) {
+        readiness = error instanceof Error ? error.name : "connection failed";
       }
 
       await Bun.sleep(250);
@@ -241,8 +256,7 @@ export async function fullStackChecks(
     );
     const run = await runProcess(
       [
-        process.execPath,
-        "--no-env-file",
+        "node",
         "node_modules/@playwright/test/cli.js",
         "test",
         "--project=chromium",

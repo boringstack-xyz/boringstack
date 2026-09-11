@@ -31,7 +31,11 @@ The reviewer copies only declared production integration files and appended Driz
 
 The same named API/UI/browser acceptance and app static checks run against that submission. This first judge does not support arbitrary resource names or task schemas. Security and release verification remain separate requirements.
 
-The candidate's application code still runs as the local user. Use an OS sandbox for untrusted submissions; file selection and disposable services are not a hostile-code boundary.
+Candidate execution runs automatically inside a non-root Docker container. Its root filesystem is read-only; writable temporary storage is bounded. It has no host bind mounts, Docker socket, inherited host credentials, published ports or outbound network. Disposable Postgres and Valkey share only the runner's private loopback namespace. CPU, memory and process limits apply.
+
+The trusted image is built from the reviewer's source and locked dependencies before candidate files are copied in. Candidate scripts, dependencies and configuration never control that build. Docker must be available; there is no fallback to executing a candidate on the host. The controller removes its containers and image tag on completion or failure. If cleanup fails, the command reports the run's resource names for inspection.
+
+This boundary protects the host. It does not make assertions running in the same process as arbitrary application code tamper-proof, and containers still share their Docker host's kernel. Continue reviewing candidate code and evidence. `agent:check:docker` includes real isolation probes and a complete positive candidate control.
 
 ## Measure agents separately
 

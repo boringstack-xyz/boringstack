@@ -16,6 +16,7 @@ import { planAccountResource } from "./generate/account-resource";
 import { formatEdits } from "./generate/format";
 import {
   acceptInventories,
+  reviewInventories,
   compareInventory,
   identities,
   inventoryEvidence,
@@ -212,7 +213,11 @@ test("inventory observations cannot be accepted after source changes", () => {
     );
 
     expect(result.status).toBe("blocked");
-    acceptInventories(dir, ["api.tests"]);
+    acceptInventories(
+      dir,
+      ["api.tests"],
+      reviewInventories(dir, ["api.tests"]).token
+    );
     expect(
       inventoryEvidence(
         dir,
@@ -222,9 +227,36 @@ test("inventory observations cannot be accepted after source changes", () => {
         identifyCheckout(dir).fingerprint
       ).status
     ).toBe("passed");
+    const baseline = join(dir, "tools/agent/inventories/api.tests.json");
+    const originalBaseline = readFileSync(baseline, "utf8");
+    const substituted = xml.replace('name="control"', 'name="replacement"');
+
+    inventoryEvidence(
+      dir,
+      "api.tests",
+      substituted,
+      { checkId: "api.tests", status: "passed", reason: "tests_passed" },
+      identifyCheckout(dir).fingerprint
+    );
+    const review = reviewInventories(dir, ["api.tests"]);
+
+    expect(review.changes[0]?.removed).toEqual(['["a.ts","control"]']);
+    expect(() => {
+      acceptInventories(dir, ["api.tests"], review.token);
+    }).toThrow("removals");
+    expect(readFileSync(baseline, "utf8")).toBe(originalBaseline);
+    expect(() => {
+      acceptInventories(dir, ["api.tests"], "stale", review.token);
+    }).toThrow("changed");
+    acceptInventories(dir, ["api.tests"], review.token, review.token);
+    expect(readFileSync(baseline, "utf8")).toContain("replacement");
     writeFileSync(join(dir, "changed.ts"), "export const changed=true;");
     expect(() => {
-      acceptInventories(dir, ["api.tests"]);
+      acceptInventories(
+        dir,
+        ["api.tests"],
+        reviewInventories(dir, ["api.tests"]).token
+      );
     }).toThrow("stale");
     expect(
       existsSync(join(dir, "tools/agent/inventories/api.tests.json"))

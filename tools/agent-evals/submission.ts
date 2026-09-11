@@ -48,15 +48,27 @@ export function candidateEdits(
     }));
 }
 
+function migrationPaths(base: string): string[] {
+  const paths: string[] = [];
+
+  for (const path of new Bun.Glob("**/*.{sql,json}").scanSync({
+    cwd: join(base, "apps/api/drizzle"),
+    followSymlinks: false,
+  })) {
+    if (paths.length >= 1000) {
+      throw new Error("Candidate exceeds migration file budget");
+    }
+
+    paths.push(path);
+  }
+
+  return paths;
+}
+
 /** Existing migration history must be byte-identical; only appended migration artifacts are accepted. */
 export function migrationEdits(root: string, candidate: string): IEdit[] {
   const base = realpathSync(candidate);
-  const paths = [
-    ...new Bun.Glob("**/*.{sql,json}").scanSync({
-      cwd: join(base, "apps/api/drizzle"),
-      followSymlinks: false,
-    }),
-  ];
+  const paths = migrationPaths(base);
   const existing = [
     ...new Bun.Glob("**/*.{sql,json}").scanSync({
       cwd: join(root, "apps/api/drizzle"),
@@ -68,6 +80,7 @@ export function migrationEdits(root: string, candidate: string): IEdit[] {
   }
 
   const edits: IEdit[] = [];
+  let bytes = 0;
 
   for (const path of paths) {
     const relativePath = `apps/api/drizzle/${path}`;
@@ -83,6 +96,12 @@ export function migrationEdits(root: string, candidate: string): IEdit[] {
     }
 
     const after = readCandidate(base, relativePath);
+
+    bytes += Buffer.byteLength(after);
+
+    if (bytes > 32 * 1024 * 1024) {
+      throw new Error("Candidate exceeds migration byte budget");
+    }
 
     if (before !== null && path !== "meta/_journal.json" && before !== after) {
       throw new Error("Candidate rewrites migration history");
