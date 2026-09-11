@@ -1,0 +1,145 @@
+/* Light-only art direction. Geometry stays shared with the dark theme;
+   paper surfaces, display typography and ink treatments live here. */
+html[data-theme="light"] body {
+  background:
+    url("/paper-grain.svg"),
+    linear-gradient(var(--paper-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-grid) 1px, transparent 1px),
+    var(--background) !important;
+  background-size:
+    180px 180px,
+    28px 28px,
+    28px 28px;
+}
+
+/* Keep the reading column quiet; the grid belongs to the surrounding sheet. */
+html[data-theme="light"]:not([data-has-hero]) .main-pane {
+  background: var(--background);
+}
+
+[data-theme="light"] .bs-landing #bs-hero-title {
+  max-width: 12ch;
+  font-family: var(--font-display);
+  font-size: clamp(3.25rem, 5.8vw, 5.5rem);
+  font-weight: 700;
+  line-height: 0.99;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+}
+
+[data-theme="light"] #bs-hero-title span {
+  color: var(--accent);
+}
+
+[data-theme="light"] .bs-landing .bs-section-heading h2,
+[data-theme="light"] .bs-landing h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 3.5vw, 3.25rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+}
+
+[data-theme="light"] :is(h1[data-page-title], .content-panel h1) {
+  font-family: var(--font-display);
+  letter-spacing: -0.035em;
+}
+
+[data-theme="light"] .bs-hero-tech {
+  border-top: 3px solid var(--primary);
+  padding-top: 14px;
+}
+
+[data-theme="light"] .bs-machine {
+  background: var(--card);
+  border-color: var(--border-strong);
+  box-shadow: var(--paper-shadow);
+}
+
+[data-theme="light"] .bs-machine-caption {
+  padding-block: 18px;
+  background: var(--secondary);
+  line-height: 1.6;
+}
+
+[data-theme="light"] .bs-machine-id > span {
+  box-shadow: none;
+}
+
+[data-theme="light"] .bs-machine-steps button > span {
+  opacity: 1;
+}
+
+/* One ink per layer, with a pale wash underneath the technical drawing. */
+[data-theme="light"] .bs-machine-layer[data-layer="0"] {
+  --layer-ink: #386d7b;
+}
+
+[data-theme="light"] .bs-machine-layer[data-layer="1"] {
+  --layer-ink: #836343;
+}
+
+[data-theme="light"] .bs-machine-layer[data-layer="2"] {
+  --layer-ink: #716080;
+}
+
+[data-theme="light"] .bs-machine-layer[data-layer="3"] {
+  --layer-ink: #52704a;
+}
+
+[data-theme="light"] .bs-machine-layer .bs-machine-plane {
+  fill: color-mix(in srgb, var(--layer-ink) 13%, var(--card));
+  stroke: var(--layer-ink);
+}
+
+[data-theme="light"] .bs-machine-layer .bs-machine-edge {
+  fill: color-mix(in srgb, var(--layer-ink) 22%, var(--card));
+  stroke: var(--layer-ink);
+}
+
+[data-theme="light"] .bs-machine-layer[data-selected="true"] .bs-machine-plane {
+  fill: color-mix(in srgb, var(--layer-ink) 22%, var(--card));
+  stroke-width: 1.5;
+}
+
+[data-theme="light"]
+  .bs-machine[data-stage="1"]
+  [data-layer="1"]
+  .bs-machine-plane {
+  stroke: var(--warning);
+}
+
+[data-theme="light"] .bs-machine-grid {
+  opacity: 0.12;
+}
+
+[data-theme="light"] .bs-machine-status,
+[data-theme="light"] .bs-machine-layers {
+  background: color-mix(in srgb, var(--background) 70%, var(--card));
+}
+
+[data-theme="light"] .bs-guardrail-demo {
+  box-shadow: var(--paper-shadow);
+  border-color: var(--border-strong);
+}
+
+[data-theme="light"] .bs-demo-editor {
+  background: var(--code-surface);
+}
+
+[data-theme="light"] .bs-closing .bs-closing-brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.75rem;
+  letter-spacing: -0.04em;
+}
+
+[data-theme="light"] .bs-closing {
+  border-top: 3px double var(--border-strong);
+}
+
+@media (max-width: 640px) {
+  [data-theme="light"] .bs-landing #bs-hero-title {
+    font-size: clamp(3rem, 12vw, 4.25rem);
+  }
+}

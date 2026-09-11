@@ -235,16 +235,14 @@ export default defineConfig({
         "The production-grade SaaS starter, built to be set up by an agent. Auth, billing, queues, email and observability already wired, with the architecture enforced by lint and CI. MIT, open source.",
       favicon: "/favicon.svg",
       /*
-       * Load order matters. redesign.css is the skin ported from tsforge and
-       * has to come last so it owns the final look; custom.css stays intact
-       * underneath for the accessible-table wrapper, the mermaid theme and
-       * the .bs-landing inline-code reset. Removing the last entry reverts
-       * the site to the previous green/rounded look.
+       * Shared tokens and accessible component styles load first. The base
+       * skin maps them to Starlight; paper.css supplies light-only art direction.
        */
       customCss: [
         "./src/styles/tailwind.css",
         "./src/styles/custom.css",
         "./src/styles/redesign.css",
+        "./src/styles/paper.css",
       ],
       plugins: [
         /*
