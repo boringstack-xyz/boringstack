@@ -11,9 +11,20 @@ dispatches the two app-local `/build-feature` skills in order, with
 the OpenAPI-types regen as the bridge.
 
 The skill assumes the standard BoringStack layout: `apps/api`,
-`apps/ui`, `apps/docs`, and `infra/compose/compose` under one git
+`apps/ui` and `infra/compose/compose` (`apps/docs` is optional downstream) under one git
 root. Run every command from the repo root unless a step explicitly
 `cd`s into an app.
+
+## Account-owned resources
+
+For an account-owned resource, first run `bun run agent:inspect -- account-resource --json`.
+Use its explicit `team-read-admin-write` policy only when it matches the requested
+product behavior. The account generator supports `--dry-run --json`, and
+`agent:sync -- --sandbox=<id> --json` regenerates contracts against owned services.
+Finish with the recipe's feature/release-local verification; keep blocked checks
+visible in the handoff. See `tools/agent/README.md`. Existing user-scoped flows
+remain supported. Resolve only product decisions absent from the current spec
+and conversation.
 
 ## Checkpoint 1 — Spec the slice
 

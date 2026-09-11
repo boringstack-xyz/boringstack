@@ -1,0 +1,43 @@
+import { MemoryRouter } from "react-router-dom";
+
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+import { AppPageHeaderProvider } from "@/components/core/AppPage/AppPageHeaderProvider";
+
+import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
+
+import { PROJECTS_QUERY_KEYS } from "../../Projects.constants";
+import ProjectsPage from "./ProjectsPage";
+
+const meta: Meta<typeof ProjectsPage> = {
+  title: "Features/Projects/ProjectsPage",
+  component: ProjectsPage,
+  decorators: [
+    (Story) => {
+      const client = new QueryClient({
+        defaultOptions: { queries: { staleTime: Infinity, retry: false } }
+      });
+
+      client.setQueryData(AUTH_QUERY_KEYS.me, {
+        account: { id: "demo" },
+        role: "viewer"
+      });
+      client.setQueryData(PROJECTS_QUERY_KEYS.list("demo"), []);
+
+      return (
+        <QueryClientProvider client={client}>
+          <MemoryRouter>
+            <AppPageHeaderProvider>
+              <Story />
+            </AppPageHeaderProvider>
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+    }
+  ]
+};
+
+export default meta;
+type IStory = StoryObj<typeof ProjectsPage>;
+export const Default: IStory = {};

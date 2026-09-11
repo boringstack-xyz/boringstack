@@ -17,7 +17,11 @@ const ALLOWED_WARNING_LINES = [
   /^warn: \[exact-mirror\] TypeBox's TypeCompiler is required to use Union$/u,
 ] as const;
 
-const bunArgs = ["test", ...process.argv.slice(2)];
+const bunArgs = [
+  ...(process.env.AGENT_SANDBOX === "1" ? ["--no-env-file"] : []),
+  "test",
+  ...process.argv.slice(2),
+];
 
 const result = spawnSync("bun", bunArgs, {
   encoding: "utf8",
@@ -62,7 +66,8 @@ if (violations.length > 0) {
     console.error(`  ${line}`);
   }
 
-  process.exit(1);
+  // Reserved for a completed product-quality gate; infrastructure retains its own exit.
+  process.exit(86);
 }
 
 process.exit(result.status ?? 1);

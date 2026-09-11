@@ -143,6 +143,15 @@ fi
 
 STACK_BOOTED_BY_US=0
 
+teardown() {
+  if [[ $STACK_BOOTED_BY_US -eq 1 ]]; then
+    note "Tearing down the smoke stack we booted"
+    ( cd infra/compose/compose && STACK=smoke ./dev.sh down -v ) || true
+  fi
+}
+
+trap teardown EXIT
+
 probe_api() { curl -fsS http://localhost:7330/health -o /dev/null 2>&1; }
 probe_ui()  { curl -fsS http://localhost:7331/ -o /dev/null 2>&1; }
 
@@ -150,8 +159,8 @@ if probe_api && probe_ui; then
   ok "Stack already up on :7330 + :7331 — reusing it."
 else
   step "Booting smoke stack (STACK=smoke ./dev.sh up -d --build)"
-  ( cd infra/compose/compose && STACK=smoke ./dev.sh up -d --build )
   STACK_BOOTED_BY_US=1
+  ( cd infra/compose/compose && STACK=smoke ./dev.sh up -d --build )
 
   note "Waiting up to 90s for API health on :7330"
   for i in $(seq 1 90); do
@@ -179,15 +188,6 @@ else
 fi
 
 # ─── Run Playwright ────────────────────────────────────────────────────────
-
-teardown() {
-  if [[ $STACK_BOOTED_BY_US -eq 1 ]]; then
-    note "Tearing down the smoke stack we booted"
-    ( cd infra/compose/compose && STACK=smoke ./dev.sh down -v ) || true
-  fi
-}
-
-trap teardown EXIT
 
 step "Running Playwright against the live stack"
 (

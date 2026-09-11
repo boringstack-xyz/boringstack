@@ -1,0 +1,109 @@
+import type { ReactNode } from "react";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, expect, it, vi } from "vitest";
+
+import { useSaveProject } from "./Projects.mutations";
+import { useProjects } from "./Projects.queries";
+
+const api = vi.hoisted(() => ({ GET: vi.fn(), POST: vi.fn(), PATCH: vi.fn() }));
+
+vi.mock("@/lib/api/client", () => ({ apiClient: api }));
+beforeEach(() => {
+  vi.resetAllMocks();
+});
+
+function setup() {
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, staleTime: Infinity },
+      mutations: { retry: false }
+    }
+  });
+  const wrapper = ({ children }: { readonly children: ReactNode }) => (
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  );
+
+  return { client, wrapper };
+}
+
+it("account changes never expose the previous account's cached records", async () => {
+  const { wrapper } = setup();
+
+  api.GET.mockResolvedValueOnce({
+    data: [{ id: "a1", accountId: "a", name: "Private A" }]
+  }).mockImplementationOnce(
+    () =>
+      new Promise(() => {
+        /* Hold the next account request pending. */
+      })
+  );
+  const { result, rerender } = renderHook(
+    ({ accountId }) => useProjects(accountId),
+    { wrapper, initialProps: { accountId: "a" } }
+  );
+
+  await waitFor(() => {
+    expect(result.current.data).toHaveLength(1);
+  });
+  rerender({ accountId: "b" });
+  expect(result.current.data).toBeUndefined();
+  await waitFor(() => {
+    expect(api.GET).toHaveBeenCalledTimes(2);
+  });
+});
+it("control: returning to the same account uses its own cache", async () => {
+  const { wrapper } = setup();
+
+  api.GET.mockResolvedValueOnce({
+    data: [{ id: "a1", accountId: "a", name: "A" }]
+  }).mockResolvedValueOnce({ data: [{ id: "b1", accountId: "b", name: "B" }] });
+  const { result, rerender } = renderHook(
+    ({ accountId }) => useProjects(accountId),
+    { wrapper, initialProps: { accountId: "a" } }
+  );
+
+  await waitFor(() => {
+    expect(result.current.data?.[0]?.name).toBe("A");
+  });
+  rerender({ accountId: "b" });
+  await waitFor(() => {
+    expect(result.current.data?.[0]?.name).toBe("B");
+  });
+  rerender({ accountId: "a" });
+  expect(result.current.data?.[0]?.name).toBe("A");
+});
+it("a response for a different account is rejected", async () => {
+  const { wrapper } = setup();
+
+  api.GET.mockResolvedValue({
+    data: [{ id: "x", accountId: "b", name: "Private" }]
+  });
+  const { result } = renderHook(() => useProjects("a"), { wrapper });
+
+  await waitFor(() => {
+    expect(result.current.isError).toBe(true);
+  });
+  expect(result.current.data).toBeUndefined();
+});
+it("successful creation refreshes the active account list", async () => {
+  const { wrapper } = setup();
+
+  api.GET.mockResolvedValueOnce({ data: [] }).mockResolvedValueOnce({
+    data: [{ id: "a1", accountId: "a", name: "New" }]
+  });
+  api.POST.mockResolvedValue({ data: {} });
+  const { result } = renderHook(
+    () => ({ list: useProjects("a"), save: useSaveProject("a") }),
+    { wrapper }
+  );
+
+  await waitFor(() => {
+    expect(result.current.list.data).toEqual([]);
+  });
+  await act(() => result.current.save.mutateAsync({ name: "New" }));
+  await waitFor(() => {
+    expect(result.current.list.data?.[0]?.name).toBe("New");
+  });
+});

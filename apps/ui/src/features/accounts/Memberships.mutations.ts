@@ -8,6 +8,7 @@ import { ApiError } from "@/lib/api/ApiError";
 import { apiClient } from "@/lib/api/client";
 
 import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
+import type { IMe } from "@/features/auth/Auth.types";
 
 /**
  * Mutations that act on the caller's *own* membership: switching the
@@ -36,15 +37,35 @@ export function useSwitchAccount(): UseMutationResult<
       return data.data;
     },
     onSuccess: async () => {
-      /*
-       * The new active account is on the server (JWT cookie was
-       * rotated). Drop ALL cached data so account-scoped queries
-       * (sites, dashboard, invitations) refetch under the new aid,
-       * then refetch /me last so AbilityProvider rebuilds with the
-       * new role + features.
-       */
-      qc.clear();
-      await qc.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me });
+      const previousAccountId = qc.getQueryData<IMe | null>(AUTH_QUERY_KEYS.me)
+        ?.account.id;
+      const isSession = (key: readonly unknown[]) =>
+        key.length === 2 && key[0] === "auth" && key[1] === "me";
+
+      await qc.cancelQueries();
+
+      // Reset data without fetching under the previous account's query keys.
+      for (const query of qc.getQueryCache().getAll()) {
+        if (!isSession(query.queryKey)) {
+          query.reset();
+        }
+      }
+
+      await qc.resetQueries(
+        { queryKey: AUTH_QUERY_KEYS.me, exact: true },
+        { throwOnError: true }
+      );
+      qc.removeQueries({
+        type: "inactive",
+        predicate: (query) => !isSession(query.queryKey)
+      });
+      await qc.refetchQueries({
+        type: "active",
+        predicate: (query) =>
+          !isSession(query.queryKey) &&
+          (previousAccountId === undefined ||
+            !query.queryKey.includes(previousAccountId))
+      });
     }
   });
 }

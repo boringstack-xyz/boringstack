@@ -1,0 +1,39 @@
+import {
+  type UseMutationResult,
+  useMutation,
+  useQueryClient
+} from "@tanstack/react-query";
+
+import { apiClient } from "@/lib/api/client";
+
+import { PROJECTS_QUERY_KEYS } from "./Projects.constants";
+
+export function useSaveProject(
+  accountId: string | undefined
+): UseMutationResult<void, Error, { id?: string; name: string }> {
+  const client = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input) => {
+      if (accountId === undefined) {
+        throw new Error("No active account");
+      }
+
+      if (input.id === undefined) {
+        await apiClient.POST("/api/v1/projects/", {
+          body: { name: input.name }
+        });
+      } else {
+        await apiClient.PATCH("/api/v1/projects/{id}", {
+          params: { path: { id: input.id } },
+          body: { name: input.name }
+        });
+      }
+    },
+    onSuccess: async () => {
+      await client.invalidateQueries({
+        queryKey: PROJECTS_QUERY_KEYS.list(accountId ?? "no-account")
+      });
+    }
+  });
+}

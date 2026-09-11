@@ -5,6 +5,20 @@ description: "Recent changes to BoringStack: docs, templates, and tooling. Rever
 
 A log of substantial changes to the docs, templates, and tooling. For per-commit detail, see the git history of each [workspace app](https://github.com/boringstack-xyz). For the latest released images, see the [Image updates runbook](/runbooks/image-updates/).
 
+## 2026-09
+
+### Executable security fixes
+
+- The [API security specification](/topics/security-spec/) now gates the behaviors covered by 22 fixed findings, with positive controls and per-case manifest reconciliation.
+- [Authentication](/api/auth/) now documents browser-bound OAuth, OAuth MFA and refresh-family replay handling. The [rollout runbook](/runbooks/security-upgrade/) covers the lineage migration and mixed-writer limits.
+- [Billing](/api/billing/) and [ACL](/api/acl/) document effective entitlement expiry, immediate loss of plan features on `past_due`, and transactional seat admission. Notification delivery and SSE lifetime boundaries are documented in [Notifications](/api/notifications/).
+
+### Agent development workflow
+
+- [Structured verification](/skills/verified-workflow/) adds owned disposable services, explicit synchronization, named-test inventories and pass/fail/blocked evidence.
+- The optional [account-resource generator](/recipes/add-account-resource/) supplies an explicit tenant/role policy. A separate [Projects evaluator](/reference/agent-evaluation/) checks known-good behavior and deliberate defects; no live-agent benchmark is claimed.
+- Account switching resets cached data before refetching under the new account. Tooling now follows the API's strict script lint, typecheck and formatting policy.
+
 ## 2026-05
 
 ### Cost & decisions

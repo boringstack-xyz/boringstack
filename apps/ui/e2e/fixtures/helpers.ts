@@ -1,6 +1,7 @@
 import { type APIRequestContext, request } from "@playwright/test";
 import { z } from "zod";
 
+import { e2eConfig } from "../../e2e.config";
 import { parseBody } from "./parse";
 
 /**
@@ -14,7 +15,7 @@ export interface ITestUser {
   readonly password: string;
 }
 
-export const E2E_API_BASE_URL = "http://localhost:7331";
+export const E2E_API_BASE_URL = e2eConfig.baseURL;
 export const E2E_PASSWORD = "E2EPassword123!";
 
 /** Unique throwaway address; prefix namespaces the owning spec. */

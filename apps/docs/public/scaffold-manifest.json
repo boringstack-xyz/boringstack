@@ -262,5 +262,11 @@
       "subPath": "apps/docs",
       "gates": [{ "cwd": ".", "command": "bun run build" }]
     }
+  },
+  "agentWorkflow": {
+    "recipe": "tools/agent/tasks/account-resource.json",
+    "publishedRecipe": "/account-resource.json",
+    "inspect": "bun run agent:inspect -- account-resource --json",
+    "documentation": "tools/agent/README.md"
   }
 }

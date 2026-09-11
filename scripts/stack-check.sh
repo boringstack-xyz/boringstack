@@ -6,6 +6,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/stack-lib.sh"
 
 FULL="${1:-}"
 FAILED=()
+SKIPPED=()
 
 run_check() {
   local label="$1"
@@ -31,14 +32,16 @@ if [[ -d "$BORINGSTACK_DOCS_DIR" ]]; then
   HAS_DOCS=1
 fi
 
+run_check "tooling quality" bun run agent:quality
+
 run_check "ACL drift" bash -c "cd \"$BORINGSTACK_API_DIR\" && bun run generate:acl-types:check"
 run_check "api lint-meta docs" bash -c "cd \"$BORINGSTACK_API_DIR\" && bun run check:lint-meta-docs"
 run_check "api scripts docs" bash -c "cd \"$BORINGSTACK_API_DIR\" && bun run check:scripts-docs"
 
 if require_api_swagger; then
-  run_check "OpenAPI drift" bash -c "cd \"$BORINGSTACK_UI_DIR\" && OPENAPI_URL=http://localhost:7330/swagger/json bun run generate:api:check"
+  run_check "OpenAPI drift" bash -c "cd \"$BORINGSTACK_UI_DIR\" && bun run generate:api:check"
 else
-  c_yellow "  skipped OpenAPI drift — api-dev not on :7330"
+  SKIPPED+=("OpenAPI drift")
 fi
 
 run_check "ui lint-meta docs" bash -c "cd \"$BORINGSTACK_UI_DIR\" && bun run check:lint-meta-docs"
@@ -66,4 +69,9 @@ if ((${#FAILED[@]} > 0)); then
   exit 1
 fi
 
-c_green "check passed"
+if ((${#SKIPPED[@]} > 0)); then
+  c_yellow "check incomplete: ${#SKIPPED[@]} check(s) skipped (${SKIPPED[*]})"
+  c_yellow "Legacy exit status retained; use agent:verify for strict OpenAPI evidence."
+else
+  c_green "check passed (declared scope only; not the complete CI gate)"
+fi

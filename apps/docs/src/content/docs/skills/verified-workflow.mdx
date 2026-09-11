@@ -1,0 +1,92 @@
+---
+title: Verify agent changes
+description: Repository commands for isolated integration tests, structured evidence, and explicit contract regeneration.
+---
+
+An agent implements the feature using its normal editing and shell tools. BoringStack supplies commands to inspect the repository contract and verify the resulting checkout. These commands do not invoke a model or replace Claude Code, Cursor, or another agent harness.
+
+Claude Code's repository `CLAUDE.md` points to `AGENTS.md`, which documents this workflow. For other agents, make the repository instructions part of the task. Most files under `tools/agent` are executable tooling and tests; they do not need to be loaded into the agent's context.
+
+## Run a feature verification
+
+Install the API and UI dependencies from their frozen lockfiles and make Docker available. Run these commands from the repository root:
+
+```sh
+bun run agent:inspect -- account-resource --json
+bun run sandbox:up -- --json
+```
+
+Use the opaque sandbox ID returned by `sandbox:up` in subsequent commands:
+
+```sh
+bun run agent:verify -- --profile=feature --sandbox=<id> --json
+bun run sandbox:down -- --id=<id>
+```
+
+The sandbox contains dedicated Postgres and Valkey instances with random credentials and loopback ports. Verification starts this checkout's private API/UI as needed. It does not select a database from your development `.env`. Integration tests can truncate data inside these disposable services.
+
+Cleanup belongs in the task's finalization path even when a check fails. `sandbox:down` checks ownership before deleting resources and refuses an active verification lease. It never globally prunes Docker. After an interrupted process exits, rerun cleanup with the same ID; keep the descriptor if cleanup fails.
+
+## Choose the evidence you need
+
+| Profile | Checks |
+| --- | --- |
+| `openapi` | Compares the UI schema with the selected `OPENAPI_URL`, defaulting to `http://localhost:7330/swagger/json`. |
+| `static` | Tooling quality, API/UI static checks, ACL drift, script documentation and applicable docs data. |
+| `feature` | Static checks plus migrations, test templates, API integration tests, UI tests with coverage, OpenAPI and Chromium acceptance. |
+| `security` | Migrations, templates, executable security cases and their manifest reconciliation. |
+| `release-local` | Feature and security checks, API coverage/build, UI build/bundle/modulepreload and applicable docs build. |
+
+Use `release-local` before claiming the broader local gate is complete. GitHub security scans and repository settings remain separate. A standalone `openapi` result cannot attest which source built an external API. The broader profiles use the selected checkout's runtime.
+
+## Read the result
+
+JSON stdout contains one versioned result; progress goes to stderr. Exit codes are:
+
+| Exit | Status | Meaning |
+| --- | --- | --- |
+| `0` | `passed` | The requested profile completed successfully. |
+| `1` | `failed` | A check or assertion failed. |
+| `2` | `blocked` | Required evidence could not be established. |
+
+A missing service, skipped test, malformed report, timeout or source edit during the run cannot establish a complete pass. Each result identifies the commit and a fingerprint of tracked and untracked non-ignored files, modes and symlink targets. Ignored configuration is not included. This is a consistency check, not tamper-proof attestation against a hostile process.
+
+Include the profile, result, checkout identity and outstanding checks in the handoff. Root `bun run check` remains a lightweight drift command; an incomplete OpenAPI check there is not equivalent to passing feature verification.
+
+## Regenerate contracts explicitly
+
+Verification does not rewrite committed contracts. After changing a schema, generate and inspect SQL in `apps/api` with `bun run db:generate`. Then, from the root:
+
+```sh
+bun run agent:sync -- --sandbox=<id> --json
+```
+
+This applies committed migrations to the owned sandbox, builds test templates and regenerates ACL/OpenAPI contracts through this checkout's runtime. Review its reported paths before verifying again.
+
+## Review test inventory changes
+
+The ordinary API, UI and browser suites compare observed test identities, including multiplicity, with `tools/agent/inventories/*.json`. This rejects missing or substituted tests even when the reported total looks plausible.
+
+A complete passing underlying suite records an observation even when new tests cause an inventory mismatch. After reviewing the intended additions/removals, accept only the changed lanes:
+
+```sh
+bun run agent:inventory -- api.tests ui.tests ui.e2e
+```
+
+Name fewer lanes when appropriate. Observations must belong to the unchanged checkout. Accept multiple changed lanes together, review the inventory diff against the actual tests, then rerun verification. Do not accept an unexpected shrink to obtain a green result. The security suite has its own [per-case manifest](/topics/security-spec/).
+
+## Tooling maintenance and boundaries
+
+`agent:quality` runs strict typechecking, ESLint and formatting using the API's script policy. `agent:check` adds the tooling tests; `agent:check:docker` tests real service isolation and cleanup. `agent:format` formats tooling and templates. Generated code must also pass its app's full checks.
+
+A checkout lock serializes generation, synchronization and verification in one checkout. Separate checkouts and sandboxes can run independently. After a dead generator or checkout process, inspect partial edits before using `agent:recover -- generator --acknowledge-partial-writes` or `agent:recover -- checkout --acknowledge-partial-writes`. Live or malformed locks are refused; recovery does not roll back edits.
+
+The `agent verification contract` workflow checks relevant tooling changes and reports on unrelated PRs without running the expensive work. Desired required-check settings are versioned separately; editing that file does not apply GitHub branch protection. Wait for the workflow to report before reconciling settings.
+
+These tools execute reviewed source locally. Disposable databases do not isolate hostile code from your files or network. Production capacity, external provider delivery, TLS/proxy behavior and disaster recovery need their own verification.
+
+## Related
+
+- [Add an account-owned resource](/recipes/add-account-resource/)
+- [Evaluate the tooling](/reference/agent-evaluation/)
+- [Executable security specification](/topics/security-spec/)

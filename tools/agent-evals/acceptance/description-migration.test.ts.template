@@ -1,0 +1,31 @@
+import { expect, test } from "bun:test";
+import { db, sql, requireDb } from "../../helpers/db";
+
+test("control: the migration database is reachable", async () => {
+  if (!(await requireDb())) {
+    throw new Error("SPEC-INFRA: database unavailable");
+  }
+
+  expect(await requireDb()).toBe(true);
+});
+test("existing project survives with a nullable description", async () => {
+  if (!(await requireDb())) {
+    throw new Error("SPEC-INFRA: database unavailable");
+  }
+
+  const columns = await db.execute(
+    sql`SELECT is_nullable FROM information_schema.columns WHERE table_schema='app' AND table_name='projects' AND column_name='description'`
+  );
+
+  expect(columns).toHaveLength(1);
+  expect(columns[0]).toMatchObject({ is_nullable: "YES" });
+  const rows = await db.execute(
+    sql`SELECT name, description FROM app.projects WHERE name='Before migration'`
+  );
+
+  expect(rows).toHaveLength(1);
+  expect(rows[0]).toMatchObject({
+    name: "Before migration",
+    description: null,
+  });
+});

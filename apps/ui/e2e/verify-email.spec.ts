@@ -1,9 +1,10 @@
 import { type APIRequestContext, request } from "@playwright/test";
 
+import { e2eConfig } from "../e2e.config";
 import { expect, test } from "./fixtures/auth";
 import { LoginPage } from "./pages/LoginPage";
 
-const BASE_URL = "http://localhost:7331";
+const BASE_URL = e2eConfig.baseURL;
 
 interface IPendingUser {
   readonly email: string;

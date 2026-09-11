@@ -61,6 +61,12 @@ All security workflows fire on `0 6 * * 1` (Monday morning UTC, staggered by min
 - An `ignoreUntil` allowlist entry expiring
 - A new rule release from Semgrep or osv
 
+## Executable API regression gate
+
+The [security specification](/topics/security-spec/) runs behavioral cases for the 22 tracked API findings against required Postgres and Valkey services. Named-case reconciliation and positive controls prevent a missing fixture or skipped test from masquerading as evidence. The `security spec (review findings)` workflow reports for PRs targeting `main` and runs the expensive cases when relevant paths change.
+
+This complements secret, dependency and static analysis. Read the [upgrade runbook](/runbooks/security-upgrade/) for refresh-lineage migration, OAuth writer cutover and changed entitlement defaults; passing scans alone does not cover those operational requirements.
+
 ## Layer 2: agent skills
 
 Two marketplaces are declared in `.claude/settings.json`. When you trust the folder, Claude Code prompts to install them.

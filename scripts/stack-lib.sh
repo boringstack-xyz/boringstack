@@ -29,10 +29,11 @@ require_dir() {
 probe_tcp() { nc -z "$1" "$2" 2>/dev/null; }
 
 require_api_swagger() {
-  if probe_tcp localhost 7330; then
+  export OPENAPI_URL="${OPENAPI_URL:-http://localhost:7330/swagger/json}"
+  if curl --fail --silent --output /dev/null --connect-timeout 2 --max-time 5 "$OPENAPI_URL"; then
     return 0
   fi
-  c_yellow "  api-dev not reachable on :7330 — OpenAPI regen/check skipped"
-  c_yellow "  start stack: cd infra/compose/compose && ./dev.sh up -d api-dev"
+  c_yellow "  API schema unavailable — OpenAPI regen/check skipped"
+  c_yellow "  start the API or set OPENAPI_URL; strict evidence: bun run agent:verify -- --json"
   return 1
 }

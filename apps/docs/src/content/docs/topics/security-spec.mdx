@@ -1,0 +1,67 @@
+---
+title: Executable security specification
+description: Behavioral regression tests for the API security review, their manifest contract, and the limits of a green run.
+---
+
+The API's `security-spec/` directory turns the September 2026 security review into behavioral regression tests. The 22 tracked findings are marked fixed. Tests assert required behavior, with positive controls to distinguish a refused attack from a broken fixture. The manifest is the current source of case identities and expectations; test counts can grow without changing the number of findings.
+
+## Run against disposable services
+
+From the repository root, with Docker and the app dependencies available:
+
+```sh
+bun run sandbox:up -- --json
+bun run agent:verify -- --profile=security --sandbox=<id> --json
+bun run sandbox:down -- --id=<id>
+```
+
+Use the returned sandbox ID. The profile applies migrations, builds templates, runs the cases with required Postgres/Valkey integration and reconciles the manifest. These tests delete test data; never point manual invocations at a database or cache you need to keep. For lower-level commands and environment requirements, see `apps/api/security-spec/README.md` in the checkout.
+
+## What changed in production
+
+| Area | Enforced behavior |
+| --- | --- |
+| OAuth identity | Unverified provider identities cannot auto-link to verified users. Promoting a pending password signup through verified OAuth retires its previous password credential. GitHub email verification uses the provider's email list. |
+| OAuth callback | A consumed state record must match the initiating browser's binding nonce before provider exchange. MFA-enabled OAuth login requires the second factor before session issuance. |
+| Request and credential limits | Body limits run before parsing; MFA attempts are reserved before verification; rate-limit keys separate policies. Memory-cache increments update without an intervening asynchronous read. |
+| Refresh sessions | Retired token hashes form a persistent lineage. Replaying a retired token revokes its refresh family. Existing access JWTs retain their bounded lifetime unless separately revoked. |
+| Memberships and plans | Sensitive membership checks use current state; revoked membership is forbidden. Feature resolution respects status and expiry. Invitations require entitlement, and seat-consuming paths enforce capacity transactionally. |
+| Billing events | Subscription identity and event ordering protect current state from stale deletion and checkout events. |
+| Account lifecycle | Domain-claim outcomes distinguish pending approval from provisioning; notifications occur after commit. Ownership transfer locks and rechecks the relevant state. |
+| Notifications | Detached delivery failures are handled; SSE checks credentials before buffered delivery and on idle ticks. Push destinations are validated at registration and again before delivery. |
+| Logging | Redaction covers structured data, message/interpolation arguments and child bindings; depth-limited subtrees are replaced rather than exposed. |
+| Dependency exceptions | Expired audit exceptions stop suppressing findings. |
+
+Read the [upgrade runbook](/runbooks/security-upgrade/) before deploying over an existing database. Authentication and entitlement changes affect existing users, not just new installations.
+
+## Manifest and controls
+
+`apps/api/security-spec/findings.json` records expected outcomes for every named case. Reconciliation rejects missing, unlisted, duplicate or skipped cases and outcomes that disagree with the manifest. A fixture exception does not count as an expected assertion failure. A refuted finding retains metadata but must have no cases, no spec file and no executed cases.
+
+From `apps/api`, `bun run new:finding -- F23 high "required behavior"` creates a new finding scaffold. Replace the incomplete fixture with behavioral probes and positive controls. `write:security-manifest` regenerates expectations from a real run; review the case-level diff. `check:security-manifest` reconciles a run without approving changes for you. Do not change expectations merely to bless a regression.
+
+The `no-silent-bail` and `requires-control` lint-meta rules enforce fixture participation and lexical control attribution. The manifest checks actual runtime names, including cases created from static parameter lists.
+
+The `security spec (review findings)` CI job reports for PRs targeting `main`; relevance filtering is inside the workflow so an unrelated PR is not left waiting on a required check that never started. Repository settings remain an explicit operator action.
+
+## What a green run does not establish
+
+The suite is a regression net for its assertions, not a complete security audit:
+
+- Refresh replay revokes a family, not all previously issued access JWTs.
+- Boot validation does not prove correct behavior throughout a live Valkey outage.
+- Handled notification failures do not provide a durable outbox, durable audit delivery or full deduplication assurance.
+- SSE lifetime checks do not establish connection budgets or absence of subscriber leaks.
+- Push destination validation does not establish delivery-time DNS-rebinding protection or a bounded delivery deadline.
+- OAuth-only users do not yet have a provider step-up flow for password-based MFA enrollment.
+- Seat tests cover committed memberships, not reservation of seats by pending invitations. A concurrent-request probe alone is not proof against every possible schedule.
+- Invitation-token race coverage and broader external-provider assurance remain outside the demonstrated cases.
+
+The maintainer README records detailed case scope. Independent review, CI scans and operational testing remain necessary as the implementation changes.
+
+## Related
+
+- [Security pipeline](/topics/security/)
+- [Security upgrade runbook](/runbooks/security-upgrade/)
+- [Authentication](/api/auth/)
+- [Billing](/api/billing/)

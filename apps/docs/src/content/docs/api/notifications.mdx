@@ -160,6 +160,14 @@ All three require the standard auth cookie.
 
 **Conditional registration**: `setup-notifications.ts` only registers the web push channel when all three `WEB_PUSH_VAPID_*` env vars are set. A fork that doesn't ship Web Push never sees it.
 
+## Delivery security and lifetime
+
+SSE streams recheck access-token expiry, JTI revocation and the user-wide cutoff before dequeuing each buffered message, as well as on idle ticks. A failed credential check ends the generator and disconnects its subscriber; a backlog does not extend a revoked session's access.
+
+Web Push registration validates the destination against the allowed provider policy. The worker repeats validation immediately before sending, including for subscriptions stored before validation existed. Refused destinations are dropped rather than retried; rejection logs identify the subscription and host without exposing endpoint paths or keys. This does not establish protection against DNS changes between validation and delivery or a request deadline.
+
+Use the notification dispatcher's `detach` helper for intentional background delivery so rejected promises are handled. This does not turn best-effort notifications or audit records into durable delivery. Outbox semantics, connection budgets and full delivery-deduplication assurance require additional work.
+
 ## Out of scope (v1)
 
 Auth transactional emails (verification, password reset) stay on the direct `sendTemplate(...)` path. Transactional is not subscription; preferences shouldn't be able to silence them. Notification digest emails ("you have 5 new") and per-user throttling beyond dedup are future work.

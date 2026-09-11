@@ -1,0 +1,56 @@
+import { beforeEach, expect, test } from "bun:test";
+
+import { projectsService } from "../../../src/api/projects/projects.service";
+
+import { seedVerifiedUser } from "../../helpers/auth";
+
+import {
+  accountMemberships,
+  cleanDatabase,
+  db,
+  eq,
+  requireDb,
+} from "../../helpers/db";
+
+import { ApiError } from "../../../src/lib/errors";
+
+import { now } from "../../../src/lib/time/now";
+
+beforeEach(async () => {
+  if (!(await requireDb())) {
+    throw new Error("SPEC-INFRA: database unavailable");
+  }
+
+  await cleanDatabase();
+});
+
+test("service boundary rechecks membership independently of the HTTP plugin", async () => {
+  const owner = await seedVerifiedUser({ email: "service-owner@gmail.com" });
+
+  const created = await projectsService.create(
+    owner.user.id,
+    owner.account.id,
+    "Service record"
+  );
+
+  expect(created.accountId).toBe(owner.account.id);
+
+  await db
+    .update(accountMemberships)
+    .set({ revokedAt: now() })
+    .where(eq(accountMemberships.id, owner.membership.id));
+
+  let denied = false;
+
+  try {
+    await projectsService.list(owner.user.id, owner.account.id);
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.statusCode !== 403) {
+      throw error;
+    }
+
+    denied = true;
+  }
+
+  expect(denied).toBe(true);
+});

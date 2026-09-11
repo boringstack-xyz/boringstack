@@ -5,6 +5,10 @@ description: Slash-command skills shipped with BoringStack. Each one encodes a t
 
 BoringStack ships agent skills in the repo root `.claude/skills/` (cross-app and audit skills) and per-app in `apps/api/.claude/skills/` and `apps/ui/.claude/skills/`. Each skill is a markdown file with a prompt that an agent follows. Type the skill name (e.g., `/add-full-feature`) in Claude Code or Cursor and the agent runs the workflow.
 
+## Verification commands
+
+Skills guide an agent's implementation work. The [verified workflow](/skills/verified-workflow/) supplies executable checks and structured evidence afterward. Use the [account-resource recipe](/recipes/add-account-resource/) for its explicit owner/admin-write policy; the [evaluator](/reference/agent-evaluation/) is separate maintainer tooling.
+
 ## Full-stack skills
 
 ### /add-full-feature

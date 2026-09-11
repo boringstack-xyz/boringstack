@@ -32,6 +32,17 @@ bun run rename:project  # one-shot rebrand after Use this template (boringstack 
 ./scripts/audit-repo-settings.sh # diff GitHub repo settings vs .github/desired-repo-settings.json
 ```
 
+## Structured verification
+
+Start account-owned feature work with `bun run agent:inspect -- account-resource --json`.
+Use `sandbox:up`, then `agent:verify -- --profile=feature --sandbox=<id> --json`,
+and `sandbox:down -- --id=<id>`. `release-local` adds security, coverage and builds.
+Exit 0 is passed, 1 failed, 2 blocked; never present skipped/unavailable checks as
+complete. See [tools/agent/README.md](tools/agent/README.md) for scope and cleanup.
+Run `agent:check` and the deterministic `agent:eval --deterministic` for tooling changes.
+Tooling and templates obey the same strict script policy as the API; `agent:quality`
+checks types, lint and formatting and is also included in root `check`.
+
 ## Layout
 
 | Path              | Role                   |

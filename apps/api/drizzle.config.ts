@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 import type { Config } from "drizzle-kit";
 
-dotenv.config({ path: ".env" });
+dotenv.config({ path: process.env.DOTENV_CONFIG_PATH ?? ".env" });
 
 export default {
   schema: "./src/clients/postgres/schema/*.ts",

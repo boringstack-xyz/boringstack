@@ -27,3 +27,10 @@ focused pattern guides under [`docs/agents/`](docs/agents/).
 | Adding an allowlist entry; debugging a security workflow                       | [security-pipeline](docs/agents/security-pipeline.md) |
 | Starting a backend feature (`/build-feature`, `/add-audit-event`, etc.)        | [feature-skills](docs/agents/feature-skills.md)       |
 | Reviewing a diff or running instance for security                              | [security-skills](docs/agents/security-skills.md)     |
+
+## Account-owned feature workflow
+
+From the repository root, run `bun run agent:inspect -- account-resource --json`.
+The checked recipe connects the existing API/UI contracts, explicit role policy,
+migrations, generated clients and isolated verification. See
+[agent workflow](../../tools/agent/README.md).

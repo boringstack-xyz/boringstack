@@ -1,0 +1,30 @@
+import { type UseQueryResult, useQuery } from "@tanstack/react-query";
+
+import { ApiError } from "@/lib/api/ApiError";
+import { apiClient } from "@/lib/api/client";
+
+import { PROJECTS_QUERY_KEYS } from "./Projects.constants";
+import type { IProject } from "./Projects.types";
+
+export function useProjects(
+  accountId: string | undefined
+): UseQueryResult<IProject[]> {
+  return useQuery({
+    queryKey: PROJECTS_QUERY_KEYS.list(accountId ?? "no-account"),
+    enabled: accountId !== undefined,
+    queryFn: async ({ signal }) => {
+      if (accountId === undefined) {
+        throw new ApiError(0, { message: "No active account" });
+      }
+
+      const { data } = await apiClient.GET("/api/v1/projects/", { signal });
+      const rows = data ?? [];
+
+      if (rows.some((row) => row.accountId !== accountId)) {
+        throw new ApiError(0, { message: "Account changed during request" });
+      }
+
+      return rows;
+    }
+  });
+}

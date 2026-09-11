@@ -1,0 +1,32 @@
+import {
+  foreignKey,
+  index,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
+import { accounts } from "./app.schema";
+import { app } from "./pg-schemas";
+
+export const resourcePlural = app.table(
+  "resourcePlural",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    accountId: uuid("account_id").notNull(),
+    name: varchar({ length: 100 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("idx_resourcePlural_account_id").on(table.accountId),
+    foreignKey({
+      columns: [table.accountId],
+      foreignColumns: [accounts.id],
+      name: "resourcePlural_account_id_fkey",
+    }).onDelete("cascade"),
+  ]
+);

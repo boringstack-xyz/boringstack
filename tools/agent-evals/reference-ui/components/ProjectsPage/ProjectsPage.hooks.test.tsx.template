@@ -1,0 +1,35 @@
+import { renderHook } from "@testing-library/react";
+import { beforeEach, expect, it, vi } from "vitest";
+
+import { useProjectsPage } from "./ProjectsPage.hooks";
+
+const state = vi.hoisted(() => ({ role: "owner", error: false }));
+
+vi.mock("@/features/auth/Auth.queries", () => ({
+  useMe: () => ({ data: { account: { id: "a" }, role: state.role } })
+}));
+vi.mock("../../Projects.queries", () => ({
+  useProjects: () => ({ data: [], isPending: false, isError: state.error })
+}));
+vi.mock("../../Projects.mutations", () => ({
+  useSaveProject: () => ({ mutate: vi.fn(), isPending: false, isError: false })
+}));
+beforeEach(() => {
+  state.role = "owner";
+  state.error = false;
+});
+it("a role change removes writer controls from the mounted page", () => {
+  const { result, rerender } = renderHook(() => useProjectsPage());
+
+  expect(result.current.canWrite).toBe(true);
+  state.role = "member";
+  rerender();
+  expect(result.current.canWrite).toBe(false);
+});
+it("a failed list becomes an error view rather than a successful empty result", () => {
+  state.error = true;
+  const { result } = renderHook(() => useProjectsPage());
+
+  expect(result.current.hasError).toBe(true);
+  expect(result.current.isLoading).toBe(false);
+});

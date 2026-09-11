@@ -49,7 +49,7 @@ Revoked memberships keep their row (soft-delete via `revoked_at`) so the audit t
 
 Invitation tokens are opaque, single-use, and hashed at rest. The route response carries the raw token exactly once (so the caller can hand it to email). The database stores only `sha256(token + pepper)`. Resending rotates the token, invalidating any leaked old links. The daily `cleanExpiredInvitationsJob` background sweep also soft-revokes unaccepted invitations past their TTL.
 
-Revoke is a soft-delete via `revoked_at`; subsequent accept attempts fail with `invitation_revoked`. Seat-limit checks fire twice (at creation and acceptance), so if an admin revokes a seat between create and accept, the second check catches it.
+Revoke is a soft-delete via `revoked_at`; subsequent accept attempts fail with `invitation_revoked`. Invitation creation requires the team-invitation feature. Acceptance checks current seat capacity in the membership transaction; join-request approval uses the same admission helper. An outstanding invitation does not reserve a seat or bypass a subsequent downgrade.
 
 Routes:
 - `POST /api/v1/accounts/:id/invitations` (owner | admin)
@@ -59,7 +59,7 @@ Routes:
 
 ## Owner lifecycle
 
-**Transfer ownership**: `POST /api/v1/accounts/:id/transfer-ownership` (owner-only, cache-bypassing). Atomically demotes the current owner to `admin`, promotes the target to `owner`. The partial unique index is never violated mid-transaction because `accountsService.transferOwnership` demotes the outgoing owner FIRST.
+**Transfer ownership**: `POST /api/v1/accounts/:id/transfer-ownership` (owner-only, cache-bypassing). Atomically demotes the current owner to `admin`, promotes the target to `owner`. The transaction locks the relevant membership state and rechecks that the target is active before promotion. The outgoing owner is demoted first to respect the partial unique index.
 
 **Cannot leave without transferring**: An owner cannot leave their account; they must transfer first or delete the account. An owner cannot be removed by an admin.
 
@@ -67,7 +67,7 @@ Routes:
 
 ## Domain claiming (optional, B2B mode)
 
-Off by default. Flip `ACCOUNT_DOMAIN_CLAIMING=true` and the first verified signup with a non-public email domain claims that domain on its personal account. Subsequent verified signups from the same domain fail with `DOMAIN_CLAIMED` (409) and return the existing account's name and accountId. The blocked user can still be invited via standard `account_invitations`.
+Off by default. Flip `ACCOUNT_DOMAIN_CLAIMING=true` and the first verified signup with a non-public email domain claims that domain on its personal account. Subsequent verified signups create a pending join request for the claimed account rather than provisioning a second account. The service returns a typed `domain_claimed` outcome so the request can commit before the route reports the conflict. Owner notification happens after commit. Approval must pass the current seat cap.
 
 This flag suits B2B products where one email domain maps to one workspace (Linear, Vercel, Dreamdata). For consumer products, leave it off.
 
