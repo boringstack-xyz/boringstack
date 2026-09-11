@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,7 +8,7 @@ import { docker } from "../agent-evals/isolated/docker";
 import { candidateOutcome } from "../agent-evals/isolated/outcome";
 import { runnerArguments } from "../agent-evals/isolated/policy";
 import { withIsolatedRuntime } from "../agent-evals/isolated/runtime";
-import { dockerTestsEnabled } from "./environment";
+import { dockerTestsEnabled, hostEnvironment } from "./environment";
 import { runProcess } from "./process";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -63,6 +63,47 @@ test("candidate completion rejects missing, duplicated and contradictory evidenc
       0
     )
   ).toBe(2);
+});
+
+test("Docker failures expose status without echoing credential arguments or stderr", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "bs-docker-error-"));
+  const credential = "disposable-test-credential";
+
+  try {
+    const executable = join(directory, "docker");
+
+    writeFileSync(
+      executable,
+      `#!/bin/sh
+if [ "$1" = "success" ]; then printf ready; exit 0; fi
+printf '%s\\n' '${credential}' >&2
+exit 7
+`
+    );
+    chmodSync(executable, 0o700);
+    const result = await runProcess(
+      [
+        process.execPath,
+        "--no-env-file",
+        "-e",
+        `import {docker} from ${JSON.stringify(join(ROOT, "tools/agent-evals/isolated/docker.ts"))};
+        console.log(await docker(${JSON.stringify(ROOT)}, ["success"]));
+        try { await docker(${JSON.stringify(ROOT)}, ["run", ${JSON.stringify(credential)}]); }
+        catch (error) { console.error(error.message); process.exitCode = 2; }`,
+      ],
+      {
+        cwd: ROOT,
+        env: { PATH: `${directory}:${hostEnvironment().PATH ?? ""}` },
+      }
+    );
+
+    expect(result.code).toBe(2);
+    expect(result.stdout.trim()).toBe("ready");
+    expect(result.stderr).not.toContain(credential);
+    expect(result.stderr).toContain("command_completed; exit=7");
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 if (dockerTestsEnabled()) {

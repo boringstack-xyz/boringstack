@@ -12,7 +12,7 @@ export async function docker(
 
   if (result.status !== "completed" || result.code !== 0) {
     throw new Error(
-      `Candidate sandbox Docker operation failed: ${args[0] ?? "unknown"} (${result.reason})\n${result.stderr.slice(-4000)}`
+      `Candidate sandbox Docker operation failed (${result.reason}; exit=${String(result.code)})`
     );
   }
 
