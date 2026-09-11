@@ -348,7 +348,8 @@ site-search button[data-open-modal]:hover {
 site-search kbd {
   border-radius: 0;
   background: none;
-  border: 1px solid var(--border);
+  border: 0;
+  box-shadow: none;
   font-family: var(--sl-font-mono);
 }
 

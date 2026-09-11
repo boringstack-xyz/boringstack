@@ -1,26 +1,31 @@
 ---
-/*
- * Starlight ThemeProvider override.
- *
- * Default behaviour reads OS prefers-color-scheme and uses light for
- * users whose OS is light. We force dark as the default for first-time
- * visitors so the docs match the brand surface; the toggle still works
- * and the user's pick persists in localStorage, so we only override the
- * "no stored preference" branch.
- */
+/* First visits start in light mode. Explicit light/dark and the stored
+ * empty-string Auto preference remain compatible with Starlight's picker. */
 import { Icon } from "@astrojs/starlight/components";
 ---
 
 {/* Inlined to avoid FOUC. */}
 <script is:inline>
   window.StarlightThemeProvider = (() => {
-    const storedTheme =
-      typeof localStorage !== "undefined" &&
-      localStorage.getItem("starlight-theme");
-    const theme = storedTheme || "dark";
-    document.documentElement.dataset.theme = theme === "light" ? "light" : "dark";
+    let storedTheme = null;
+    try {
+      storedTheme = localStorage.getItem("starlight-theme");
+      if (storedTheme === null) {
+        localStorage.setItem("starlight-theme", "light");
+        storedTheme = "light";
+      }
+    } catch {
+      // Rendering still has a deterministic default when storage is unavailable.
+    }
+    const preference = storedTheme === null ? "light" : storedTheme || "auto";
+    const systemTheme = matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+    const theme = preference === "auto" ? systemTheme : preference;
+    document.documentElement.dataset.theme =
+      theme === "dark" ? "dark" : "light";
     return {
-      updatePickers(theme = storedTheme || "auto") {
+      updatePickers(theme = preference) {
         document.querySelectorAll("starlight-theme-select").forEach((picker) => {
           const select = picker.querySelector("select");
           if (select) select.value = theme;

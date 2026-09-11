@@ -4,18 +4,8 @@
 @source "../components/**/*.{astro,tsx,jsx,ts,js}";
 @source "../content/**/*.{mdx,astro,tsx,jsx}";
 
-/* =====================================================================
-   Design tokens, ported from tsforge (apps/docs) so the two sites read as
-   one product: OKLCH ramp, cyan primary, zero radius, Inter + JetBrains
-   Mono. `redesign.css` maps these onto Starlight's --sl-* variables and
-   owns the final look; this file only declares the palette and the
-   utilities the landing components use.
-
-   tsforge is dark-only and forces `color-scheme: dark` on every theme.
-   BoringStack ships a working theme toggle in its header, so the light
-   ramp below is derived from the same hues rather than dropped. Removing
-   the `[data-theme="light"]` block is all it takes to go dark-only.
-   ===================================================================== */
+/* Shared semantic tokens. Dark uses cool instrument-panel colours; light
+   uses paper, graphite and archival inks. Components consume the same roles. */
 
 :root,
 :root[data-theme="dark"] {
@@ -52,32 +42,36 @@
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
 
-/* Same hues, inverted lightness. Primary drops to L 0.52 because the dark
-   ramp's L 0.78 cyan cannot carry 4.5:1 against a near-white page. */
+/* Warm paper with dark inks: text and interactive colours stay distinct
+   from the softer decorative tints used on the architecture drawing. */
 :root[data-theme="light"] {
-  --background: oklch(0.99 0.003 260);
-  --foreground: oklch(0.21 0.02 265);
-  --card: oklch(0.97 0.006 260);
-  --card-foreground: oklch(0.21 0.02 265);
-  --popover: oklch(0.97 0.006 260);
-  --popover-foreground: oklch(0.21 0.02 265);
-  --primary: oklch(0.52 0.11 210);
-  --primary-foreground: oklch(0.99 0.003 260);
-  --secondary: oklch(0.94 0.008 260);
-  --secondary-foreground: oklch(0.21 0.02 265);
-  --muted: oklch(0.95 0.006 260);
-  --muted-foreground: oklch(0.44 0.02 260);
-  --accent: oklch(0.47 0.17 300);
-  --accent-foreground: oklch(0.99 0.003 260);
-  --destructive: oklch(0.52 0.2 22);
-  --destructive-foreground: oklch(0.99 0.003 260);
-  --success: oklch(0.5 0.14 155);
-  --warning: oklch(0.55 0.13 75);
-  --border: oklch(0.89 0.008 260);
-  --border-strong: oklch(0.76 0.015 260);
-  --input: oklch(0.88 0.01 260);
-  --ring: oklch(0.52 0.11 210);
-  --code-surface: oklch(0.96 0.006 260);
+  --background: #f3efdf;
+  --foreground: #30382f;
+  --card: #faf7ed;
+  --card-foreground: var(--foreground);
+  --popover: #faf7ed;
+  --popover-foreground: var(--foreground);
+  --primary: #355a49;
+  --primary-foreground: #fffaf0;
+  --secondary: #e5e0cf;
+  --secondary-foreground: var(--foreground);
+  --muted: #eae5d5;
+  --muted-foreground: #595d50;
+  --accent: #a24430;
+  --accent-foreground: #fffaf0;
+  --destructive: #a23930;
+  --destructive-foreground: #fffaf0;
+  --success: #456740;
+  --warning: #805913;
+  --border: #cbc8b6;
+  --border-strong: #8d9380;
+  --input: #cbc8b6;
+  --ring: var(--primary);
+  --code-surface: #eae7d8;
+  --font-display:
+    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --paper-grid: rgb(78 109 98 / 5%);
+  --paper-shadow: 4px 5px 0 rgb(57 64 43 / 8%);
 }
 
 @theme inline {
