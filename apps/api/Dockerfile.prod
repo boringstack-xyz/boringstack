@@ -2,7 +2,7 @@
 # required. If you have BuildKit available, you can wrap the bun install
 # RUN in `--mount=type=cache,target=/root/.bun/install/cache` for faster
 # rebuilds; we keep the portable version here.
-FROM oven/bun:1.4.0-alpine@sha256:07235578f79ef8c6f97d94aee7938e76f5cdba5f21ae5dbfdd3d3d38058437eb AS builder
+FROM oven/bun:1.4.2-alpine@sha256:d888c0ae6c86d7866ff10c5aafdd9077b36aee6455b33dd270fb93c0dd5cef6f AS builder
 
 WORKDIR /app
 
@@ -21,11 +21,11 @@ COPY . .
 RUN bun run build
 
 # Production stage
-FROM oven/bun:1.4.0-alpine@sha256:07235578f79ef8c6f97d94aee7938e76f5cdba5f21ae5dbfdd3d3d38058437eb AS production
+FROM oven/bun:1.4.2-alpine@sha256:d888c0ae6c86d7866ff10c5aafdd9077b36aee6455b33dd270fb93c0dd5cef6f AS production
 
 RUN apk add --no-cache dumb-init
 
-# Non-root user (k8s-friendly fixed UID/GID). `oven/bun:1.4.0-alpine@sha256:07235578f79ef8c6f97d94aee7938e76f5cdba5f21ae5dbfdd3d3d38058437eb` ships
+# Non-root user (k8s-friendly fixed UID/GID). `oven/bun:1.4.2-alpine` ships
 # with a `bun` user/UID 1000 already; we add our own at 1001 to avoid
 # collisions and so prod images run as a deliberate, named user.
 RUN addgroup -g 1001 -S nodejs && \

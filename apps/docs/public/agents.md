@@ -61,7 +61,7 @@ Do not look for a "Use this template" button. That is a browser action. The repo
 | ~4 GB free RAM                 | first boot builds api + ui images and runs migrations                                   |
 | `git`                          | required                                                                                |
 | `gh`, authenticated            | optional; gets you a GitHub-hosted repo instead of a local-only one                     |
-| `bun` 1.4.0                    | not needed to boot; needed to develop (`bun run check`, `regen`, `rename:project`)     |
+| `bun` 1.4.2                    | not needed to boot; needed to develop (`bun run check`, `regen`, `rename:project`)     |
 
 Ports: `7331` UI, `7330` API, `5432` Postgres, `6379` Valkey. Optional overlays, all on by
 default in dev: `7332` bull-board, `8025` Mailpit, `8055` GlitchTip, `3010` Grafana,
