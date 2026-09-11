@@ -6,9 +6,9 @@
   "description": "boringstack.xyz docs site for the BoringStack project. Astro Starlight, deployed via Cloudflare Pages.",
   "engines": {
     "node": ">=24.0.0",
-    "bun": "1.4.0"
+    "bun": "1.4.2"
   },
-  "packageManager": "bun@1.4.0",
+  "packageManager": "bun@1.4.2",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
@@ -36,11 +36,12 @@
     "check:agent-surface": "bun run scripts/check-agent-surface.mjs"
   },
   "dependencies": {
-    "@astrojs/react": "6.0.4",
-    "@astrojs/sitemap": "3.7.3",
-    "@astrojs/starlight": "0.41.10",
+    "@astrojs/markdown-remark": "7.3.0",
+    "@astrojs/react": "6.0.5",
+    "@astrojs/sitemap": "3.7.4",
+    "@astrojs/starlight": "0.42.0",
     "@tailwindcss/vite": "4.3.3",
-    "astro": "7.2.9",
+    "astro": "7.3.1",
     "astro-mermaid": "2.1.0",
     "clsx": "2.1.1",
     "mermaid": "11.17.2",
@@ -54,10 +55,10 @@
   },
   "devDependencies": {
     "@axe-core/cli": "4.13.0",
-    "@types/react-dom": "19.2.5",
+    "@types/react-dom": "19.2.7",
     "http-server": "14.1.1",
     "starlight-llms-txt": "0.11.0",
-    "wrangler": "4.123.0"
+    "wrangler": "4.129.0"
   },
   "//overrides": {
     "_": "Why these transitive deps are pinned. Build-time/dev tooling only \u2014 the deployed site is static Cloudflare Pages. Re-evaluate quarterly (see osv-scanner.toml).",
