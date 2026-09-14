@@ -9,15 +9,14 @@ import { describe, expect, it, vi } from "vitest";
 import { buildAbility } from "@/lib/acl/ability";
 import { AbilityContext } from "@/lib/acl/acl.context";
 import { i18n } from "@/lib/i18n/config";
-
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
-import type { IMe } from "@/features/auth/Auth.types";
+import { type IMe, SESSION_QUERY_KEYS } from "@/lib/session";
 
 import { ACCOUNTS_QUERY_KEYS } from "../../Accounts.constants";
 import type { IJoinRequest } from "../../Accounts.types";
 import { JoinRequestsPage } from "./JoinRequestsPage";
 
 const approveMock = vi.hoisted(() => vi.fn());
+
 const denyMock = vi.hoisted(() => vi.fn());
 
 vi.mock("../../JoinRequests.mutations", () => ({
@@ -64,7 +63,7 @@ function renderPage(rows: IJoinRequest[]): void {
   });
   const me = buildMe();
 
-  client.setQueryData(AUTH_QUERY_KEYS.me, me);
+  client.setQueryData(SESSION_QUERY_KEYS.me, me);
   client.setQueryData(ACCOUNTS_QUERY_KEYS.joinRequests("acc-1"), rows);
 
   render(

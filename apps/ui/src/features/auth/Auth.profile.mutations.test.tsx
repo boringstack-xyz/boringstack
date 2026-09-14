@@ -4,8 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { SESSION_QUERY_KEYS } from "@/lib/session";
+
 import { makeUser } from "../../../tests/factories";
-import { AUTH_QUERY_KEYS } from "./Auth.constants";
 import { useUpdateProfile } from "./Auth.profile.mutations";
 
 const apiMock = vi.hoisted(() => ({
@@ -59,7 +60,7 @@ describe("useUpdateProfile", () => {
       body: { firstName: "Grace", lastName: "Hopper" }
     });
     expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: AUTH_QUERY_KEYS.me
+      queryKey: SESSION_QUERY_KEYS.me
     });
   });
 

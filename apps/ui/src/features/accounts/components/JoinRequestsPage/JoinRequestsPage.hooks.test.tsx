@@ -4,13 +4,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
-import type { IMe } from "@/features/auth/Auth.types";
+import { type IMe, SESSION_QUERY_KEYS } from "@/lib/session";
 
 import { ACCOUNTS_QUERY_KEYS } from "../../Accounts.constants";
 import { useJoinRequestsPage } from "./JoinRequestsPage.hooks";
 
 const approveMock = vi.hoisted(() => vi.fn());
+
 const denyMock = vi.hoisted(() => vi.fn());
 
 vi.mock("../../JoinRequests.mutations", () => ({
@@ -59,7 +59,7 @@ const me: IMe = {
 describe("useJoinRequestsPage", () => {
   it("returns the seeded join requests once /me + list are both warm", async () => {
     const { Wrapper } = makeWrapper((client) => {
-      client.setQueryData(AUTH_QUERY_KEYS.me, me);
+      client.setQueryData(SESSION_QUERY_KEYS.me, me);
       client.setQueryData(ACCOUNTS_QUERY_KEYS.joinRequests("acc-1"), [
         {
           id: "jr1",
@@ -87,7 +87,7 @@ describe("useJoinRequestsPage", () => {
 
   it("forwards onApprove to the mutation hook with the chosen requestId", () => {
     const { Wrapper } = makeWrapper((client) => {
-      client.setQueryData(AUTH_QUERY_KEYS.me, me);
+      client.setQueryData(SESSION_QUERY_KEYS.me, me);
       client.setQueryData(ACCOUNTS_QUERY_KEYS.joinRequests("acc-1"), []);
     });
 

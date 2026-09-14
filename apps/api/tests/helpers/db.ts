@@ -4,21 +4,12 @@
  * Do not assert on `void auditLogService.record(...)` without awaiting the
  * returned promise or polling `audit_log`, fire-and-forget writes race in CI.
  *
- * The pattern: each integration test file imports `requireDb()` and bails
- * silently when no Postgres is reachable (dev runs without docker, CI
- * without a service container, etc.). When the DB *is* available, tests
- * use `cleanDatabase()` in a `beforeEach` to start from a known state.
- *
- * Setup once per machine:
- *   1. Start the dev stack:    (cd ../../infra/compose/compose && ./dev.sh up)
- *   2. Apply schema:           bun run db:push
- *   3. Set `DATABASE_URL`      (already set if you copied .env.example)
- *   4. Run integration tests:  bun test
- *
- * Override the test target by setting `TEST_DATABASE_URL`, or set
- * `REQUIRE_INTEGRATION_DB=true` to force the configured `DATABASE_URL`.
- * This avoids accidentally probing a local dev DB from `.env` during a
- * plain unit-test run.
+ * Integration tests opt in through TEST_DATABASE_URL (preferred), or
+ * REQUIRE_INTEGRATION_DB=true / CI=true with DATABASE_URL. An explicitly
+ * requested database must be reachable; failures cannot become passing tests.
+ * Without an integration target the helper logs a skip notice and returns false.
+ * Use an isolated migrated test database, never a development database containing
+ * product data. Run the default lane with `bun run test`, not bare `bun test`.
  */
 import { sql } from "drizzle-orm";
 import { db } from "../../src/clients/postgres";
@@ -67,8 +58,8 @@ export const isDbAvailable = async (): Promise<boolean> => {
  *     // ...real assertions
  *   });
  *
- * Logs a one-line skip notice instead of failing so unit suites stay
- * green when the DB isn't available.
+ * An unconfigured unit-only run logs one skip notice. Explicit integration
+ * targets fail closed if the connection cannot be established.
  */
 let warnedAboutSkip = false;
 
@@ -77,8 +68,10 @@ export const requireDb = async (): Promise<boolean> => {
     return true;
   }
 
-  if (process.env.REQUIRE_INTEGRATION_DB === "true") {
-    throw new Error("Integration database is required but unreachable");
+  if (explicitTestDatabaseUrl() !== undefined) {
+    throw new Error(
+      "Integration database explicitly requested but unreachable; check TEST_DATABASE_URL"
+    );
   }
 
   if (!warnedAboutSkip) {

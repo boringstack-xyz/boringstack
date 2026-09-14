@@ -6,8 +6,7 @@ import {
 
 import { ApiError } from "@/lib/api/ApiError";
 import { apiClient } from "@/lib/api/client";
-
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
+import { SESSION_QUERY_KEYS } from "@/lib/session";
 
 import type { IOwnershipTransfer } from "./Accounts.types";
 
@@ -45,7 +44,7 @@ export function useAcceptOwnershipTransfer(): UseMutationResult<
        * owner; the role-aware UI surfaces live in /me + the membership
        * cache. Drop both so the next paint sees the new role.
        */
-      await qc.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me });
+      await qc.invalidateQueries({ queryKey: SESSION_QUERY_KEYS.me });
     }
   });
 }

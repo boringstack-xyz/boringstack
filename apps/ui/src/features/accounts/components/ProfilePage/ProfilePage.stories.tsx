@@ -5,8 +5,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
 
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
-import type { IMe } from "@/features/auth/Auth.types";
+import { type IMe, SESSION_QUERY_KEYS } from "@/lib/session";
 
 import ProfilePage from "./ProfilePage";
 
@@ -55,7 +54,7 @@ function withMe(me: IMe | null) {
       defaultOptions: { queries: { retry: false } }
     });
 
-    client.setQueryData(AUTH_QUERY_KEYS.me, me);
+    client.setQueryData(SESSION_QUERY_KEYS.me, me);
 
     return (
       <QueryClientProvider client={client}>

@@ -67,6 +67,13 @@ export function planAccountResource(
       upper,
     })
   );
+  patch("apps/api/eslint.config.js", (source) =>
+    replaceOnce(
+      source,
+      'scopeColumn: "accountId",\n          tables: [',
+      `scopeColumn: "accountId",\n          tables: [\n            "${prefix}",`
+    )
+  );
   patch(
     "apps/api/src/clients/postgres/schema/index.ts",
     (source) => source + `\nexport * from "./${prefix}.schema";\n`
@@ -143,6 +150,10 @@ export function planAccountResource(
       singular,
       upper,
     })
+  );
+  newFile(
+    `apps/api/src/api/${prefix}/index.ts`,
+    `export { ${prefix}Service } from "./${prefix}.service";\nexport type { I${singular} } from "./${prefix}.types";\n`
   );
   newFile(
     `apps/api/src/api/${prefix}/${prefix}.routes.ts`,

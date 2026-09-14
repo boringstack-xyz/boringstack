@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import { useMe } from "@/features/auth/Auth.queries";
+import { useMe } from "@/lib/session";
 
 import { useSwitchAccount } from "../../Memberships.mutations";
 import type { IAccountSwitcherView } from "./AccountSwitcher.types";

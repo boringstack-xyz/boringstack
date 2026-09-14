@@ -114,6 +114,12 @@ test("account generation works in a stripped and already extended checkout", asy
     expect(
       readFileSync(join(dir, "apps/api/src/lib/acl/acl.constants.ts"), "utf8")
     ).toContain('"Widget"');
+    expect(
+      readFileSync(join(dir, "apps/api/src/api/widgets/index.ts"), "utf8")
+    ).toContain('export { widgetsService } from "./widgets.service"');
+    expect(
+      readFileSync(join(dir, "apps/api/eslint.config.js"), "utf8")
+    ).toContain('"widgets"');
     expect(() => planAccountResource(dir, "Teams", "guess")).toThrow();
   } finally {
     rmSync(dir, { recursive: true, force: true });

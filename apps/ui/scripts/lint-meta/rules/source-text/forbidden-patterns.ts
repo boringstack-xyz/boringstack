@@ -91,15 +91,12 @@ export function createForbiddenTextPatterns(
     },
     {
       /*
-       * Shared factories and e2e code run against wall-clock-sensitive
-       * consumers: a literal ISO timestamp ages out (relative-time
-       * assertions drift, servers reject stale consent/validity windows).
-       * Generate with now() from @/lib/time/now instead. Inline literals
-       * in colocated unit tests stay allowed: deterministic fixtures
-       * asserted against fixed expectations are a feature there.
+       * Test timeout budgets do not sleep. Reject timer-based delays and
+       * Playwright waitForTimeout while allowing test.setTimeout.
        */
       rule: "no-sleep-in-e2e",
-      pattern: /\bsetTimeout\s*\(/u,
+      pattern:
+        /(?<![\w.])(?:setTimeout|(?:window|globalThis)\.setTimeout)\s*\(|\.waitForTimeout\s*\(/u,
       message:
         "Wall-clock sleeps flake under CI load and tax every run. Use Playwright's expect.poll/waitFor, or make the awaited state deterministic (see mfa.spec.ts's previous-step TOTP enrolment).",
       allow: (file) => !file.startsWith(resolve(root, "e2e"))

@@ -241,11 +241,13 @@ jobs:
             infra/compose/scripts/*.sh \
             scripts/*.sh \
             scripts/ci/*.sh \
-            setup.sh \
-            apps/docs/public/install.sh
+            setup.sh
+          if [[ -f apps/docs/public/install.sh ]]; then
+            shellcheck -x -S warning apps/docs/public/install.sh
+          fi
 
       - name: Installer contract (arg parsing, validation, dry run)
-        if: steps.filter.outputs.code == 'true'
+        if: steps.filter.outputs.code == 'true' && hashFiles('apps/docs/public/install.sh') != ''
         # The installer is the entrypoint the whole project points at, and it
         # runs on strangers' machines via curl | sh. These assertions are cheap
         # and need no Docker and no network.

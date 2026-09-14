@@ -46,7 +46,9 @@ every event needs a `created` field. See
 ## `db.ts` — `requireDb()`
 
 All integration-shape tests gate on `if (!(await requireDb())) return;`
-so suites no-op when `DATABASE_URL` is unreachable. Even small-looking
+so unconfigured unit-only runs no-op. When `TEST_DATABASE_URL` is supplied,
+or CI / required-integration mode selects `DATABASE_URL`, an unreachable
+database throws instead of reporting a passing test. Even small-looking
 tests in `tests/api/**` use the helper because their fixtures rely on
 Drizzle and an actual schema.
 

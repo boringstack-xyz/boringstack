@@ -17,6 +17,16 @@
 # `wget --spider` against each service's own health endpoint.
 
 services:
+  # Only the overlay that supplies Tempo gives the exporter its local default.
+  # An explicitly empty endpoint disables export; external collectors still work.
+  api-dev:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${API_DEV_OTEL_EXPORTER_OTLP_ENDPOINT-http://tempo:4318}
+
+  api:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT-http://tempo:4318}
+
   prometheus:
     profiles: ["observability"]
     image: prom/prometheus:v2.54.1@sha256:f6639335d34a77d9d9db382b92eeb7fc00934be8eae81dbc03b31cfe90411a94

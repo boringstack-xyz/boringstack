@@ -153,6 +153,24 @@ describe("checkForbiddenText", () => {
         checkForbiddenTextWithRoot(spec, root).map((row) => row.rule)
       ).toContain("no-sleep-in-e2e");
 
+      for (const source of ["test.setTimeout(30000);", "test.slow();"]) {
+        writeFileSync(spec, source);
+        expect(
+          checkForbiddenTextWithRoot(spec, root).map((row) => row.rule)
+        ).not.toContain("no-sleep-in-e2e");
+      }
+
+      for (const source of [
+        "window.setTimeout(done, 1000);",
+        "globalThis.setTimeout(done, 1000);",
+        "await page.waitForTimeout(1000);"
+      ]) {
+        writeFileSync(spec, source);
+        expect(
+          checkForbiddenTextWithRoot(spec, root).map((row) => row.rule)
+        ).toContain("no-sleep-in-e2e");
+      }
+
       const srcFile = join(srcDir, "thing.ts");
 
       writeFileSync(srcFile, sleepLine);
@@ -715,6 +733,9 @@ describe("checkI18nLocaleKeysUsed", () => {
         join(localeDir, "common.json"),
         JSON.stringify({
           billing: { currentPlan: { free: "Free", paid: "Paid" } },
+          files_one: "One file",
+          files_other: "Many files",
+          unused_one: "Unused",
           auth: { oauth: { google: "Google", github: "GitHub" } }
         })
       );
@@ -723,7 +744,7 @@ describe("checkI18nLocaleKeysUsed", () => {
 
       writeFileSync(
         srcFile,
-        't("billing.currentPlan.free");\nt(`auth.oauth.${provider}`);\n'
+        't("billing.currentPlan.free");\nt("files", { count: 2 });\nt(`auth.oauth.${provider}`);\n'
       );
 
       const violations = checkI18nLocaleKeysUsed(root, [srcFile]);
@@ -731,7 +752,10 @@ describe("checkI18nLocaleKeysUsed", () => {
       expect(violations.map((row) => row.message)).toContainEqual(
         expect.stringContaining("billing.currentPlan.paid")
       );
-      expect(violations).toHaveLength(1);
+      expect(violations.map((row) => row.message)).toContainEqual(
+        expect.stringContaining("unused_one")
+      );
+      expect(violations).toHaveLength(2);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

@@ -31,19 +31,19 @@ Hard rules:
 
 ## Commands
 
-| Command                        | What it does                                                           |
-| ------------------------------ | ---------------------------------------------------------------------- |
-| `bun run dev`                  | Vite dev server on :7331 (proxies `/api` and `/auth` → `VITE_API_URL`) |
-| `bun run validate`             | Merge gate: lint + format + typecheck + vitest + build + size budget   |
-| `bun run validate:full`        | `validate` + Playwright (needs a running stack on :7331)               |
-| `bun run check`                | Lint + format + typecheck (no tests)                                   |
-| `bun run test`                 | Vitest in watch mode                                                   |
-| `bun run test:ci`              | Vitest single run with coverage                                        |
-| `bun run e2e`                  | Playwright (Chromium + WebKit)                                         |
-| `bun run storybook`            | Storybook on :6006                                                     |
-| `bun run ui:add <name>`        | Add a shadcn/ui primitive                                              |
-| `bun run new:component <path>` | Scaffold a component folder with all suffixes                          |
-| `bun run new:feature <Name>`   | Scaffold a feature folder + starter page; prints route/i18n next steps |
+| Command                        | What it does                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------- |
+| `bun run dev`                  | Vite dev server on :7331 (proxies `/api` and `/auth` → `VITE_API_URL`)                |
+| `bun run validate`             | Merge gate: lint + format + typecheck + vitest + build + size budget                  |
+| `bun run validate:full`        | `validate` + Playwright (needs a running stack on :7331)                              |
+| `bun run check`                | Lint + format + typecheck (no tests)                                                  |
+| `bun run test`                 | Vitest in watch mode                                                                  |
+| `bun run test:ci`              | Vitest single run with coverage                                                       |
+| `bun run e2e`                  | Playwright (Chromium + WebKit)                                                        |
+| `bun run storybook`            | Storybook on :6006                                                                    |
+| `bun run ui:add <name>`        | Add a shadcn/ui primitive                                                             |
+| `bun run new:component <path>` | Scaffold a component folder with all suffixes                                         |
+| `bun run new:feature <Name>`   | Scaffold a feature + starter page; optional `--i18n-namespace` adds lazy translations |
 
 ## Feature folder layout
 

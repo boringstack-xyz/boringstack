@@ -59,8 +59,11 @@ export function acquireWorkspace(
 
 /** Recovery is explicit: a dead writer may have left partial multi-file edits. */
 export function recoverWorkspace(root: string, kind: LockKind): void {
-  const path = lockPath(root, kind);
+  recoverDeadLock(lockPath(root, kind));
+}
 
+/** Caller must validate ownership of the containing state directory. */
+export function recoverDeadLock(path: string): void {
   if (lstatSync(path).isSymbolicLink()) {
     throw new Error("Unsafe lock");
   }

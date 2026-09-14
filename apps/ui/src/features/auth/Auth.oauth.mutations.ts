@@ -5,8 +5,7 @@ import {
 } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api/client";
-
-import { AUTH_QUERY_KEYS } from "./Auth.constants";
+import { SESSION_QUERY_KEYS } from "@/lib/session";
 
 export function useDisconnectOAuth(): UseMutationResult<
   void,
@@ -22,7 +21,7 @@ export function useDisconnectOAuth(): UseMutationResult<
       });
     },
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me });
+      await qc.invalidateQueries({ queryKey: SESSION_QUERY_KEYS.me });
     }
   });
 }

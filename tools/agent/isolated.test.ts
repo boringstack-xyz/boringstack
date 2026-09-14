@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test";
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,6 +17,7 @@ import { runnerArguments } from "../agent-evals/isolated/policy";
 import { withIsolatedRuntime } from "../agent-evals/isolated/runtime";
 import { dockerTestsEnabled, hostEnvironment } from "./environment";
 import { runProcess } from "./process";
+import { isRecord, parseRecord } from "./validation";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -65,7 +73,7 @@ test("candidate completion rejects missing, duplicated and contradictory evidenc
   ).toBe(2);
 });
 
-test("Docker failures expose status without echoing credential arguments or stderr", async () => {
+test("Docker failures expose status and a redacted stderr tail without echoing credential arguments", async () => {
   const directory = mkdtempSync(join(tmpdir(), "bs-docker-error-"));
   const credential = "disposable-test-credential";
 
@@ -76,7 +84,7 @@ test("Docker failures expose status without echoing credential arguments or stde
       executable,
       `#!/bin/sh
 if [ "$1" = "success" ]; then printf ready; exit 0; fi
-printf '%s\\n' '${credential}' >&2
+printf 'no such image for %s\\n' '${credential}' >&2
 exit 7
 `
     );
@@ -101,6 +109,8 @@ exit 7
     expect(result.stdout.trim()).toBe("ready");
     expect(result.stderr).not.toContain(credential);
     expect(result.stderr).toContain("command_completed; exit=7");
+    expect(result.stderr).toContain("docker run");
+    expect(result.stderr).toContain("no such image for [redacted]");
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -199,3 +209,36 @@ if (dockerTestsEnabled()) {
     }
   }, 1_800_000);
 }
+
+test("candidate image copies every patched-dependency file before its frozen installs", () => {
+  const dockerfile = readFileSync(
+    join(ROOT, "tools/agent-evals/isolated/Dockerfile"),
+    "utf8"
+  );
+  const install = dockerfile.indexOf("bun install --frozen-lockfile");
+
+  expect(install).toBeGreaterThan(0);
+
+  for (const app of ["api", "ui"]) {
+    const manifest = parseRecord(
+      readFileSync(join(ROOT, "apps", app, "package.json"), "utf8")
+    );
+    const patched = manifest.patchedDependencies;
+    const patches = isRecord(patched) ? Object.values(patched) : [];
+
+    for (const patch of patches) {
+      expect(typeof patch).toBe("string");
+
+      if (typeof patch !== "string") {
+        continue;
+      }
+
+      const directory = `apps/${app}/${patch.split("/")[0] ?? ""}`;
+      const copy = dockerfile.indexOf(`COPY ${directory} ${directory}`);
+
+      expect(existsSync(join(ROOT, "apps", app, patch))).toBe(true);
+      expect(copy).toBeGreaterThan(0);
+      expect(copy).toBeLessThan(install);
+    }
+  }
+});

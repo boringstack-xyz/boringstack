@@ -8,7 +8,7 @@ import {
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useMe } from "@/features/auth/Auth.queries";
+import { useMe } from "@/lib/session";
 
 import { ACCOUNTS_QUERY_KEYS } from "./Accounts.constants";
 import { useInvitations } from "./Accounts.queries";

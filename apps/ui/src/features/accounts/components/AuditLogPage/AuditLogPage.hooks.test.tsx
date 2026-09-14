@@ -4,12 +4,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type * as session from "@/lib/session";
+
 import { useAuditLogPage } from "./AuditLogPage.hooks";
 
 const useMeMock = vi.hoisted(() => vi.fn());
 const useAuditLogMock = vi.hoisted(() => vi.fn());
 
-vi.mock("@/features/auth/Auth.queries", () => ({
+vi.mock("@/lib/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof session>()),
   useMe: useMeMock
 }));
 

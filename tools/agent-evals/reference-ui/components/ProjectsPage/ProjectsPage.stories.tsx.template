@@ -3,9 +3,9 @@ import { MemoryRouter } from "react-router-dom";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { AppPageHeaderProvider } from "@/components/core/AppPage/AppPageHeaderProvider";
+import { SESSION_QUERY_KEYS } from "@/lib/session";
 
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
+import { AppPageHeaderProvider } from "@/components/core/AppPage/AppPageHeaderProvider";
 
 import { PROJECTS_QUERY_KEYS } from "../../Projects.constants";
 import ProjectsPage from "./ProjectsPage";
@@ -19,7 +19,7 @@ const meta: Meta<typeof ProjectsPage> = {
         defaultOptions: { queries: { staleTime: Infinity, retry: false } }
       });
 
-      client.setQueryData(AUTH_QUERY_KEYS.me, {
+      client.setQueryData(SESSION_QUERY_KEYS.me, {
         account: { id: "demo" },
         role: "viewer"
       });

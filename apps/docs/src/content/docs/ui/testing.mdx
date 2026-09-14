@@ -83,3 +83,32 @@ Usually one of three things:
 - [UI template overview](/ui/overview/); the SPA shell the tests cover end-to-end.
 - [OpenAPI client](/ui/openapi-client/); the typed contract whose drift e2e catches.
 - [Lint as the contract](/architecture/lint-as-contract/); the test-conventions plugin enforcing no-orphan tests.
+
+## Layout observers in component tests
+
+The shared jsdom setup provides a `ResizeObserver` lifecycle stub for Radix
+primitives. It does not calculate sizes or emit resize notifications. Assert
+size-dependent behaviour in Playwright; do not treat a component mounting under
+this stub as layout verification.
+
+## Provider-backed component tests
+
+Use `tests/render-with-providers.tsx` with explicit translation resources. Each
+call creates its own QueryClient and i18next instance plus a MemoryRouter. The
+helper awaits translation initialization and returns the render result, client
+and i18n instance. Its isolation test verifies cached account data and translated
+copy cannot leak between renders. This helper does not simulate backend requests.
+
+## Lazy feature translations
+
+Run `bun run new:feature Posts --i18n-namespace` to generate per-locale `posts.json`
+files, a page using `useNamespace("posts")`, and a separate 10 KB gzip namespace
+budget. Translate the generated English placeholders in each locale before release.
+The namespace name matches the feature directory so ESLint selects the correct
+dictionary. Locale parity and unused-key checks cover all namespace files.
+
+English `common` remains bundled for loading and error messages. Other dictionaries
+load on demand; failed feature loads reach the error boundary if no fallback is
+available. Keep the existing initial-route budget rather than raising it to fit
+translations that belong to a lazy feature. The generator produces starter logic;
+register the route and implement its behavior and tests before shipping.

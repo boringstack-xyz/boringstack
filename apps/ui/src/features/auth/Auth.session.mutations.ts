@@ -7,8 +7,8 @@ import {
 import { ApiError } from "@/lib/api/ApiError";
 import { apiClient } from "@/lib/api/client";
 import { CAPABILITIES_QUERY_KEY } from "@/lib/api/queries/capabilities.constants";
+import { SESSION_QUERY_KEYS } from "@/lib/session";
 
-import { AUTH_QUERY_KEYS } from "./Auth.constants";
 import {
   isLoginUserEnvelope,
   isMfaRequiredEnvelope
@@ -84,7 +84,7 @@ export function useLogout(): UseMutationResult<undefined, unknown, undefined> {
       return undefined;
     },
     onSuccess: () => {
-      qc.setQueryData(AUTH_QUERY_KEYS.me, null);
+      qc.setQueryData(SESSION_QUERY_KEYS.me, null);
       qc.clear();
     }
   });

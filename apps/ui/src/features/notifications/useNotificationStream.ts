@@ -7,9 +7,8 @@ import { toast } from "sonner";
 
 import { performRefresh } from "@/lib/api/openapi";
 import { logger } from "@/lib/logger/logger";
+import { useMe } from "@/lib/session";
 import { sanitizeTargetPath } from "@/lib/web-push/sw-url-sanitize";
-
-import { useMe } from "@/features/auth/Auth.queries";
 
 import { NOTIFICATION_STREAM_MAX_RECONNECTS } from "./Notifications.constants";
 import {

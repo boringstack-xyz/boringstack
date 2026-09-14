@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
-import type { IAppPageHeaderState } from "@/components/core/AppPage";
+import type { IMe } from "@/lib/session";
 
-import type { IMe } from "@/features/auth/Auth.types";
+import type { IAppPageHeaderState } from "@/components/core/AppPage";
 
 export interface IAppShellProps {
   readonly children: ReactNode;

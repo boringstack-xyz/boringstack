@@ -2,6 +2,7 @@
 
 Single repository: `apps/api`, `apps/ui`, `apps/docs`, `infra/compose`, `infra/bootstrap`.
 
+<!-- template-onboarding:start -->
 ## Starting a new project from this template
 
 This repo is a GitHub template, so there is a programmatic path. Do not look for
@@ -21,6 +22,8 @@ cd acme && ./scripts/rename-project.sh acme acme-corp acme.com && ./setup.sh --u
 
 The one-page version for an agent, including the invariants that keep generated
 code passing CI, is served at <https://boringstack.xyz/agents.md>.
+
+<!-- template-onboarding:end -->
 
 ## Maintainer commands (repo root)
 
@@ -65,8 +68,8 @@ config surface: every field with its kind and per-`STACK` defaults, the services
 each toggle spawns, the secrets each one requires, and the cross-rules between
 them.
 
-It is the public agent contract. `apps/docs` publishes it verbatim at
-<https://boringstack.xyz/scaffold-manifest.json> (via
+It is the public agent contract. When present, `apps/docs` publishes it verbatim
+as `/scaffold-manifest.json` (via
 `bun run generate:scaffold-manifest`, drift-checked in `build:ci`) so any agent
 asked to set this stack up can read the real options instead of guessing at env
 vars. The tsforge setup wizard is one consumer: it clones BoringStack and reads

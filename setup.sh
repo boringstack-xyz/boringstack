@@ -15,6 +15,10 @@ if [[ ! -d "$INFRA" ]]; then
   exit 1
 fi
 
+# Docker must not create root-owned mount-point stubs inside the source tree.
+mkdir -p "$ROOT/apps/api/node_modules" "$ROOT/apps/ui/node_modules" \
+  "$ROOT/apps/api/src/templates/email/dist"
+
 echo "[setup] Making shell scripts executable…"
 chmod +x "$INFRA/compose/dev.sh" "$INFRA"/scripts/*.sh "$ROOT"/scripts/stack-*.sh 2>/dev/null || true
 
@@ -36,14 +40,20 @@ fi
 # http:// strings, so the link is still reachable).
 osc8() {
   local url="$1" text="$2"
-  printf '\033]8;;%s\033\\%s\033]8;;\033\\' "$url" "$text"
+  if [[ -t 1 ]]; then
+    printf '\033]8;;%s\033\\%s\033]8;;\033\\' "$url" "$text"
+  else
+    printf '%s' "$url"
+  fi
 }
 
 # Pretty-print "Name  http://...". 18-char left column accommodates the
 # longest service name without wrapping.
 row() {
   local name="$1" url="$2"
-  printf '  %-18s%s\n' "$name" "$(osc8 "$url" "$url")"
+  printf '  %-18s' "$name"
+  osc8 "$url" "$url"
+  printf '\n'
 }
 
 # Read a `KEY=value` line out of an env file; empty string if absent.

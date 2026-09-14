@@ -7,9 +7,7 @@ import { I18nextProvider } from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
 
 import { i18n } from "@/lib/i18n/config";
-
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
-import type { IMe } from "@/features/auth/Auth.types";
+import { type IMe, SESSION_QUERY_KEYS } from "@/lib/session";
 
 import { AccountSwitcher } from "./AccountSwitcher";
 
@@ -40,7 +38,7 @@ function renderWithMe(me: IMe | null): void {
     defaultOptions: { queries: { retry: false } }
   });
 
-  client.setQueryData(AUTH_QUERY_KEYS.me, me);
+  client.setQueryData(SESSION_QUERY_KEYS.me, me);
 
   render(
     <QueryClientProvider client={client}>

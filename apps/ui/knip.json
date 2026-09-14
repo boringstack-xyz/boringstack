@@ -13,12 +13,12 @@
   ],
   "project": [
     "src/**/*.{ts,tsx}!",
+    "src/**/*.css",
     "scripts/**/*.ts",
     "e2e/**/*.ts",
     "tests/**/*.ts",
     "!tests/lint-meta/fixtures/**"
   ],
-  "ignoreDependencies": ["tailwindcss"],
   "ignoreExportsUsedInFile": true,
   "include": ["files", "dependencies", "unlisted", "exports", "types"]
 }

@@ -6,8 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "@/lib/api/ApiError";
 import { apiClient } from "@/lib/api/client";
 import { logger } from "@/lib/logger/logger";
-
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
+import { SESSION_QUERY_KEYS } from "@/lib/session";
 
 import {
   FAILURE_REDIRECT_PATH,
@@ -56,7 +55,7 @@ export function useInvitationAcceptPage(): IInvitationAcceptPageView {
         await apiClient.POST("/api/v1/invitations/accept", {
           body: { token }
         });
-        await qc.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me });
+        await qc.invalidateQueries({ queryKey: SESSION_QUERY_KEYS.me });
         setStatus("success");
         logger.info({ event: "accounts.invitation_accepted" });
         await navigate(POST_ACCEPT_PATH, { replace: true });

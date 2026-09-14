@@ -1,10 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import { apiClient } from "@/lib/api/client";
-
-import { AUTH_QUERY_KEYS } from "./Auth.constants";
-import { isAuthenticatedMe } from "./Auth.queries.utils";
-import type { IMe } from "./Auth.types";
+import { type IMe, SESSION_QUERY_KEYS, isAuthenticatedMe } from "@/lib/session";
 
 /**
  * After any flow that establishes a fresh session (login, MFA verify,
@@ -44,7 +41,7 @@ export async function syncMeAfterSessionEstablished(
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const me = await qc.query<IMe | null>({
-      queryKey: AUTH_QUERY_KEYS.me,
+      queryKey: SESSION_QUERY_KEYS.me,
       queryFn: async (): Promise<IMe | null> => {
         const { data } = await apiClient.GET("/api/v1/users/me");
 

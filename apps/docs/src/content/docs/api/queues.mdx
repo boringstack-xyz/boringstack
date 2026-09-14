@@ -62,8 +62,10 @@ Using BullMQ's `jobId` for deduplication only protects against simultaneous dupl
 ## Adding a queue
 
 1. Create `src/queues/<name>/` following the per-queue directory pattern (constants, types, queue, worker, setup).
-2. Add it to `QueueManager`'s constructor, an `enqueue<Name>()` method, `getStats()`, and `close()`.
-3. Call `manager.enqueue<Name>(...)` from the producer.
+2. Export setup and types through `src/queues/index.ts`. Construct the pair in `src/config/setup/setup-queues.ts` and pass it to the manager.
+3. Extend `src/queues/queue-manager.ts`: constructor input, `enqueue<Name>()`, `getStats()` and `close()`.
+4. Call `manager.enqueue<Name>(...)` from the producer. Define durable retry idempotency; a stable job name is not a deduplication key.
+5. Test enqueue options, repeated delivery, failure and shutdown. Any new configuration must be represented in env validation, `.env.example`, Compose and the scaffold manifest.
 
 ## Dashboard and monitoring
 

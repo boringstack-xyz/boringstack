@@ -20,6 +20,8 @@ import pluginReactHooks from "eslint-plugin-react-hooks";
 import pluginReactRefresh from "eslint-plugin-react-refresh";
 import pluginSonarjs from "eslint-plugin-sonarjs";
 import pluginUnicorn from "eslint-plugin-unicorn";
+import { createHash } from "node:crypto";
+import { readFileSync, readdirSync } from "node:fs";
 import tseslint from "typescript-eslint";
 
 // AI-first linting (mirror of the API app's philosophy): every rule that
@@ -35,6 +37,26 @@ import tseslint from "typescript-eslint";
 //   - hardcoded user-facing strings in JSX (handled by react-component-architecture)
 //   - className= ternaries / template literals (handled by react-component-architecture)
 //   - useState/useEffect inside *.tsx (must live in *.hooks.ts)
+
+const localeRoot = new URL("./src/lib/i18n/locales/en/", import.meta.url);
+const dictionaries = readdirSync(localeRoot)
+  .filter((file) => /^[a-z][a-z0-9]*\.json$/u.test(file))
+  .sort();
+const featureNamespaces = dictionaries
+  .filter((file) => file !== "common.json")
+  .map((file) => file.slice(0, -5));
+
+// ESLint's result cache keys each file on its content plus a hash of its
+// resolved config. The translation dictionaries that `i18n-keys` reads are
+// invisible to that hash, so a key deleted from common.json would leave a
+// cached "clean" result behind. Carrying a digest of every dictionary in
+// `settings` makes the config hash, and therefore the cache, follow them.
+const dictionaryDigest = dictionaries
+  .reduce(
+    (hash, file) => hash.update(readFileSync(new URL(file, localeRoot))),
+    createHash("sha256")
+  )
+  .digest("hex");
 
 export default tseslint.config(
   {
@@ -156,6 +178,7 @@ export default tseslint.config(
       }
     },
     settings: {
+      "i18n-keys/dictionaryDigest": dictionaryDigest,
       react: { version: "19.2" },
       "import/resolver": {
         typescript: { project: "./tsconfig.json" }
@@ -451,7 +474,14 @@ export default tseslint.config(
       "module-boundaries/single-semantic-module": [
         "error",
         {
-          allow: []
+          allow: [],
+          /*
+           * Only the exported surface gives a module its meaning. A
+           * non-exported config object, render helper or private class
+           * next to the hook or component that uses it stays where it is
+           * read instead of being scattered into .constants / .utils.
+           */
+          ignorePrivateDeclarations: true
         }
       ],
       "test-conventions/no-focused-tests": "error",
@@ -513,23 +543,13 @@ export default tseslint.config(
            * Other auth↔feature crossings should still fail.
            */
           allowList: [
-            ["dashboard", "auth"],
             /*
-             * `notifications` gates SSE on the authenticated user;
-             * `useMe` is the canonical auth handle.
+             * `accounts` owns the MFA settings section, which drives the
+             * auth feature's MFA queries and mutations directly. The
+             * current user itself comes from `@/lib/session` and needs
+             * no exception anywhere.
              */
-            ["notifications", "auth"],
-            /*
-             * `accounts` reads memberships + active account id from the
-             * `/me` response and invalidates its cache after a switch.
-             * The `useMe` query is the canonical auth handle.
-             */
-            ["accounts", "auth"],
-            /*
-             * `billing` gates checkout/portal on owner role and subscription
-             * state from the canonical `/me` response.
-             */
-            ["billing", "auth"]
+            ["accounts", "auth"]
           ]
         }
       ]
@@ -930,5 +950,14 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": "off"
     }
-  }
+  },
+  ...featureNamespaces.map((namespace) => ({
+    files: [`src/features/${namespace}/**/*.{ts,tsx}`],
+    rules: {
+      "i18n-keys/static-translation-key-exists": [
+        "error",
+        { dictionary: `src/lib/i18n/locales/en/${namespace}.json` }
+      ]
+    }
+  }))
 );

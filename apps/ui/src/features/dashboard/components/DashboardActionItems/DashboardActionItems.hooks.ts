@@ -3,8 +3,8 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useCapabilities } from "@/lib/api/queries/useCapabilities";
+import { useMe } from "@/lib/session";
 
-import { useMe } from "@/features/auth/Auth.queries";
 import {
   useDashboardPendingInvitations,
   useDashboardUnreadCount

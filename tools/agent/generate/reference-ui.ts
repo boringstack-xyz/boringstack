@@ -21,15 +21,6 @@ export function planReferenceUi(root: string): IEdit[] {
   );
 
   edits.push(
-    edit(root, "apps/ui/eslint.config.mjs", (source) =>
-      replaceOnce(
-        source,
-        '["dashboard", "auth"],',
-        '["dashboard", "auth"],\n            ["projects", "auth"],'
-      )
-    )
-  );
-  edits.push(
     edit(root, "apps/ui/src/app/router/routes.tsx", (source) =>
       replaceOnce(
         source,

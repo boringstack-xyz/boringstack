@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
+import { SESSION_QUERY_KEYS } from "@/lib/session";
 
 import { ACCOUNTS_QUERY_KEYS } from "../../Accounts.constants";
 import JoinRequestsPage from "./JoinRequestsPage";
@@ -20,7 +20,7 @@ export default meta;
 type IStory = StoryObj<typeof JoinRequestsPage>;
 
 const seedMe = (client: QueryClient): void => {
-  client.setQueryData(AUTH_QUERY_KEYS.me, {
+  client.setQueryData(SESSION_QUERY_KEYS.me, {
     status: "authed",
     user: {
       id: "u1",

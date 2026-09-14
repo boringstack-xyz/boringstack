@@ -2,8 +2,8 @@ import { withThemeByDataAttribute } from "@storybook/addon-themes";
 import type { Preview, ReactRenderer } from "@storybook/react-vite";
 import { HelmetProvider } from "react-helmet-async";
 
+import { I18nProvider } from "../src/app/providers/I18nProvider";
 import "../src/assets/css/tailwind.css";
-import "../src/lib/i18n/config";
 
 const preview: Preview = {
   parameters: {
@@ -30,9 +30,11 @@ const preview: Preview = {
     }),
     (Story) => (
       <HelmetProvider>
-        <div className='bg-background text-foreground min-h-screen p-6'>
-          <Story />
-        </div>
+        <I18nProvider>
+          <div className='bg-background text-foreground min-h-screen p-6'>
+            <Story />
+          </div>
+        </I18nProvider>
       </HelmetProvider>
     )
   ]

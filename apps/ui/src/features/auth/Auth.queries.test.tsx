@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/api/ApiError";
 
 import { makeUser } from "../../../tests/factories";
-import { useMe, useMfaStatus } from "./Auth.queries";
+import { useMfaStatus } from "./Auth.queries";
 import { useLogin, useLogout } from "./Auth.session.mutations";
 import type { ILoginInput } from "./Auth.types";
 
@@ -57,77 +57,6 @@ const VALID_LOGIN: ILoginInput = {
 beforeEach(() => {
   apiMock.GET.mockReset();
   apiMock.POST.mockReset();
-});
-
-describe("useMe", () => {
-  it("propagates 401 as an ApiError (consumer distinguishes auth failure from anonymous)", async () => {
-    apiMock.GET.mockRejectedValueOnce(
-      new ApiError(401, { message: "Unauthorized" })
-    );
-    const { result } = renderHook(() => useMe(), { wrapper: wrapper() });
-
-    await waitFor(() => {
-      expect(result.current.isError).toBe(true);
-    });
-    expect(result.current.error).toBeInstanceOf(ApiError);
-    expect((result.current.error as ApiError).isUnauthorized).toBe(true);
-  });
-
-  it("returns the full session payload when the API responds 200 with the authenticated shape", async () => {
-    apiMock.GET.mockResolvedValueOnce({ data: ME_PAYLOAD, response: {} });
-    const { result } = renderHook(() => useMe(), { wrapper: wrapper() });
-
-    await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
-    });
-    expect(result.current.data).toEqual(ME_PAYLOAD);
-  });
-
-  it("returns null when the API responds 200 `{ user: null }` (anonymous probe)", async () => {
-    apiMock.GET.mockResolvedValueOnce({
-      data: { user: null },
-      response: {}
-    });
-    const { result } = renderHook(() => useMe(), { wrapper: wrapper() });
-
-    await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
-    });
-    expect(result.current.data).toBeNull();
-  });
-
-  it("returns null when the response data is absent", async () => {
-    apiMock.GET.mockResolvedValueOnce({ data: undefined, response: {} });
-    const { result } = renderHook(() => useMe(), { wrapper: wrapper() });
-
-    await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
-    });
-    expect(result.current.data).toBeNull();
-  });
-
-  it("propagates 5xx server errors instead of silently logging the user out", async () => {
-    apiMock.GET.mockRejectedValueOnce(
-      new ApiError(500, { message: "Server error" })
-    );
-    const { result } = renderHook(() => useMe(), { wrapper: wrapper() });
-
-    await waitFor(() => {
-      expect(result.current.isError).toBe(true);
-    });
-    expect(result.current.error).toBeInstanceOf(ApiError);
-  });
-
-  it("propagates network errors so the offline fallback can render", async () => {
-    apiMock.GET.mockRejectedValueOnce(new Error("network is down"));
-    const { result } = renderHook(() => useMe(), { wrapper: wrapper() });
-
-    await waitFor(() => {
-      expect(result.current.isError).toBe(true);
-    });
-    expect(result.current.error).toBeInstanceOf(Error);
-    expect(result.current.error).not.toBeInstanceOf(ApiError);
-  });
 });
 
 describe("useLogin", () => {

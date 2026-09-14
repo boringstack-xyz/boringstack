@@ -1,6 +1,6 @@
 import { requireAuth } from "../auth/auth.plugin";
 import { errorHandler } from "../../middleware/error-handler";
-import { resourcePluralService } from "./resourcePlural.service";
+import { resourcePluralService } from "./index";
 import {
   NameBody,
   IdParams,

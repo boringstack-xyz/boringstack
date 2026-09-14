@@ -48,6 +48,8 @@ project=""
 ghcr_owner=""
 domain=""
 target_dir=""
+env_file=""
+config_tmp=""
 ref="$DEFAULT_REF"
 do_boot=1
 do_rename=1
@@ -109,6 +111,7 @@ Options:
   --domain <domain>       Product domain, used for seeded mailboxes.
                           Default: <project>.com
   --dir <path>            Where to create the project. Default: ./<project>
+  --env-file <path>      Overlay local dotenv values before first boot (never printed).
   --ref <git-ref>         Template ref to start from. Default: main
   --no-rename             Keep the upstream BoringStack identifiers.
   --no-boot               Scaffold and rename only; do not start Docker.
@@ -146,6 +149,8 @@ while [ $# -gt 0 ]; do
     --domain=*) domain="${1#*=}"; shift ;;
     --dir) [ $# -ge 2 ] || die 2 "--dir needs a value"; target_dir="$2"; shift 2 ;;
     --dir=*) target_dir="${1#*=}"; shift ;;
+    --env-file) [ $# -ge 2 ] || die 2 "--env-file needs a value"; env_file="$2"; shift 2 ;;
+    --env-file=*) env_file="${1#*=}"; shift ;;
     --ref) [ $# -ge 2 ] || die 2 "--ref needs a value"; ref="$2"; shift 2 ;;
     --ref=*) ref="${1#*=}"; shift ;;
     --no-boot) do_boot=0; shift ;;
@@ -161,6 +166,25 @@ while [ $# -gt 0 ]; do
     *) usage; die 2 "unknown argument: $1" ;;
   esac
 done
+
+if [ -n "$env_file" ]; then
+  [ -f "$env_file" ] && [ -r "$env_file" ] || die 2 "--env-file must name a readable file"
+  env_file="$(cd "$(dirname "$env_file")" && pwd)/$(basename "$env_file")"
+  # dev.sh sources its configuration: accept literal assignments only,
+  # never command substitution or shell statements from an imported file.
+  awk '
+    /^[[:space:]]*($|#)/ { next }
+    /^[A-Za-z_][A-Za-z0-9_]*=/ {
+      value = $0; sub(/^[^=]*=/, "", value)
+      if (value ~ /^[A-Za-z0-9_.\/:@%+,=!?#-]*$/) next
+      if (value ~ /^"[^"$`\\]*"$/) next
+      quote = sprintf("%c", 39)
+      if (length(value) >= 2 && substr(value, 1, 1) == quote && substr(value, length(value), 1) == quote && index(substr(value, 2, length(value)-2), quote) == 0) next
+    }
+    { invalid = 1; print "Invalid dotenv assignment at line " NR > "/dev/stderr" }
+    END { exit invalid }
+  ' "$env_file" || die 2 "--env-file accepts literal KEY=value assignments only; quote spaces and avoid shell expansion"
+fi
 
 if [ -z "$project" ]; then
   usage
@@ -399,6 +423,11 @@ if [ "$do_boot" -eq 1 ]; then
   [ -n "$mem_note" ] && say "  memory      $mem_note"
 else
   say "  docker      skipped (--no-boot)"
+  for port in $CORE_PORTS; do
+    if have lsof && lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+      warn "port $port is occupied; before boot, inspect its owner with: lsof -nP -iTCP:$port -sTCP:LISTEN"
+    fi
+  done
 fi
 
 # Bun is not needed to boot, Compose runs every runtime, but it is needed
@@ -409,7 +438,7 @@ else
   warn "bun is not installed"
   warn "  not needed to boot: Compose runs every runtime"
   warn "  needed to develop: 'bun run check', 'bun run regen', 'bun run rename:project'"
-  warn "  install: curl -fsSL https://bun.sh/install | bash"
+  warn '  install: curl -fsSL https://bun.sh/install | bash -s "bun-v1.4.2"'
 fi
 
 if [ -e "$target_dir" ]; then
@@ -452,6 +481,7 @@ rm -rf "$staging" "$conflicts" "$git_backup"
 # if the destination's repository was moved aside and the install did not
 # finish, put it back rather than leaving the caller without their history.
 cleanup() {
+  [ -z "$config_tmp" ] || rm -f "$config_tmp"
   rm -rf "$staging" "$conflicts" 2>/dev/null || true
   if [ -d "$git_backup" ]; then
     if [ "$install_ok" = "1" ]; then
@@ -626,6 +656,39 @@ phase_ok
 # ------------------------------------------------------ phase 4: boot
 
 phase 4 boot
+
+if [ -n "$env_file" ]; then
+  config_dir="$project_dir/infra/compose/compose"
+  [ -d "$config_dir" ] && [ ! -L "$config_dir" ] || die 6 "Compose directory is missing or a symlink"
+  [ ! -e "$config_dir/.env" ] && [ ! -L "$config_dir/.env" ] \
+    || die 6 "Refusing to replace an existing compose/.env" "merge your dotenv values manually, then rerun without --env-file"
+  # Only template-declared settings may enter a sourced configuration.
+  # Process hooks such as BASH_ENV and PATH are not application settings.
+  awk '
+    FILENAME == ARGV[1] {
+      line = $0; sub(/^[[:space:]]*#[[:space:]]*/, "", line)
+      if (line ~ /^[A-Za-z_][A-Za-z0-9_]*=/) {
+        sub(/=.*/, "", line); allowed[line] = 1
+      }
+      next
+    }
+    /^[[:space:]]*($|#)/ { next }
+    { key = $0; sub(/=.*/, "", key)
+      if (!(key in allowed)) { invalid = 1; print "Undeclared configuration key at line " FNR > "/dev/stderr" }
+    }
+    END { exit invalid }
+  ' "$config_dir/.env.example" "$env_file" || die 6 "--env-file keys must be declared in compose/.env.example"
+  config_tmp="$(mktemp "$config_dir/.env.install.XXXXXX")"
+  if ! { cat "$config_dir/.env.example"; printf '\n'; cat "$env_file"; } > "$config_tmp"; then
+    rm -f "$config_tmp"
+    die 6 "Could not prepare dotenv configuration"
+  fi
+  chmod 600 "$config_tmp"
+  ln "$config_tmp" "$config_dir/.env" || die 6 "Compose .env appeared during installation; refusing to overwrite it"
+  rm -f "$config_tmp"
+  config_tmp=""
+  say "  local dotenv overrides installed (values withheld)"
+fi
 
 if [ "$do_boot" -eq 0 ]; then
   say "  skipped (--no-boot)"
