@@ -35,4 +35,7 @@ ComponentName/
 
 Lint enforces the required siblings (`component-folder-structure` +
 `index-must-reexport-default`). shadcn primitives in
-`src/components/ui/` are exempt.
+`src/components/ui/` are exempt, and so is a `.tsx` file in the folder
+that exports nothing: an illustration or private sub-component split out
+for length belongs to the component beside it and needs no anatomy of its
+own until it gains an `export`.

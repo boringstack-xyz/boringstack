@@ -36,7 +36,7 @@
         "@boring-stack-pkg/eslint-plugin-env-access": "0.1.3",
         "@boring-stack-pkg/eslint-plugin-i18n-keys": "0.1.3",
         "@boring-stack-pkg/eslint-plugin-module-boundaries": "0.1.2",
-        "@boring-stack-pkg/eslint-plugin-react-component-architecture": "0.3.0",
+        "@boring-stack-pkg/eslint-plugin-react-component-architecture": "0.3.1",
         "@boring-stack-pkg/eslint-plugin-structured-logging": "0.1.2",
         "@boring-stack-pkg/eslint-plugin-tanstack-query-cache": "0.2.0",
         "@boring-stack-pkg/eslint-plugin-test-conventions": "0.1.2",
@@ -186,7 +186,7 @@
 
     "@boring-stack-pkg/eslint-plugin-module-boundaries": ["@boring-stack-pkg/eslint-plugin-module-boundaries@0.1.2", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": "8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-ReaOUjLiZ6lKFP9sLJVJ/lRsi/8hznT6k6VXSCuGPreJNeZhMaoJvMNmhuYItqIIPrYA5NvKiC8te58jjGc3gg=="],
 
-    "@boring-stack-pkg/eslint-plugin-react-component-architecture": ["@boring-stack-pkg/eslint-plugin-react-component-architecture@0.3.0", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0", "yaml": "2.4.1" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0", "typescript": ">=5.0.0" } }, "sha512-DZJnqa97Fyzge7uhMDwpXaz8YWvzobhcR8d3VcaU4VBcUaprJBlW3TkSDP5gWhfVdPrrLTpOzdkdTYaz8Ks/Yw=="],
+    "@boring-stack-pkg/eslint-plugin-react-component-architecture": ["@boring-stack-pkg/eslint-plugin-react-component-architecture@0.3.1", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0", "yaml": "2.4.1" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0", "typescript": ">=5.0.0" } }, "sha512-DJKVeKE919DKvMN/N6POE9/I0Lw29SD9j9DW88KXKWlI8cAOA95EHg/W7St+nOqZJGYd8uxJVBfzuEGdHnbgPg=="],
 
     "@boring-stack-pkg/eslint-plugin-structured-logging": ["@boring-stack-pkg/eslint-plugin-structured-logging@0.1.2", "", { "dependencies": { "@typescript-eslint/utils": "8.0.0" }, "peerDependencies": { "@typescript-eslint/parser": ">=8.0.0", "eslint": "8.57.0 || ^9.0.0", "typescript": ">=5.0.0" } }, "sha512-P9MuL88AUsHzqLWJ1bmiyJojv8kejXn8GlkDE79cwY8nN/fODU6/ZwrIWsH4kRw2LH2E+4p1NBhat/OJO8mkzw=="],
 

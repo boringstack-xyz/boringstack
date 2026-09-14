@@ -35,7 +35,7 @@ agent-built product. Existing security and coverage gates remain enforced.
 | 37 | TypeBox literal unions from `.map()` silently become `undefined`. | Needs original TypeBox union and OpenAPI output fixture. |
 | 38 | `smallint`/`integer` columns arrive in the OpenAPI client as `string / number`. | Needs original nested integer schema and generated-client consumer. |
 | 39 | `account-scoped-tables-require-where` has no story for public-by-token lookups. | Security design required: public token resolution must establish account scope at a reviewed boundary; no tenant-query exemption added. |
-| 40 | `no-raw-sql-outside-allowlist` blocks the standard Drizzle increment. | Needs concrete atomic-update call; no raw-SQL allowlist expansion without a scoped typed helper and DB regression. |
+| 40 | `no-raw-sql-outside-allowlist` blocks the standard Drizzle increment. | Implemented upstream: `eslint-plugin-drizzle-conventions` 0.2.0 accepts templates whose text is only arithmetic around column references (`sql\`${col} + 1\``); anything else stays reported (boringstack-xyz/eslint-plugins#15). Drizzle guide names the accepted shape. |
 | 41 | `resource-architecture/no-cross-resource-internal-imports` needs a "public surface" convention that the generator scaffolds. | Implemented: account-resource generator emits a public index.ts for service and types; generated routes consume it and generator validation checks it. |
 | 42 | New queue = five touch points the docs don't list. | Addressed: queue guides enumerate exports, setup, manager, producer, tests and configuration registrations with actual paths. |
 | 12 | Rebranding the theme trips the 12 KB CSS budget. | Policy retained: measure the stylesheet and review an intentional budget change; do not raise every product budget from one report. |
@@ -75,7 +75,7 @@ agent-built product. Existing security and coverage gates remain enforced.
 | 62 | The dev stack applies schema with `db:push --force`, so a freshly generated migration changes nothing until you know that. | Documented: migration-history verification differs from schema push (17). |
 | 63 | `i18n-locale-keys-used` cannot see keys built from a variable prefix. | Needs product dynamic-key expression; arbitrary variable prefixes cannot be proven statically without a declared key set. |
 | 64 | `no-cross-resource-internal-imports` fires with no hint that an `index.ts` public surface is the fix. | Addressed in generated public barrel and validation guide; existing rule enforces importing that surface. |
-| 65 | `mutating-service-must-audit` matches private helpers by prefix. | Needs private helper example and enclosing audit path; retain audit enforcement until tested. |
+| 65 | `mutating-service-must-audit` matches private helpers by prefix. | Implemented upstream: `eslint-plugin-audit-log` 0.2.0 checks the public surface only; module-private functions and private/protected methods are body of the audited method, `includePrivate` restores the old scan (boringstack-xyz/eslint-plugins#15). Audit guide updated. |
 | 66 | `switch-exhaustiveness-check` on a nullable union forces an if-chain. | Policy retained: do not weaken exhaustive handling based on one nullable switch; need the expression to assess. |
 | 67 | Wins. | Preserve: reported win; no corrective change requested. |
 | 68 | Importing the i18n config into a test fixture flips every test in the folder to real copy. | Documented: avoid application singleton i18n in cross-test fixtures (14). |
@@ -92,5 +92,5 @@ agent-built product. Existing security and coverage gates remain enforced.
 | 79 | Wins. | Preserve: reported win; no corrective change requested. |
 | 80 | `react-hooks/exhaustive-deps` and a single-store selector style fight each other on big view hooks. | Needs hook/store selector code and stale-state reproduction; no exhaustive-deps exemption. |
 | 81 | Wins. | Preserve: reported win; no corrective change requested. |
-| 82 | `component-folder-structure` treats every `const X: FC` in a folder as a component needing its own siblings. | Needs shared-rule fixture for typed helper components; no blanket component anatomy exemption. |
+| 82 | `component-folder-structure` treats every `const X: FC` in a folder as a component needing its own siblings. | Implemented upstream: `eslint-plugin-react-component-architecture` 0.3.1 exempts `.tsx` files that export nothing; the anatomy applies once a file gains an export (boringstack-xyz/eslint-plugins#15). Component anatomy guide updated. |
 | 83 | Wins. | Preserve: reported win; no corrective change requested. |

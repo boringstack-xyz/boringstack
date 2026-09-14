@@ -20,6 +20,13 @@ void auditLogService.record({
 Always `void`-prefixed. Awaiting an audit write means a flaky audit
 table can break a real request.
 
+The rule checks the service's public surface: exported functions, public
+methods and properties of exported service objects whose names start with
+a mutating verb. A module-private helper or a `private` method called from
+inside an audited method (an `insertDetail` step of an audited
+`createComponent` transaction) is part of that method's body and records
+nothing of its own.
+
 ## Skill
 
 `/add-audit-event` walks the narrow workflow: pick an action name,
