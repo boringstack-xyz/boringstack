@@ -10,7 +10,7 @@
 #
 # Checks: healthchecks | digest-pins | credential-fallbacks | valkey-auth
 #         | rooted-caps | no-new-privileges | resource-reservations
-#         | prod-image-tags | all (default)
+#         | prod-image-tags | optional-tracing | all (default)
 #
 # Requires: docker (compose config rendering), python3.
 
@@ -310,7 +310,45 @@ EOF
   ok "resource-reservations"
 }
 
+check_optional_tracing() {
+  python3 - <<'EOF'
+import json
+import os
+import subprocess
+
+environment = os.environ.copy()
+environment["GRAFANA_ADMIN_PASSWORD"] = "guardrail-render-placeholder"
+for key in ("API_DEV_OTEL_EXPORTER_OTLP_ENDPOINT", "OTEL_EXPORTER_OTLP_ENDPOINT"):
+    environment.pop(key, None)
+
+def render(overlay, overrides):
+    command = ["docker", "compose", "--env-file", "/dev/null", "-f", "docker-compose.yml"]
+    if overlay:
+        command += ["-f", "docker-compose.observability.yml", "--profile", "observability"]
+    command += ["--profile", "dev", "--profile", "prod", "config", "--format", "json"]
+    result = subprocess.run(command, env={**environment, **overrides}, check=True,
+                            capture_output=True, text=True)
+    return json.loads(result.stdout)["services"]
+
+for overlay in (False, True):
+    for endpoint in (None, "", "https://collector.example.invalid"):
+        overrides = {} if endpoint is None else {
+            "API_DEV_OTEL_EXPORTER_OTLP_ENDPOINT": endpoint,
+            "OTEL_EXPORTER_OTLP_ENDPOINT": endpoint,
+        }
+        services = render(overlay, overrides)
+        expected = endpoint if endpoint is not None else ("http://tempo:4318" if overlay else "")
+        for name in ("api", "api-dev"):
+            actual = services[name]["environment"]["OTEL_EXPORTER_OTLP_ENDPOINT"]
+            if actual != expected:
+                raise SystemExit(f"{name}: overlay={overlay}, expected {expected!r}, got {actual!r}")
+print("optional tracing: disabled, local, external and explicit-empty configurations pass")
+EOF
+  ok "optional-tracing"
+}
+
 case "$CHECK" in
+  optional-tracing)     check_optional_tracing ;;
   healthchecks)         check_healthchecks ;;
   digest-pins)          check_digest_pins ;;
   credential-fallbacks) check_credential_fallbacks ;;
@@ -320,6 +358,7 @@ case "$CHECK" in
   resource-reservations) check_resource_reservations ;;
   prod-image-tags)      check_prod_image_tags ;;
   all)
+    check_optional_tracing
     check_digest_pins
     check_credential_fallbacks
     check_valkey_auth
@@ -331,6 +370,6 @@ case "$CHECK" in
     c_green "✓ all compose guardrails passed"
     ;;
   *)
-    fail "unknown check: $CHECK (healthchecks|digest-pins|credential-fallbacks|valkey-auth|rooted-caps|no-new-privileges|resource-reservations|prod-image-tags|all)"
+    fail "unknown check: $CHECK (healthchecks|digest-pins|credential-fallbacks|valkey-auth|rooted-caps|no-new-privileges|resource-reservations|prod-image-tags|optional-tracing|all)"
     ;;
 esac

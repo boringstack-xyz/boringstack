@@ -2,14 +2,20 @@
 /**
  * Scaffold a new feature folder.
  *
- *   bun run new:feature Posts
+ *   bun run new:feature Posts [--i18n-namespace]
  *
  * Creates src/features/posts/ with all dot-suffix files filled in
  * (constants, schemas, types, queries, store, utils) and a starter
  * components/<Feature>Page/ component.
  */
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync
+} from "node:fs";
+import { join, relative, resolve, sep } from "node:path";
 
 const SRC = resolve(process.cwd(), "src", "features");
 
@@ -21,11 +27,18 @@ function bail(message: string): never {
 const arg = process.argv[2];
 
 if (typeof arg !== "string" || arg.length === 0) {
-  bail("Usage: bun run new:feature <Name>");
+  bail("Usage: bun run new:feature <Name> [--i18n-namespace]");
 }
 
 if (!/^[A-Z][A-Za-z0-9]+$/.test(arg)) {
   bail(`Feature name must be PascalCase (got '${arg}')`);
+}
+
+const options = process.argv.slice(3);
+const namespaceEnabled = options.includes("--i18n-namespace");
+
+if (options.some((option) => option !== "--i18n-namespace")) {
+  bail("Unknown option. Supported: --i18n-namespace");
 }
 
 const Name = arg;
@@ -36,16 +49,128 @@ if (existsSync(featureDir)) {
   bail(`Feature already exists: ${featureDir}`);
 }
 
+const localesDir = resolve(process.cwd(), "src/lib/i18n/locales");
+const namespacePaths = namespaceEnabled
+  ? readdirSync(localesDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => join(localesDir, entry.name, `${lower}.json`))
+  : [];
+
+if (namespacePaths.some((path) => existsSync(path))) {
+  bail(`Locale namespace already exists: ${lower}`);
+}
+
+const budgetPath = resolve(process.cwd(), ".size-limit.json");
+const budgets: unknown = namespaceEnabled
+  ? JSON.parse(readFileSync(budgetPath, "utf8"))
+  : [];
+
+if (!Array.isArray(budgets)) {
+  bail("Expected .size-limit.json to contain an array");
+}
+
 mkdirSync(featureDir, { recursive: true });
 
 const dotFiles: Record<string, string> = {
-  [`${Name}.constants.ts`]: `export const ${Name.toUpperCase()}_QUERY_KEYS = {\n  list: ["${lower}", "list"] as const\n};\n`,
-  [`${Name}.schemas.ts`]: `import { z } from "zod";\n\nexport const ${lower}ItemSchema = z.object({\n  id: z.uuid(),\n  createdAt: z.string()\n});\n`,
-  [`${Name}.types.ts`]: `import type { z } from "zod";\nimport type { ${lower}ItemSchema } from "./${Name}.schemas";\n\nexport type I${Name}Item = z.infer<typeof ${lower}ItemSchema>;\n`,
-  [`${Name}.utils.ts`]: `import type { I${Name}Item } from "./${Name}.types";\n\nexport function sort${Name}ByCreated(items: readonly I${Name}Item[]): I${Name}Item[] {\n  return [...items].sort((a, b) => a.createdAt.localeCompare(b.createdAt));\n}\n`,
-  [`${Name}.queries.ts`]: `import { useQuery, type UseQueryResult } from "@tanstack/react-query";\nimport { ${Name.toUpperCase()}_QUERY_KEYS } from "./${Name}.constants";\nimport type { I${Name}Item } from "./${Name}.types";\n\n/**\n * Replace the queryFn stub with a typed call. Errors THROW via the client\n * middleware — do NOT check \`response.error\` (dead \`no-unnecessary-condition\`).\n * Read \`data\`:\n *\n *   import { apiClient } from "@/lib/api/client";\n *   queryFn: async (): Promise<I${Name}Item[]> => {\n *     const { data } = await apiClient.GET("/api/${lower}");\n *     return data ?? [];\n *   }\n *\n * Run \`bun run generate:api\` after the endpoint is added to the OpenAPI spec.\n */\nexport function use${Name}(): UseQueryResult<I${Name}Item[]> {\n  return useQuery({\n    queryKey: ${Name.toUpperCase()}_QUERY_KEYS.list,\n    queryFn: async (): Promise<I${Name}Item[]> => Promise.resolve([])\n  });\n}\n`,
-  [`${Name}.mutations.ts`]: `import {\n  useMutation,\n  useQueryClient,\n  type UseMutationResult\n} from "@tanstack/react-query";\nimport { ${Name.toUpperCase()}_QUERY_KEYS } from "./${Name}.constants";\nimport type { I${Name}Item } from "./${Name}.types";\n\n/**\n * Replace the mutationFn stub with a typed call. Errors THROW via the client\n * middleware — do NOT check \`response.error\` (it is typed \`undefined\`, so any\n * such guard is a dead \`no-unnecessary-condition\` lint error). Read \`data\`:\n *\n *   import { apiClient } from "@/lib/api/client";\n *   mutationFn: async (input: I${Name}Item): Promise<I${Name}Item> => {\n *     const { data } = await apiClient.POST("/api/${lower}", { body: input });\n *     return data;\n *   }\n *\n * Run \`bun run generate:api\` after the endpoint is added to the OpenAPI spec.\n */\nexport function useCreate${Name}(): UseMutationResult<\n  I${Name}Item,\n  unknown,\n  I${Name}Item\n> {\n  const queryClient = useQueryClient();\n\n  return useMutation({\n    mutationFn: async (input: I${Name}Item): Promise<I${Name}Item> =>\n      Promise.resolve(input),\n    onSuccess: () => {\n      void queryClient.invalidateQueries({\n        queryKey: ${Name.toUpperCase()}_QUERY_KEYS.list\n      });\n    }\n  });\n}\n`,
-  [`${Name}.store.ts`]: `import { create } from "zustand";\n\ninterface I${Name}State {\n  readonly selectedId: string | null;\n  setSelected(id: string | null): void;\n}\n\nexport const use${Name}Store = create<I${Name}State>((set) => ({\n  selectedId: null,\n  setSelected: (id) => {\n    set({ selectedId: id });\n  }\n}));\n`
+  [`${Name}.constants.ts`]: `export const ${Name.toUpperCase()}_QUERY_KEYS = {
+  list: ["${lower}", "list"] as const
+};
+`,
+  [`${Name}.schemas.ts`]: `import { z } from "zod";
+
+export const ${lower}ItemSchema = z.object({
+  id: z.uuid(),
+  createdAt: z.string()
+});
+`,
+  [`${Name}.types.ts`]: `import type { z } from "zod";
+import type { ${lower}ItemSchema } from "./${Name}.schemas";
+
+export type I${Name}Item = z.infer<typeof ${lower}ItemSchema>;
+`,
+  [`${Name}.utils.ts`]: `import type { I${Name}Item } from "./${Name}.types";
+
+export function sort${Name}ByCreated(items: readonly I${Name}Item[]): I${Name}Item[] {
+  return [...items].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+`,
+  [`${Name}.queries.ts`]: `import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import { ${Name.toUpperCase()}_QUERY_KEYS } from "./${Name}.constants";
+import type { I${Name}Item } from "./${Name}.types";
+
+/**
+ * Replace the queryFn stub with a typed call. Errors THROW via the client
+ * middleware — do NOT check \`response.error\` (dead \`no-unnecessary-condition\`).
+ * Read \`data\`:
+ *
+ *   import { apiClient } from "@/lib/api/client";
+ *   queryFn: async (): Promise<I${Name}Item[]> => {
+ *     const { data } = await apiClient.GET("/api/${lower}");
+ *     return data ?? [];
+ *   }
+ *
+ * Run \`bun run generate:api\` after the endpoint is added to the OpenAPI spec.
+ */
+export function use${Name}(): UseQueryResult<I${Name}Item[]> {
+  return useQuery({
+    queryKey: ${Name.toUpperCase()}_QUERY_KEYS.list,
+    queryFn: async (): Promise<I${Name}Item[]> => Promise.resolve([])
+  });
+}
+`,
+  [`${Name}.mutations.ts`]: `import {
+  useMutation,
+  useQueryClient,
+  type UseMutationResult
+} from "@tanstack/react-query";
+import { ${Name.toUpperCase()}_QUERY_KEYS } from "./${Name}.constants";
+import type { I${Name}Item } from "./${Name}.types";
+
+/**
+ * Replace the mutationFn stub with a typed call. Errors THROW via the client
+ * middleware — do NOT check \`response.error\` (it is typed \`undefined\`, so any
+ * such guard is a dead \`no-unnecessary-condition\` lint error). Read \`data\`:
+ *
+ *   import { apiClient } from "@/lib/api/client";
+ *   mutationFn: async (input: I${Name}Item): Promise<I${Name}Item> => {
+ *     const { data } = await apiClient.POST("/api/${lower}", { body: input });
+ *     return data;
+ *   }
+ *
+ * Run \`bun run generate:api\` after the endpoint is added to the OpenAPI spec.
+ */
+export function useCreate${Name}(): UseMutationResult<
+  I${Name}Item,
+  unknown,
+  I${Name}Item
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: I${Name}Item): Promise<I${Name}Item> =>
+      Promise.resolve(input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ${Name.toUpperCase()}_QUERY_KEYS.list
+      });
+    }
+  });
+}
+`,
+  [`${Name}.store.ts`]: `import { create } from "zustand";
+
+interface I${Name}State {
+  readonly selectedId: string | null;
+  setSelected(id: string | null): void;
+}
+
+export const use${Name}Store = create<I${Name}State>((set) => ({
+  selectedId: null,
+  setSelected: (id) => {
+    set({ selectedId: id });
+  }
+}));
+`
 };
 
 for (const [file, content] of Object.entries(dotFiles)) {
@@ -57,23 +182,163 @@ const pageDir = join(featureDir, "components", `${Name}Page`);
 
 mkdirSync(pageDir, { recursive: true });
 
+const providersImport = relative(
+  pageDir,
+  resolve(process.cwd(), "tests/render-with-providers")
+)
+  .split(sep)
+  .join("/");
+
 const pageFiles: Record<string, string> = {
-  [`${Name}Page.types.ts`]: `export interface I${Name}PageView {\n  readonly isLoading: boolean;\n  readonly showEmpty: boolean;\n}\n`,
-  [`${Name}Page.constants.ts`]: `export const ${Name.toUpperCase()}_PAGE_I18N_KEYS = {\n  title: "features.${lower}.title",\n  empty: "features.${lower}.empty"\n} as const;\n`,
-  [`${Name}Page.hooks.ts`]: `import { use${Name} } from "@/features/${lower}/${Name}.queries";\nimport type { I${Name}PageView } from "./${Name}Page.types";\n\nexport function use${Name}Page(): I${Name}PageView {\n  const query = use${Name}();\n  const hasItems = (query.data?.length ?? 0) > 0;\n\n  return {\n    isLoading: query.isPending,\n    showEmpty: !query.isPending && !hasItems\n  };\n}\n`,
-  [`${Name}Page.tsx`]: `import type { FC } from "react";\n\nimport { Helmet } from "react-helmet-async";\nimport { useTranslation } from "react-i18next";\n\nimport { use${Name}Page } from "./${Name}Page.hooks";\nimport { ${Name.toUpperCase()}_PAGE_I18N_KEYS } from "./${Name}Page.constants";\n\nconst ${Name}Page: FC = () => {\n  const { t } = useTranslation();\n  const { isLoading, showEmpty } = use${Name}Page();\n\n  return (\n    <main className='min-h-screen p-6'>\n      <Helmet>\n        <title>{t(${Name.toUpperCase()}_PAGE_I18N_KEYS.title)}</title>\n      </Helmet>\n      <h1 className='text-2xl font-semibold'>\n        {t(${Name.toUpperCase()}_PAGE_I18N_KEYS.title)}\n      </h1>\n      {isLoading ? (\n        <p role='status' aria-live='polite' className='text-muted-foreground mt-4'>\n          {t("common.loading")}\n        </p>\n      ) : null}\n      {showEmpty ? (\n        <p className='text-muted-foreground mt-4'>\n          {t(${Name.toUpperCase()}_PAGE_I18N_KEYS.empty)}\n        </p>\n      ) : null}\n    </main>\n  );\n};\n\n${Name}Page.displayName = "${Name}Page";\n\nexport default ${Name}Page;\nexport { ${Name}Page };\n`,
-  [`${Name}Page.stories.tsx`]: `import type { Meta, StoryObj } from "@storybook/react-vite";\nimport { QueryClient, QueryClientProvider } from "@tanstack/react-query";\nimport { MemoryRouter } from "react-router-dom";\nimport ${Name}Page from "./${Name}Page";\n\nconst meta: Meta<typeof ${Name}Page> = {\n  title: "Features/${Name}/${Name}Page",\n  component: ${Name}Page,\n  decorators: [\n    (Story) => {\n      const client = new QueryClient();\n      return (\n        <QueryClientProvider client={client}>\n          <MemoryRouter><Story /></MemoryRouter>\n        </QueryClientProvider>\n      );\n    }\n  ]\n};\nexport default meta;\n\ntype IStory = StoryObj<typeof ${Name}Page>;\n\nexport const Default: IStory = {};\n`,
-  [`${Name}Page.test.tsx`]: `import { describe, it, expect } from "vitest";\nimport { render, screen } from "@testing-library/react";\nimport { QueryClient, QueryClientProvider } from "@tanstack/react-query";\nimport { MemoryRouter } from "react-router-dom";\nimport ${Name}Page from "./${Name}Page";\n\ndescribe("${Name}Page", () => {\n  it("renders the heading", () => {\n    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });\n    render(\n      <QueryClientProvider client={client}>\n        <MemoryRouter><${Name}Page /></MemoryRouter>\n      </QueryClientProvider>\n    );\n    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();\n  });\n});\n`,
-  [`index.ts`]: `export { default as ${Name}Page } from "./${Name}Page";\n`
+  [`${Name}Page.types.ts`]: `export interface I${Name}PageView {
+  readonly isLoading: boolean;
+  readonly showEmpty: boolean;
+}
+`,
+  [`${Name}Page.constants.ts`]: `export const ${Name.toUpperCase()}_PAGE_I18N_KEYS = {
+  title: "features.${lower}.title",
+  empty: "features.${lower}.empty"
+} as const;
+`,
+  [`${Name}Page.hooks.ts`]: `import { use${Name} } from "@/features/${lower}/${Name}.queries";
+import type { I${Name}PageView } from "./${Name}Page.types";
+
+export function use${Name}Page(): I${Name}PageView {
+  const query = use${Name}();
+  const hasItems = (query.data?.length ?? 0) > 0;
+
+  return {
+    isLoading: query.isPending,
+    showEmpty: !query.isPending && !hasItems
+  };
+}
+`,
+  [`${Name}Page.tsx`]: `import type { FC } from "react";
+
+import { Helmet } from "react-helmet-async";
+${namespaceEnabled ? 'import { useNamespace } from "@/lib/i18n/useNamespace";' : 'import { useTranslation } from "react-i18next";'}
+
+import { use${Name}Page } from "./${Name}Page.hooks";
+import { ${Name.toUpperCase()}_PAGE_I18N_KEYS } from "./${Name}Page.constants";
+
+const ${Name}Page: FC = () => {
+  const { t } = ${namespaceEnabled ? `useNamespace(${JSON.stringify(lower)})` : "useTranslation()"};
+  const { isLoading, showEmpty } = use${Name}Page();
+
+  return (
+    <main className='min-h-screen p-6'>
+      <Helmet>
+        <title>{t(${Name.toUpperCase()}_PAGE_I18N_KEYS.title)}</title>
+      </Helmet>
+      <h1 className='text-2xl font-semibold'>
+        {t(${Name.toUpperCase()}_PAGE_I18N_KEYS.title)}
+      </h1>
+      {isLoading ? (
+        <p role='status' aria-live='polite' className='text-muted-foreground mt-4'>
+          {t("common.loading")}
+        </p>
+      ) : null}
+      {showEmpty ? (
+        <p className='text-muted-foreground mt-4'>
+          {t(${Name.toUpperCase()}_PAGE_I18N_KEYS.empty)}
+        </p>
+      ) : null}
+    </main>
+  );
+};
+
+${Name}Page.displayName = "${Name}Page";
+
+export default ${Name}Page;
+export { ${Name}Page };
+`,
+  [`${Name}Page.stories.tsx`]: `import type { Meta, StoryObj } from "@storybook/react-vite";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
+import ${Name}Page from "./${Name}Page";
+
+const meta: Meta<typeof ${Name}Page> = {
+  title: "Features/${Name}/${Name}Page",
+  component: ${Name}Page,
+  decorators: [
+    (Story) => {
+      const client = new QueryClient();
+      return (
+        <QueryClientProvider client={client}>
+          <MemoryRouter><Story /></MemoryRouter>
+        </QueryClientProvider>
+      );
+    }
+  ]
+};
+export default meta;
+
+type IStory = StoryObj<typeof ${Name}Page>;
+
+export const Default: IStory = {};
+`,
+  [`${Name}Page.test.tsx`]: `import { describe, it, expect } from "vitest";
+import { screen } from "@testing-library/react";
+import { HelmetProvider } from "react-helmet-async";
+import { renderWithProviders } from "${providersImport}";
+import ${Name}Page from "./${Name}Page";
+
+describe("${Name}Page", () => {
+  it("renders the translated heading", async () => {
+    await renderWithProviders(<HelmetProvider><${Name}Page /></HelmetProvider>, {
+      resources: { en: { ${namespaceEnabled ? lower : "common"}: {
+        features: { ${lower}: { title: "${Name}", empty: "Empty" } },
+        common: { loading: "Loading" }
+      } } }
+    });
+    expect(screen.getByRole("heading", { level: 1, name: "${Name}" })).toBeInTheDocument();
+  });
+});
+`,
+  [`index.ts`]: `export { default as ${Name}Page } from "./${Name}Page";
+`
 };
 
 for (const [file, content] of Object.entries(pageFiles)) {
   writeFileSync(join(pageDir, file), content, "utf8");
 }
 
+if (namespaceEnabled) {
+  const dictionary = {
+    features: { [lower]: { title: Name, empty: `No ${lower} yet.` } },
+    common: { loading: "Loading…" }
+  };
+
+  for (const path of namespacePaths) {
+    writeFileSync(
+      path,
+      `${JSON.stringify(dictionary, null, 2)}
+`,
+      "utf8"
+    );
+  }
+
+  budgets.push({
+    name: `${Name} translations (all locales)`,
+    path: `dist/assets/${lower}-*.js`,
+    limit: "10 KB",
+    gzip: true
+  });
+  writeFileSync(
+    budgetPath,
+    `${JSON.stringify(budgets, null, 2)}
+`,
+    "utf8"
+  );
+}
+
 console.log(
-  `[new:feature] Created feature '${Name}' at ${featureDir}\n` +
-    `  • ${String(Object.keys(dotFiles).length)} dot-suffix files\n` +
-    `  • components/${Name}Page/ with ${String(Object.keys(pageFiles).length)} files\n\n` +
-    `Next: register the route in src/app/router/routes.tsx, add a query hook in ${Name}.queries.ts, and translate every visible string.`
+  `[new:feature] Created feature '${Name}' at ${featureDir}
+` +
+    `  • ${String(Object.keys(dotFiles).length)} dot-suffix files
+` +
+    `  • components/${Name}Page/ with ${String(Object.keys(pageFiles).length)} files
+
+` +
+    `Next: register the route in src/app/router/routes.tsx, add a query hook in ${Name}.queries.ts, and translate every visible string. Namespace dictionaries contain English placeholders in every locale; replace them before shipping.`
 );

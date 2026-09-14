@@ -20,6 +20,7 @@ import pluginReactHooks from "eslint-plugin-react-hooks";
 import pluginReactRefresh from "eslint-plugin-react-refresh";
 import pluginSonarjs from "eslint-plugin-sonarjs";
 import pluginUnicorn from "eslint-plugin-unicorn";
+import { readdirSync } from "node:fs";
 import tseslint from "typescript-eslint";
 
 // AI-first linting (mirror of the API app's philosophy): every rule that
@@ -35,6 +36,14 @@ import tseslint from "typescript-eslint";
 //   - hardcoded user-facing strings in JSX (handled by react-component-architecture)
 //   - className= ternaries / template literals (handled by react-component-architecture)
 //   - useState/useEffect inside *.tsx (must live in *.hooks.ts)
+
+const featureNamespaces = readdirSync(
+  new URL("./src/lib/i18n/locales/en/", import.meta.url)
+)
+  .filter(
+    (file) => /^[a-z][a-z0-9]*\.json$/u.test(file) && file !== "common.json"
+  )
+  .map((file) => file.slice(0, -5));
 
 export default tseslint.config(
   {
@@ -930,5 +939,14 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": "off"
     }
-  }
+  },
+  ...featureNamespaces.map((namespace) => ({
+    files: [`src/features/${namespace}/**/*.{ts,tsx}`],
+    rules: {
+      "i18n-keys/static-translation-key-exists": [
+        "error",
+        { dictionary: `src/lib/i18n/locales/en/${namespace}.json` }
+      ]
+    }
+  }))
 );

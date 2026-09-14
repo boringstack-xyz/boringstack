@@ -104,7 +104,9 @@ export async function runProfile(
         error instanceof Error &&
         (error.message === "interrupted" ||
           error.message === "checkout_requires_git" ||
-          error.message.startsWith("checkout_locked"))
+          error.message.startsWith("checkout_locked") ||
+          error.message.startsWith("lease_locked") ||
+          error.message.startsWith("sandbox_not_found"))
           ? (error.message.split(":")[0] ?? "required_prerequisite_unavailable")
           : "required_prerequisite_unavailable",
     });

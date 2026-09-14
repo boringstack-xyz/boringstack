@@ -1,16 +1,9 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import type { IMetaRule, IViolation } from "../../types";
 
-const CANONICAL_LOCALE = join(
-  "src",
-  "lib",
-  "i18n",
-  "locales",
-  "en",
-  "common.json"
-);
+const CANONICAL_LOCALE = join("src", "lib", "i18n", "locales", "en");
 
 /*
  * The cross-repo i18n-keys plugin guarantees every `t("…")` literal has a
@@ -37,11 +30,10 @@ function flattenKeys(value: unknown, prefix: string, out: string[]): void {
 
 const DYNAMIC_PREFIX_REGEX = /t\(\s*`([^`$]+)\$\{/gu;
 
-export function checkI18nLocaleKeysUsed(
-  root: string,
+function checkDictionary(
+  localePath: string,
   sourceFiles: readonly string[]
 ): IViolation[] {
-  const localePath = join(root, CANONICAL_LOCALE);
   let parsed: unknown;
 
   try {
@@ -75,7 +67,19 @@ export function checkI18nLocaleKeysUsed(
       continue;
     }
 
-    if (!corpus.includes(`"${key}"`) && !corpus.includes(`'${key}'`)) {
+    // i18next resolves count-based calls to CLDR-suffixed leaf keys.
+    const baseKey = key.replace(
+      /_(?:ordinal_)?(?:zero|one|two|few|many|other)$/u,
+      ""
+    );
+    const references = [key, baseKey];
+
+    if (
+      !references.some(
+        (reference) =>
+          corpus.includes(`"${reference}"`) || corpus.includes(`'${reference}'`)
+      )
+    ) {
       violations.push({
         file: localePath,
         rule: "i18n-locale-keys-used",
@@ -87,12 +91,27 @@ export function checkI18nLocaleKeysUsed(
   return violations;
 }
 
+export function checkI18nLocaleKeysUsed(
+  root: string,
+  sourceFiles: readonly string[]
+): IViolation[] {
+  const directory = join(root, CANONICAL_LOCALE);
+
+  if (!existsSync(directory)) {
+    return [];
+  }
+
+  return readdirSync(directory)
+    .filter((file) => file.endsWith(".json"))
+    .flatMap((file) => checkDictionary(join(directory, file), sourceFiles));
+}
+
 /** Every locale leaf key must be referenced somewhere in src. */
 export const i18nLocaleKeysUsedRule: IMetaRule = {
   id: "i18n-locale-keys-used",
   category: "source-text",
   description:
-    "Locale keys defined in en/common.json must be referenced in src (dynamic t() prefixes exempt).",
+    "Locale keys defined in en/*.json must be referenced in src (dynamic t() prefixes exempt).",
   run({ root, sourceFiles }) {
     return checkI18nLocaleKeysUsed(root, sourceFiles);
   }

@@ -19,6 +19,7 @@
     "dev": "./scripts/dev/preflight-host-dev.sh && bun run build:templates && bun run --watch src/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:prepare": "bun run db:migrate && bun run db:seed",
     "db:push": "drizzle-kit push",
     "db:seed": "bun run scripts/db/seed-superuser.ts",
     "db:studio": "drizzle-kit studio",

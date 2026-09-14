@@ -2,6 +2,20 @@ import "@testing-library/jest-dom/vitest";
 import { vi } from "vitest";
 
 /*
+ * jsdom has no layout engine. This stub supports observer lifecycle only;
+ * size-dependent behaviour must be verified in Playwright.
+ */
+if (typeof globalThis.ResizeObserver === "undefined") {
+  class ResizeObserverStub {
+    public observe = vi.fn();
+    public unobserve = vi.fn();
+    public disconnect = vi.fn();
+  }
+
+  vi.stubGlobal("ResizeObserver", ResizeObserverStub);
+}
+
+/*
  * jsdom ships a stub `requestSubmit` that prints "Not implemented" the
  * first time React Hook Form (or any Enter-to-submit form path) calls
  * it. Replace it unconditionally with a spec-shaped polyfill so the

@@ -3,13 +3,6 @@
 Read when starting the SPA in dev, switching between host and
 container dev, or chasing stale-module / blank-page boots.
 
-## Reset container deps
-
-```bash
-rm -rf apps/ui/node_modules
-cd infra/compose/compose && docker volume rm boringstack-infra_ui_dev_node_modules 2>/dev/null; ./dev.sh up -d --build ui-dev
-```
-
 ## Pick one runner
 
 Two ways to run the SPA in dev — `bun run dev` on the host, or the
@@ -26,12 +19,21 @@ error message to switch sides cleanly.
 
 ## After touching `package.json` / `bun.lock`
 
-- **Host:** `bun run install` (no special steps).
-- **Container:** `./dev.sh up --build` rebuilds the image; the named
-  `ui_dev_node_modules` volume persists across rebuilds, so refresh
-  it once with
-  `docker volume rm boringstack-infra_ui_dev_node_modules` before the
-  next `up`.
+- **Host:** run `bun install` inside `apps/ui`.
+- **Container:** refresh its separate dependency volume using the same Compose
+  wrapper and overlays, then restart Vite:
 
-`node_modules` is baked into the image at build time, so the container
-does not run `bun install` on startup.
+```bash
+infra/compose/compose/dev.sh stop ui-dev
+infra/compose/compose/dev.sh run --rm --no-deps ui-dev bun install --frozen-lockfile
+infra/compose/compose/dev.sh up -d --no-deps ui-dev
+```
+
+The container's named dependency volume survives image rebuilds. Rebuilding an
+image alone does not update that volume. Do not delete the database volumes to
+repair frontend dependencies.
+
+If only the host install changed Vite's lockfile hash, or a large rename left a
+stale module graph, first try `infra/compose/compose/dev.sh restart ui-dev`.
+`504 Outdated Optimize Dep` and a missing export that exists on disk are useful
+signals to check the long-running development server before rerunning e2e.

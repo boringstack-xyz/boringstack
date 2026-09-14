@@ -26,12 +26,16 @@ try {
   } else {
     throw new Error("Use up, inspect --id=<id>, or down --id=<id>");
   }
-} catch {
+} catch (error) {
   console.log(
     JSON.stringify({
       schemaVersion: 1,
       status: "blocked",
-      reason: "sandbox_operation_failed",
+      reason:
+        error instanceof Error && error.message.startsWith("sandbox_not_found:")
+          ? "sandbox_not_found"
+          : "sandbox_operation_failed",
+      next: "Inspect the sandbox and Docker runtime; use sandbox:up when the descriptor is missing.",
     })
   );
   process.exitCode = 2;

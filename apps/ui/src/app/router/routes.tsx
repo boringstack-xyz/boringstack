@@ -1,7 +1,7 @@
 import { type FC, Suspense, lazy } from "react";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
-import { useTranslation } from "react-i18next";
+import { useNamespace } from "@/lib/i18n/useNamespace";
 
 import { AppShell } from "@/components/core/AppShell";
 
@@ -121,7 +121,7 @@ const NotFoundPage = lazy(() =>
 );
 
 const Fallback: FC = () => {
-  const { t } = useTranslation();
+  const { t } = useNamespace("common");
 
   return (
     <div

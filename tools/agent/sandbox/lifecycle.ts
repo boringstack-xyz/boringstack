@@ -106,7 +106,15 @@ export function readSandbox(root: string, id: string): ISandbox {
   safeState(root);
   const path = join(stateDir(root), `${id}.json`);
 
-  if (lstatSync(path).isSymbolicLink()) {
+  const descriptor = lstatSync(path, { throwIfNoEntry: false });
+
+  if (descriptor === undefined) {
+    throw new Error(
+      "sandbox_not_found: run sandbox:up to create an owned sandbox"
+    );
+  }
+
+  if (descriptor.isSymbolicLink()) {
     throw new Error("Sandbox descriptor cannot be a symlink");
   }
 

@@ -44,8 +44,15 @@ if (
       ? JSON.stringify(result)
       : [
           `${result.profile}: ${result.status}`,
-          ...result.checks.map(
-            (check) => `${check.checkId}: ${check.status} (${check.reason})`
+          ...result.checks.map((check) =>
+            [
+              `${check.checkId}: ${check.status} (${check.reason})`,
+              check.durationMs === undefined
+                ? ""
+                : `${(check.durationMs / 1000).toFixed(1)}s`,
+            ]
+              .filter(Boolean)
+              .join(" ")
           ),
         ].join("\n")
   );

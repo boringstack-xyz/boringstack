@@ -40,6 +40,7 @@ try {
       {
         fingerprint: review.fingerprint,
         token: review.token,
+        acceptCommand: `bun run agent:inventory -- ${lanes.join(" ")} --accept=${review.token}${review.changes.some((change) => change.removed.length > 0) ? ` --allow-removals=${review.token}` : ""}`,
         changes: review.changes.map((change) => ({
           lane: change.lane,
           beforeCount: change.before.length,

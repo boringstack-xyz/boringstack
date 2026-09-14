@@ -182,6 +182,30 @@ apply_to_file() {
     "$file"
 }
 
+# A fork needs local development instructions, not a fictional installer at
+# its new domain. Only replace the upstream README on the first rename.
+if [[ "$DRY_RUN" != "1" ]] && grep -q 'apps/docs/profile/assets/boringstack-xyz.png' README.md 2>/dev/null; then
+  # The marked section is upstream onboarding; retain all local safety contracts.
+  agents_tmp="$(mktemp "$ROOT/.rename-agents.XXXXXX")"
+  sed '/<!-- template-onboarding:start -->/,/<!-- template-onboarding:end -->/d' AGENTS.md > "$agents_tmp"
+  mv "$agents_tmp" AGENTS.md
+  cat > README.md <<EOF
+# ${PROJECT_TITLE}
+
+## Develop
+
+Run \`./setup.sh --up\` to prepare and start the local stack. Configuration lives
+in \`infra/compose/compose/.env\`; inspect it before enabling optional services.
+
+- API: \`apps/api\` — read \`apps/api/AGENT_CONTRACT.md\` before changes.
+- UI: \`apps/ui\` — read \`apps/ui/AGENT_CONTRACT.md\` before changes.
+- Runtime: \`infra/compose\`; use \`infra/compose/compose/dev.sh\` for Compose operations.
+
+Run \`bun run check\` at the root and \`bun run validate\` in each changed app.
+See \`AGENTS.md\` for structured verification and \`CONTRIBUTING.md\` for policies.
+EOF
+fi
+
 while IFS= read -r path; do
   apply_to_file "$path"
 done < <(inventory_files)
@@ -206,10 +230,11 @@ cat <<EOF
 
 Rename complete. Next:
   1. Review the diff:  git diff
-  2. Reinstall deps:   (cd apps/api && bun install) && (cd apps/ui && bun install) && (cd apps/docs && bun install)
-  3. Regen catalogs:   bun run regen
-  4. Drift gate:       bun run check
-  5. Boot the stack:   ./setup.sh --up
+  2. Reinstall deps:   run bun install inside each remaining apps/* directory
+  3. Format renamed files: (cd apps/api && bun run format) && (cd apps/ui && bun run format)
+  4. Regen catalogs:   bun run regen
+  5. Drift gate:       bun run check
+  6. Boot the stack:   ./setup.sh --up
 
 Things this script deliberately does NOT touch:
   - LICENSE attribution (the MIT copyright line keeps the original author)

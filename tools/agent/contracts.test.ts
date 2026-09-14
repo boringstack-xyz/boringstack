@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { RELEASE_CHECKS, STATIC_CHECKS } from "./checks";
@@ -12,6 +12,10 @@ const root = fileURLToPath(new URL("../../", import.meta.url));
 
 test("every check adapter references an existing package script", () => {
   for (const check of [...STATIC_CHECKS, ...RELEASE_CHECKS]) {
+    if (check.app === "docs" && !existsSync(join(root, "apps/docs"))) {
+      continue;
+    }
+
     const scripts = parseRecord(
       readFileSync(
         check.app === "root"

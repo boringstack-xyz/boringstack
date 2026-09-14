@@ -18,8 +18,5 @@
     "files",
     "dependencies",
     "unlisted"
-  ],
-  "ignore": [
-    "tests/setup-test-env.ts"
   ]
 }

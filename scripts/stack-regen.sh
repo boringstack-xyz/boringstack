@@ -6,7 +6,10 @@ source "$(dirname "${BASH_SOURCE[0]}")/stack-lib.sh"
 
 require_dir "api" "$BORINGSTACK_API_DIR"
 require_dir "ui" "$BORINGSTACK_UI_DIR"
-require_dir "docs" "$BORINGSTACK_DOCS_DIR"
+HAS_DOCS=0
+if [[ -d "$BORINGSTACK_DOCS_DIR" ]]; then
+  HAS_DOCS=1
+fi
 
 step "ACL types (api → ui)"
 (
@@ -38,14 +41,16 @@ step "lint-meta RULES.md (ui)"
 )
 ok "ui RULES.md regenerated"
 
-step "docs catalogs (lint-meta + scripts JSON)"
-(
-  cd "$BORINGSTACK_DOCS_DIR"
-  BORINGSTACK_API_DIR="$BORINGSTACK_API_DIR" \
-  BORINGSTACK_UI_DIR="$BORINGSTACK_UI_DIR" \
-    bun run generate:docs-data
-)
-ok "docs data regenerated"
+if [[ "$HAS_DOCS" == "1" ]]; then
+  step "docs catalogs (lint-meta + scripts JSON)"
+  (
+    cd "$BORINGSTACK_DOCS_DIR"
+    BORINGSTACK_API_DIR="$BORINGSTACK_API_DIR" \
+    BORINGSTACK_UI_DIR="$BORINGSTACK_UI_DIR" \
+      bun run generate:docs-data
+  )
+  ok "docs data regenerated"
+fi
 
 printf '\n'
 c_green "regen complete — review git status in apps/{api,ui,docs}"

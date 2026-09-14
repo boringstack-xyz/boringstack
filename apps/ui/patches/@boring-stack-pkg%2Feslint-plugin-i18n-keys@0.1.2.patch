@@ -1,0 +1,52 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index ab939d0d5776d5882cbd7a10e3c0efbac13cb912..fe0cf59368e6a1b5f8317327d79d6a8a73efb8a0 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -139,6 +139,21 @@ var staticTranslationKeyExistsRule = createRule({
+         if (key === null || key === "") {
+           return;
+         }
++        const callOptions = node.arguments[1];
++        if (callOptions?.type === "ObjectExpression") {
++          const option = (name) => callOptions.properties.find((property) =>
++            property.type === "Property" && !property.computed &&
++            ((property.key.type === "Identifier" && property.key.name === name) ||
++             (property.key.type === "Literal" && property.key.value === name))
++          );
++          const count = option("count");
++          const ordinal = option("ordinal");
++          const suffix = ordinal?.value.type === "Literal" && ordinal.value.value === true
++            ? "_ordinal_other" : "_other";
++          if (count && keys.has(`${key}${suffix}`)) {
++            return;
++          }
++        }
+         if (keys.has(key)) {
+           return;
+         }
+diff --git a/dist/index.js b/dist/index.js
+index 2d12374869482eeef8d82f46c2b72993d8bf4014..6cbb99e74c6a6f2c40b97d7e874d750644431cff 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -110,6 +110,21 @@ var staticTranslationKeyExistsRule = createRule({
+         if (key === null || key === "") {
+           return;
+         }
++        const callOptions = node.arguments[1];
++        if (callOptions?.type === "ObjectExpression") {
++          const option = (name) => callOptions.properties.find((property) =>
++            property.type === "Property" && !property.computed &&
++            ((property.key.type === "Identifier" && property.key.name === name) ||
++             (property.key.type === "Literal" && property.key.value === name))
++          );
++          const count = option("count");
++          const ordinal = option("ordinal");
++          const suffix = ordinal?.value.type === "Literal" && ordinal.value.value === true
++            ? "_ordinal_other" : "_other";
++          if (count && keys.has(`${key}${suffix}`)) {
++            return;
++          }
++        }
+         if (keys.has(key)) {
+           return;
+         }

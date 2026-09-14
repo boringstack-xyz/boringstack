@@ -244,7 +244,7 @@ export class ProfileRunner {
       process.execPath,
       NO_ENV_FILE,
       "run",
-      "db:migrate",
+      "db:prepare",
     ]);
 
     if (migration.status !== "passed") {

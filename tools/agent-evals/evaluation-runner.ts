@@ -70,7 +70,7 @@ export async function runEvaluation(
 
     for (const script of [
       ...(candidate !== undefined ? [] : ["db:generate"]),
-      "db:migrate",
+      "db:prepare",
       "build:templates",
     ]) {
       const run = await runProcess(

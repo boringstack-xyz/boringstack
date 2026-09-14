@@ -119,3 +119,17 @@ back as evidence. Coverage/forbidden-warning gate failures are reported as failu
 when the complete test inventory agrees; missing or crashed execution stays blocked.
 
 The owned API uses Bun; the owned Vite server uses Node, matching Vite’s CLI runtime. Install Node compatible with the UI package’s engine requirements alongside Bun. Both servers bind to IPv4 loopback, and readiness checks report transport/HTTP failures separately from process exits.
+
+### Interrupted verification leases
+
+A `lease_locked` blocker identifies a sandbox already reserved by a verification
+process. Inspect the owner and wait for a live process. After an interrupted owner
+has exited, run:
+
+```sh
+bun run agent:recover -- lease --id=<sandbox-id> --acknowledge-partial-writes
+```
+
+Recovery refuses live or malformed owners and validates the sandbox belongs to
+this checkout. Inspect any partially written test data, then rerun verification;
+recovering the lease is not evidence the interrupted run passed.

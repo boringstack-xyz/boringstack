@@ -8,6 +8,7 @@ import {
 import { accounts } from "./app.schema";
 import { app } from "./pg-schemas";
 
+// @account-scoped accountId
 export const resourcePlural = app.table(
   "resourcePlural",
   {

@@ -41,7 +41,7 @@ try {
   const env = sandboxEnv(sandbox);
 
   for (const script of [
-    "db:migrate",
+    "db:prepare",
     "build:templates",
     "generate:acl-types",
   ]) {

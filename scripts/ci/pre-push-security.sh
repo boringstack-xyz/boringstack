@@ -51,6 +51,24 @@ paths_match() {
   echo "$CHANGED_PATHS" | grep -qE "$pattern"
 }
 
+# Discover every required scanner before starting any expensive scan.
+required_tools=(gitleaks)
+if paths_match '(^apps/(api|ui)/(src|scripts)/|^\.github/workflows/apps-(api|ui)-security-sast\.yml$|^\.semgrep/(api|ui)\.yml$)'; then
+  required_tools+=(semgrep)
+fi
+if paths_match '^apps/(api|ui|docs)/(bun\.lock|osv-scanner\.toml)$'; then
+  required_tools+=(osv-scanner)
+fi
+missing_tools=()
+for tool in "${required_tools[@]}"; do
+  if ! command -v "$tool" >/dev/null 2>&1; then
+    missing_tools+=("$tool")
+  fi
+done
+if [[ ${#missing_tools[@]} -gt 0 ]]; then
+  fail "Missing security tools: ${missing_tools[*]}. Install these before retrying (macOS: brew install ${missing_tools[*]})."
+fi
+
 # ─── 1. gitleaks ───────────────────────────────────────────────────────────
 step "Security 1/3 — gitleaks (secret scan)"
 
@@ -168,7 +186,7 @@ run_osv_for_app() {
 }
 
 for app in api ui docs; do
-  if paths_match "^apps/${app}/bun\\.lock$|^apps/${app}/osv-scanner\\.toml$"; then
+  if [[ -d "apps/${app}" ]] && paths_match "^apps/${app}/bun\\.lock$|^apps/${app}/osv-scanner\\.toml$"; then
     run_osv_for_app "$app"
   fi
 done

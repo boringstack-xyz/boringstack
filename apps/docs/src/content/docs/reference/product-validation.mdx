@@ -1,0 +1,114 @@
+---
+title: Validate a product fork
+description: Reproduce product feedback with disposable fixtures and focused checks before a full release gate.
+---
+
+Preserve a product's failing input, request, schema or command as a small regression
+fixture. Rebuilding the product with an agent is not required to validate a template fix.
+
+## Configure first boot
+
+Pass `--env-file /absolute/path/to/private.env` to the installer to overlay local
+literal dotenv assignments on `.env.example` before boot, including `WITH_*`
+toggles and seed configuration. Quote values containing spaces; shell statements
+and command substitution are rejected because the Compose wrapper sources its configuration.
+Keys must be declared in the template’s `.env.example`; process hooks such as
+`BASH_ENV` cannot be imported as application settings. Values are not printed; the resulting file has mode 0600. An
+existing Compose `.env` is never overwritten. `--no-boot` still prepares the file
+so the next `setup.sh --up` uses it. Keep the input file outside version control.
+
+## Choose a faithful reproduction
+
+- Installer, rename and optional-docs failures belong in a disposable checkout.
+  Exercise the real script, check its exit status and inspect generated files.
+- Database and tenancy failures require an isolated database with relevant rows.
+  Include a successful control so a broken fixture cannot appear to enforce an invariant.
+- Type generation failures need the original schema and a compile-time consumer
+  assertion. Do not loosen a schema or cast the response to make the test pass.
+- Browser timing and layout failures require Playwright against the real app.
+  A jsdom stub cannot establish layout correctness.
+
+Where practical, run the regression against the old implementation too. The
+failure should be the intended assertion, not a missing dependency or crashed
+fixture. After focused checks pass, run normal quality and release gates.
+
+## Database tests and reference data
+
+Use `bun run test` inside `apps/api`; bare `bun test` can discover the separate
+security-spec lane. An unconfigured unit-only run may omit database work. Setting
+`TEST_DATABASE_URL` explicitly requests integration work: an unreachable database
+must fail, even outside CI. Never use a production database for these tests.
+
+Owned agent runtimes run `db:prepare`, applying migrations and then `db:seed`.
+Add idempotent reference-data seeding to the existing seed entry point when your
+product needs roles, plans or other lookup rows. A seed failure stops preparation.
+Keep seed data separate from end-user records; do not depend on a developer's
+existing database contents.
+
+The development Compose migrator uses schema push and seeding. That does not test
+migration history. Validate generated migrations against a fresh owned database
+before release; production uses `db:prepare` and committed migrations.
+
+## Recover interrupted verification
+
+A sandbox lease prevents concurrent destructive suites from sharing a runtime.
+A stopped process can leave a lease behind. Inspect its owner and partial writes
+before running:
+
+```sh
+bun run agent:recover -- lease --id=YOUR_SANDBOX_ID --acknowledge-partial-writes
+```
+
+Recovery refuses a live owner and validates the descriptor. It does not undo
+partially committed test data. Recreate the disposable sandbox if its state is
+uncertain. `sandbox_not_found` means the descriptor is absent; use `sandbox:up`
+to create an owned runtime before retrying.
+
+Inventory previews include an `acceptCommand` tied to the reviewed diff. Removed
+cases require an additional acknowledgement, included in that command. Review
+case identities before accepting; shrinking an inventory cannot repair tests
+that failed to execute.
+
+## Use the same Compose project
+
+Use `infra/compose/compose/dev.sh` for Compose operations so project and overlay
+selection match setup. For a stale Vite module graph after a host install, run
+`infra/compose/compose/dev.sh restart ui-dev`.
+Do not start a second stack on occupied ports. Inspect the owner before stopping it.
+
+API development dependencies and generated email templates use named volumes.
+Setup creates source-side mount directories on the host before Docker runs.
+Existing root-owned directories require an explicit ownership repair; setup does
+not silently change their owner.
+
+Local Tempo tracing is enabled by the observability overlay. Without that overlay
+or an explicit external exporter endpoint, the API has no OTLP destination.
+An explicitly empty endpoint disables export even with the overlay enabled.
+
+## Keep fast feedback honest
+
+Security pre-push checks report missing scanners required by the changed paths
+before starting a scan. Install those tools before a long push. UI ESLint runs
+without its file cache because locale JSON is an input to translation validation:
+changing a dictionary must recheck unchanged source.
+
+In Playwright, `test.setTimeout` changes a time budget; it is not a sleep. Await
+observable state instead of timer delays. Give tests that mutate account state
+independent authenticated fixtures.
+
+Run `scripts/strip-docs.sh` to preview removal of the site, docs-only workflows
+and its Dependabot entry; `scripts/strip-docs.sh --apply` applies that preview.
+Root regeneration and tooling contract checks support the resulting checkout.
+Review product documentation and remote required-check settings separately. Keep historical
+secret-scan exceptions narrow: deleting docs does not delete Git history.
+
+## Resource boundaries
+
+The account-resource generator emits `index.ts` with the service instance and
+public model type. Cross-resource callers import that surface; they must not
+reach into internal routes, schemas or service files. Adding an export is an API
+design decision, not permission to bypass membership checks in the service.
+
+Story files still need a `Default` export; an alias to a representative named
+variant is sufficient. The hook-count diagnostic counts exported hook declarations,
+not calls to React hooks inside a component. These rules remain enforced.
