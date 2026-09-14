@@ -1,13 +1,23 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { type ICommandCheck } from "./checks";
+import type { Lane } from "./lanes";
 import { hostEnvironment } from "./environment";
 import { inventoryEvidence } from "./inventory";
 import { runProcess } from "./process";
 import { testEvidence } from "./reports";
 import type { ICheckResult, IVerificationResult } from "./result";
 import { acquireLease } from "./sandbox/lease";
-import { inspectSandbox, sandboxEnv, type ISandbox } from "./sandbox/lifecycle";
+import { runLanes } from "./lanes";
+import {
+  ensureLaneDatabases,
+  inspectSandbox,
+  SANDBOX_LANES,
+  sandboxEnv,
+  EXTRA_LANES,
+  type ISandbox,
+  type SandboxLaneName,
+} from "./sandbox/lifecycle";
 import { securityManifestEvidence } from "./security-evidence";
 import { isAborted } from "./validation";
 
@@ -29,8 +39,18 @@ export class ProfileRunner {
     private readonly temp: string,
     private readonly result: IVerificationResult,
     private readonly signal?: AbortSignal,
-    private readonly sandboxId?: string
+    private readonly sandboxId?: string,
+    readonly concurrency = 1
   ) {}
+
+  /** Environment for a stateful lane: its own database and Valkey index. */
+  laneEnv(lane: SandboxLaneName): Record<string, string | undefined> {
+    if (this.state === undefined) {
+      throw new Error("Sandbox absent");
+    }
+
+    return sandboxEnv(this.state, SANDBOX_LANES[lane]);
+  }
 
   add(check: ICheckResult): void {
     this.result.checks.push(check);
@@ -81,18 +101,19 @@ export class ProfileRunner {
       return;
     }
 
+    const base = check.lane === undefined ? this.env : this.laneEnv(check.lane);
+
     await this.command(
       check.id,
       check.app,
       [process.execPath, NO_ENV_FILE, "run", check.script],
-      check.nodeEnv !== undefined
-        ? { ...this.env, NODE_ENV: check.nodeEnv }
-        : this.env
+      check.nodeEnv !== undefined ? { ...base, NODE_ENV: check.nodeEnv } : base
     );
   }
 
   async tests(security: boolean): Promise<void> {
     const report = join(this.temp, security ? "security.xml" : "api.xml");
+    const laneEnv = this.laneEnv(security ? "security" : "tests");
     const run = await runProcess(
       [
         process.execPath,
@@ -106,7 +127,7 @@ export class ProfileRunner {
       {
         cwd: join(this.root, "apps/api"),
         env: {
-          ...this.env,
+          ...laneEnv,
           SECURITY_SPEC: security ? "true" : "false",
           ...(security
             ? {
@@ -155,13 +176,7 @@ export class ProfileRunner {
     }
   }
 
-  async feature(featureSandbox: ISandbox, fingerprint: string): Promise<void> {
-    if (isAborted(this.signal)) {
-      throw new Error("interrupted");
-    }
-
-    await this.tests(false);
-
+  async uiTests(fingerprint: string): Promise<void> {
     if (isAborted(this.signal)) {
       throw new Error("interrupted");
     }
@@ -199,8 +214,10 @@ export class ProfileRunner {
             fingerprint
           )
     );
+  }
 
-    // Full-stack adapter starts the selected checkout rather than trusting an ambient server.
+  /** Full-stack adapter starts the selected checkout rather than trusting an ambient server. */
+  async e2e(featureSandbox: ISandbox, fingerprint: string): Promise<void> {
     if (isAborted(this.signal)) {
       throw new Error("interrupted");
     }
@@ -211,20 +228,61 @@ export class ProfileRunner {
       this.root,
       featureSandbox,
       this.signal,
-      fingerprint
+      fingerprint,
+      SANDBOX_LANES.e2e
     )) {
       this.add(check);
     }
   }
 
-  async scripts(checks: readonly ICommandCheck[]): Promise<void> {
-    for (const check of checks) {
-      if (isAborted(this.signal)) {
-        return;
-      }
+  /** The feature lanes: API tests, UI tests and the browser run, each on its own state. */
+  featureLanes(featureSandbox: ISandbox, fingerprint: string): Lane[] {
+    return [
+      () => this.tests(false),
+      () => this.uiTests(fingerprint),
+      () => this.e2e(featureSandbox, fingerprint),
+    ];
+  }
 
-      await this.script(check);
+  /**
+   * One lane per script. A check with `after` waits for that check to finish
+   * (a size gate reads the build it names) but everything else runs as the
+   * concurrency budget allows.
+   */
+  scriptLanes(checks: readonly ICommandCheck[]): Lane[] {
+    const done = new Map<string, Promise<void>>();
+    const resolvers = new Map<string, () => void>();
+
+    for (const check of checks) {
+      done.set(
+        check.id,
+        new Promise<void>((resolve) => {
+          resolvers.set(check.id, resolve);
+        })
+      );
     }
+
+    return checks.map((check) => async () => {
+      try {
+        if (check.after !== undefined) {
+          await done.get(check.after);
+        }
+
+        if (!isAborted(this.signal)) {
+          await this.script(check);
+        }
+      } finally {
+        resolvers.get(check.id)?.();
+      }
+    });
+  }
+
+  async scripts(checks: readonly ICommandCheck[]): Promise<void> {
+    await this.lanes(this.scriptLanes(checks));
+  }
+
+  async lanes(lanes: readonly Lane[]): Promise<void> {
+    await runLanes(lanes, this.concurrency, this.signal);
   }
 
   async prepareSandbox(): Promise<void> {
@@ -240,14 +298,20 @@ export class ProfileRunner {
       status: "passed",
       reason: "owned_services_ready",
     });
-    const migration = await this.command("api.migrate", "api", [
-      process.execPath,
-      NO_ENV_FILE,
-      "run",
-      "db:prepare",
-    ]);
+    await ensureLaneDatabases(this.root, this.state);
 
-    if (migration.status !== "passed") {
+    const migrations = await Promise.all(
+      [undefined, ...EXTRA_LANES].map((lane) =>
+        this.command(
+          lane === undefined ? "api.migrate" : `api.migrate.${lane}`,
+          "api",
+          [process.execPath, NO_ENV_FILE, "run", "db:prepare"],
+          lane === undefined ? this.env : this.laneEnv(lane)
+        )
+      )
+    );
+
+    if (migrations.some((migration) => migration.status !== "passed")) {
       throw new Error("Migration prerequisite failed");
     }
 

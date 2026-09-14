@@ -27,6 +27,36 @@ export interface ISandbox {
   postgresPort: number;
   valkeyPort: number;
 }
+/**
+ * Verification lanes that mutate state each get their own Postgres database
+ * and Valkey database index inside the one sandbox, so the API tests, the
+ * security spec, the browser run and the coverage run can execute at the
+ * same time without truncating each other's tables or sharing rate-limit
+ * counters. Stateless lanes (lint, typecheck, unit tests, builds) need none.
+ */
+export interface ISandboxLane {
+  readonly database: string;
+  readonly valkeyDb: number;
+}
+
+export const SANDBOX_LANES = {
+  default: { database: "app", valkeyDb: 0 },
+  tests: { database: "app_tests", valkeyDb: 1 },
+  security: { database: "app_security", valkeyDb: 2 },
+  e2e: { database: "app_e2e", valkeyDb: 3 },
+  coverage: { database: "app_coverage", valkeyDb: 4 },
+} as const satisfies Record<string, ISandboxLane>;
+
+export type SandboxLaneName = keyof typeof SANDBOX_LANES;
+
+/** Every lane database except the default that `sandbox:up` created. */
+export const EXTRA_LANES: readonly SandboxLaneName[] = [
+  "tests",
+  "security",
+  "e2e",
+  "coverage",
+];
+
 const VALKEY_PONG = "PONG";
 const ID = /^[a-f0-9]{32}$/;
 const ownerOf = (root: string): string =>
@@ -367,8 +397,11 @@ export async function upSandbox(root: string): Promise<ISandbox> {
 }
 
 /** Explicit test defaults override Bun's ambient dotenv. No developer service credentials are inherited. */
-export function sandboxEnv(state: ISandbox): Record<string, string> {
-  const db = `postgresql://app:${state.password}@127.0.0.1:${state.postgresPort}/app`;
+export function sandboxEnv(
+  state: ISandbox,
+  lane: ISandboxLane = SANDBOX_LANES.default
+): Record<string, string> {
+  const db = `postgresql://app:${state.password}@127.0.0.1:${state.postgresPort}/${lane.database}`;
 
   return {
     AGENT_SANDBOX: "1",
@@ -389,6 +422,7 @@ export function sandboxEnv(state: ISandbox): Record<string, string> {
     RUN_VALKEY_NETWORK_TESTS: "true",
     VALKEY_HOST: "127.0.0.1",
     VALKEY_PORT: String(state.valkeyPort),
+    VALKEY_DB: String(lane.valkeyDb),
     VALKEY_PASSWORD: state.valkeyPassword,
     CACHE_PROVIDER: "valkey",
     CACHE_ENABLED: "true",
@@ -428,4 +462,51 @@ export function publicSandbox(state: ISandbox): object {
     valkeyPort: state.valkeyPort,
     ownership: "current-checkout",
   };
+}
+
+/**
+ * Creates the extra lane databases in the sandbox's Postgres when they are
+ * missing. Idempotent: a second verification on the same sandbox finds them
+ * present. Uses the container's local socket, which the image trusts.
+ */
+export async function ensureLaneDatabases(
+  root: string,
+  state: ISandbox
+): Promise<void> {
+  await owned(root, state, state.postgres);
+
+  const listed = await docker(root, [
+    "exec",
+    state.postgres,
+    "psql",
+    "-U",
+    "app",
+    "-d",
+    "app",
+    "-tAc",
+    "SELECT datname FROM pg_database",
+  ]);
+  const existing = new Set(listed.split("\n").map((line) => line.trim()));
+
+  for (const name of EXTRA_LANES) {
+    const { database } = SANDBOX_LANES[name];
+
+    if (existing.has(database)) {
+      continue;
+    }
+
+    await docker(root, [
+      "exec",
+      state.postgres,
+      "psql",
+      "-U",
+      "app",
+      "-d",
+      "app",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-c",
+      `CREATE DATABASE "${database}"`,
+    ]);
+  }
 }

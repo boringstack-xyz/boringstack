@@ -29,3 +29,4 @@ scripts/lint-meta/RULES.md
 # Untracked working docs (code-review swarms, scratchpads). Anything matching
 # this glob is operator-local and should not gate format:check.
 code-review-swarm-*.md
+.tsforge

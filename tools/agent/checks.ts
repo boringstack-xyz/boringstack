@@ -1,8 +1,14 @@
+import type { SandboxLaneName } from "./sandbox/lifecycle";
+
 export interface ICommandCheck {
   id: string;
   app: "api" | "ui" | "docs" | "root";
   script: string;
   nodeEnv?: "production";
+  /** Stateful scripts run against their own lane database. */
+  lane?: SandboxLaneName;
+  /** Runs only after the named check has finished (it reads that check's output). */
+  after?: string;
 }
 /** References existing package scripts; parity tests reject drift. No arbitrary shell fragments. */
 export const STATIC_CHECKS: readonly ICommandCheck[] = [
@@ -15,11 +21,16 @@ export const STATIC_CHECKS: readonly ICommandCheck[] = [
   { id: "docs.data", app: "docs", script: "check:docs-data" },
 ];
 export const RELEASE_CHECKS: readonly ICommandCheck[] = [
-  { id: "api.coverage", app: "api", script: "test:coverage" },
+  { id: "api.coverage", app: "api", script: "test:coverage", lane: "coverage" },
   { id: "api.build", app: "api", script: "build" },
   { id: "ui.build", app: "ui", script: "build", nodeEnv: "production" },
-  { id: "ui.bundle", app: "ui", script: "size:check" },
-  { id: "ui.modulepreload", app: "ui", script: "size:check:modulepreload" },
+  { id: "ui.bundle", app: "ui", script: "size:check", after: "ui.build" },
+  {
+    id: "ui.modulepreload",
+    app: "ui",
+    script: "size:check:modulepreload",
+    after: "ui.build",
+  },
   { id: "docs.build", app: "docs", script: "build:ci", nodeEnv: "production" },
 ];
 export const PROFILES = [
