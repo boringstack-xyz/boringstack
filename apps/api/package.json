@@ -55,7 +55,7 @@
     "prepare": "husky 2>/dev/null || true"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.123.0",
+    "@anthropic-ai/sdk": "0.124.0",
     "@casl/ability": "7.0.1",
     "@elysiajs/cors": "1.4.2",
     "@elysiajs/jwt": "1.4.2",
@@ -78,7 +78,7 @@
     "fs-extra": "11.4.0",
     "handlebars": "4.7.9",
     "ioredis": "5.11.1",
-    "nodemailer": "10.0.0",
+    "nodemailer": "10.0.1",
     "openai": "7.10.0",
     "otpauth": "9.5.2",
     "pg": "8.23.0",
