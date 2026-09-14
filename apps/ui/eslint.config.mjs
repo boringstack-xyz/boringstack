@@ -20,7 +20,8 @@ import pluginReactHooks from "eslint-plugin-react-hooks";
 import pluginReactRefresh from "eslint-plugin-react-refresh";
 import pluginSonarjs from "eslint-plugin-sonarjs";
 import pluginUnicorn from "eslint-plugin-unicorn";
-import { readdirSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { readdirSync, readFileSync } from "node:fs";
 import tseslint from "typescript-eslint";
 
 // AI-first linting (mirror of the API app's philosophy): every rule that
@@ -37,13 +38,25 @@ import tseslint from "typescript-eslint";
 //   - className= ternaries / template literals (handled by react-component-architecture)
 //   - useState/useEffect inside *.tsx (must live in *.hooks.ts)
 
-const featureNamespaces = readdirSync(
-  new URL("./src/lib/i18n/locales/en/", import.meta.url)
-)
-  .filter(
-    (file) => /^[a-z][a-z0-9]*\.json$/u.test(file) && file !== "common.json"
-  )
+const localeRoot = new URL("./src/lib/i18n/locales/en/", import.meta.url);
+const dictionaries = readdirSync(localeRoot)
+  .filter((file) => /^[a-z][a-z0-9]*\.json$/u.test(file))
+  .sort();
+const featureNamespaces = dictionaries
+  .filter((file) => file !== "common.json")
   .map((file) => file.slice(0, -5));
+
+// ESLint's result cache keys each file on its content plus a hash of its
+// resolved config. The translation dictionaries that `i18n-keys` reads are
+// invisible to that hash, so a key deleted from common.json would leave a
+// cached "clean" result behind. Carrying a digest of every dictionary in
+// `settings` makes the config hash, and therefore the cache, follow them.
+const dictionaryDigest = dictionaries
+  .reduce(
+    (hash, file) => hash.update(readFileSync(new URL(file, localeRoot))),
+    createHash("sha256")
+  )
+  .digest("hex");
 
 export default tseslint.config(
   {
@@ -165,6 +178,7 @@ export default tseslint.config(
       }
     },
     settings: {
+      "i18n-keys/dictionaryDigest": dictionaryDigest,
       react: { version: "19.2" },
       "import/resolver": {
         typescript: { project: "./tsconfig.json" }
