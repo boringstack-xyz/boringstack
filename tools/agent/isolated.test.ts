@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test";
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,6 +17,7 @@ import { runnerArguments } from "../agent-evals/isolated/policy";
 import { withIsolatedRuntime } from "../agent-evals/isolated/runtime";
 import { dockerTestsEnabled, hostEnvironment } from "./environment";
 import { runProcess } from "./process";
+import { isRecord, parseRecord } from "./validation";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
@@ -199,3 +207,36 @@ if (dockerTestsEnabled()) {
     }
   }, 1_800_000);
 }
+
+test("candidate image copies every patched-dependency file before its frozen installs", () => {
+  const dockerfile = readFileSync(
+    join(ROOT, "tools/agent-evals/isolated/Dockerfile"),
+    "utf8"
+  );
+  const install = dockerfile.indexOf("bun install --frozen-lockfile");
+
+  expect(install).toBeGreaterThan(0);
+
+  for (const app of ["api", "ui"]) {
+    const manifest = parseRecord(
+      readFileSync(join(ROOT, "apps", app, "package.json"), "utf8")
+    );
+    const patched = manifest.patchedDependencies;
+    const patches = isRecord(patched) ? Object.values(patched) : [];
+
+    for (const patch of patches) {
+      expect(typeof patch).toBe("string");
+
+      if (typeof patch !== "string") {
+        continue;
+      }
+
+      const directory = `apps/${app}/${patch.split("/")[0] ?? ""}`;
+      const copy = dockerfile.indexOf(`COPY ${directory} ${directory}`);
+
+      expect(existsSync(join(ROOT, "apps", app, patch))).toBe(true);
+      expect(copy).toBeGreaterThan(0);
+      expect(copy).toBeLessThan(install);
+    }
+  }
+});
