@@ -80,10 +80,10 @@ agent-built product. Existing security and coverage gates remain enforced.
 | 67 | Wins. | Preserve: reported win; no corrective change requested. |
 | 68 | Importing the i18n config into a test fixture flips every test in the folder to real copy. | Documented: avoid application singleton i18n in cross-test fixtures (14). |
 | 69 | `max-hooks-per-file` counts exported hooks, not hook calls; the message could say so. | Already explicit in installed plugin: diagnostic says “This file exports ... hooks”, names them, and suggests focused modules. |
-| 70 | `static-translation-key-exists` does not understand i18next plural suffixes. | Implemented: lockfile-backed plugin patch checks counted plural fallbacks through the real ESLint entry point. |
+| 70 | `static-translation-key-exists` does not understand i18next plural suffixes. | Implemented upstream: `@boring-stack-pkg/eslint-plugin-i18n-keys` 0.1.3 resolves `count`, `ordinal` and `context` suffixes the way i18next does (boringstack-xyz/eslint-plugins#10); the template pins the release and checks it through the real ESLint entry point. |
 | 71 | Account-scoped tables need four registrations, none discoverable from the schema file. | Partial: generator now registers each generated table in the ESLint account-scope list, alongside schema export, relations and test cleanup. General hand-written schema drift detection remains open. |
 | 72 | Wins. | Preserve: reported win; no corrective change requested. |
-| 73 | `static-translation-key-exists` again: hand-rolled plurals spread. | Implemented: same plural regression/patch as 70; counted calls need an other fallback. |
+| 73 | `static-translation-key-exists` again: hand-rolled plurals spread. | Implemented upstream with 70; counted calls need an `_other` fallback, and the guide documents the accepted forms. |
 | 74 | Wins. | Preserve: reported win; no corrective change requested. |
 | 75 | `WITH_OBSERVABILITY=0` leaves the OTEL exporter pointed at a Tempo that does not exist, and the retries rate-limit the developer's DNS. | Implemented: Tempo default exists only in observability overlay; matrix covers absent, empty and external endpoints in dev/prod. |
 | 76 | A sandbox lease survives its owner's death and can only be reclaimed by destroying the sandbox. | Implemented: explicit dead-owner lease recovery, live-owner refusal, replacement-token protection and regression. |

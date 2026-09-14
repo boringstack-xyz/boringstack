@@ -87,7 +87,7 @@
     "@boring-stack-pkg/eslint-plugin-code-flow": "0.2.0",
     "@boring-stack-pkg/eslint-plugin-comment-hygiene": "0.2.0",
     "@boring-stack-pkg/eslint-plugin-env-access": "0.1.3",
-    "@boring-stack-pkg/eslint-plugin-i18n-keys": "0.1.2",
+    "@boring-stack-pkg/eslint-plugin-i18n-keys": "0.1.3",
     "@boring-stack-pkg/eslint-plugin-module-boundaries": "0.1.2",
     "@boring-stack-pkg/eslint-plugin-react-component-architecture": "0.3.0",
     "@boring-stack-pkg/eslint-plugin-structured-logging": "0.1.2",
@@ -174,8 +174,5 @@
     "tmp": "0.2.7",
     "undici": "7.29.0",
     "ws": "8.21.3"
-  },
-  "patchedDependencies": {
-    "@boring-stack-pkg/eslint-plugin-i18n-keys@0.1.2": "patches/@boring-stack-pkg%2Feslint-plugin-i18n-keys@0.1.2.patch"
   }
 }

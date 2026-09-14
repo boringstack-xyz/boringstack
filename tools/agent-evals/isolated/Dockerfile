@@ -4,7 +4,6 @@ COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
 WORKDIR /review
 COPY apps/api/package.json apps/api/bun.lock apps/api/
 COPY apps/ui/package.json apps/ui/bun.lock apps/ui/
-COPY apps/ui/patches apps/ui/patches
 RUN cd apps/api && bun install --frozen-lockfile --ignore-scripts && cd ../ui && bun install --frozen-lockfile --ignore-scripts
 COPY . .
 RUN git init -q && git add . && git -c user.name=Verifier -c user.email=verifier@example.com commit -qm snapshot && git config --system safe.directory /review

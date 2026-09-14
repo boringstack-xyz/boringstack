@@ -29,11 +29,12 @@ For translated assertions, use a fresh i18next instance with explicit resources
 and locale in the wrapper. Importing the application's singleton config in one
 fixture changes global translation state for other tests in the same process.
 
-The pinned i18n lint plugin has a Bun patch for counted plural keys. It requires
-an `_other` fallback (or `_ordinal_other` with `ordinal: true`) and a `count`
-option; an uncounted missing base key still fails. The installed plugin regression
-runs its actual ESLint entry point. Remove the patch only after a released plugin
-passes that regression unmodified.
+The i18n lint plugin resolves keys the way i18next does: `t("files", { count })`
+needs `files_other` (or `files_ordinal_other` with `ordinal: true`), a string
+`context` needs `files_<context>`, and an uncounted call to a plural-only key
+still fails. `tests/lint-meta/i18n-plugin.test.ts` runs the installed plugin
+through the real ESLint entry point, so a plugin upgrade that regresses plural
+handling fails `validate` here rather than in a product.
 
 ## Feature translation namespaces
 
