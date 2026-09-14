@@ -23,6 +23,30 @@ export const tickets = pgSchema("app").table("tickets", {
 });
 ```
 
+## Typing relational results
+
+`InferSelectModel<typeof components>` covers a base row only. For a
+`db.query.x.findMany({ with })` result, derive the type from the query
+function instead of composing it by hand, so the `with` clause and the type
+never drift:
+
+```ts
+export const listWithRelations = () =>
+  db.query.components.findMany({
+    with: { terminals: true, manufacturer: true },
+  });
+
+export type IComponentWithRelations = Awaited<
+  ReturnType<typeof listWithRelations>
+>[number];
+```
+
+Pure mappers take `IComponentWithRelations`; the repository function is the
+single owner of the shape. Two column-type reminders for the same mappers:
+Postgres `numeric` / `decimal` arrive as `string` (convert at the mapper, or
+declare the column `{ mode: "number" }` when precision allows), and `bigint`
+arrives as `string` unless the column is declared `{ mode: "number" }`.
+
 ## Migrations
 
 Versioned: `bun run db:generate` (creates SQL) → `bun run db:migrate`

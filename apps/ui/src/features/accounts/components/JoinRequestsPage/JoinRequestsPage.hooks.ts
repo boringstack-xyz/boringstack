@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 
-import { useMe } from "@/features/auth/Auth.queries";
+import { useMe } from "@/lib/session";
 
 import {
   useApproveJoinRequest,

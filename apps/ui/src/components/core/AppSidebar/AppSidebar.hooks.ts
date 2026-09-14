@@ -14,8 +14,7 @@ import { useTranslation } from "react-i18next";
 
 import { ROLE } from "@/lib/acl/acl.types";
 import { useCapabilities } from "@/lib/api/queries/useCapabilities";
-
-import { useMe } from "@/features/auth/Auth.queries";
+import { useMe } from "@/lib/session";
 
 import { APP_SIDEBAR_NAV_ITEMS } from "./AppSidebar.constants";
 import type {

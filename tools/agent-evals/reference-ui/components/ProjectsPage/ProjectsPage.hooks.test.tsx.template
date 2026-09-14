@@ -5,7 +5,7 @@ import { useProjectsPage } from "./ProjectsPage.hooks";
 
 const state = vi.hoisted(() => ({ role: "owner", error: false }));
 
-vi.mock("@/features/auth/Auth.queries", () => ({
+vi.mock("@/lib/session", () => ({
   useMe: () => ({ data: { account: { id: "a" }, role: state.role } })
 }));
 vi.mock("../../Projects.queries", () => ({

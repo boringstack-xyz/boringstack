@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 import * as Sentry from "@sentry/react";
 
-import { useMe } from "@/features/auth/Auth.queries";
+import { useMe } from "@/lib/session";
 
 /*
  * Syncs the current /me identity into the Sentry SDK's user context so

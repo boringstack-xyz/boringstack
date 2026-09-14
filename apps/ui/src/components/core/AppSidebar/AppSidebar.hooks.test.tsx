@@ -6,9 +6,7 @@ import type * as ReactI18Next from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
 
 import { CAPABILITIES_QUERY_KEY } from "@/lib/api/queries/capabilities.constants";
-
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
-import type { IMe } from "@/features/auth/Auth.types";
+import { type IMe, SESSION_QUERY_KEYS } from "@/lib/session";
 
 import { useAppSidebar } from "./AppSidebar.hooks";
 
@@ -32,7 +30,7 @@ function makeWrapper(
     defaultOptions: { queries: { retry: false } }
   });
 
-  client.setQueryData(AUTH_QUERY_KEYS.me, me);
+  client.setQueryData(SESSION_QUERY_KEYS.me, me);
   client.setQueryData(CAPABILITIES_QUERY_KEY, {
     features: {
       billing: { enabled: billingEnabled },

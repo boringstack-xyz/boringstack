@@ -536,23 +536,13 @@ export default tseslint.config(
            * Other auth↔feature crossings should still fail.
            */
           allowList: [
-            ["dashboard", "auth"],
             /*
-             * `notifications` gates SSE on the authenticated user;
-             * `useMe` is the canonical auth handle.
+             * `accounts` owns the MFA settings section, which drives the
+             * auth feature's MFA queries and mutations directly. The
+             * current user itself comes from `@/lib/session` and needs
+             * no exception anywhere.
              */
-            ["notifications", "auth"],
-            /*
-             * `accounts` reads memberships + active account id from the
-             * `/me` response and invalidates its cache after a switch.
-             * The `useMe` query is the canonical auth handle.
-             */
-            ["accounts", "auth"],
-            /*
-             * `billing` gates checkout/portal on owner role and subscription
-             * state from the canonical `/me` response.
-             */
-            ["billing", "auth"]
+            ["accounts", "auth"]
           ]
         }
       ]

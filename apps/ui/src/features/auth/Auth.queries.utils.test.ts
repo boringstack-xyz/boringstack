@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { ApiError } from "@/lib/api/ApiError";
+import type { IMe } from "@/lib/session";
 
-import { isAuthenticatedMe, resolveAuthStatus } from "./Auth.queries.utils";
-import type { IMe } from "./Auth.types";
+import { resolveAuthStatus } from "./Auth.queries.utils";
 
 const ME_FIXTURE: IMe = {
   user: {
@@ -23,35 +23,6 @@ const ME_FIXTURE: IMe = {
   authProviders: ["local"],
   hasPasswordLogin: true
 };
-
-describe("isAuthenticatedMe", () => {
-  it("returns false for null", () => {
-    expect(isAuthenticatedMe(null)).toBe(false);
-  });
-
-  it("returns false for undefined", () => {
-    expect(isAuthenticatedMe(undefined)).toBe(false);
-  });
-
-  it("returns false for non-object primitives", () => {
-    expect(isAuthenticatedMe("string")).toBe(false);
-    expect(isAuthenticatedMe(42)).toBe(false);
-    expect(isAuthenticatedMe(true)).toBe(false);
-  });
-
-  it("returns false when `user` key is absent (openapi-fetch empty-content branch)", () => {
-    expect(isAuthenticatedMe({})).toBe(false);
-    expect(isAuthenticatedMe({ account: { id: "a", name: "A" } })).toBe(false);
-  });
-
-  it("returns false for the anonymous shape `{ user: null }`", () => {
-    expect(isAuthenticatedMe({ user: null })).toBe(false);
-  });
-
-  it("returns true when `user` is a non-null object (authenticated shape)", () => {
-    expect(isAuthenticatedMe(ME_FIXTURE)).toBe(true);
-  });
-});
 
 describe("resolveAuthStatus", () => {
   it("returns 'authed' for an IMe payload", () => {

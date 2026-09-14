@@ -6,8 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { ROLE } from "@/lib/acl/acl.types";
 import { ApiError } from "@/lib/api/ApiError";
-
-import { useMe } from "@/features/auth/Auth.queries";
+import { useMe } from "@/lib/session";
 
 import { useInvitations } from "../../Accounts.queries";
 import { inviteMemberSchema } from "../../Accounts.schemas";

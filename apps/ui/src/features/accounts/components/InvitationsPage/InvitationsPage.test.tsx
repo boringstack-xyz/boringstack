@@ -10,15 +10,14 @@ import { describe, expect, it, vi } from "vitest";
 import { buildAbility } from "@/lib/acl/ability";
 import { AbilityContext } from "@/lib/acl/acl.context";
 import { i18n } from "@/lib/i18n/config";
-
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
-import type { IMe } from "@/features/auth/Auth.types";
+import { type IMe, SESSION_QUERY_KEYS } from "@/lib/session";
 
 import { ACCOUNTS_QUERY_KEYS } from "../../Accounts.constants";
 import type { IPendingInvitation } from "../../Accounts.types";
 import { InvitationsPage } from "./InvitationsPage";
 
 const inviteMock = vi.hoisted(() => vi.fn());
+
 const resendMock = vi.hoisted(() => vi.fn());
 const revokeMock = vi.hoisted(() => vi.fn());
 
@@ -70,7 +69,7 @@ function renderPage(
     defaultOptions: { queries: { retry: false } }
   });
 
-  client.setQueryData(AUTH_QUERY_KEYS.me, me);
+  client.setQueryData(SESSION_QUERY_KEYS.me, me);
 
   if (me !== null) {
     client.setQueryData(

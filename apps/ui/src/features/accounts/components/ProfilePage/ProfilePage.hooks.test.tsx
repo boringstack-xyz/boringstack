@@ -5,8 +5,7 @@ import { renderHook } from "@testing-library/react";
 import type * as ReactI18Next from "react-i18next";
 import { describe, expect, it, vi } from "vitest";
 
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
-import type { IMe } from "@/features/auth/Auth.types";
+import { type IMe, SESSION_QUERY_KEYS } from "@/lib/session";
 
 import { useProfilePage } from "./ProfilePage.hooks";
 
@@ -27,7 +26,7 @@ function makeWrapper(me: IMe | null) {
     defaultOptions: { queries: { retry: false } }
   });
 
-  client.setQueryData(AUTH_QUERY_KEYS.me, me);
+  client.setQueryData(SESSION_QUERY_KEYS.me, me);
 
   return ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>

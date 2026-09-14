@@ -47,6 +47,16 @@ reachable during the run.
 Routes that aren't in the spec yet are forbidden — add them to the
 API first, then regenerate.
 
+## When a field's type looks wrong
+
+If a numeric field arrives as `string | number`, a tuple as `T[]`, or a
+literal union as `undefined`, the cause is on the API side: Elysia's
+coercing `t.Integer()`, `t.Tuple()`, or `t.Union(values.map(...))` in a
+`*.schemas.ts` file. Fix the schema there (`Type.Integer()` from
+`@sinclair/typebox`, `t.Array()`, `t.UnionEnum()`), regenerate, and do not
+paper over it with `Number(...)` in the UI. `elysia/portable-schema-types`
+reports these in the API app.
+
 ## What about Zod schemas?
 
 Zod schemas (`*.schemas.ts`) are for **runtime validation at the

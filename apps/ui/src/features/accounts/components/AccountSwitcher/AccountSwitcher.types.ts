@@ -1,4 +1,4 @@
-import type { IMembershipSummary } from "@/features/auth/Auth.types";
+import type { IMembershipSummary } from "@/lib/session";
 
 export interface IAccountSwitcherProps {
   readonly className?: string;

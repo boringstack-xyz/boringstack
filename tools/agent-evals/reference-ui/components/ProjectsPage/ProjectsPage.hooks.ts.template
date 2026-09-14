@@ -6,8 +6,7 @@ import {
 } from "react";
 
 import { ROLE } from "@/lib/acl/acl.types.generated";
-
-import { useMe } from "@/features/auth/Auth.queries";
+import { useMe } from "@/lib/session";
 
 import { useSaveProject } from "../../Projects.mutations";
 import { useProjects } from "../../Projects.queries";

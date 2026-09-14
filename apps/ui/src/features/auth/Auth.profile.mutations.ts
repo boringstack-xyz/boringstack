@@ -6,8 +6,8 @@ import {
 
 import { ApiError } from "@/lib/api/ApiError";
 import { apiClient } from "@/lib/api/client";
+import { SESSION_QUERY_KEYS } from "@/lib/session";
 
-import { AUTH_QUERY_KEYS } from "./Auth.constants";
 import type { IUpdateProfileInput, IUser } from "./Auth.types";
 
 export function useUpdateProfile(): UseMutationResult<
@@ -30,7 +30,7 @@ export function useUpdateProfile(): UseMutationResult<
       return data;
     },
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me });
+      await qc.invalidateQueries({ queryKey: SESSION_QUERY_KEYS.me });
     }
   });
 }

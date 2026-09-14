@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 
 import { useCapabilities } from "@/lib/api/queries/useCapabilities";
 import { logger } from "@/lib/logger/logger";
+import { useMe } from "@/lib/session";
 import { displayName } from "@/lib/users/display-name";
 
 import { useAppPageHeader } from "@/components/core/AppPage";
 
-import { useMe } from "@/features/auth/Auth.queries";
 import { useLogout } from "@/features/auth/Auth.session.mutations";
 import { useNotificationStream } from "@/features/notifications/useNotificationStream";
 

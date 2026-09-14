@@ -6,9 +6,7 @@ import {
 
 import { ApiError } from "@/lib/api/ApiError";
 import { apiClient } from "@/lib/api/client";
-
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
-import type { IMe } from "@/features/auth/Auth.types";
+import { type IMe, SESSION_QUERY_KEYS } from "@/lib/session";
 
 /**
  * Mutations that act on the caller's *own* membership: switching the
@@ -37,8 +35,9 @@ export function useSwitchAccount(): UseMutationResult<
       return data.data;
     },
     onSuccess: async () => {
-      const previousAccountId = qc.getQueryData<IMe | null>(AUTH_QUERY_KEYS.me)
-        ?.account.id;
+      const previousAccountId = qc.getQueryData<IMe | null>(
+        SESSION_QUERY_KEYS.me
+      )?.account.id;
       const isSession = (key: readonly unknown[]) =>
         key.length === 2 && key[0] === "auth" && key[1] === "me";
 
@@ -52,7 +51,7 @@ export function useSwitchAccount(): UseMutationResult<
       }
 
       await qc.resetQueries(
-        { queryKey: AUTH_QUERY_KEYS.me, exact: true },
+        { queryKey: SESSION_QUERY_KEYS.me, exact: true },
         { throwOnError: true }
       );
       qc.removeQueries({

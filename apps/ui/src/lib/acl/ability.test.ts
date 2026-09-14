@@ -1,11 +1,12 @@
 import { subject } from "@casl/ability";
 import { describe, expect, it } from "vitest";
 
-import type { IResolvedFeatures } from "@/features/auth/Auth.types";
+import type { IResolvedFeatures } from "@/lib/session";
 
 import { buildAbility } from "./ability";
 
 const ACCOUNT_ID = "acc-1";
+
 const OTHER_ACCOUNT_ID = "acc-2";
 
 const featuresAllOn: IResolvedFeatures = {

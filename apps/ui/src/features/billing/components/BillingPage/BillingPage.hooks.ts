@@ -7,8 +7,7 @@ import { ROLE } from "@/lib/acl/acl.types";
 import { useCapabilities } from "@/lib/api/queries/useCapabilities";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger/logger";
-
-import { useMe } from "@/features/auth/Auth.queries";
+import { useMe } from "@/lib/session";
 
 import { BILLING_PATH } from "../../Billing.constants";
 import { useBillingCheckout, useBillingPortal } from "../../Billing.mutations";

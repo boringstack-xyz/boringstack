@@ -8,9 +8,7 @@ import { I18nextProvider } from "react-i18next";
 import { buildAbility } from "@/lib/acl/ability";
 import { AbilityContext } from "@/lib/acl/acl.context";
 import { i18n } from "@/lib/i18n/config";
-
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
-import type { IMe } from "@/features/auth/Auth.types";
+import { type IMe, SESSION_QUERY_KEYS } from "@/lib/session";
 
 import { ACCOUNTS_QUERY_KEYS } from "../../Accounts.constants";
 import type { IPendingInvitation } from "../../Accounts.types";
@@ -62,7 +60,7 @@ function withSeed(invitations: IPendingInvitation[]) {
       defaultOptions: { queries: { retry: false } }
     });
 
-    client.setQueryData(AUTH_QUERY_KEYS.me, me);
+    client.setQueryData(SESSION_QUERY_KEYS.me, me);
     client.setQueryData(
       ACCOUNTS_QUERY_KEYS.invitations(me.account.id),
       invitations

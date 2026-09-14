@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 
-import { useMe } from "@/features/auth/Auth.queries";
+import { useMe } from "@/lib/session";
 
 import { useAuditLog } from "../../AuditLog.queries";
 import type { IAuditLogEntry } from "../../AuditLog.types";

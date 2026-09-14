@@ -4,7 +4,8 @@ import { Navigate, useLocation } from "react-router-dom";
 
 import { useTranslation } from "react-i18next";
 
-import { useMe } from "@/features/auth/Auth.queries";
+import { useMe } from "@/lib/session";
+
 import { resolveAuthStatus } from "@/features/auth/Auth.queries.utils";
 
 import { OfflineFallback } from "./OfflineFallback";

@@ -1,4 +1,5 @@
-import { useMe } from "@/features/auth/Auth.queries";
+import { useMe } from "@/lib/session";
+
 import { useDashboardSummary } from "@/features/dashboard/Dashboard.queries";
 
 import type { IDashboardPageView } from "./DashboardPage.types";

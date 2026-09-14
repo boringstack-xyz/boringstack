@@ -22,10 +22,10 @@ import { ApiError } from "@/lib/api/ApiError";
 import { useCapabilities } from "@/lib/api/queries/useCapabilities";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger/logger";
+import { useMe } from "@/lib/session";
 
 import { useDisconnectOAuth } from "@/features/auth/Auth.oauth.mutations";
 import { useChangePassword } from "@/features/auth/Auth.password.mutations";
-import { useMe } from "@/features/auth/Auth.queries";
 import { changePasswordInputSchema } from "@/features/auth/Auth.schemas";
 import { applyServerErrors } from "@/features/auth/Auth.utils";
 

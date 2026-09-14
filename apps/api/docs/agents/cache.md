@@ -17,6 +17,29 @@ if (widget) {
 }
 ```
 
+## Namespaces that change under you
+
+A read cache over reference data (a catalog, a plan table) should not wait
+for its TTL when a seed, an admin publish or a migration changes the data.
+Put the namespace's generation in every read key and bump it from every
+write path:
+
+```ts
+import { bumpGeneration, generationScopedKey } from "../../lib/cache";
+
+// reader
+const key = await generationScopedKey("catalog", "list", digest);
+const items = await cacheService.wrap(key, load, { ttlSeconds: 3600 });
+
+// seed, publish, migration
+await bumpGeneration("catalog");
+```
+
+A bump makes every old key unreachable at once; the entries age out on
+their own TTL. `readGeneration(namespace)` exposes the counter for keys
+built elsewhere. Seeds must be idempotent and must bump, otherwise a
+pre-seed empty list stays cached until it expires.
+
 ## Lint contract
 
 The `cache-keys` plugin requires:

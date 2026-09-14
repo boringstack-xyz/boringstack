@@ -1,4 +1,9 @@
 export { cacheService } from "./cache.service";
+export {
+  bumpGeneration,
+  generationScopedKey,
+  readGeneration,
+} from "./cache.generation";
 export { buildCacheService } from "./cache.service.utils";
 export type {
   CacheProviderName,

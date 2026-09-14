@@ -6,8 +6,7 @@ import {
 
 import { ApiError } from "@/lib/api/ApiError";
 import { apiClient } from "@/lib/api/client";
-
-import { AUTH_QUERY_KEYS } from "@/features/auth/Auth.constants";
+import { SESSION_QUERY_KEYS } from "@/lib/session";
 
 export function useTransferOwnership(
   accountId: string | undefined
@@ -35,7 +34,7 @@ export function useTransferOwnership(
        * Role on /me will flip from owner to admin. AbilityProvider
        * rebuilds, gating the buttons the former owner used to see.
        */
-      await qc.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me });
+      await qc.invalidateQueries({ queryKey: SESSION_QUERY_KEYS.me });
     }
   });
 }
@@ -82,7 +81,7 @@ export function useUpdateAccount(
       return data;
     },
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.me });
+      await qc.invalidateQueries({ queryKey: SESSION_QUERY_KEYS.me });
     }
   });
 }

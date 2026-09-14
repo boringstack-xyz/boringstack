@@ -5,7 +5,7 @@ the sidebar.
 
 `src/app/router/routes.tsx` declares every route as a lazy import.
 Protected routes wrap their element with `<ProtectedRoute>` and
-`<AppShell>`. `<ProtectedRoute>` uses `useMe()` from auth queries;
+`<AppShell>`. `<ProtectedRoute>` uses `useMe()` from `@/lib/session`;
 while loading it renders a spinner; if unauthenticated it
 `<Navigate to="/login" state={{ from }} />` so the user returns to
 the original page after login.

@@ -1,6 +1,5 @@
 import type { ApiError } from "@/lib/api/ApiError";
-
-import type { IMe } from "./Auth.types";
+import type { IMe } from "@/lib/session";
 
 /*
  * Discriminated state used by `ProtectedRoute` (via `resolveAuthStatus`

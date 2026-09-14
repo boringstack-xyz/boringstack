@@ -1,6 +1,6 @@
 import { AbilityBuilder, createMongoAbility } from "@casl/ability";
 
-import type { IResolvedFeatures } from "@/features/auth/Auth.types";
+import type { IResolvedFeatures } from "@/lib/session";
 
 import { ROLE } from "./acl.types";
 import type { AppAbility, Role } from "./acl.types";

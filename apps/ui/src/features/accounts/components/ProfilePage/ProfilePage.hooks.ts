@@ -8,9 +8,9 @@ import { toast } from "sonner";
 
 import { ApiError } from "@/lib/api/ApiError";
 import { logger } from "@/lib/logger/logger";
+import { useMe } from "@/lib/session";
 
 import { useUpdateProfile } from "@/features/auth/Auth.profile.mutations";
-import { useMe } from "@/features/auth/Auth.queries";
 import { updateProfileInputSchema } from "@/features/auth/Auth.schemas";
 import { applyServerErrors } from "@/features/auth/Auth.utils";
 

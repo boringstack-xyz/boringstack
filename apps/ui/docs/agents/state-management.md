@@ -78,3 +78,25 @@ export const useThemeStore = create<IThemeState>((set) => ({
 Selectors should be granular — `useThemeStore((s) => s.theme)` —
 not the whole store. Subscribing to the whole store re-renders the
 component on every unrelated change.
+
+A large view hook that reads many slices does not need one selector per
+slice: group them with `useShallow` so the component takes one stable
+object and `react-hooks/exhaustive-deps` sees one dependency instead of
+ten.
+
+```ts
+import { useShallow } from "zustand/react/shallow";
+
+const { selection, extras, select } = useEditorStore(
+  useShallow((s) => ({
+    selection: s.selection,
+    extras: s.extras,
+    select: s.select
+  }))
+);
+```
+
+The current user is not store state. Read it with `useMe()` from
+`@/lib/session`, which every feature may import without a cross-feature
+exception; `SESSION_QUERY_KEYS.me` is the key to invalidate after a
+mutation that changes the session.

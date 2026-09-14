@@ -83,7 +83,7 @@ function checkDictionary(
       violations.push({
         file: localePath,
         rule: "i18n-locale-keys-used",
-        message: `Locale key \`${key}\` is defined but never referenced in src — dead translation surface (remove it from every locale, or wire it up).`
+        message: `Locale key \`${key}\` is defined but never referenced in src — dead translation surface. Remove it from every locale, or reference it: string literals count, and so do template literals whose prefix is literal (t(\`section.\${value}\`)); a template whose prefix is a variable (t(\`\${prefix}.\${value}\`)) cannot be followed statically.`
       });
     }
   }

@@ -3,8 +3,7 @@ import { useMemo } from "react";
 
 import { buildAbility } from "@/lib/acl/ability";
 import { AbilityContext, emptyAbility } from "@/lib/acl/acl.context";
-
-import { useMe } from "@/features/auth/Auth.queries";
+import { useMe } from "@/lib/session";
 
 export const AbilityProvider: FC<PropsWithChildren> = ({ children }) => {
   const me = useMe();
