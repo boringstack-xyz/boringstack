@@ -462,6 +462,14 @@ export default tseslint.config(
       "elysia/prefer-direct-return": "error",
       "elysia/no-decorate-state-collision": "error",
       /*
+       * Contract schemas are published as OpenAPI and become the UI
+       * client's types. Elysia's coercing t.Integer(), t.Tuple() and
+       * t.Union(values.map(...)) validate fine and come out wrong on the
+       * other side (string | number, T[], undefined). Use Type.Integer()
+       * from @sinclair/typebox, t.Array(), t.UnionEnum().
+       */
+      "elysia/portable-schema-types": "error",
+      /*
        * Every Elysia route handler that destructures `membership` from
        * its context MUST authorize the action explicitly. Either read
        * `membership.role` directly, or call one of the configured

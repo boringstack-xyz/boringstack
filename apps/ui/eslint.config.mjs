@@ -474,7 +474,14 @@ export default tseslint.config(
       "module-boundaries/single-semantic-module": [
         "error",
         {
-          allow: []
+          allow: [],
+          /*
+           * Only the exported surface gives a module its meaning. A
+           * non-exported config object, render helper or private class
+           * next to the hook or component that uses it stays where it is
+           * read instead of being scattered into .constants / .utils.
+           */
+          ignorePrivateDeclarations: true
         }
       ],
       "test-conventions/no-focused-tests": "error",
