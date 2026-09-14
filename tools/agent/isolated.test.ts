@@ -73,7 +73,7 @@ test("candidate completion rejects missing, duplicated and contradictory evidenc
   ).toBe(2);
 });
 
-test("Docker failures expose status without echoing credential arguments or stderr", async () => {
+test("Docker failures expose status and a redacted stderr tail without echoing credential arguments", async () => {
   const directory = mkdtempSync(join(tmpdir(), "bs-docker-error-"));
   const credential = "disposable-test-credential";
 
@@ -84,7 +84,7 @@ test("Docker failures expose status without echoing credential arguments or stde
       executable,
       `#!/bin/sh
 if [ "$1" = "success" ]; then printf ready; exit 0; fi
-printf '%s\\n' '${credential}' >&2
+printf 'no such image for %s\\n' '${credential}' >&2
 exit 7
 `
     );
@@ -109,6 +109,8 @@ exit 7
     expect(result.stdout.trim()).toBe("ready");
     expect(result.stderr).not.toContain(credential);
     expect(result.stderr).toContain("command_completed; exit=7");
+    expect(result.stderr).toContain("docker run");
+    expect(result.stderr).toContain("no such image for [redacted]");
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
