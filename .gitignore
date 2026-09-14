@@ -22,3 +22,6 @@ ROADMAP.md
 .mcp.json
 # Owned disposable agent verification state (contains test credentials).
 .agent-state/
+
+# tsforge review cache (local tooling by the same author; never part of the template)
+.tsforge/

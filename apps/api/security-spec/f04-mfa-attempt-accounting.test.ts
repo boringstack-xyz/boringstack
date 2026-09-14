@@ -30,6 +30,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { Redis } from "ioredis";
 
+import { getValkeyAppClientOptions } from "../src/clients/valkey/valkey.utils";
 import { now } from "../src/lib/time/now";
 import { mfaService } from "../src/api/auth/services/mfa.service";
 import { MFA_MAX_CHALLENGE_ATTEMPTS } from "../src/api/auth/mfa.constants";
@@ -45,16 +46,11 @@ import {
 import { seedVerifiedUser } from "../tests/helpers/auth";
 import { raceAll, requireDbOrFail, requireValkeyOrFail } from "./harness";
 
-/** Opens a raw client against the same Valkey the cache provider uses. */
+/** Opens a raw client against the same Valkey (and database index) the app uses. */
 const valkeyClient = async (): Promise<Redis> => {
-  const client = new Redis({
-    host: process.env.VALKEY_HOST ?? "127.0.0.1",
-    port: Number(process.env.VALKEY_PORT ?? 6379),
-    password: process.env.VALKEY_PASSWORD,
-    lazyConnect: true,
-  });
+  const client = new Redis(getValkeyAppClientOptions({ connectTimeout: 500 }));
 
-  await client.connect();
+  await client.ping();
 
   return client;
 };

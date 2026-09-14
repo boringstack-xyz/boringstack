@@ -26,7 +26,7 @@
     "check:components": "bun run scripts/check-unused-components.mjs",
     "build:site": "bun run generate:scaffold-manifest && bun run generate:og-image && astro build && bun run sanitize:llms",
     "build": "bun run generate:scaffold-manifest && bun run generate:og-image && astro build && bun run sanitize:llms",
-    "build:ci": "bun run check:docs-data && bun run check:components && bun run generate:og-image && astro build && bun run sanitize:llms && bun run check:fragments && bun run check:rendered-markdown && bun run check:agent-surface",
+    "build:ci": "bun run check:docs-data && bun run check:components && astro build && bun run sanitize:llms && bun run check:fragments && bun run check:rendered-markdown && bun run check:agent-surface",
     "preview": "bun run build:site && wrangler dev",
     "astro": "astro",
     "deploy": "bun run build:ci && wrangler deploy",

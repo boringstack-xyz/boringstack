@@ -13,7 +13,12 @@ import { inventoryEvidence } from "./inventory";
 import { runProcess } from "./process";
 import { testEvidence } from "./reports";
 import type { ICheckResult } from "./result";
-import { sandboxEnv, type ISandbox } from "./sandbox/lifecycle";
+import {
+  SANDBOX_LANES,
+  sandboxEnv,
+  type ISandbox,
+  type ISandboxLane,
+} from "./sandbox/lifecycle";
 import { isAborted, parseRecord, requireValue } from "./validation";
 import { checkOpenapi } from "./verification";
 
@@ -27,7 +32,8 @@ export interface IRuntime {
 export async function startRuntime(
   root: string,
   state: ISandbox,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  lane: ISandboxLane = SANDBOX_LANES.default
 ): Promise<IRuntime> {
   const dir = join(root, ".agent-state", `runtime-${randomUUID()}`);
 
@@ -110,7 +116,7 @@ export async function startRuntime(
     await reservation.stop(true);
     const uiUrl = `http://localhost:${uiPort}`;
     const env = {
-      ...sandboxEnv(state),
+      ...sandboxEnv(state, lane),
       QUEUES_ENABLED: "false",
       ACCOUNT_DOMAIN_CLAIMING: "false",
       FRONTEND_URL: uiUrl,
@@ -241,13 +247,14 @@ export async function fullStackChecks(
   root: string,
   state: ISandbox,
   signal?: AbortSignal,
-  expectedFingerprint?: string
+  expectedFingerprint?: string,
+  lane: ISandboxLane = SANDBOX_LANES.default
 ): Promise<ICheckResult[]> {
   let runtime: IRuntime | undefined;
   const report = join(root, ".agent-state", `playwright-${randomUUID()}.xml`);
 
   try {
-    runtime = await startRuntime(root, state, signal);
+    runtime = await startRuntime(root, state, signal, lane);
     const schema = await checkOpenapi(
       root,
       `${runtime.apiUrl}/swagger/json`,
