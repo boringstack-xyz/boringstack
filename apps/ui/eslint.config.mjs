@@ -21,7 +21,7 @@ import pluginReactRefresh from "eslint-plugin-react-refresh";
 import pluginSonarjs from "eslint-plugin-sonarjs";
 import pluginUnicorn from "eslint-plugin-unicorn";
 import { createHash } from "node:crypto";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import tseslint from "typescript-eslint";
 
 // AI-first linting (mirror of the API app's philosophy): every rule that
