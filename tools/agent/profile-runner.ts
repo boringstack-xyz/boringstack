@@ -1,20 +1,19 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type ICommandCheck } from "./checks";
-import type { Lane } from "./lanes";
+import type { ITask } from "./scheduler";
+import type { IExecutionBudget } from "./scheduling";
 import { hostEnvironment } from "./environment";
 import { inventoryEvidence } from "./inventory";
-import { runProcess } from "./process";
+import { runProcess, type IProcessResult } from "./process";
 import { testEvidence } from "./reports";
 import type { ICheckResult, IVerificationResult } from "./result";
 import { acquireLease } from "./sandbox/lease";
-import { runLanes } from "./lanes";
 import {
   ensureLaneDatabases,
   inspectSandbox,
   SANDBOX_LANES,
   sandboxEnv,
-  EXTRA_LANES,
   type ISandbox,
   type SandboxLaneName,
 } from "./sandbox/lifecycle";
@@ -28,7 +27,7 @@ export class ProfileRunner {
 
   releaseLease: (() => void) | undefined;
 
-  private env: Record<string, string | undefined> = {
+  private readonly env: Record<string, string | undefined> = {
     ...hostEnvironment(),
     CI: "true",
     DOTENV_CONFIG_PATH: "/dev/null",
@@ -40,7 +39,7 @@ export class ProfileRunner {
     private readonly result: IVerificationResult,
     private readonly signal?: AbortSignal,
     private readonly sandboxId?: string,
-    readonly concurrency = 1
+    readonly budget: IExecutionBudget = { slots: 1, testWorkers: 1 }
   ) {}
 
   /** Environment for a stateful lane: its own database and Valkey index. */
@@ -55,6 +54,24 @@ export class ProfileRunner {
   add(check: ICheckResult): void {
     this.result.checks.push(check);
     process.stderr.write(`${check.checkId}: ${check.status}\n`);
+  }
+
+  private logFailure(id: string, run: IProcessResult): void {
+    const directory = join(
+      this.root,
+      ".agent-state",
+      "verification",
+      this.result.runId
+    );
+
+    mkdirSync(directory, { recursive: true, mode: 0o700 });
+    const path = join(
+      directory,
+      `${id.replaceAll(/[^a-zA-Z0-9.-]/g, "_")}.log`
+    );
+
+    writeFileSync(path, run.stdout + run.stderr, { mode: 0o600 });
+    process.stderr.write(`${id}: output saved to ${path}\n`);
   }
 
   async command(
@@ -87,6 +104,10 @@ export class ProfileRunner {
 
     this.add(check);
 
+    if (check.status !== "passed") {
+      this.logFailure(id, run);
+    }
+
     return check;
   }
 
@@ -111,7 +132,8 @@ export class ProfileRunner {
     );
   }
 
-  async tests(security: boolean): Promise<void> {
+  async tests(security: boolean, coverage = false): Promise<void> {
+    const checkId = security ? "security.tests" : "api.tests";
     const report = join(this.temp, security ? "security.xml" : "api.xml");
     const laneEnv = this.laneEnv(security ? "security" : "tests");
     const run = await runProcess(
@@ -119,8 +141,10 @@ export class ProfileRunner {
         process.execPath,
         NO_ENV_FILE,
         "run",
-        "scripts/quality/run-tests-clean.ts",
-        security ? "security-spec" : "tests",
+        coverage
+          ? "scripts/quality/check-coverage.ts"
+          : "scripts/quality/run-tests-clean.ts",
+        ...(coverage ? [] : [security ? "security-spec" : "tests"]),
         "--reporter=junit",
         `--reporter-outfile=${report}`,
       ],
@@ -144,30 +168,39 @@ export class ProfileRunner {
     const check =
       run.status === "blocked"
         ? {
-            checkId: security ? "security.tests" : "api.tests",
+            checkId,
             status: "blocked" as const,
             reason: run.reason,
           }
-        : testEvidence(
-            security ? "security.tests" : "api.tests",
-            xml,
-            run.code,
-            "bun",
-            run.code === 86
-          );
+        : testEvidence(checkId, xml, run.code, "bun", run.code === 86);
 
-    this.add({
-      ...(security
-        ? check
-        : inventoryEvidence(
-            this.root,
-            "api.tests",
-            xml,
-            check,
-            this.result.checkout?.fingerprint
-          )),
-      durationMs: run.durationMs,
-    });
+    const evidence = security
+      ? check
+      : inventoryEvidence(
+          this.root,
+          "api.tests",
+          xml,
+          check,
+          this.result.checkout?.fingerprint
+        );
+
+    this.add({ ...evidence, durationMs: run.durationMs });
+
+    if (evidence.status !== "passed") {
+      this.logFailure(checkId, run);
+    }
+
+    if (coverage) {
+      this.add({
+        checkId: "api.coverage",
+        status: evidence.status,
+        reason:
+          evidence.status === "passed"
+            ? "coverage_gate_passed"
+            : evidence.reason,
+        durationMs: run.durationMs,
+      });
+    }
 
     if (security) {
       this.add(
@@ -191,14 +224,18 @@ export class ProfileRunner {
         "scripts/quality/run-tests-clean.ts",
         "run",
         "--coverage",
+        "--coverage.reporter=text-summary",
+        "--coverage.reporter=lcovonly",
+        `--maxWorkers=${String(this.budget.testWorkers)}`,
         "--reporter=junit",
         `--outputFile=${report}`,
       ],
       { cwd: join(this.root, "apps/ui"), env: this.env, signal: this.signal }
     );
 
-    this.add(
-      run.status === "blocked"
+    this.add({
+      durationMs: run.durationMs,
+      ...(run.status === "blocked"
         ? { checkId: "ui.tests", status: "blocked", reason: run.reason }
         : inventoryEvidence(
             this.root,
@@ -212,8 +249,15 @@ export class ProfileRunner {
               run.code === 86
             ),
             fingerprint
-          )
-    );
+          )),
+    });
+
+    if (
+      this.result.checks.find((check) => check.checkId === "ui.tests")
+        ?.status !== "passed"
+    ) {
+      this.logFailure("ui.tests", run);
+    }
   }
 
   /** Full-stack adapter starts the selected checkout rather than trusting an ambient server. */
@@ -229,101 +273,93 @@ export class ProfileRunner {
       featureSandbox,
       this.signal,
       fingerprint,
-      SANDBOX_LANES.e2e
+      SANDBOX_LANES.e2e,
+      this.budget.testWorkers
     )) {
       this.add(check);
     }
   }
 
-  /** The feature lanes: API tests, UI tests and the browser run, each on its own state. */
-  featureLanes(featureSandbox: ISandbox, fingerprint: string): Lane[] {
-    return [
-      () => this.tests(false),
-      () => this.uiTests(fingerprint),
-      () => this.e2e(featureSandbox, fingerprint),
-    ];
+  /** Tasks declare their evidence IDs so concurrent completions cannot cross-contaminate status. */
+  task(
+    id: string,
+    run: () => Promise<void>,
+    after: readonly string[] = [],
+    slots = 1,
+    priority = 0,
+    evidenceIds: readonly string[] = [id]
+  ): ITask {
+    return {
+      id,
+      after,
+      slots,
+      priority,
+      run: async () => {
+        await run();
+
+        return evidenceIds.every((checkId) =>
+          this.result.checks.some(
+            (check) =>
+              check.checkId === checkId &&
+              (check.status === "passed" || check.status === "not_applicable")
+          )
+        );
+      },
+      blocked: (reason) => {
+        for (const checkId of evidenceIds) {
+          if (!this.result.checks.some((check) => check.checkId === checkId)) {
+            this.add({ checkId, status: "blocked", reason });
+          }
+        }
+      },
+    };
   }
 
-  /**
-   * One lane per script. A check with `after` waits for that check to finish
-   * (a size gate reads the build it names) but everything else runs as the
-   * concurrency budget allows.
-   */
-  scriptLanes(checks: readonly ICommandCheck[]): Lane[] {
-    const done = new Map<string, Promise<void>>();
-    const resolvers = new Map<string, () => void>();
-
-    for (const check of checks) {
-      done.set(
+  scriptTasks(checks: readonly ICommandCheck[]): ITask[] {
+    return checks.map((check) =>
+      this.task(
         check.id,
-        new Promise<void>((resolve) => {
-          resolvers.set(check.id, resolve);
-        })
-      );
-    }
-
-    return checks.map((check) => async () => {
-      try {
-        if (check.after !== undefined) {
-          await done.get(check.after);
-        }
-
-        if (!isAborted(this.signal)) {
-          await this.script(check);
-        }
-      } finally {
-        resolvers.get(check.id)?.();
-      }
-    });
+        () => this.script(check),
+        [
+          ...(check.after === undefined ? [] : [check.after]),
+          ...(check.id === "api.build" ? ["api.templates"] : []),
+        ],
+        1,
+        check.priority
+      )
+    );
   }
 
-  async scripts(checks: readonly ICommandCheck[]): Promise<void> {
-    await this.lanes(this.scriptLanes(checks));
-  }
-
-  async lanes(lanes: readonly Lane[]): Promise<void> {
-    await runLanes(lanes, this.concurrency, this.signal);
-  }
-
-  async prepareSandbox(): Promise<void> {
+  async prepareSandbox(lanes: readonly SandboxLaneName[]): Promise<void> {
     if (this.sandboxId === undefined || this.sandboxId === "") {
       throw new Error("Owned sandbox required");
     }
 
     this.releaseLease = acquireLease(this.root, this.sandboxId);
     this.state = await inspectSandbox(this.root, this.sandboxId);
-    this.env = sandboxEnv(this.state);
+    await ensureLaneDatabases(this.root, this.state, lanes);
     this.add({
       checkId: "sandbox.ready",
       status: "passed",
       reason: "owned_services_ready",
     });
-    await ensureLaneDatabases(this.root, this.state);
+  }
 
-    const migrations = await Promise.all(
-      [undefined, ...EXTRA_LANES].map((lane) =>
-        this.command(
-          lane === undefined ? "api.migrate" : `api.migrate.${lane}`,
-          "api",
-          [process.execPath, NO_ENV_FILE, "run", "db:prepare"],
-          lane === undefined ? this.env : this.laneEnv(lane)
-        )
-      )
+  async migrate(lane: SandboxLaneName): Promise<void> {
+    await this.command(
+      `api.migrate.${lane}`,
+      "api",
+      [process.execPath, NO_ENV_FILE, "run", "db:prepare"],
+      this.laneEnv(lane)
     );
+  }
 
-    if (migrations.some((migration) => migration.status !== "passed")) {
-      throw new Error("Migration prerequisite failed");
-    }
-
-    const templates = await this.command("api.templates", "api", [
+  async templates(): Promise<void> {
+    await this.command("api.templates", "api", [
       process.execPath,
       NO_ENV_FILE,
       "run",
       "build:templates",
     ]);
-
-    if (templates.status !== "passed") {
-      throw new Error("Template prerequisite failed");
-    }
   }
 }

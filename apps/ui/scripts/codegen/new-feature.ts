@@ -322,7 +322,8 @@ if (namespaceEnabled) {
     name: `${Name} translations (all locales)`,
     path: `dist/assets/${lower}-*.js`,
     limit: "10 KB",
-    gzip: true
+    gzip: true,
+    running: false
   });
   writeFileSync(
     budgetPath,

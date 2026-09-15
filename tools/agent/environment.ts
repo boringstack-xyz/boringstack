@@ -18,3 +18,12 @@ export function openApiUrl(): string {
 export function dockerTestsEnabled(): boolean {
   return process.env.AGENT_DOCKER_TESTS === "true";
 }
+
+/** Capture real caller policy before isolated child processes receive CI=true. */
+export function verificationEnvironment(): Record<string, string | undefined> {
+  return {
+    CI: process.env.CI,
+    AGENT_VERIFY_PARALLEL: process.env.AGENT_VERIFY_PARALLEL,
+    AGENT_VERIFY_TEST_WORKERS: process.env.AGENT_VERIFY_TEST_WORKERS,
+  };
+}

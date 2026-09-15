@@ -7,6 +7,7 @@ import { runProcess } from "../process";
 import { acquireLease } from "./lease";
 import {
   downSandbox,
+  ensureLaneDatabases,
   inspectSandbox,
   publicSandbox,
   readSandbox,
@@ -124,6 +125,22 @@ if (dockerTestsEnabled()) {
       expect(firstWrite.code).toBe(0);
       expect(secondRead.stdout.trim()).toBe("");
       expect(secondWrite.code).toBe(0);
+
+      await ensureLaneDatabases(ROOT, first, ["security"]);
+      await ensureLaneDatabases(ROOT, first, ["security"]);
+      const selected = await query(
+        first,
+        "SELECT datname FROM pg_database WHERE datname LIKE 'app_%' ORDER BY datname;"
+      );
+
+      expect(selected.code).toBe(0);
+      expect(selected.stdout.trim()).toBe("app_security");
+      const otherSandbox = await query(
+        second,
+        "SELECT datname FROM pg_database WHERE datname LIKE 'app_%';"
+      );
+
+      expect(otherSandbox.stdout.trim()).toBe("");
 
       const createMarker = await query(
         first,

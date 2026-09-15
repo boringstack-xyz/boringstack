@@ -73,7 +73,8 @@ test("namespace scaffolding wires dictionaries, lint scope, and a separate bundl
         name: "Posts translations (all locales)",
         path: "dist/assets/posts-*.js",
         limit: "10 KB",
-        gzip: true
+        gzip: true,
+        running: false
       }
     ]);
 

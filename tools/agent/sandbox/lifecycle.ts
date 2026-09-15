@@ -471,7 +471,8 @@ export function publicSandbox(state: ISandbox): object {
  */
 export async function ensureLaneDatabases(
   root: string,
-  state: ISandbox
+  state: ISandbox,
+  lanes: readonly SandboxLaneName[] = EXTRA_LANES
 ): Promise<void> {
   await owned(root, state, state.postgres);
 
@@ -488,7 +489,7 @@ export async function ensureLaneDatabases(
   ]);
   const existing = new Set(listed.split("\n").map((line) => line.trim()));
 
-  for (const name of EXTRA_LANES) {
+  for (const name of new Set(lanes)) {
     const { database } = SANDBOX_LANES[name];
 
     if (existing.has(database)) {

@@ -2,13 +2,36 @@ import { expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { RELEASE_CHECKS, STATIC_CHECKS } from "./checks";
+import { CHECK_GROUPS, RELEASE_CHECKS, STATIC_CHECKS } from "./checks";
 import { runProcess } from "./process";
 import { testEvidence } from "./reports";
 import { inspectTask } from "./tasks";
 import { isRecord, parseRecord } from "./validation";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
+
+test("parallel static tasks preserve every constituent of the aggregate package gates", () => {
+  for (const group of CHECK_GROUPS) {
+    const path =
+      group.app === "root"
+        ? join(root, "package.json")
+        : join(root, "apps", group.app, "package.json");
+    const scripts = parseRecord(readFileSync(path, "utf8")).scripts;
+
+    if (!isRecord(scripts)) {
+      throw new Error("Package scripts missing");
+    }
+
+    expect(scripts[group.script]).toBe(
+      group.parts.map((script) => `bun run ${script}`).join(" && ")
+    );
+    expect(
+      STATIC_CHECKS.filter((check) => check.id.startsWith(`${group.id}.`)).map(
+        (check) => check.script
+      )
+    ).toEqual([...group.parts]);
+  }
+});
 
 test("every check adapter references an existing package script", () => {
   for (const check of [...STATIC_CHECKS, ...RELEASE_CHECKS]) {

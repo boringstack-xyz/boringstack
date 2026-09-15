@@ -49,16 +49,26 @@ const runCoverage = (): {
    * letting them into the coverage gate turns the ordinary merge gate red
    * for reasons unrelated to the change under review.
    */
-  const result = spawnSync("bun", ["test", "tests", "--coverage"], {
-    encoding: "utf8",
-    maxBuffer: MAX_TEST_OUTPUT_BUFFER_BYTES,
-    env: {
-      ...process.env,
-      NODE_ENV: "test",
-      LOG_LEVEL: "error",
-      NODE_NO_WARNINGS: "1",
-    },
-  });
+  const result = spawnSync(
+    "bun",
+    [
+      ...(process.env.AGENT_SANDBOX === "1" ? ["--no-env-file"] : []),
+      "test",
+      "tests",
+      "--coverage",
+      ...process.argv.slice(2),
+    ],
+    {
+      encoding: "utf8",
+      maxBuffer: MAX_TEST_OUTPUT_BUFFER_BYTES,
+      env: {
+        ...process.env,
+        NODE_ENV: "test",
+        LOG_LEVEL: "error",
+        NODE_NO_WARNINGS: "1",
+      },
+    }
+  );
 
   return {
     combined: result.stdout + result.stderr,
@@ -80,7 +90,14 @@ const parseAllFilesRow = (output: string): ICoverageResult | null => {
   const functionPct = parseFloat(parts[1] ?? "");
   const linePct = parseFloat(parts[2] ?? "");
 
-  if (Number.isNaN(linePct) || Number.isNaN(functionPct)) {
+  if (
+    !Number.isFinite(linePct) ||
+    !Number.isFinite(functionPct) ||
+    linePct < 0 ||
+    linePct > 100 ||
+    functionPct < 0 ||
+    functionPct > 100
+  ) {
     return null;
   }
 
@@ -118,7 +135,7 @@ if (warningLines.length > 0) {
     console.error(`  ${line}`);
   }
 
-  process.exit(1);
+  process.exit(86);
 }
 
 if (exitCode !== 0) {
@@ -145,7 +162,7 @@ if (!lineOk || !functionOk) {
       `\n\nTo raise: add tests for under-covered surfaces (queues / SSE / web push / setup).` +
       `\nTo lower the threshold: do not. Treat the gate as a ratchet.`
   );
-  process.exit(1);
+  process.exit(86);
 }
 
 console.log(
