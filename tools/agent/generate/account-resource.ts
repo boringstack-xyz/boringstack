@@ -95,11 +95,7 @@ export function planAccountResource(
     return replaceOnce(source, anchors[0], `"${singular}", "all"] as const`);
   });
   patch("apps/api/src/lib/acl/acl.types.ts", (source) =>
-    replaceOnce(
-      source,
-      "export type SubjectInstance =",
-      `export interface I${singular}Subject extends ForcedSubject<"${singular}"> { readonly accountId: string; }\n\nexport type SubjectInstance = I${singular}Subject |`
-    )
+    addSubjectInstance(source, singular)
   );
   patch("apps/api/src/lib/acl/ability.ts", (source) =>
     replaceOnce(
@@ -219,4 +215,46 @@ export function planAccountResource(
   apply(root, changes, true);
 
   return changes;
+}
+
+const SUBJECT_UNION = /export type SubjectInstance =([\s\S]*?);/;
+
+/**
+ * Prettier switches the union to leading pipes once it wraps, so splicing
+ * `X |` after the equals sign breaks a product that already has a few
+ * subjects. Rebuild the declaration from its members instead; the formatter
+ * settles the final layout.
+ */
+export function addSubjectInstance(source: string, singular: string): string {
+  const match = SUBJECT_UNION.exec(source);
+
+  if (
+    match === null ||
+    source.slice(match.index + 1).includes("export type SubjectInstance =")
+  ) {
+    throw new Error("Expected one patch anchor: export type SubjectInstance");
+  }
+
+  const subject = `I${singular}Subject`;
+  const members = (match[1] ?? "")
+    .split("|")
+    .map((member) => member.trim())
+    .filter((member) => member !== "");
+
+  if (members.includes(subject)) {
+    throw new Error(`Subject already declared: ${subject}`);
+  }
+
+  const declaration = [
+    `export interface ${subject} extends ForcedSubject<"${singular}"> { readonly accountId: string; }`,
+    "",
+    "export type SubjectInstance =",
+    ...[subject, ...members].map((member) => `  | ${member}`),
+  ].join("\n");
+
+  return (
+    source.slice(0, match.index) +
+    `${declaration};` +
+    source.slice(match.index + match[0].length)
+  );
 }

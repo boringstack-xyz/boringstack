@@ -86,7 +86,11 @@ echo 'PASS local startup forwards selected host ports'
 # project flags. Stub docker captures arguments without contacting a daemon.
 cp "$ROOT/infra/compose/compose/dev.sh" "$FIXTURE/infra/compose/compose/dev.sh"
 printf 'POSTGRES_HOST_PORT=5432\nVALKEY_HOST_PORT=6379\n' > "$FIXTURE/ports.env"
+# Every optional overlay is pinned off: a product checkout may enable Mailpit,
+# BullMQ or WUD in its compose .env, and the assertion below is the exact
+# profile list.
 ENV_FILE="$FIXTURE/ports.env" STACK=dev WITH_OBSERVABILITY=0 WITH_GLITCHTIP=0 \
+ WITH_MAILPIT=0 WITH_BULLMQ=0 WITH_WUD=0 \
  POSTGRES_HOST_PORT=55432 VALKEY_HOST_PORT=56379 \
  /bin/bash "$FIXTURE/infra/compose/compose/dev.sh" config
 assert_contains "$FIXTURE/docker" '--profile dev config|55432|56379'

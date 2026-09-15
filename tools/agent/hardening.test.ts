@@ -11,6 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { withoutRecordAccountPredicate } from "../agent-evals/mutants";
+import { fixtureResourceNames } from "./generate/fixture";
 import { identifyCheckout } from "./checkout";
 import { planAccountResource } from "./generate/account-resource";
 import { formatEdits } from "./generate/format";
@@ -162,19 +163,26 @@ test("UI wrapper distinguishes coverage and warning failures from process errors
 });
 
 test("record-scope mutants hit both reference predicates and refuse drift", async () => {
+  const name = requireValue(
+    fixtureResourceNames(root, 1)[0],
+    "Fixture resource name is absent"
+  );
+  const table = name.toLowerCase();
   const edits = await formatEdits(
     root,
-    planAccountResource(root, "Projects", "team-read-admin-write")
+    planAccountResource(root, name, "team-read-admin-write")
   );
   const service = requireValue(
     edits.find((plannedEdit) =>
-      plannedEdit.path.endsWith("projects.service.ts")
+      plannedEdit.path.endsWith(`${table}.service.ts`)
     ),
     "Required fixture edit is absent"
   ).after;
 
   for (const index of [0, 1] as const) {
-    expect(withoutRecordAccountPredicate(service, index)).not.toBe(service);
+    expect(withoutRecordAccountPredicate(service, index, table)).not.toBe(
+      service
+    );
   }
 
   expect(() =>
