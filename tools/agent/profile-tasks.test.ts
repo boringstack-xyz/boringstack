@@ -27,6 +27,7 @@ const runner = new ProfileRunner(
     testWorkers: 4,
     uiTestWorkers: 7,
     securityShards: 4,
+    apiShards: 4,
   }
 );
 const serial = new ProfileRunner(
@@ -40,6 +41,7 @@ const serial = new ProfileRunner(
     testWorkers: 1,
     uiTestWorkers: 1,
     securityShards: 1,
+    apiShards: 1,
   }
 );
 
@@ -57,10 +59,19 @@ test("profiles prepare only used lanes and release tests supply coverage once", 
     "api.migrate.security-2",
     "api.migrate.security-3",
     "api.migrate.security-4",
-    "api.migrate.tests",
+    "api.migrate.tests-1",
+    "api.migrate.tests-2",
+    "api.migrate.tests-3",
+    "api.migrate.tests-4",
     "api.migrate.e2e",
   ]);
-  expect(migrations(feature)).toEqual(["api.migrate.tests", "api.migrate.e2e"]);
+  expect(migrations(feature)).toEqual([
+    "api.migrate.tests-1",
+    "api.migrate.tests-2",
+    "api.migrate.tests-3",
+    "api.migrate.tests-4",
+    "api.migrate.e2e",
+  ]);
   expect(migrations(security)).toEqual([
     "api.migrate.security-1",
     "api.migrate.security-2",
@@ -68,7 +79,21 @@ test("profiles prepare only used lanes and release tests supply coverage once", 
     "api.migrate.security-4",
   ]);
   expect(release.filter((task) => task.id === "api.tests")).toHaveLength(1);
+  expect(
+    release.filter((task) => /^api\.tests\.\d$/.test(task.id))
+  ).toHaveLength(4);
+  expect(release.find((task) => task.id === "api.tests")?.after).toEqual([
+    "api.tests.1",
+    "api.tests.2",
+    "api.tests.3",
+    "api.tests.4",
+  ]);
   expect(release.some((task) => task.id === "api.coverage")).toBe(false);
+  expect(
+    profileTasks(serial, "release-local", "fixture").filter((task) =>
+      task.id.startsWith("api.tests")
+    )
+  ).toHaveLength(1);
   expect(release.find((task) => task.id === "ui.e2e")?.slots).toBe(4);
   expect(release.find((task) => task.id === "ui.tests")?.slots).toBe(7);
   expect(release.find((task) => task.id === "ui.tests")?.after).toEqual([]);
@@ -119,12 +144,25 @@ test("the security spec shards across lanes and aggregates, or runs whole with o
 });
 
 test("shard files cover every spec file exactly once", () => {
-  const shards = runner.securityShardFiles(4);
-  const whole = runner.securityShardFiles(1);
+  const shards = runner.shardedFiles("security", 4);
+  const whole = runner.shardedFiles("security", 1);
   const flat = shards.flat().sort();
 
   expect(shards).toHaveLength(4);
   expect(flat).toEqual([...(whole[0] ?? [])].sort());
   expect(new Set(flat).size).toBe(flat.length);
   expect(flat.length).toBeGreaterThan(10);
+});
+
+test("API test files are found recursively and cover every file once", () => {
+  const shards = runner.shardedFiles("tests", 4);
+  const flat = shards.flat();
+
+  expect(shards).toHaveLength(4);
+  expect(new Set(flat).size).toBe(flat.length);
+  expect(flat.length).toBeGreaterThan(100);
+  expect(
+    flat.every((path) => path.startsWith("tests/") && path.endsWith(".test.ts"))
+  ).toBe(true);
+  expect(flat.some((path) => path.split("/").length > 2)).toBe(true);
 });

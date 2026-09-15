@@ -9,8 +9,9 @@ import type { ICheckResult } from "./result";
 import type { ITask } from "./scheduler";
 import {
   SANDBOX_LANES,
-  securityShardLane,
+  shardLane,
   type ISandboxLane,
+  type ShardedSuite,
 } from "./sandbox/lifecycle";
 import { requireValue } from "./validation";
 
@@ -23,13 +24,18 @@ export function profileTasks(
   const release = profile === "release-local";
   const feature = profile === "feature" || release;
   const security = profile === "security" || release;
-  const shards = security ? runner.budget.securityShards : 0;
-  const shardLanes = Array.from({ length: shards }, (_, offset) =>
-    securityShardLane(offset + 1, shards)
-  );
+  const shardCount: Record<ShardedSuite, number> = {
+    security: security ? runner.budget.securityShards : 0,
+    tests: feature ? runner.budget.apiShards : 0,
+  };
+  const laneList = (suite: ShardedSuite): ISandboxLane[] =>
+    Array.from({ length: shardCount[suite] }, (_, offset) =>
+      shardLane(suite, offset + 1, shardCount[suite])
+    );
   const lanes: ISandboxLane[] = [
-    ...shardLanes,
-    ...(feature ? [SANDBOX_LANES.tests, SANDBOX_LANES.e2e] : []),
+    ...laneList("security"),
+    ...laneList("tests"),
+    ...(feature ? [SANDBOX_LANES.e2e] : []),
   ];
 
   if (lanes.length > 0) {
@@ -59,18 +65,60 @@ export function profileTasks(
     }
   }
 
+  /*
+   * A sharded suite is one task per shard plus an aggregate that merges the
+   * reports. With one shard the single task carries the suite's evidence.
+   */
+  const shardedSuite = (
+    suite: ShardedSuite,
+    aggregateId: string,
+    evidence: readonly string[],
+    priority: number,
+    coverage: boolean
+  ): void => {
+    const files = runner.shardedFiles(suite, shardCount[suite]);
+    const count = files.length;
+    const shardIds = files.map(
+      (_, offset) => `${aggregateId}.${String(offset + 1)}`
+    );
+
+    files.forEach((shardFiles, offset) => {
+      const index = offset + 1;
+      const lane = shardLane(suite, index, count);
+
+      tasks.push(
+        runner.task(
+          count === 1 ? aggregateId : (shardIds[offset] ?? ""),
+          () => runner.shard(suite, index, count, shardFiles, coverage),
+          [`api.migrate.${lane.name}`, "api.templates"],
+          1,
+          priority,
+          count === 1 ? evidence : undefined
+        )
+      );
+    });
+
+    if (count > 1) {
+      tasks.push(
+        runner.task(
+          aggregateId,
+          () => runner.aggregate(suite, count, coverage),
+          shardIds,
+          1,
+          priority,
+          evidence
+        )
+      );
+    }
+  };
+
   if (feature) {
-    tasks.push(
-      runner.task(
-        "api.tests",
-        () => runner.apiTests(release),
-        ["api.migrate.tests", "api.templates"],
-        1,
-        70,
-        profile === "release-local"
-          ? ["api.tests", "api.coverage"]
-          : ["api.tests"]
-      )
+    shardedSuite(
+      "tests",
+      "api.tests",
+      release ? ["api.tests", "api.coverage"] : ["api.tests"],
+      70,
+      release
     );
     tasks.push(
       runner.task(
@@ -95,44 +143,13 @@ export function profileTasks(
   }
 
   if (security) {
-    const files = runner.securityShardFiles(shards);
-    const count = files.length;
-    const shardIds = files.map(
-      (_, offset) => `security.tests.${String(offset + 1)}`
+    shardedSuite(
+      "security",
+      "security.tests",
+      ["security.tests", "security.manifest"],
+      90,
+      false
     );
-
-    files.forEach((shardFiles, offset) => {
-      const index = offset + 1;
-      const lane = securityShardLane(index, count);
-
-      tasks.push(
-        runner.task(
-          count === 1 ? "security.tests" : (shardIds[offset] ?? ""),
-          () => runner.securityShard(index, count, shardFiles),
-          [`api.migrate.${lane.name}`, "api.templates"],
-          1,
-          90,
-          count === 1 ? ["security.tests", "security.manifest"] : undefined
-        )
-      );
-    });
-
-    if (count > 1) {
-      tasks.push(
-        runner.task(
-          "security.tests",
-          () => {
-            runner.securityAggregate(count);
-
-            return Promise.resolve();
-          },
-          shardIds,
-          1,
-          90,
-          ["security.tests", "security.manifest"]
-        )
-      );
-    }
   }
 
   if (release) {

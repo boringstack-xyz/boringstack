@@ -8,6 +8,7 @@ export interface IExecutionBudget {
   /** Vitest workers: the UI suite is the long pole once the spec is sharded. */
   uiTestWorkers: number;
   securityShards: number;
+  apiShards: number;
 }
 
 const MAX_UI_WORKERS = 8;
@@ -57,5 +58,6 @@ export function executionBudget(
     testWorkers,
     uiTestWorkers,
     securityShards: Math.min(MAX_SHARDS, testWorkers),
+    apiShards: Math.min(MAX_SHARDS, testWorkers),
   };
 }

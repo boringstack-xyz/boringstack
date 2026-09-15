@@ -58,35 +58,43 @@ export const EXTRA_LANES: readonly ISandboxLane[] = [
   SANDBOX_LANES.coverage,
 ];
 
-const SHARD_VALKEY_BASE = 4;
+export const MAX_SHARDS = 4;
+export type ShardedSuite = "security" | "tests";
 
-export const MAX_SECURITY_SHARDS = 4;
+const SHARD_VALKEY_BASE: Record<ShardedSuite, number> = {
+  security: 4,
+  tests: 8,
+};
 
 /**
- * The security spec is the longest single process of a run. Sharding it
- * across processes needs a database and a Valkey index per shard; with one
- * shard the ordinary `security` lane is used so CI output does not change.
+ * The two API suites are the longest single processes of a run. Sharding
+ * them across processes needs a database and a Valkey index per shard; with
+ * one shard the suite's ordinary lane is used so CI output does not change.
  */
-export function securityShardLane(index: number, count: number): ISandboxLane {
+export function shardLane(
+  suite: ShardedSuite,
+  index: number,
+  count: number
+): ISandboxLane {
   if (
     !Number.isSafeInteger(index) ||
     !Number.isSafeInteger(count) ||
     count < 1 ||
-    count > MAX_SECURITY_SHARDS ||
+    count > MAX_SHARDS ||
     index < 1 ||
     index > count
   ) {
-    throw new Error("Invalid security shard");
+    throw new Error("Invalid shard");
   }
 
   if (count === 1) {
-    return SANDBOX_LANES.security;
+    return SANDBOX_LANES[suite];
   }
 
   return {
-    name: `security-${String(index)}`,
-    database: `app_security_${String(index)}`,
-    valkeyDb: SHARD_VALKEY_BASE + index,
+    name: `${suite}-${String(index)}`,
+    database: `app_${suite}_${String(index)}`,
+    valkeyDb: SHARD_VALKEY_BASE[suite] + index,
   };
 }
 

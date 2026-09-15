@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { mergeJunitReports, shardFiles, suiteDurations } from "./junit";
 import { testEvidence } from "./reports";
-import { securityShardLane, SANDBOX_LANES } from "./sandbox/lifecycle";
+import { shardLane, SANDBOX_LANES } from "./sandbox/lifecycle";
 
 const report = (name: string, failures: number): string =>
   `<?xml version="1.0" encoding="UTF-8"?>
@@ -51,7 +51,10 @@ test("files pack largest-first into balanced, deterministic shards", () => {
 });
 
 test("shard lanes are distinct from each other and from the fixed lanes", () => {
-  const lanes = [1, 2, 3, 4].map((index) => securityShardLane(index, 4));
+  const lanes = [
+    ...[1, 2, 3, 4].map((index) => shardLane("security", index, 4)),
+    ...[1, 2, 3, 4].map((index) => shardLane("tests", index, 4)),
+  ];
   const fixed = Object.values(SANDBOX_LANES);
   const keys = [...lanes, ...fixed].map(
     (lane) => `${lane.database}/${String(lane.valkeyDb)}`
@@ -63,14 +66,20 @@ test("shard lanes are distinct from each other and from the fixed lanes", () => 
     database: "app_security_1",
     valkeyDb: 5,
   });
-  expect(securityShardLane(1, 1)).toBe(SANDBOX_LANES.security);
-  expect(() => securityShardLane(5, 4)).toThrow("Invalid security shard");
-  expect(() => securityShardLane(1, 5)).toThrow("Invalid security shard");
+  expect(lanes[4]).toEqual({
+    name: "tests-1",
+    database: "app_tests_1",
+    valkeyDb: 9,
+  });
+  expect(shardLane("security", 1, 1)).toBe(SANDBOX_LANES.security);
+  expect(shardLane("tests", 1, 1)).toBe(SANDBOX_LANES.tests);
+  expect(() => shardLane("security", 5, 4)).toThrow("Invalid shard");
+  expect(() => shardLane("tests", 1, 5)).toThrow("Invalid shard");
 });
 
 test("suite durations come from the per-file testsuite time attributes", () => {
   const merged = mergeJunitReports([
-    report("f01", 0).replace('time="0.01"', 'time="0.01"'),
+    report("f01", 0),
     report("f02", 0),
   ]).replace(
     '<testsuite name="f01" tests="2" failures="0">',

@@ -11,6 +11,7 @@ import { type ICommandCheck } from "./checks";
 import type { ITask } from "./scheduler";
 import type { IExecutionBudget } from "./scheduling";
 import { mergeJunitReports, shardFiles, suiteDurations } from "./junit";
+import { coverageVerdict, formatCoverage, mergeLcov } from "./lcov";
 import { hostEnvironment } from "./environment";
 import { inventoryEvidence } from "./inventory";
 import { runProcess, type IProcessResult } from "./process";
@@ -22,14 +23,16 @@ import {
   inspectSandbox,
   SANDBOX_LANES,
   sandboxEnv,
-  securityShardLane,
+  shardLane,
   type ISandbox,
   type ISandboxLane,
+  type ShardedSuite,
 } from "./sandbox/lifecycle";
 import { securityManifestEvidence } from "./security-evidence";
 import { isAborted, isRecord, parseRecord } from "./validation";
 
 const NO_ENV_FILE = "--no-env-file";
+const API_COVERAGE = "api.coverage";
 
 export class ProfileRunner {
   state: ISandbox | undefined;
@@ -53,14 +56,15 @@ export class ProfileRunner {
       testWorkers: 1,
       uiTestWorkers: 1,
       securityShards: 1,
+      apiShards: 1,
     }
   ) {}
 
-  /** Shard reports collected for the aggregate security evidence. */
-  private readonly securityReports = new Map<
-    number,
-    { xml: string; run: IProcessResult }
-  >();
+  /** Shard reports collected for each suite's aggregate evidence. */
+  private readonly shardReports: Record<
+    ShardedSuite,
+    Map<number, { xml: string; run: IProcessResult; lcov: string }>
+  > = { security: new Map(), tests: new Map() };
 
   /** Environment for a stateful lane: its own database and Valkey index. */
   laneEnv(lane: ISandboxLane): Record<string, string | undefined> {
@@ -155,14 +159,19 @@ export class ProfileRunner {
     );
   }
 
-  private securityEnv(lane: ISandboxLane): Record<string, string | undefined> {
-    return {
-      ...this.laneEnv(lane),
-      SECURITY_SPEC: "true",
-      ACCOUNT_DOMAIN_CLAIMING: "true",
-      GOOGLE_OAUTH_CLIENT_ID: "spec-google-client-id",
-      GOOGLE_OAUTH_CLIENT_SECRET: "spec-google-client-secret",
-    };
+  private suiteEnv(
+    suite: ShardedSuite,
+    lane: ISandboxLane
+  ): Record<string, string | undefined> {
+    return suite === "security"
+      ? {
+          ...this.laneEnv(lane),
+          SECURITY_SPEC: "true",
+          ACCOUNT_DOMAIN_CLAIMING: "true",
+          GOOGLE_OAUTH_CLIENT_ID: "spec-google-client-id",
+          GOOGLE_OAUTH_CLIENT_SECRET: "spec-google-client-secret",
+        }
+      : { ...this.laneEnv(lane), SECURITY_SPEC: "false" };
   }
 
   private async bunTests(
@@ -188,63 +197,19 @@ export class ProfileRunner {
     };
   }
 
-  /** API tests on the `tests` lane; in release runs the same execution enforces coverage. */
-  async apiTests(coverage = false): Promise<void> {
-    const { run, xml } = await this.bunTests(
-      coverage
-        ? ["scripts/quality/check-coverage.ts"]
-        : ["scripts/quality/run-tests-clean.ts", "tests"],
-      join(this.temp, "api.xml"),
-      { ...this.laneEnv(SANDBOX_LANES.tests), SECURITY_SPEC: "false" }
-    );
-    const check =
-      run.status === "blocked"
-        ? {
-            checkId: "api.tests",
-            status: "blocked" as const,
-            reason: run.reason,
-          }
-        : testEvidence("api.tests", xml, run.code, "bun", run.code === 86);
-    const evidence = inventoryEvidence(
-      this.root,
-      "api.tests",
-      xml,
-      check,
-      this.result.checkout?.fingerprint
-    );
-
-    this.add({ ...evidence, durationMs: run.durationMs });
-
-    if (evidence.status !== "passed") {
-      this.logFailure("api.tests", run);
-    }
-
-    if (coverage) {
-      this.add({
-        checkId: "api.coverage",
-        status: evidence.status,
-        reason:
-          evidence.status === "passed"
-            ? "coverage_gate_passed"
-            : evidence.reason,
-        durationMs: run.durationMs,
-      });
-    }
-  }
-
-  private timingsPath(): string {
+  private timingsPath(suite: ShardedSuite): string {
     return join(
       this.root,
       ".agent-state",
       "verification",
       "timings",
-      "security-spec.json"
+      `${suite}.json`
     );
   }
 
   /** Per-file seconds recorded by the previous run; empty on a fresh checkout. */
-  recordedDurations(): Record<string, number> {
-    const path = this.timingsPath();
+  recordedDurations(suite: ShardedSuite): Record<string, number> {
+    const path = this.timingsPath(suite);
 
     if (!existsSync(path)) {
       return {};
@@ -266,73 +231,105 @@ export class ProfileRunner {
     }
   }
 
-  private recordDurations(xml: string): void {
+  private recordDurations(suite: ShardedSuite, xml: string): void {
     const files = suiteDurations(xml);
 
     if (Object.keys(files).length === 0) {
       return;
     }
 
-    mkdirSync(join(this.timingsPath(), ".."), { recursive: true, mode: 0o700 });
+    mkdirSync(join(this.timingsPath(suite), ".."), {
+      recursive: true,
+      mode: 0o700,
+    });
     writeFileSync(
-      this.timingsPath(),
+      this.timingsPath(suite),
       JSON.stringify({ schemaVersion: 1, files }, null, 2),
       { mode: 0o600 }
     );
   }
 
+  private listTestFiles(directory: string, prefix: string): string[] {
+    return readdirSync(join(this.root, "apps/api", directory), {
+      withFileTypes: true,
+    }).flatMap((entry) =>
+      entry.isDirectory()
+        ? this.listTestFiles(
+            `${directory}/${entry.name}`,
+            `${prefix}/${entry.name}`
+          )
+        : entry.name.endsWith(".test.ts")
+          ? [`${prefix}/${entry.name}`]
+          : []
+    );
+  }
+
   /**
-   * Spec files packed into `count` shards, longest first. Duration comes from
-   * the previous run's JUnit report; a file without a record is assumed to be
-   * as long as the median recorded file, and size decides ties, so a fresh
-   * checkout still gets a sensible split.
+   * Suite files packed into `count` shards, longest first. Duration comes
+   * from the previous run's JUnit report; a file without a record is assumed
+   * to be as long as the median recorded file, and size decides ties, so a
+   * fresh checkout still gets a sensible split.
    */
-  securityShardFiles(count: number): string[][] {
-    const directory = join(this.root, "apps/api/security-spec");
-    const recorded = this.recordedDurations();
+  shardedFiles(suite: ShardedSuite, count: number): string[][] {
+    const directory = suite === "security" ? "security-spec" : "tests";
+    const recorded = this.recordedDurations(suite);
     const known = Object.values(recorded).sort((left, right) => left - right);
     const median = known[Math.floor(known.length / 2)] ?? 1;
-    const files = readdirSync(directory)
-      .filter((name) => name.endsWith(".test.ts"))
-      .map((name) => {
-        const path = `security-spec/${name}`;
-        const size = statSync(join(directory, name)).size;
-
-        return {
-          path,
-          // Seconds dominate; bytes only order files of equal duration.
-          size: (recorded[path] ?? median) * 1_000_000 + size,
-        };
-      });
+    const files = this.listTestFiles(directory, directory).map((path) => ({
+      path,
+      // Seconds dominate; bytes only order files of equal duration.
+      size:
+        (recorded[path] ?? median) * 1_000_000 +
+        statSync(join(this.root, "apps/api", path)).size,
+    }));
 
     return shardFiles(files, count);
   }
 
   /**
-   * One shard of the security spec on its own lane. With a single shard this
-   * is the whole spec and records the `security.tests` evidence directly.
+   * One shard of a suite on its own lane. With a single shard this is the
+   * whole suite and records its evidence directly.
    */
-  async securityShard(
+  async shard(
+    suite: ShardedSuite,
     index: number,
     count: number,
-    files: readonly string[]
+    files: readonly string[],
+    coverage = false
   ): Promise<void> {
-    const lane = securityShardLane(index, count);
+    const lane = shardLane(suite, index, count);
+    const coverageDir = join(this.temp, `coverage-${suite}-${String(index)}`);
     const { run, xml } = await this.bunTests(
-      ["scripts/quality/run-tests-clean.ts", ...files],
-      join(this.temp, `security-${String(index)}.xml`),
-      this.securityEnv(lane)
+      [
+        "scripts/quality/run-tests-clean.ts",
+        ...files,
+        ...(coverage
+          ? [
+              "--coverage",
+              "--coverage-reporter=lcov",
+              `--coverage-dir=${coverageDir}`,
+            ]
+          : []),
+      ],
+      join(this.temp, `${suite}-${String(index)}.xml`),
+      this.suiteEnv(suite, lane)
     );
+    const lcovPath = join(coverageDir, "lcov.info");
 
-    this.securityReports.set(index, { xml, run });
+    this.shardReports[suite].set(index, {
+      xml,
+      run,
+      lcov:
+        coverage && existsSync(lcovPath) ? readFileSync(lcovPath, "utf8") : "",
+    });
 
     if (count === 1) {
-      this.securityEvidence([run], xml);
+      await this.aggregate(suite, 1, coverage);
 
       return;
     }
 
-    const checkId = `security.tests.${String(index)}`;
+    const checkId = `${suite === "security" ? "security.tests" : "api.tests"}.${String(index)}`;
     const check =
       run.status === "blocked"
         ? { checkId, status: "blocked" as const, reason: run.reason }
@@ -345,38 +342,34 @@ export class ProfileRunner {
     }
   }
 
-  /** Merges the shard reports so evidence and the manifest see one run. */
-  securityAggregate(count: number): void {
+  /** Merges the shard reports so evidence, inventory, manifest and coverage see one run. */
+  async aggregate(
+    suite: ShardedSuite,
+    count: number,
+    coverage = false
+  ): Promise<void> {
+    const checkId = suite === "security" ? "security.tests" : "api.tests";
     const shards = Array.from({ length: count }, (_, offset) =>
-      this.securityReports.get(offset + 1)
+      this.shardReports[suite].get(offset + 1)
     );
-
-    if (shards.includes(undefined)) {
-      this.add({
-        checkId: "security.tests",
-        status: "blocked",
-        reason: "security_shard_missing",
-      });
-      this.add({
-        checkId: "security.manifest",
-        status: "blocked",
-        reason: "security_shard_missing",
-      });
-
-      return;
-    }
-
     const present = shards.flatMap((shard) =>
       shard === undefined ? [] : [shard]
     );
 
-    this.securityEvidence(
-      present.map((shard) => shard.run),
-      mergeJunitReports(present.map((shard) => shard.xml))
-    );
-  }
+    if (present.length !== count) {
+      for (const id of [
+        checkId,
+        ...(suite === "security" ? ["security.manifest"] : []),
+        ...(coverage ? [API_COVERAGE] : []),
+      ]) {
+        this.add({ checkId: id, status: "blocked", reason: "shard_missing" });
+      }
 
-  private securityEvidence(runs: readonly IProcessResult[], xml: string): void {
+      return;
+    }
+
+    const runs = present.map((shard) => shard.run);
+    const xml = mergeJunitReports(present.map((shard) => shard.xml));
     const blocked = runs.find((run) => run.status === "blocked");
     const exit = runs.reduce<number | null>(
       (worst, run) =>
@@ -385,32 +378,113 @@ export class ProfileRunner {
     );
     const check =
       blocked !== undefined
-        ? {
-            checkId: "security.tests",
-            status: "blocked" as const,
-            reason: blocked.reason,
-          }
+        ? { checkId, status: "blocked" as const, reason: blocked.reason }
         : testEvidence(
-            "security.tests",
+            checkId,
             xml,
             exit,
             "bun",
             runs.some((run) => run.code === 86)
           );
+    const evidence =
+      suite === "security"
+        ? check
+        : inventoryEvidence(
+            this.root,
+            "api.tests",
+            xml,
+            check,
+            this.result.checkout?.fingerprint
+          );
     const durationMs = runs.reduce((total, run) => total + run.durationMs, 0);
 
-    this.add({ ...check, durationMs });
-    this.recordDurations(xml);
+    this.add({ ...evidence, durationMs });
+    this.recordDurations(suite, xml);
 
-    if (check.status !== "passed") {
+    if (evidence.status !== "passed") {
       for (const run of runs) {
-        this.logFailure("security.tests", run);
+        this.logFailure(checkId, run);
       }
     }
 
-    this.add(
-      securityManifestEvidence(this.root, xml, check.status !== "blocked")
+    if (suite === "security") {
+      this.add(
+        securityManifestEvidence(this.root, xml, check.status !== "blocked")
+      );
+    }
+
+    if (coverage) {
+      await this.coverageEvidence(
+        evidence.status,
+        present.map((shard) => shard.lcov),
+        durationMs
+      );
+    }
+  }
+
+  /**
+   * Line coverage merges exactly across shards. Function coverage merges as
+   * a lower bound; when that bound alone misses the floor, the whole suite
+   * runs once through the single-process gate so the verdict is the real one.
+   */
+  private async coverageEvidence(
+    tests: ICheckResult["status"],
+    reports: readonly string[],
+    durationMs: number
+  ): Promise<void> {
+    if (tests !== "passed") {
+      this.add({
+        checkId: API_COVERAGE,
+        status: tests,
+        reason: "tests_did_not_pass",
+        durationMs,
+      });
+
+      return;
+    }
+
+    const summary = mergeLcov(reports);
+    const verdict = coverageVerdict(summary);
+
+    process.stderr.write(`api.coverage: ${formatCoverage(summary)}\n`);
+
+    if (verdict === "passed") {
+      this.add({
+        checkId: API_COVERAGE,
+        status: "passed",
+        reason: "coverage_gate_passed",
+        durationMs,
+      });
+
+      return;
+    }
+
+    if (verdict === "lines_below_floor") {
+      this.add({
+        checkId: API_COVERAGE,
+        status: "failed",
+        reason: "coverage_below_floor",
+        durationMs,
+      });
+
+      return;
+    }
+
+    const confirmation = await this.command(
+      API_COVERAGE,
+      "api",
+      [
+        process.execPath,
+        NO_ENV_FILE,
+        "run",
+        "scripts/quality/check-coverage.ts",
+      ],
+      this.suiteEnv("tests", SANDBOX_LANES.tests)
     );
+
+    if (confirmation.status === "passed") {
+      confirmation.reason = "coverage_gate_passed_after_full_run";
+    }
   }
 
   async uiTests(fingerprint: string): Promise<void> {

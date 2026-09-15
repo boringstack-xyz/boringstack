@@ -5,14 +5,12 @@
  * `coverageThreshold` is documented but not enforced, so we parse the
  * text report ourselves and exit non-zero on regression.
  *
- * The threshold is a ratchet, not a wishlist: it sits a few points
- * below the current measured rate so a small slip triggers the alarm.
- * Raise it as coverage climbs; never lower it to silence a regression.
+ * The floor lives in coverage-thresholds.ts, shared with the sharded
+ * verification runner.
  */
 import { spawnSync } from "node:child_process";
+import { MIN_FUNCTION, MIN_LINE } from "./coverage-thresholds";
 
-const MIN_LINE = 0.65;
-const MIN_FUNCTION = 0.7;
 const MAX_TEST_OUTPUT_BUFFER_BYTES = 64 * 1024 * 1024;
 
 const FORBIDDEN_OUTPUT = [
