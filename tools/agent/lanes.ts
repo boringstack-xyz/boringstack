@@ -1,32 +1,13 @@
-import { availableParallelism } from "node:os";
+import { executionBudget } from "./scheduling";
 import type { ICheckResult } from "./result";
 import { isAborted } from "./validation";
 
 export type Lane = () => Promise<void>;
 
-const MIN_PARALLEL = 2;
-const MAX_PARALLEL = 6;
-const CORES_PER_LANE = 3;
-
-/**
- * Each lane is a whole toolchain process (type-aware ESLint, vitest workers,
- * a Playwright run), not a single thread, so the default leaves roughly
- * three cores per lane and stays inside a modest band. `AGENT_VERIFY_PARALLEL`
- * overrides it; `1` restores strictly sequential runs.
- */
 export function defaultConcurrency(
-  env: Record<string, string | undefined> = process.env
+  env?: Record<string, string | undefined>
 ): number {
-  const requested = Number(env.AGENT_VERIFY_PARALLEL ?? "");
-
-  if (Number.isInteger(requested) && requested >= 1) {
-    return requested;
-  }
-
-  return Math.max(
-    MIN_PARALLEL,
-    Math.min(MAX_PARALLEL, Math.floor(availableParallelism() / CORES_PER_LANE))
-  );
+  return executionBudget(env).slots;
 }
 
 /**

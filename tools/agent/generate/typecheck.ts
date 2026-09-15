@@ -67,7 +67,12 @@ export function validateGeneratedTypes(
   );
   const program = ts.createProgram({
     rootNames: [...new Set([...parsed.fileNames, ...addedFiles])],
-    options: { ...parsed.options, noEmit: true, incremental: false },
+    options: {
+      ...parsed.options,
+      noEmit: true,
+      incremental: false,
+      tsBuildInfoFile: undefined,
+    },
     host,
   });
   const errors = [

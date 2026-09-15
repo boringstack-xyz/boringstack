@@ -103,6 +103,18 @@ const precompilePartials = (): Record<string, string> => {
   return partials;
 };
 
+/** Avoid replacing artifacts while parallel test and build consumers read them. */
+const writeArtifact = (outputPath: string, content: string): void => {
+  if (
+    fs.existsSync(outputPath) &&
+    fs.readFileSync(outputPath, "utf8") === content
+  ) {
+    return;
+  }
+
+  fs.writeFileSync(outputPath, content, "utf8");
+};
+
 const buildTemplate = (templatePath: string): void => {
   const source = fs.readFileSync(templatePath, "utf8");
   const baseTemplate = precompileToString(source);
@@ -123,10 +135,9 @@ const buildTemplate = (templatePath: string): void => {
     contentTemplate = precompileToString(contentSource);
   }
 
-  fs.writeFileSync(
+  writeArtifact(
     outputPath,
-    JSON.stringify({ baseTemplate, contentTemplate }, null, 2),
-    "utf8"
+    JSON.stringify({ baseTemplate, contentTemplate }, null, 2)
   );
   console.log(`✓ Built: ${path.relative(__dirname, outputPath)}`);
 };
@@ -137,7 +148,7 @@ const buildPartialsManifest = (): void => {
   fs.ensureDirSync(DIST_DIR);
   const manifestPath = path.join(DIST_DIR, "partials.json");
 
-  fs.writeFileSync(manifestPath, JSON.stringify(partials, null, 2), "utf8");
+  writeArtifact(manifestPath, JSON.stringify(partials, null, 2));
   console.log(
     `✓ Built partials manifest: ${path.relative(__dirname, manifestPath)}`
   );

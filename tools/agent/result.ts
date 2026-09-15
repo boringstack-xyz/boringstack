@@ -1,3 +1,6 @@
+import type { ITaskTiming } from "./scheduler";
+import type { IExecutionBudget } from "./scheduling";
+
 const INVALID_EVIDENCE = "Invalid verification evidence";
 
 /** Versioned evidence for a declared check, never a production certification. */
@@ -21,6 +24,7 @@ export interface IVerificationResult {
   source: "caller-selected-api" | "owned-sandbox" | "checkout";
   status: Status;
   checks: ICheckResult[];
+  execution?: IExecutionBudget & { tasks: ITaskTiming[] };
 }
 
 export const exitCode = (status: Status): number =>

@@ -82,8 +82,8 @@ test("concurrency honours AGENT_VERIFY_PARALLEL and otherwise stays in band", ()
   expect(defaultConcurrency({ AGENT_VERIFY_PARALLEL: "9" })).toBe(9);
   expect(
     defaultConcurrency({ AGENT_VERIFY_PARALLEL: "zero" })
-  ).toBeGreaterThanOrEqual(2);
-  expect(defaultConcurrency({})).toBeLessThanOrEqual(6);
+  ).toBeGreaterThanOrEqual(1);
+  expect(defaultConcurrency({})).toBeLessThanOrEqual(24);
 });
 
 test("checks report in the declared order regardless of completion order", () => {

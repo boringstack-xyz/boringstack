@@ -248,13 +248,17 @@ export async function fullStackChecks(
   state: ISandbox,
   signal?: AbortSignal,
   expectedFingerprint?: string,
-  lane: ISandboxLane = SANDBOX_LANES.default
+  lane: ISandboxLane = SANDBOX_LANES.default,
+  workers = 1
 ): Promise<ICheckResult[]> {
   let runtime: IRuntime | undefined;
   const report = join(root, ".agent-state", `playwright-${randomUUID()}.xml`);
 
   try {
+    const startup = performance.now();
+
     runtime = await startRuntime(root, state, signal, lane);
+    const startupMs = Math.round(performance.now() - startup);
     const schema = await checkOpenapi(
       root,
       `${runtime.apiUrl}/swagger/json`,
@@ -267,6 +271,7 @@ export async function fullStackChecks(
         "node_modules/@playwright/test/cli.js",
         "test",
         "--project=chromium",
+        `--workers=${String(workers)}`,
         "--retries=0",
         "--grep-invert=Visual regression",
         "--reporter=junit",
@@ -288,15 +293,29 @@ export async function fullStackChecks(
             "playwright"
           );
 
+    if (browser.status !== "passed") {
+      writeFileSync(`${report}.log`, run.stdout + run.stderr, { mode: 0o600 });
+      process.stderr.write(`ui.e2e: output saved to ${report}.log\n`);
+    }
+
     return [
+      {
+        checkId: "runtime.ready",
+        status: "passed",
+        reason: "owned_runtime_ready",
+        durationMs: startupMs,
+      },
       schema,
-      inventoryEvidence(
-        root,
-        "ui.e2e",
-        existsSync(report) ? readFileSync(report, "utf8") : "",
-        browser,
-        expectedFingerprint
-      ),
+      {
+        durationMs: run.durationMs,
+        ...inventoryEvidence(
+          root,
+          "ui.e2e",
+          existsSync(report) ? readFileSync(report, "utf8") : "",
+          browser,
+          expectedFingerprint
+        ),
+      },
     ];
   } catch {
     return [

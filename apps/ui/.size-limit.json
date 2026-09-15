@@ -9,7 +9,8 @@
       "dist/assets/query-*.js"
     ],
     "limit": "255 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "Modulepreload runtime + shared shell",
@@ -24,120 +25,140 @@
       "dist/assets/dist-*.js"
     ],
     "limit": "165 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "CSS (Tailwind compiled)",
     "path": "dist/assets/*.css",
     "limit": "12 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "LoginPage chunk",
     "path": "dist/assets/LoginPage-*.js",
     "limit": "20 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "DashboardPage chunk",
     "path": "dist/assets/DashboardPage-*.js",
     "limit": "5 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "SettingsPage chunk",
     "path": "dist/assets/SettingsPage-*.js",
     "limit": "20 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "BillingPage chunk",
     "path": "dist/assets/BillingPage-*.js",
     "limit": "4 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "NotificationsPage chunk",
     "path": "dist/assets/NotificationsPage-*.js",
     "limit": "4 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "NotificationsPreferencesPage chunk",
     "path": "dist/assets/NotificationsPreferencesPage-*.js",
     "limit": "3 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "InvitationsPage chunk",
     "path": "dist/assets/InvitationsPage-*.js",
     "limit": "4 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "InvitationAcceptPage chunk",
     "path": "dist/assets/InvitationAcceptPage-*.js",
     "limit": "3 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "OwnershipTransferAcceptPage chunk",
     "path": "dist/assets/OwnershipTransferAcceptPage-*.js",
     "limit": "3 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "JoinRequestsPage chunk",
     "path": "dist/assets/JoinRequestsPage-*.js",
     "limit": "3 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "AuditLogPage chunk",
     "path": "dist/assets/AuditLogPage-*.js",
     "limit": "3 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "ProfilePage chunk",
     "path": "dist/assets/ProfilePage-*.js",
     "limit": "3 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "SignUpPage chunk",
     "path": "dist/assets/SignUpPage-*.js",
     "limit": "3 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "ForgotPasswordPage chunk",
     "path": "dist/assets/ForgotPasswordPage-*.js",
     "limit": "3 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "ResetPasswordPage chunk",
     "path": "dist/assets/ResetPasswordPage-*.js",
     "limit": "3 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "VerifyEmailPage chunk",
     "path": "dist/assets/VerifyEmailPage-*.js",
     "limit": "3 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "OAuthCallbackPage chunk",
     "path": "dist/assets/OAuthCallbackPage-*.js",
     "limit": "3 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   },
   {
     "name": "NotFoundPage chunk",
     "path": "dist/assets/NotFoundPage-*.js",
     "limit": "2 KB",
-    "gzip": true
+    "gzip": true,
+    "running": false
   }
 ]
