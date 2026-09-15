@@ -7,7 +7,11 @@ import {
 import type { ProfileRunner } from "./profile-runner";
 import type { ICheckResult } from "./result";
 import type { ITask } from "./scheduler";
-import type { SandboxLaneName } from "./sandbox/lifecycle";
+import {
+  SANDBOX_LANES,
+  securityShardLane,
+  type ISandboxLane,
+} from "./sandbox/lifecycle";
 import { requireValue } from "./validation";
 
 export function profileTasks(
@@ -19,9 +23,13 @@ export function profileTasks(
   const release = profile === "release-local";
   const feature = profile === "feature" || release;
   const security = profile === "security" || release;
-  const lanes: SandboxLaneName[] = [
-    ...(security ? (["security"] as const) : []),
-    ...(feature ? (["tests", "e2e"] as const) : []),
+  const shards = security ? runner.budget.securityShards : 0;
+  const shardLanes = Array.from({ length: shards }, (_, offset) =>
+    securityShardLane(offset + 1, shards)
+  );
+  const lanes: ISandboxLane[] = [
+    ...shardLanes,
+    ...(feature ? [SANDBOX_LANES.tests, SANDBOX_LANES.e2e] : []),
   ];
 
   if (lanes.length > 0) {
@@ -41,7 +49,7 @@ export function profileTasks(
     for (const lane of lanes) {
       tasks.push(
         runner.task(
-          `api.migrate.${lane}`,
+          `api.migrate.${lane.name}`,
           () => runner.migrate(lane),
           ["sandbox.ready"],
           1,
@@ -55,7 +63,7 @@ export function profileTasks(
     tasks.push(
       runner.task(
         "api.tests",
-        () => runner.tests(false, release),
+        () => runner.apiTests(release),
         ["api.migrate.tests", "api.templates"],
         1,
         70,
@@ -69,7 +77,7 @@ export function profileTasks(
         "ui.tests",
         () => runner.uiTests(fingerprint),
         [],
-        runner.budget.testWorkers,
+        runner.budget.uiTestWorkers,
         70
       )
     );
@@ -87,16 +95,44 @@ export function profileTasks(
   }
 
   if (security) {
-    tasks.push(
-      runner.task(
-        "security.tests",
-        () => runner.tests(true),
-        ["api.migrate.security", "api.templates"],
-        1,
-        90,
-        ["security.tests", "security.manifest"]
-      )
+    const files = runner.securityShardFiles(shards);
+    const count = files.length;
+    const shardIds = files.map(
+      (_, offset) => `security.tests.${String(offset + 1)}`
     );
+
+    files.forEach((shardFiles, offset) => {
+      const index = offset + 1;
+      const lane = securityShardLane(index, count);
+
+      tasks.push(
+        runner.task(
+          count === 1 ? "security.tests" : (shardIds[offset] ?? ""),
+          () => runner.securityShard(index, count, shardFiles),
+          [`api.migrate.${lane.name}`, "api.templates"],
+          1,
+          90,
+          count === 1 ? ["security.tests", "security.manifest"] : undefined
+        )
+      );
+    });
+
+    if (count > 1) {
+      tasks.push(
+        runner.task(
+          "security.tests",
+          () => {
+            runner.securityAggregate(count);
+
+            return Promise.resolve();
+          },
+          shardIds,
+          1,
+          90,
+          ["security.tests", "security.manifest"]
+        )
+      );
+    }
   }
 
   if (release) {

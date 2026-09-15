@@ -3,8 +3,15 @@ import { verificationEnvironment } from "./environment";
 
 export interface IExecutionBudget {
   slots: number;
+  /** Playwright workers; also the number of security-spec shards. */
   testWorkers: number;
+  /** Vitest workers: the UI suite is the long pole once the spec is sharded. */
+  uiTestWorkers: number;
+  securityShards: number;
 }
+
+const MAX_UI_WORKERS = 8;
+const MAX_SHARDS = 4;
 
 const GIB = 1024 ** 3;
 
@@ -36,5 +43,19 @@ export function executionBudget(
         : Math.max(1, Math.min(4, Math.floor(slots / 3)))
   );
 
-  return { slots, testWorkers };
+  const uiTestWorkers = Math.min(
+    slots,
+    Number.isSafeInteger(requestedWorkers) && requestedWorkers > 0
+      ? requestedWorkers
+      : ci
+        ? testWorkers
+        : Math.max(testWorkers, Math.min(MAX_UI_WORKERS, Math.floor(slots / 2)))
+  );
+
+  return {
+    slots,
+    testWorkers,
+    uiTestWorkers,
+    securityShards: Math.min(MAX_SHARDS, testWorkers),
+  };
 }

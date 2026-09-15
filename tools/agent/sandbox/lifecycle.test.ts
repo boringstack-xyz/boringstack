@@ -8,6 +8,7 @@ import { acquireLease } from "./lease";
 import {
   downSandbox,
   ensureLaneDatabases,
+  SANDBOX_LANES,
   inspectSandbox,
   publicSandbox,
   readSandbox,
@@ -126,8 +127,8 @@ if (dockerTestsEnabled()) {
       expect(secondRead.stdout.trim()).toBe("");
       expect(secondWrite.code).toBe(0);
 
-      await ensureLaneDatabases(ROOT, first, ["security"]);
-      await ensureLaneDatabases(ROOT, first, ["security"]);
+      await ensureLaneDatabases(ROOT, first, [SANDBOX_LANES.security]);
+      await ensureLaneDatabases(ROOT, first, [SANDBOX_LANES.security]);
       const selected = await query(
         first,
         "SELECT datname FROM pg_database WHERE datname LIKE 'app_%' ORDER BY datname;"

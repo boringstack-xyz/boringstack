@@ -5,15 +5,15 @@ import { executionBudget } from "./scheduling";
 test("local budget uses a 16-core host with headroom and conservative CI defaults", () => {
   const memory = 64 * 1024 ** 3;
 
-  expect(executionBudget({}, 16, memory)).toEqual({
+  expect(executionBudget({}, 16, memory)).toMatchObject({
     slots: 14,
     testWorkers: 4,
   });
-  expect(executionBudget({ CI: "true" }, 16, memory)).toEqual({
+  expect(executionBudget({ CI: "true" }, 16, memory)).toMatchObject({
     slots: 4,
     testWorkers: 1,
   });
-  expect(executionBudget({ CI: "true" }, 2, memory)).toEqual({
+  expect(executionBudget({ CI: "true" }, 2, memory)).toMatchObject({
     slots: 2,
     testWorkers: 1,
   });
@@ -24,14 +24,14 @@ test("local budget uses a 16-core host with headroom and conservative CI default
       16,
       memory
     )
-  ).toEqual({ slots: 1, testWorkers: 1 });
+  ).toMatchObject({ slots: 1, testWorkers: 1 });
   expect(
     executionBudget(
       { AGENT_VERIFY_PARALLEL: "8", AGENT_VERIFY_TEST_WORKERS: "2" },
       16,
       memory
     )
-  ).toEqual({ slots: 8, testWorkers: 2 });
+  ).toMatchObject({ slots: 8, testWorkers: 2 });
 });
 
 test("waiting size gates do not occupy a slot needed by independent builds", async () => {
@@ -267,4 +267,32 @@ test("invalid graphs fail before executing any task", async () => {
       fixture.message
     );
   }
+});
+
+test("the UI pool grows to half the budget locally and stays with the browser pool in CI", () => {
+  const local = executionBudget({}, 20, 64 * 1024 ** 3);
+  const ci = executionBudget({ CI: "true" }, 20, 64 * 1024 ** 3);
+  const pinned = executionBudget(
+    { AGENT_VERIFY_TEST_WORKERS: "2" },
+    20,
+    64 * 1024 ** 3
+  );
+
+  expect(local).toMatchObject({
+    slots: 18,
+    testWorkers: 4,
+    uiTestWorkers: 8,
+    securityShards: 4,
+  });
+  expect(ci).toMatchObject({
+    slots: 4,
+    testWorkers: 1,
+    uiTestWorkers: 1,
+    securityShards: 1,
+  });
+  expect(pinned).toMatchObject({
+    testWorkers: 2,
+    uiTestWorkers: 2,
+    securityShards: 2,
+  });
 });

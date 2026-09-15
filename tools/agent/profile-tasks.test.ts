@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { fileURLToPath } from "node:url";
 import { ProfileRunner } from "./profile-runner";
 import { aggregateChecks, profileTasks } from "./profile-tasks";
 import type { IVerificationResult } from "./result";
@@ -14,13 +15,32 @@ const result: IVerificationResult = {
   status: "blocked",
   checks: [],
 };
+const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const runner = new ProfileRunner(
-  "/unused",
+  ROOT,
   "/unused",
   result,
   undefined,
   "fixture",
-  { slots: 14, testWorkers: 4 }
+  {
+    slots: 14,
+    testWorkers: 4,
+    uiTestWorkers: 7,
+    securityShards: 4,
+  }
+);
+const serial = new ProfileRunner(
+  ROOT,
+  "/unused",
+  result,
+  undefined,
+  "fixture",
+  {
+    slots: 1,
+    testWorkers: 1,
+    uiTestWorkers: 1,
+    securityShards: 1,
+  }
 );
 
 test("profiles prepare only used lanes and release tests supply coverage once", () => {
@@ -33,15 +53,24 @@ test("profiles prepare only used lanes and release tests supply coverage once", 
       .map((task) => task.id);
 
   expect(migrations(release)).toEqual([
-    "api.migrate.security",
+    "api.migrate.security-1",
+    "api.migrate.security-2",
+    "api.migrate.security-3",
+    "api.migrate.security-4",
     "api.migrate.tests",
     "api.migrate.e2e",
   ]);
   expect(migrations(feature)).toEqual(["api.migrate.tests", "api.migrate.e2e"]);
-  expect(migrations(security)).toEqual(["api.migrate.security"]);
+  expect(migrations(security)).toEqual([
+    "api.migrate.security-1",
+    "api.migrate.security-2",
+    "api.migrate.security-3",
+    "api.migrate.security-4",
+  ]);
   expect(release.filter((task) => task.id === "api.tests")).toHaveLength(1);
   expect(release.some((task) => task.id === "api.coverage")).toBe(false);
   expect(release.find((task) => task.id === "ui.e2e")?.slots).toBe(4);
+  expect(release.find((task) => task.id === "ui.tests")?.slots).toBe(7);
   expect(release.find((task) => task.id === "ui.tests")?.after).toEqual([]);
   expect(release.find((task) => task.id === "ui.build")?.after).toEqual([]);
   expect(release.find((task) => task.id === "api.build")?.after).toContain(
@@ -56,4 +85,46 @@ test("missing aggregate constituents block evidence instead of implying a comple
   expect(aggregateChecks([]).every((check) => check.status === "blocked")).toBe(
     true
   );
+});
+
+test("the security spec shards across lanes and aggregates, or runs whole with one worker", () => {
+  const sharded = profileTasks(runner, "security", "fixture");
+  const shardTasks = sharded.filter((task) =>
+    /^security\.tests\.\d$/.test(task.id)
+  );
+  const aggregate = sharded.find((task) => task.id === "security.tests");
+
+  expect(shardTasks.map((task) => task.id)).toEqual([
+    "security.tests.1",
+    "security.tests.2",
+    "security.tests.3",
+    "security.tests.4",
+  ]);
+  expect(shardTasks[2]?.after).toEqual([
+    "api.migrate.security-3",
+    "api.templates",
+  ]);
+  expect(aggregate?.after).toEqual(shardTasks.map((task) => task.id));
+
+  const whole = profileTasks(serial, "security", "fixture");
+
+  expect(
+    whole.filter((task) => task.id.startsWith("security.tests"))
+  ).toHaveLength(1);
+  expect(whole.find((task) => task.id === "security.tests")?.after).toEqual([
+    "api.migrate.security",
+    "api.templates",
+  ]);
+  expect(whole.map((task) => task.id)).toContain("api.migrate.security");
+});
+
+test("shard files cover every spec file exactly once", () => {
+  const shards = runner.securityShardFiles(4);
+  const whole = runner.securityShardFiles(1);
+  const flat = shards.flat().sort();
+
+  expect(shards).toHaveLength(4);
+  expect(flat).toEqual([...(whole[0] ?? [])].sort());
+  expect(new Set(flat).size).toBe(flat.length);
+  expect(flat.length).toBeGreaterThan(10);
 });

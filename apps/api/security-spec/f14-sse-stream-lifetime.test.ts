@@ -129,8 +129,32 @@ const openStream = (userId: string, jti: string): IStreamFixture => {
     }),
   });
 
+  /*
+   * The stream opens with a ping so Elysia can flush the response headers
+   * before the first notification. The fixture consumes it, so every test
+   * reads the real payloads exactly as it would have without the handshake.
+   */
+  let opened = false;
+
+  const next = async (): Promise<IteratorResult<string, void>> => {
+    if (!opened) {
+      opened = true;
+
+      const handshake = await generator.next();
+
+      if (
+        handshake.done === true ||
+        handshake.value !== JSON.stringify({ type: "ping" })
+      ) {
+        throw new Error("f14: the stream did not open with a ping");
+      }
+    }
+
+    return generator.next();
+  };
+
   return {
-    next: () => generator.next(),
+    next,
     publish: (message) =>
       valkeyPubSub.publish(userNotificationChannel(userId), message),
     credential,

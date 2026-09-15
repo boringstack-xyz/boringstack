@@ -157,6 +157,15 @@ export const notificationsStreamHandler = async function* (
   let lastPingAtMs = nowMs();
 
   try {
+    /*
+     * Elysia turns a generator into a response only after its first
+     * `yield`. A stream that stays silent until a notification arrives, or
+     * until the keepalive below, would keep the browser's `EventSource`
+     * from opening and any proxy from seeing bytes for up to 25 seconds.
+     * A ping on open flushes the headers at once; the client ignores it.
+     */
+    yield JSON.stringify({ type: "ping" });
+
     while (!isAborted()) {
       /*
        * The credential is re-checked before every payload, not once per

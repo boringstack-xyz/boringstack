@@ -21,6 +21,10 @@ const CHECK_ORDER: readonly string[] = [
   "api.migrate",
   "api.migrate.tests",
   "api.migrate.security",
+  "api.migrate.security-1",
+  "api.migrate.security-2",
+  "api.migrate.security-3",
+  "api.migrate.security-4",
   "api.migrate.e2e",
   "api.migrate.coverage",
   "api.templates",
@@ -28,6 +32,10 @@ const CHECK_ORDER: readonly string[] = [
   "api.check",
   "ui.check",
   ...STATIC_CHECKS.map((check) => check.id),
+  "security.tests.1",
+  "security.tests.2",
+  "security.tests.3",
+  "security.tests.4",
   "security.tests",
   "security.manifest",
   "api.tests",
@@ -83,7 +91,7 @@ export async function runProfile(
     const tasks = profileTasks(runner, profile, result.checkout.fingerprint);
 
     process.stderr.write(
-      `Verification budget: ${String(budget.slots)} CPU slots; ${String(budget.testWorkers)} workers per test pool\n`
+      `Verification budget: ${String(budget.slots)} CPU slots; ${String(budget.testWorkers)} browser workers and security shards; ${String(budget.uiTestWorkers)} vitest workers\n`
     );
     result.execution = {
       ...budget,

@@ -1,8 +1,16 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { type ICommandCheck } from "./checks";
 import type { ITask } from "./scheduler";
 import type { IExecutionBudget } from "./scheduling";
+import { mergeJunitReports, shardFiles, suiteDurations } from "./junit";
 import { hostEnvironment } from "./environment";
 import { inventoryEvidence } from "./inventory";
 import { runProcess, type IProcessResult } from "./process";
@@ -14,11 +22,12 @@ import {
   inspectSandbox,
   SANDBOX_LANES,
   sandboxEnv,
+  securityShardLane,
   type ISandbox,
-  type SandboxLaneName,
+  type ISandboxLane,
 } from "./sandbox/lifecycle";
 import { securityManifestEvidence } from "./security-evidence";
-import { isAborted } from "./validation";
+import { isAborted, isRecord, parseRecord } from "./validation";
 
 const NO_ENV_FILE = "--no-env-file";
 
@@ -39,16 +48,27 @@ export class ProfileRunner {
     private readonly result: IVerificationResult,
     private readonly signal?: AbortSignal,
     private readonly sandboxId?: string,
-    readonly budget: IExecutionBudget = { slots: 1, testWorkers: 1 }
+    readonly budget: IExecutionBudget = {
+      slots: 1,
+      testWorkers: 1,
+      uiTestWorkers: 1,
+      securityShards: 1,
+    }
   ) {}
 
+  /** Shard reports collected for the aggregate security evidence. */
+  private readonly securityReports = new Map<
+    number,
+    { xml: string; run: IProcessResult }
+  >();
+
   /** Environment for a stateful lane: its own database and Valkey index. */
-  laneEnv(lane: SandboxLaneName): Record<string, string | undefined> {
+  laneEnv(lane: ISandboxLane): Record<string, string | undefined> {
     if (this.state === undefined) {
       throw new Error("Sandbox absent");
     }
 
-    return sandboxEnv(this.state, SANDBOX_LANES[lane]);
+    return sandboxEnv(this.state, lane);
   }
 
   add(check: ICheckResult): void {
@@ -122,7 +142,10 @@ export class ProfileRunner {
       return;
     }
 
-    const base = check.lane === undefined ? this.env : this.laneEnv(check.lane);
+    const base =
+      check.lane === undefined
+        ? this.env
+        : this.laneEnv(SANDBOX_LANES[check.lane]);
 
     await this.command(
       check.id,
@@ -132,62 +155,68 @@ export class ProfileRunner {
     );
   }
 
-  async tests(security: boolean, coverage = false): Promise<void> {
-    const checkId = security ? "security.tests" : "api.tests";
-    const report = join(this.temp, security ? "security.xml" : "api.xml");
-    const laneEnv = this.laneEnv(security ? "security" : "tests");
+  private securityEnv(lane: ISandboxLane): Record<string, string | undefined> {
+    return {
+      ...this.laneEnv(lane),
+      SECURITY_SPEC: "true",
+      ACCOUNT_DOMAIN_CLAIMING: "true",
+      GOOGLE_OAUTH_CLIENT_ID: "spec-google-client-id",
+      GOOGLE_OAUTH_CLIENT_SECRET: "spec-google-client-secret",
+    };
+  }
+
+  private async bunTests(
+    argv: readonly string[],
+    report: string,
+    env: Record<string, string | undefined>
+  ): Promise<{ run: IProcessResult; xml: string }> {
     const run = await runProcess(
       [
         process.execPath,
         NO_ENV_FILE,
         "run",
-        coverage
-          ? "scripts/quality/check-coverage.ts"
-          : "scripts/quality/run-tests-clean.ts",
-        ...(coverage ? [] : [security ? "security-spec" : "tests"]),
+        ...argv,
         "--reporter=junit",
         `--reporter-outfile=${report}`,
       ],
-      {
-        cwd: join(this.root, "apps/api"),
-        env: {
-          ...laneEnv,
-          SECURITY_SPEC: security ? "true" : "false",
-          ...(security
-            ? {
-                ACCOUNT_DOMAIN_CLAIMING: "true",
-                GOOGLE_OAUTH_CLIENT_ID: "spec-google-client-id",
-                GOOGLE_OAUTH_CLIENT_SECRET: "spec-google-client-secret",
-              }
-            : {}),
-        },
-        signal: this.signal,
-      }
+      { cwd: join(this.root, "apps/api"), env, signal: this.signal }
     );
-    const xml = existsSync(report) ? readFileSync(report, "utf8") : "";
+
+    return {
+      run,
+      xml: existsSync(report) ? readFileSync(report, "utf8") : "",
+    };
+  }
+
+  /** API tests on the `tests` lane; in release runs the same execution enforces coverage. */
+  async apiTests(coverage = false): Promise<void> {
+    const { run, xml } = await this.bunTests(
+      coverage
+        ? ["scripts/quality/check-coverage.ts"]
+        : ["scripts/quality/run-tests-clean.ts", "tests"],
+      join(this.temp, "api.xml"),
+      { ...this.laneEnv(SANDBOX_LANES.tests), SECURITY_SPEC: "false" }
+    );
     const check =
       run.status === "blocked"
         ? {
-            checkId,
+            checkId: "api.tests",
             status: "blocked" as const,
             reason: run.reason,
           }
-        : testEvidence(checkId, xml, run.code, "bun", run.code === 86);
-
-    const evidence = security
-      ? check
-      : inventoryEvidence(
-          this.root,
-          "api.tests",
-          xml,
-          check,
-          this.result.checkout?.fingerprint
-        );
+        : testEvidence("api.tests", xml, run.code, "bun", run.code === 86);
+    const evidence = inventoryEvidence(
+      this.root,
+      "api.tests",
+      xml,
+      check,
+      this.result.checkout?.fingerprint
+    );
 
     this.add({ ...evidence, durationMs: run.durationMs });
 
     if (evidence.status !== "passed") {
-      this.logFailure(checkId, run);
+      this.logFailure("api.tests", run);
     }
 
     if (coverage) {
@@ -201,12 +230,187 @@ export class ProfileRunner {
         durationMs: run.durationMs,
       });
     }
+  }
 
-    if (security) {
-      this.add(
-        securityManifestEvidence(this.root, xml, check.status !== "blocked")
-      );
+  private timingsPath(): string {
+    return join(
+      this.root,
+      ".agent-state",
+      "verification",
+      "timings",
+      "security-spec.json"
+    );
+  }
+
+  /** Per-file seconds recorded by the previous run; empty on a fresh checkout. */
+  recordedDurations(): Record<string, number> {
+    const path = this.timingsPath();
+
+    if (!existsSync(path)) {
+      return {};
     }
+
+    try {
+      const value = parseRecord(readFileSync(path, "utf8")).files;
+
+      return isRecord(value)
+        ? Object.fromEntries(
+            Object.entries(value).filter(
+              (entry): entry is [string, number] =>
+                typeof entry[1] === "number" && Number.isFinite(entry[1])
+            )
+          )
+        : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private recordDurations(xml: string): void {
+    const files = suiteDurations(xml);
+
+    if (Object.keys(files).length === 0) {
+      return;
+    }
+
+    mkdirSync(join(this.timingsPath(), ".."), { recursive: true, mode: 0o700 });
+    writeFileSync(
+      this.timingsPath(),
+      JSON.stringify({ schemaVersion: 1, files }, null, 2),
+      { mode: 0o600 }
+    );
+  }
+
+  /**
+   * Spec files packed into `count` shards, longest first. Duration comes from
+   * the previous run's JUnit report; a file without a record is assumed to be
+   * as long as the median recorded file, and size decides ties, so a fresh
+   * checkout still gets a sensible split.
+   */
+  securityShardFiles(count: number): string[][] {
+    const directory = join(this.root, "apps/api/security-spec");
+    const recorded = this.recordedDurations();
+    const known = Object.values(recorded).sort((left, right) => left - right);
+    const median = known[Math.floor(known.length / 2)] ?? 1;
+    const files = readdirSync(directory)
+      .filter((name) => name.endsWith(".test.ts"))
+      .map((name) => {
+        const path = `security-spec/${name}`;
+        const size = statSync(join(directory, name)).size;
+
+        return {
+          path,
+          // Seconds dominate; bytes only order files of equal duration.
+          size: (recorded[path] ?? median) * 1_000_000 + size,
+        };
+      });
+
+    return shardFiles(files, count);
+  }
+
+  /**
+   * One shard of the security spec on its own lane. With a single shard this
+   * is the whole spec and records the `security.tests` evidence directly.
+   */
+  async securityShard(
+    index: number,
+    count: number,
+    files: readonly string[]
+  ): Promise<void> {
+    const lane = securityShardLane(index, count);
+    const { run, xml } = await this.bunTests(
+      ["scripts/quality/run-tests-clean.ts", ...files],
+      join(this.temp, `security-${String(index)}.xml`),
+      this.securityEnv(lane)
+    );
+
+    this.securityReports.set(index, { xml, run });
+
+    if (count === 1) {
+      this.securityEvidence([run], xml);
+
+      return;
+    }
+
+    const checkId = `security.tests.${String(index)}`;
+    const check =
+      run.status === "blocked"
+        ? { checkId, status: "blocked" as const, reason: run.reason }
+        : testEvidence(checkId, xml, run.code, "bun", run.code === 86);
+
+    this.add({ ...check, durationMs: run.durationMs });
+
+    if (check.status !== "passed") {
+      this.logFailure(checkId, run);
+    }
+  }
+
+  /** Merges the shard reports so evidence and the manifest see one run. */
+  securityAggregate(count: number): void {
+    const shards = Array.from({ length: count }, (_, offset) =>
+      this.securityReports.get(offset + 1)
+    );
+
+    if (shards.includes(undefined)) {
+      this.add({
+        checkId: "security.tests",
+        status: "blocked",
+        reason: "security_shard_missing",
+      });
+      this.add({
+        checkId: "security.manifest",
+        status: "blocked",
+        reason: "security_shard_missing",
+      });
+
+      return;
+    }
+
+    const present = shards.flatMap((shard) =>
+      shard === undefined ? [] : [shard]
+    );
+
+    this.securityEvidence(
+      present.map((shard) => shard.run),
+      mergeJunitReports(present.map((shard) => shard.xml))
+    );
+  }
+
+  private securityEvidence(runs: readonly IProcessResult[], xml: string): void {
+    const blocked = runs.find((run) => run.status === "blocked");
+    const exit = runs.reduce<number | null>(
+      (worst, run) =>
+        worst === null || run.code === null ? null : Math.max(worst, run.code),
+      0
+    );
+    const check =
+      blocked !== undefined
+        ? {
+            checkId: "security.tests",
+            status: "blocked" as const,
+            reason: blocked.reason,
+          }
+        : testEvidence(
+            "security.tests",
+            xml,
+            exit,
+            "bun",
+            runs.some((run) => run.code === 86)
+          );
+    const durationMs = runs.reduce((total, run) => total + run.durationMs, 0);
+
+    this.add({ ...check, durationMs });
+    this.recordDurations(xml);
+
+    if (check.status !== "passed") {
+      for (const run of runs) {
+        this.logFailure("security.tests", run);
+      }
+    }
+
+    this.add(
+      securityManifestEvidence(this.root, xml, check.status !== "blocked")
+    );
   }
 
   async uiTests(fingerprint: string): Promise<void> {
@@ -226,7 +430,7 @@ export class ProfileRunner {
         "--coverage",
         "--coverage.reporter=text-summary",
         "--coverage.reporter=lcovonly",
-        `--maxWorkers=${String(this.budget.testWorkers)}`,
+        `--maxWorkers=${String(this.budget.uiTestWorkers)}`,
         "--reporter=junit",
         `--outputFile=${report}`,
       ],
@@ -330,7 +534,7 @@ export class ProfileRunner {
     );
   }
 
-  async prepareSandbox(lanes: readonly SandboxLaneName[]): Promise<void> {
+  async prepareSandbox(lanes: readonly ISandboxLane[]): Promise<void> {
     if (this.sandboxId === undefined || this.sandboxId === "") {
       throw new Error("Owned sandbox required");
     }
@@ -345,9 +549,9 @@ export class ProfileRunner {
     });
   }
 
-  async migrate(lane: SandboxLaneName): Promise<void> {
+  async migrate(lane: ISandboxLane): Promise<void> {
     await this.command(
-      `api.migrate.${lane}`,
+      `api.migrate.${lane.name}`,
       "api",
       [process.execPath, NO_ENV_FILE, "run", "db:prepare"],
       this.laneEnv(lane)

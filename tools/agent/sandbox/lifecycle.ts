@@ -35,27 +35,60 @@ export interface ISandbox {
  * counters. Stateless lanes (lint, typecheck, unit tests, builds) need none.
  */
 export interface ISandboxLane {
+  readonly name: string;
   readonly database: string;
   readonly valkeyDb: number;
 }
 
 export const SANDBOX_LANES = {
-  default: { database: "app", valkeyDb: 0 },
-  tests: { database: "app_tests", valkeyDb: 1 },
-  security: { database: "app_security", valkeyDb: 2 },
-  e2e: { database: "app_e2e", valkeyDb: 3 },
-  coverage: { database: "app_coverage", valkeyDb: 4 },
+  default: { name: "default", database: "app", valkeyDb: 0 },
+  tests: { name: "tests", database: "app_tests", valkeyDb: 1 },
+  security: { name: "security", database: "app_security", valkeyDb: 2 },
+  e2e: { name: "e2e", database: "app_e2e", valkeyDb: 3 },
+  coverage: { name: "coverage", database: "app_coverage", valkeyDb: 4 },
 } as const satisfies Record<string, ISandboxLane>;
 
 export type SandboxLaneName = keyof typeof SANDBOX_LANES;
 
 /** Every lane database except the default that `sandbox:up` created. */
-export const EXTRA_LANES: readonly SandboxLaneName[] = [
-  "tests",
-  "security",
-  "e2e",
-  "coverage",
+export const EXTRA_LANES: readonly ISandboxLane[] = [
+  SANDBOX_LANES.tests,
+  SANDBOX_LANES.security,
+  SANDBOX_LANES.e2e,
+  SANDBOX_LANES.coverage,
 ];
+
+const SHARD_VALKEY_BASE = 4;
+
+export const MAX_SECURITY_SHARDS = 4;
+
+/**
+ * The security spec is the longest single process of a run. Sharding it
+ * across processes needs a database and a Valkey index per shard; with one
+ * shard the ordinary `security` lane is used so CI output does not change.
+ */
+export function securityShardLane(index: number, count: number): ISandboxLane {
+  if (
+    !Number.isSafeInteger(index) ||
+    !Number.isSafeInteger(count) ||
+    count < 1 ||
+    count > MAX_SECURITY_SHARDS ||
+    index < 1 ||
+    index > count
+  ) {
+    throw new Error("Invalid security shard");
+  }
+
+  if (count === 1) {
+    return SANDBOX_LANES.security;
+  }
+
+  return {
+    name: `security-${String(index)}`,
+    database: `app_security_${String(index)}`,
+    valkeyDb: SHARD_VALKEY_BASE + index,
+  };
+}
 
 const VALKEY_PONG = "PONG";
 const ID = /^[a-f0-9]{32}$/;
@@ -472,7 +505,7 @@ export function publicSandbox(state: ISandbox): object {
 export async function ensureLaneDatabases(
   root: string,
   state: ISandbox,
-  lanes: readonly SandboxLaneName[] = EXTRA_LANES
+  lanes: readonly ISandboxLane[] = EXTRA_LANES
 ): Promise<void> {
   await owned(root, state, state.postgres);
 
@@ -489,9 +522,7 @@ export async function ensureLaneDatabases(
   ]);
   const existing = new Set(listed.split("\n").map((line) => line.trim()));
 
-  for (const name of new Set(lanes)) {
-    const { database } = SANDBOX_LANES[name];
-
+  for (const database of new Set(lanes.map((lane) => lane.database))) {
     if (existing.has(database)) {
       continue;
     }
