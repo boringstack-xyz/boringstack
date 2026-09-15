@@ -56,3 +56,29 @@ export function copyFixture(root: string, destination: string): void {
     );
   }
 }
+
+const FIXTURE_RESOURCE_CANDIDATES = [
+  "Projects",
+  "Widgets",
+  "Ledgers",
+  "Beacons",
+  "Quotas",
+  "Tickets",
+] as const;
+
+/**
+ * Resource names the generator can create in this checkout. A product built
+ * on the template may already own `projects` or `widgets`; the tooling tests
+ * must exercise the generator without colliding with what the product ships.
+ */
+export function fixtureResourceNames(root: string, count: number): string[] {
+  const free = FIXTURE_RESOURCE_CANDIDATES.filter(
+    (name) => !existsSync(join(root, "apps/api/src/api", name.toLowerCase()))
+  );
+
+  if (free.length < count) {
+    throw new Error("Not enough free fixture resource names in this checkout");
+  }
+
+  return free.slice(0, count);
+}

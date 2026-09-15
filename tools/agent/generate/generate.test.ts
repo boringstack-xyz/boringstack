@@ -11,12 +11,20 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { planAccountResource } from "./account-resource";
-import { copyFixture } from "./fixture";
+import { addSubjectInstance, planAccountResource } from "./account-resource";
+import { copyFixture, fixtureResourceNames } from "./fixture";
 import { formatEdits } from "./format";
 import { apply, replaceOnce } from "./patch";
 
 const root = join(import.meta.dir, "../../..");
+
+const requireName = (name: string | undefined): string => {
+  if (name === undefined) {
+    throw new Error("Fixture resource name is absent");
+  }
+
+  return name;
+};
 
 test("all patch preconditions are checked before any write", () => {
   const dir = mkdtempSync(join(tmpdir(), "bs-patch-"));
@@ -85,13 +93,18 @@ test("account generation works in a stripped and already extended checkout", asy
 
     writeFileSync(join(dir, dependency), original + "\n");
     expect(readFileSync(join(root, dependency), "utf8")).toBe(original);
+    const [primary, secondary] = fixtureResourceNames(dir, 2);
+    const primaryName = requireName(primary);
+    const secondaryName = requireName(secondary);
     const first = await formatEdits(
       dir,
-      planAccountResource(dir, "Projects", "team-read-admin-write")
+      planAccountResource(dir, primaryName, "team-read-admin-write")
     );
 
     apply(dir, first, true);
-    expect(existsSync(join(dir, "apps/api/src/api/projects"))).toBe(false);
+    expect(
+      existsSync(join(dir, "apps/api/src/api", primaryName.toLowerCase()))
+    ).toBe(false);
     apply(dir, first);
     const before = readFileSync(
       join(dir, "apps/api/src/config/routes/routes.ts"),
@@ -99,7 +112,7 @@ test("account generation works in a stripped and already extended checkout", asy
     );
 
     expect(() =>
-      planAccountResource(dir, "Projects", "team-read-admin-write")
+      planAccountResource(dir, primaryName, "team-read-admin-write")
     ).toThrow();
     expect(
       readFileSync(join(dir, "apps/api/src/config/routes/routes.ts"), "utf8")
@@ -108,12 +121,12 @@ test("account generation works in a stripped and already extended checkout", asy
       dir,
       await formatEdits(
         dir,
-        planAccountResource(dir, "Widgets", "team-read-admin-write")
+        planAccountResource(dir, secondaryName, "team-read-admin-write")
       )
     );
     expect(
       readFileSync(join(dir, "apps/api/src/lib/acl/acl.constants.ts"), "utf8")
-    ).toContain('"Widget"');
+    ).toContain(`"${secondaryName.slice(0, -1)}"`);
     expect(
       readFileSync(join(dir, "apps/api/src/api/widgets/index.ts"), "utf8")
     ).toContain('export { widgetsService } from "./widgets.service"');
@@ -125,3 +138,42 @@ test("account generation works in a stripped and already extended checkout", asy
     rmSync(dir, { recursive: true, force: true });
   }
 }, 120000);
+
+test("a new subject joins the union in either Prettier layout", () => {
+  const trailing = `export type SubjectInstance =
+  ITeamMemberSubject | ISiteSubject | IAccountSubject;
+
+export type AppSubject = Subject | SubjectInstance;`;
+  const leading = `export type SubjectInstance =
+  | IWidgetSubject
+  | IProjectSubject
+  | ITeamMemberSubject;`;
+  const membersOf = (source: string): string[] =>
+    (/export type SubjectInstance =([\s\S]*?);/.exec(source)?.[1] ?? "")
+      .split("|")
+      .map((member) => member.trim())
+      .filter((member) => member !== "");
+
+  for (const source of [trailing, leading]) {
+    const result = addSubjectInstance(source, "Ledger");
+    const members = membersOf(result);
+
+    expect(result).toContain(
+      'export interface ILedgerSubject extends ForcedSubject<"Ledger">'
+    );
+    expect(members).toEqual(["ILedgerSubject", ...membersOf(source)]);
+    expect(result).not.toContain("| |");
+    // Everything after the union declaration is untouched.
+    expect(result.endsWith(source.slice(source.indexOf(";") + 1))).toBe(true);
+  }
+
+  expect(() => addSubjectInstance(leading, "Widget")).toThrow(
+    "already declared"
+  );
+  expect(() => addSubjectInstance("export type Other = A;", "Ledger")).toThrow(
+    "anchor"
+  );
+  expect(() =>
+    addSubjectInstance(`${trailing}\n${trailing}`, "Ledger")
+  ).toThrow("anchor");
+});

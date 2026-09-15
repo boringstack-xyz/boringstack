@@ -1,11 +1,15 @@
 /** Deliberate edits to the trusted reference only; candidates need not share its source shape. */
 export function withoutRecordAccountPredicate(
   source: string,
-  index: 0 | 1
+  index: 0 | 1,
+  table = "projects"
 ): string {
   const matches = [
     ...source.matchAll(
-      /and\(\s*eq\(projects.accountId, accountId\),\s*eq\(projects.id, id\),?\s*\)/g
+      new RegExp(
+        `and\\(\\s*eq\\(${table}\\.accountId, accountId\\),\\s*eq\\(${table}\\.id, id\\),?\\s*\\)`,
+        "g"
+      )
     ),
   ];
 
@@ -21,7 +25,7 @@ export function withoutRecordAccountPredicate(
 
   return (
     source.slice(0, match.index) +
-    "eq(projects.id, id)" +
+    `eq(${table}.id, id)` +
     source.slice(match.index + match[0].length)
   );
 }
