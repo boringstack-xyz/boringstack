@@ -17,7 +17,15 @@ export default [
   {
     plugins: scriptConfig.plugins,
     linterOptions: { ...scriptConfig.linterOptions, noInlineConfig: true },
-    settings: scriptConfig.settings ?? {},
+    settings: {
+      ...(scriptConfig.settings ?? {}),
+      // tools/ has no node_modules, so eslint-plugin-import would resolve its
+      // named "node" resolver against Bun's global cache instead of the API's
+      // pinned copy. Point at the installed file so the lockfile decides.
+      "import/resolver": {
+        [`${apiRoot}node_modules/eslint-import-resolver-node/index.js`]: {},
+      },
+    },
     files: ["agent/**/*.ts", "agent-evals/**/*.ts"],
     languageOptions: {
       ...scriptConfig.languageOptions,
