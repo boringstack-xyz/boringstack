@@ -14,6 +14,7 @@ The base stack (always on):
 - **api-migrate** - One-shot schema push plus optional superuser seed
 - **api-dev / api** - Bun + Elysia in dev, GHCR image in production
 - **ui-dev / ui** - Vite dev server locally, nginx static image in production
+- **site-dev / site** - public marketing site (`apps/site`). Astro dev server locally, nginx static image in prod. Controlled by `WITH_SITE`; see [Public site](/site/overview/)
 
 Optional overlays:
 - **observability** - Prometheus, Grafana, Loki, Promtail, and exporters
@@ -32,6 +33,7 @@ WITH_GLITCHTIP=0 ./dev.sh up -d        # skip glitchtip
 WITH_BULLMQ=1 ./dev.sh up -d           # add bull board (opt-in)
 WITH_WUD=1 ./dev.sh up -d              # add WUD image-update detector (opt-in)
 WITH_MAILPIT=1 ./dev.sh up -d          # add Mailpit local SMTP (opt-in)
+WITH_SITE=0 ./dev.sh up -d             # skip the public marketing site (on in dev, off in prod)
 ```
 
 The default stack includes Prometheus, Grafana, Loki, and GlitchTip. Niche tooling (Bull Board, WUD, Mailpit) is opt-in. See [Profiles & overlays](/infra/profiles-and-overlays/).
@@ -50,6 +52,7 @@ Under `infra/compose/`:
 - `docker-compose.bullmq.yml` - Bull Board in development
 - `docker-compose.wud.yml` - WUD image-update detector
 - `docker-compose.mailpit.yml` - Local SMTP catcher in development
+- `docker-compose.site.yml` - Public marketing site: `site-dev` in dev, `site` behind Traefik in prod
 - `dev.sh` - Orchestrator
 - `.env.example` - All knobs in one file
 - `prometheus/` - Scrape config
@@ -74,9 +77,9 @@ Two bridge networks. Services are split on purpose:
 
 **backend (data plane).** postgres, valkey, api[-dev], api-migrate, exporters, glitchtip, and mailpit.
 
-**frontend (ingress).** traefik in prod, ui[-dev], and glitchtip-web. Traefik joins both when it needs to route.
+**frontend (ingress).** traefik in prod, ui[-dev], site[-dev], and glitchtip-web. Traefik joins both when it needs to route.
 
-In prod, Traefik joins both networks so it can route HTTPS from `frontend` to services on `backend`. The data plane (Postgres, Valkey) is never exposed to `frontend`.
+In prod, Traefik joins both networks so it can route HTTPS from `frontend` to services on `backend`. The data plane (Postgres, Valkey) is never exposed to `frontend`. The site joins `frontend` only, because it calls no backend service.
 
 ## Resource budgets
 

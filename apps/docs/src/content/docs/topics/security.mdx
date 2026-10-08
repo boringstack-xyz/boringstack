@@ -61,6 +61,22 @@ All security workflows fire on `0 6 * * 1` (Monday morning UTC, staggered by min
 - An `ignoreUntil` allowlist entry expiring
 - A new rule release from Semgrep or osv
 
+### Self-hosted runners
+
+Set the repository variable `CI_RUNNER` to a runner label and jobs move off GitHub-hosted
+minutes. Each job selects its runner with the same expression:
+
+```yaml
+runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+```
+
+Pull requests from forks always stay on `ubuntu-24.04`, so code from outside the repository
+never runs on your machines. `production-release.yml` always runs on GitHub-hosted runners.
+The lint-meta rule `github-actions-runner-pinned` enforces both halves. It requires an
+explicit OS version instead of a floating `*-latest` label, and it rejects a
+`vars.CI_RUNNER` expression that lacks the fork guard. The rule is listed in the
+[lint:meta rules](/architecture/lint-meta/) catalog.
+
 ## Executable API regression gate
 
 The [security specification](/topics/security-spec/) runs behavioral cases for the 22 tracked API findings against required Postgres and Valkey services. Named-case reconciliation and positive controls prevent a missing fixture or skipped test from masquerading as evidence. The `security spec (review findings)` workflow reports for PRs targeting `main` and runs the expensive cases when relevant paths change.

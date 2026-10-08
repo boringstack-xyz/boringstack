@@ -705,6 +705,16 @@ The full config surface is machine-readable at https://boringstack.xyz/scaffold-
           ],
         },
         {
+          label: "Public site",
+          items: [
+            { label: "Overview", link: "/site/overview/" },
+            {
+              label: "Configuration and deployment",
+              link: "/site/deployment/",
+            },
+          ],
+        },
+        {
           label: "Topics",
           items: [
             { label: "Email in development", link: "/topics/email-in-dev/" },

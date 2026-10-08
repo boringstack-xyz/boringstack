@@ -1,6 +1,6 @@
 ---
 title: Provisioning with k3s (GitOps)
-description: Ship BoringStack to any ArgoCD-managed k3s/Kubernetes cluster. Register one Application, seed secrets, and every main-branch release deploys the API, migrations and UI together.
+description: Ship BoringStack to any ArgoCD-managed k3s/Kubernetes cluster. Register one Application, seed secrets, and every main-branch release deploys the API, migrations, UI and site together.
 ---
 
 import { Aside } from "@astrojs/starlight/components";
@@ -8,7 +8,7 @@ import { Aside } from "@astrojs/starlight/components";
 The cluster deployment path. Where [OpenTofu](/topics/provisioning-with-tofu/)
 gives you a single VPS running docker-compose, this gives you a GitOps loop on a
 Kubernetes cluster you already run: push code, the release workflow publishes the
-API, migration and UI images as one set, and ArgoCD syncs that set. HA,
+API, migration, UI and site images as one set, and ArgoCD syncs that set. HA,
 autoscaling, and TLS come with it.
 
 Source lives in [`infra/k3s`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/k3s).
@@ -33,7 +33,7 @@ A k3s/Kubernetes cluster with these operators installed:
   backend (Vault + VSO by default, or the SealedSecrets controller)
 
 You'll also need the release workflow (`production-release.yml`), which builds and
-digest-pins `ghcr.io/<owner>/<project>-api`, `-migrations` and `-ui`. Set the
+digest-pins `ghcr.io/<owner>/<project>-api`, `-migrations`, `-ui` and `-site`. Set the
 repository variable `PRODUCTION_RELEASE_MODE=coordinated` once the cluster is
 ready. The [production releases runbook](/runbooks/production-release/) has the
 activation steps.
@@ -50,7 +50,10 @@ That rewrites every `boringstack*` token across the repo, including the k3s
 manifests. Then edit the handful of cluster-specific values (all listed in
 `infra/k3s/README.md`):
 
-- the domain in `overlays/prod/ingress.yaml`, `certificate.yaml`, `glitchtip/`
+- the domain in `overlays/prod/ingress.yaml`, `certificate.yaml`, `glitchtip/`. The
+  site serves the apex (`<domain>`), the app serves `app.<domain>`, and GlitchTip serves
+  `glitchtip.<domain>`. Set the production site values in `overlays/prod/site-build.env`
+  too (see [Public site](/site/deployment/)).
 - the `ClusterIssuer` name in `overlays/prod/certificate.yaml` (its credential must cover every domain in `dnsNames`)
 - the `StorageClass` in `base/postgres/cluster.yaml` and `base/valkey/statefulset.yaml` (optional; defaults to the cluster default)
 - `source.repoURL` in `argocd/boringstack-prod.yaml`
@@ -84,18 +87,18 @@ app-of-apps repo. It points ArgoCD at your fork's `infra/k3s/argocd` directory.
 flowchart LR
   push["git push<br/>(app code)"]
   ci["CI passes for the commit"]
-  build["Build api, migrations, ui<br/>as candidates"]
-  pin["One commit pins<br/>all three digests"]
+  build["Build api, migrations, ui, site<br/>as candidates"]
+  pin["One commit pins<br/>all four digests"]
   argo["ArgoCD syncs<br/>overlays/prod"]
   mig["Sync hook, wave -1<br/>db:migrate only"]
-  k8s["Rolling deploy<br/>api, then ui, GlitchTip"]
+  k8s["Rolling deploy<br/>api, then ui, site, GlitchTip"]
 
   push --> ci --> build --> pin --> argo --> mig --> k8s
 ```
 
 ArgoCD renders the prod overlay (base + secrets component + HA patches) and syncs
 in wave order: infrastructure first, then the migration Job, then the API, then
-the UI once the API is healthy. CloudNativePG manages Postgres, cert-manager
+the UI and the site once the API is healthy. CloudNativePG manages Postgres, cert-manager
 issues the TLS cert, and the Vault Secrets Operator (or your chosen backend)
 materializes the app secrets.
 
@@ -103,13 +106,14 @@ materializes the app secrets.
 
 ```bash
 kubectl -n boringstack-prod get pods            # all Running/Ready
-curl -sI https://<domain>/health                 # 200 from the api
-curl -sI https://<domain>/                        # 200 from the ui (SPA)
+curl -sI https://app.<domain>/health             # 200 from the api
+curl -sI https://app.<domain>/                   # 200 from the ui (SPA)
+curl -sI https://<domain>/                       # 200 from the public site
 ```
 
 In ArgoCD the Application should be Synced and Healthy. Each promoted release
-should appear there as one sync, with the API, migration and UI digests changing
-together.
+should appear there as one sync, with the API, migration, UI and site digests
+changing together.
 
 ### First-deploy checks
 

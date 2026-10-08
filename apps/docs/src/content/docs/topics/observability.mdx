@@ -128,6 +128,52 @@ CPU by mode (user, system, iowait, etc.). iowait stat (red when sustained indica
 Drop additional dashboards into `compose/grafana/dashboards/` and Grafana picks them up within 30 seconds. Community starters to pair with the defaults: Node Exporter Full (id `1860`), PostgreSQL exporter quickstart (id `9628`), Loki Logs (id `13186`).
 
 
+## Business metrics (k3s)
+
+The k3s prod overlay adds product metrics next to the database health metrics. They are
+for the cluster's kube-prometheus-stack, and the Compose stack does not include them.
+The source is `infra/k3s/overlays/prod/monitoring/`.
+
+- A `PodMonitor` (`podmonitor.yaml`) scrapes the CloudNativePG exporter on every
+  Postgres instance every 30 seconds.
+- `cnpg-business-queries.yaml` adds custom queries to that exporter, through
+  `patches/postgres-monitoring.yaml`. They run on the primary only, so the three
+  instances do not triple-count. The list replaces the operator default, so the
+  standard health queries are repeated in the patch.
+- The queries run over the `auth`, `audit` and `billing` tables once per scrape.
+
+| Metric | What it counts |
+| ------ | -------------- |
+| `cnpg_boringstack_signups_daily_users` | Accounts created per UTC day (90 days) |
+| `cnpg_boringstack_active_users_last_{1d,7d,30d}` | Distinct users with a successful sign-in |
+| `cnpg_boringstack_account_plans_accounts` | Paid or granted plans by plan, status and source |
+| `cnpg_boringstack_churn_daily_canceled` | Subscriptions canceled per UTC day (approximate) |
+| `cnpg_boringstack_stripe_webhooks_events` | Stored Stripe webhook events by type |
+
+**Only aggregates leave the database.** The exporter does not connect as a superuser. It
+reads through the built-in `pg_monitor` role, and migration
+`apps/api/drizzle/0002_metrics_exporter_grants.sql` grants that role column by column.
+The grants cover `created_at` on users, `user_id`, `action` and `created_at` on the audit
+log, a few plan and status columns, and the Stripe event `type`. No email, name, IP
+address, user agent, audit metadata, password or MFA material, or Stripe identifier is
+readable. `infra/k3s/tests/business-metrics.test.ts` checks the queries against the schema
+and the grants.
+
+A query that touches a column outside the grant fails with "permission denied" in the
+instance log, and that query produces no series.
+
+**What is not derived.** Plans have no price in the database, so MRR is not computed. The
+Free plan has no row per account, so it is not counted in the plan series.
+
+**Scrape selector.** The PodMonitor carries `app: postgres` and matches the CNPG cluster
+label. Like the ServiceMonitor, it needs a label that your Prometheus
+`podMonitorSelector` matches (often `release: <helm-release>`). Otherwise install the
+stack with `podMonitorSelectorNilUsesHelmValues=false`.
+
+**Dashboard.** `dashboards/boringstack-business.json` ("Business metrics") is turned into a
+ConfigMap labelled `grafana_dashboard: "1"` on every render, so the Grafana sidecar imports
+it without a copy step.
+
 ## Querying
 
 **Metrics (Prometheus, PromQL).** Out of the box, node, postgres, and traefik metrics return data. Once you add the `/metrics` endpoint and its scrape job:

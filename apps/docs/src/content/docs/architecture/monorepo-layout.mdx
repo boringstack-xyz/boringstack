@@ -14,7 +14,10 @@ boringstack/
   apps/api/               Bun + Elysia HTTP API; Drizzle schema + migrations
   apps/ui/               Vite + React SPA; OpenAPI client generated from /swagger/json
   apps/docs/             Astro Starlight site (boringstack.xyz)
+  apps/site/             Astro static marketing site on the apex domain (see Public site)
+  packages/              Shared code used by more than one app (optional; see below)
   infra/compose/         Docker Compose runtime; services, env vars, profiles, overlays
+  infra/k3s/             Optional Kustomize + ArgoCD target for a Kubernetes cluster
   infra/bootstrap/       Optional OpenTofu for VPS provisioning on Hetzner + Cloudflare
 ```
 
@@ -24,7 +27,7 @@ Each app keeps its own `package.json`, lockfile, and lint config. CI workflows (
 
 **Smaller context:** Open `apps/ui` for UI work without loading the entire API schema graph.
 
-**Independent releases:** API and UI each publish their own GHCR image. Compose pins versions via env vars.
+**Independent releases:** Compose publishes `latest` and `sha-*` images per app for WUD, and pins versions via env vars. The Kubernetes target ships the API, migrations, UI and site as one digest-pinned set. See [Production releases](/runbooks/production-release/).
 
 **Explicit join points:** OpenAPI schema, ACL types, lint-meta RULES, and docs catalogs are regenerated from the repo root with `bun run regen`, so drift is caught by CI.
 
@@ -65,9 +68,42 @@ scripts and runbooks.
 boringstack.xyz Starlight site. Generated lint-meta and scripts
 tooling catalogs.
 
+### apps/site
+
+The public marketing site at the apex domain: static pages and a Markdown blog,
+built by Astro and served by nginx. It has no server code and makes no API calls.
+See [Public site](/site/overview/).
+
 ### infra/bootstrap (optional)
 
 Hetzner provisioning, Cloudflare DNS, cloud-init.
+
+## Shared packages
+
+Code used by two or more apps goes in `packages/<name>/`. Code used by one app stays in
+that app. A package holds no secrets and no app-specific routes or pages. The full
+convention is in [`apps/ui/docs/agents/shared-packages.md`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/ui/docs/agents/shared-packages.md).
+
+Each package has `package.json` with `"private": true`, `src/index.ts` as its public
+entry, a `tsconfig.json` that extends the UI config, and an `eslint.config.mjs` that
+imports the UI rule set. Its `lint`, `format:check` and `typecheck` scripts run the
+binaries in `apps/ui/node_modules`, so run `bun install` in `apps/ui` first. Its
+`validate` script runs all three, and `lint` uses `--max-warnings=0`.
+
+Packages are discovered, not listed:
+
+- `bun run check` runs `validate` in every `packages/*/` that has a `package.json`.
+  A package without a `validate` script fails the check. A repo with no `packages/`
+  directory gets no package checks and no error.
+- `scripts/ci/pre-push.sh` runs the same gate when anything under `packages/` changed,
+  even if no app changed.
+- `.github/workflows/apps-ui-validate.yml` runs it on `packages/**` changes.
+- Dependabot has a `bun` entry for `/packages/*`. It matches nothing until the directory
+  exists.
+
+Wiring a package into `apps/ui` (tsconfig `paths`, `server.fs.allow`, `resolve.dedupe`) is
+a separate step, described in the same guide. Note that `lint:meta` does not scan
+`packages/`, so the package's own ESLint config is its only architecture gate.
 
 ## Cross-app contracts
 

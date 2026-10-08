@@ -271,6 +271,11 @@ IMAGE_OWNER=your-github-org
 # UI_IMAGE_NAME=your-fork-ui
 ```
 
+The public marketing site is off in prod by default (`WITH_SITE=0`). To serve it, set
+`WITH_SITE=1`, `PUBLIC_SITE_HOST` to the apex domain, `SITE_CONTACT_EMAIL`, and a pinned
+`SITE_IMAGE_TAG`. Then set `PUBLIC_UI_HOST` to `app.<your-domain>`, because the app moves to
+its own origin. The [Public site](/site/deployment/) page lists the rules.
+
 ```bash
 # compose/api.prod.env.tpl  (gitignored; renders to compose/api.prod.env)
 JWT_SECRET=op://Production/Auth/jwt_secret

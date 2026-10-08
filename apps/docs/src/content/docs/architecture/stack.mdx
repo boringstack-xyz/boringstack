@@ -13,6 +13,8 @@ Runtime and dev dependencies, what each does, and why each piece exists. BoringS
 - **[apps/ui](/ui/overview/).** Vite React SPA: React 19, TanStack Query, Zustand, shadcn/ui, Playwright, and a generated client instead of hand-written API calls.
 - **[infra-compose](/infra/overview/).** Single-host Compose runtime: Postgres, Valkey, Traefik, and optional observability/error-tracking overlays for local and VPS environments.
 - **[infra-tofu](/topics/provisioning-with-tofu/).** First real deploy path: OpenTofu, Hetzner, Cloudflare, and cloud-init provision a VPS and drop the Compose stack in place.
+- **[apps/site](/site/overview/).** Static Astro marketing site on the apex domain: Markdown blog, no cookies, no API calls, served by nginx.
+- **[infra-k3s](/infra/kubernetes/).** Optional GitOps target for a Kubernetes cluster: Kustomize, ArgoCD, CloudNativePG, and one digest-pinned release of all four images.
 
 ## Full inventory
 
@@ -73,6 +75,13 @@ Runtime and dev dependencies, what each does, and why each piece exists. BoringS
 - **Firewall.** Hetzner cloud firewall; Cloudflare IP ranges at plan time.
 - **First boot.** cloud-init + `bootstrap.sh`; clone infra, `compose pull && up -d`.
 - **Backups (optional).** rclone via cron at apply time.
+
+### apps/site
+
+- **Static site: Astro.** Pages and Markdown blog built at image build time, with config validated by the build.
+- **Serving: nginx 1.31.** Non-root, read-only root filesystem, CSP and security headers from the same config.
+- **Social cards: Satori + Sharp.** 1200x630 PNGs rendered at build time.
+- **Analytics (optional).** Off by default; the script loads only after a consent banner accept.
 
 ## Architecture-enforcement plugins
 

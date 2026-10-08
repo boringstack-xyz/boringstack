@@ -5,9 +5,10 @@ description: How the k3s target ships api, migrations and ui together as one dig
 
 The [k3s target](/infra/kubernetes/) deploys one coordinated release. It replaces
 per-image auto-updating. `.github/workflows/production-release.yml` is the only
-publisher for this target. It builds three candidate images for one commit, then
-pins all three digests in `infra/k3s/overlays/prod/kustomization.yaml` in a
-single commit. ArgoCD syncs that commit.
+publisher for this target. It builds four candidate images for one commit (api,
+migrations, ui and the public site), then pins all four digests in
+`infra/k3s/overlays/prod/kustomization.yaml` in a single commit. ArgoCD syncs that
+commit.
 
 The per-image approach shipped the UI before the API image it needed existed. It
 also produced a stream of `automatic update` commits. Full detail lives in
@@ -18,13 +19,15 @@ also produced a stream of `automatic update` commits. Full detail lives in
 1. Your push to `main` waits, up to 45 minutes, for every applicable CI workflow
    at the same commit. Any missing, cancelled, failed or timed-out check blocks
    the release.
-2. The workflow builds `boringstack-api`, `boringstack-migrations` and
-   `boringstack-ui` as `candidate-<sha>` images. Nothing moves `latest` or
-   `sha-*` for this target.
-3. Only after all three builds succeed does it pin the digests in one commit. A
+2. The workflow builds `boringstack-api`, `boringstack-migrations`,
+   `boringstack-ui` and `boringstack-site` as `candidate-<sha>` images. Nothing
+   moves `latest` or `sha-*` for this target. The site image takes its build-time
+   values from `infra/k3s/overlays/prod/site-build.env`, so a change there rebuilds it.
+3. Only after all four builds succeed does it pin the digests in one commit. A
    newer `main` commit supersedes an older release.
 4. Argo syncs in wave order: infrastructure, then the migration Job (wave -1),
-   then the API (wave 0), then the UI (wave 1) once the API is healthy.
+   then the API (wave 0), then the UI and the public site (wave 1) once the API is
+   healthy.
 
 A successful workflow means the digests were promoted. It does not mean Argo has
 finished deploying. Check Synced and Healthy, then smoke-test sign-in and the
@@ -41,6 +44,17 @@ main screens.
 4. Allow the release bot to push the promotion commit to `main`. Do not disable
    branch protection to make a release pass.
 
+## Runtime and database TLS
+
+The API and migrations images run with a read-only root filesystem. Only `/tmp` is
+writable. The API's CMD runs `bun --no-install`, so it never installs packages at
+startup.
+
+Postgres TLS follows one policy for the runtime and the migration Job. The CA comes
+from the CloudNativePG-generated `boringstack-db-ca` secret and is injected as
+`DATABASE_SSL_CA`. The policy lives in `apps/api/src/lib/postgres/connection.ts`. Keep
+it in `DATABASE_SSL_*`, not in `sslmode` on the URL.
+
 ## Migrations and seeds
 
 The migration Job runs `db:migrate` only. It runs on every sync, so it must never
@@ -52,8 +66,9 @@ exist.
 
 ## Rollback
 
-Restore all three digests from one earlier promotion in a reviewed commit, then
-sync the whole Application. Do not selectively sync Deployments. Migrations do not
+Restore all four digests from one earlier promotion in a reviewed commit, then
+sync the whole Application. The site image follows the same rule. It has no separate
+rollback path. Do not selectively sync Deployments. Migrations do not
 reverse automatically, so confirm the older API works with the current schema
 first.
 
@@ -63,3 +78,4 @@ first.
 - [Provisioning with k3s](/topics/provisioning-with-k3s/)
 - [Secrets backends](/runbooks/vault-secrets-operator/)
 - [Image updates (Compose / WUD)](/runbooks/image-updates/), the Compose-path equivalent. Compose keeps its own `latest` publishers.
+- [Public site](/site/deployment/), the site image's configuration and runtime.
