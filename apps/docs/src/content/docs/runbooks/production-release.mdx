@@ -1,63 +1,65 @@
 ---
-title: ArgoCD image updater
-description: How the k3s target auto-deploys new builds via image-list, tag strategy, and git write-back, plus how to bootstrap and troubleshoot it.
+title: Production releases (k3s)
+description: How the k3s target ships api, migrations and ui together as one digest-pinned release, how to activate it, how migrations and seeds behave, and how to roll back.
 ---
 
-The [k3s target](/infra/kubernetes/) closes the deploy loop with
-[argocd-image-updater](https://argocd-image-updater.readthedocs.io/): when CI
-pushes a new GHCR image, the updater rewrites the tag in
-`overlays/prod/kustomization.yaml` and ArgoCD syncs it. All config lives in
-annotations on `infra/k3s/argocd/boringstack-prod.yaml`.
+The [k3s target](/infra/kubernetes/) deploys one coordinated release. It replaces
+per-image auto-updating. `.github/workflows/production-release.yml` is the only
+publisher for this target. It builds three candidate images for one commit, then
+pins all three digests in `infra/k3s/overlays/prod/kustomization.yaml` in a
+single commit. ArgoCD syncs that commit.
 
-## The annotations
+The per-image approach shipped the UI before the API image it needed existed. It
+also produced a stream of `automatic update` commits. Full detail lives in
+[`infra/k3s/README.md`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/k3s#images-and-the-coordinated-release).
 
-```yaml
-argocd-image-updater.argoproj.io/image-list: api=ghcr.io/<owner>/<project>-api, ui=ghcr.io/<owner>/<project>-ui
-argocd-image-updater.argoproj.io/api.update-strategy: newest-build
-argocd-image-updater.argoproj.io/api.allow-tags: regexp:^sha-[0-9a-f]{7,40}$
-argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd/image-updater-git-creds
-argocd-image-updater.argoproj.io/write-back-target: kustomization
-argocd-image-updater.argoproj.io/git-branch: main
-```
+## How a release runs
 
-`image-list` pairs an alias with each image the updater watches.
+1. Your push to `main` waits, up to 45 minutes, for every applicable CI workflow
+   at the same commit. Any missing, cancelled, failed or timed-out check blocks
+   the release.
+2. The workflow builds `boringstack-api`, `boringstack-migrations` and
+   `boringstack-ui` as `candidate-<sha>` images. Nothing moves `latest` or
+   `sha-*` for this target.
+3. Only after all three builds succeed does it pin the digests in one commit. A
+   newer `main` commit supersedes an older release.
+4. Argo syncs in wave order: infrastructure, then the migration Job (wave -1),
+   then the API (wave 0), then the UI (wave 1) once the API is healthy.
 
-`update-strategy: newest-build` plus the `^sha-` regex tracks the newest
-`sha-<short>` build. BoringStack's release workflows tag every push to main as
-`latest` + `sha-<short>` (and a semver tag on a `v*` release), so this matches
-the `sha-` form and ignores `latest`. To deploy only tagged releases instead,
-use `update-strategy: semver` with `allow-tags: regexp:^v?\d+\.\d+\.\d+$`.
+A successful workflow means the digests were promoted. It does not mean Argo has
+finished deploying. Check Synced and Healthy, then smoke-test sign-in and the
+main screens.
 
-`write-back-method: git` commits the tag bump back to your repo (the GitOps
-source of truth) using the `argocd/image-updater-git-creds` secret.
-`write-back-target: kustomization` edits the `images:` block rather than the
-Application spec.
+## Activation
 
-## Bootstrap
+1. Fresh fork: nothing to remove.
+2. If an older Argo Application still has `argocd-image-updater` annotations,
+   remove them first. Otherwise a per-image updater can overwrite the coordinated
+   digests.
+3. Set the repository variable `PRODUCTION_RELEASE_MODE=coordinated`. Without it,
+   the release fails before any image is built.
+4. Allow the release bot to push the promotion commit to `main`. Do not disable
+   branch protection to make a release pass.
 
-1. Install argocd-image-updater in the `argocd` namespace.
-2. Create the git write-back credential it references:
-   ```bash
-   kubectl -n argocd create secret generic image-updater-git-creds \
-     --from-literal=username=<git-user> \
-     --from-literal=password=<git-PAT-or-deploy-token>
-   ```
-   (Or an `sshPrivateKey` key for SSH write-back.)
-3. Give it pull access to GHCR (a registry pull secret or `--registries-conf`)
-   so it can read tags from your private packages.
+## Migrations and seeds
 
-## Troubleshooting
+The migration Job runs `db:migrate` only. It runs on every sync, so it must never
+seed. `db:seed` upserts reference data and would revert admin edits. Run the first
+admin bootstrap as a deliberate one-off. The steps are in
+[`infra/k3s/README.md`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/k3s#migrations-and-seeds).
+Its `db:seed` is idempotent: it creates the admin only when that user does not
+exist.
 
-No updates happen: check the image-updater pod logs and confirm the `allow-tags`
-regex matches the tags CI actually publishes.
+## Rollback
 
-Updates detected but not committed: the git creds secret is missing or lacks
-push rights to `main`.
-
-Tag bumped but the app didn't change: confirm the Application's `images:` block
-names match `image-list` exactly (registry plus repo path).
+Restore all three digests from one earlier promotion in a reviewed commit, then
+sync the whole Application. Do not selectively sync Deployments. Migrations do not
+reverse automatically, so confirm the older API works with the current schema
+first.
 
 ## Related
 
+- [Kubernetes (k3s) infra reference](/infra/kubernetes/)
 - [Provisioning with k3s](/topics/provisioning-with-k3s/)
-- [Image updates (Compose / WUD)](/runbooks/image-updates/), the Compose-path equivalent.
+- [Secrets backends](/runbooks/vault-secrets-operator/)
+- [Image updates (Compose / WUD)](/runbooks/image-updates/), the Compose-path equivalent. Compose keeps its own `latest` publishers.

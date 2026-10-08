@@ -47,7 +47,8 @@ existing database contents.
 
 The development Compose migrator uses schema push and seeding. That does not test
 migration history. Validate generated migrations against a fresh owned database
-before release; production uses `db:prepare` and committed migrations.
+before release. Production applies committed migrations with `db:migrate` only;
+seeds run as a deliberate one-off, never on every deploy.
 
 ## Recover interrupted verification
 

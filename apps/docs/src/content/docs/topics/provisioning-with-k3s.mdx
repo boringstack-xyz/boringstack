@@ -1,15 +1,15 @@
 ---
 title: Provisioning with k3s (GitOps)
-description: Ship BoringStack to any ArgoCD-managed k3s/Kubernetes cluster. Register one Application, seed secrets, and every CI build auto-deploys via argocd-image-updater.
+description: Ship BoringStack to any ArgoCD-managed k3s/Kubernetes cluster. Register one Application, seed secrets, and every main-branch release deploys the API, migrations and UI together.
 ---
 
 import { Aside } from "@astrojs/starlight/components";
 
 The cluster deployment path. Where [OpenTofu](/topics/provisioning-with-tofu/)
 gives you a single VPS running docker-compose, this gives you a GitOps loop on a
-Kubernetes cluster you already run: push code, CI publishes GHCR images,
-argocd-image-updater bumps the tag, and ArgoCD syncs. HA, autoscaling, and TLS
-come with it.
+Kubernetes cluster you already run: push code, the release workflow publishes the
+API, migration and UI images as one set, and ArgoCD syncs that set. HA,
+autoscaling, and TLS come with it.
 
 Source lives in [`infra/k3s`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/k3s).
 
@@ -24,16 +24,19 @@ Source lives in [`infra/k3s`](https://github.com/boringstack-xyz/boringstack/tre
 
 A k3s/Kubernetes cluster with these operators installed:
 
-- ArgoCD + argocd-image-updater (with its `argocd/image-updater-git-creds` write-back secret)
+- ArgoCD
 - the CloudNativePG operator
-- cert-manager + a DNS-01-capable `ClusterIssuer`
+- cert-manager + a DNS-01-capable `ClusterIssuer` whose credential covers your zone
 - Traefik (ships with k3s) exposing `web` + `websecure` entrypoints
 - a default/persistent StorageClass
 - optional: kube-prometheus-stack (metrics and dashboards), and a secrets
   backend (Vault + VSO by default, or the SealedSecrets controller)
 
-You'll also need CI that builds and pushes `ghcr.io/<owner>/<project>-api` and
-`-ui` images, the same pipeline the Compose/WUD path uses.
+You'll also need the release workflow (`production-release.yml`), which builds and
+digest-pins `ghcr.io/<owner>/<project>-api`, `-migrations` and `-ui`. Set the
+repository variable `PRODUCTION_RELEASE_MODE=coordinated` once the cluster is
+ready. The [production releases runbook](/runbooks/production-release/) has the
+activation steps.
 
 ## 1. Rebrand and set the knobs
 
@@ -48,7 +51,7 @@ manifests. Then edit the handful of cluster-specific values (all listed in
 `infra/k3s/README.md`):
 
 - the domain in `overlays/prod/ingress.yaml`, `certificate.yaml`, `glitchtip/`
-- the `ClusterIssuer` name in `overlays/prod/certificate.yaml`
+- the `ClusterIssuer` name in `overlays/prod/certificate.yaml` (its credential must cover every domain in `dnsNames`)
 - the `StorageClass` in `base/postgres/cluster.yaml` and `base/valkey/statefulset.yaml` (optional; defaults to the cluster default)
 - `source.repoURL` in `argocd/boringstack-prod.yaml`
 
@@ -80,19 +83,21 @@ app-of-apps repo. It points ArgoCD at your fork's `infra/k3s/argocd` directory.
 ```mermaid
 flowchart LR
   push["git push<br/>(app code)"]
-  ci["CI builds + pushes<br/>GHCR images"]
-  iu["argocd-image-updater<br/>bumps kustomization tag"]
+  ci["CI passes for the commit"]
+  build["Build api, migrations, ui<br/>as candidates"]
+  pin["One commit pins<br/>all three digests"]
   argo["ArgoCD syncs<br/>overlays/prod"]
-  presync["PreSync Job<br/>db:migrate + db:seed"]
-  k8s["Rolling deploy<br/>api · ui · GlitchTip"]
+  mig["Sync hook, wave -1<br/>db:migrate only"]
+  k8s["Rolling deploy<br/>api, then ui, GlitchTip"]
 
-  push --> ci --> iu --> argo --> presync --> k8s
+  push --> ci --> build --> pin --> argo --> mig --> k8s
 ```
 
-ArgoCD renders the prod overlay (base + secrets component + HA patches), runs the
-PreSync migration Job, then rolls out the Deployments. CloudNativePG manages
-Postgres, cert-manager issues the TLS cert, and the Vault Secrets Operator (or
-your chosen backend) materializes the app secrets.
+ArgoCD renders the prod overlay (base + secrets component + HA patches) and syncs
+in wave order: infrastructure first, then the migration Job, then the API, then
+the UI once the API is healthy. CloudNativePG manages Postgres, cert-manager
+issues the TLS cert, and the Vault Secrets Operator (or your chosen backend)
+materializes the app secrets.
 
 ## 4. Verify
 
@@ -102,8 +107,9 @@ curl -sI https://<domain>/health                 # 200 from the api
 curl -sI https://<domain>/                        # 200 from the ui (SPA)
 ```
 
-In ArgoCD the Application should be Synced and Healthy, and a new commit's image
-should auto-roll within an image-updater poll interval.
+In ArgoCD the Application should be Synced and Healthy. Each promoted release
+should appear there as one sync, with the API, migration and UI digests changing
+together.
 
 ### First-deploy checks
 
@@ -126,6 +132,6 @@ deploy a second one.
 ## Related
 
 - [Kubernetes (k3s) infra reference](/infra/kubernetes/)
-- [ArgoCD image updater](/runbooks/argocd-image-updater/)
+- [Production releases](/runbooks/production-release/)
 - [Secrets backends](/runbooks/vault-secrets-operator/)
 - [Postgres backups (CNPG)](/runbooks/cnpg-backups/)

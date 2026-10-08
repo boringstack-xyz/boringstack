@@ -800,8 +800,8 @@ The full config surface is machine-readable at https://boringstack.xyz/scaffold-
             },
             { label: "Codecov setup", link: "/runbooks/codecov-setup/" },
             {
-              label: "ArgoCD image updater (k3s)",
-              link: "/runbooks/argocd-image-updater/",
+              label: "Production releases (k3s)",
+              link: "/runbooks/production-release/",
             },
             {
               label: "Secrets backends (k3s)",
