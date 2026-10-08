@@ -28,7 +28,7 @@ describe("canonical URLs and sitemap", () => {
     (page) => {
       const canonical = canonicalOf(read(page));
       expect(canonical).toBeDefined();
-      expect(canonical!.startsWith(`${ORIGIN}/`)).toBe(true);
+      expect(new URL(canonical!).origin).toBe(ORIGIN);
       if (canonical !== `${ORIGIN}/`)
         expect(canonical!.endsWith("/")).toBe(false);
       expect(canonical).not.toContain(".html");
@@ -45,7 +45,7 @@ describe("canonical URLs and sitemap", () => {
     expect(urls).toContain(`${ORIGIN}/blog/hello-world`);
     expect(urls).toContain(`${ORIGIN}/pricing`);
     for (const url of urls) {
-      expect(url.startsWith(ORIGIN)).toBe(true);
+      expect(new URL(url).origin).toBe(ORIGIN);
       if (url !== `${ORIGIN}/`) expect(url.endsWith("/")).toBe(false);
       expect(url).not.toContain("/404");
       expect(url).not.toContain("/og/");
