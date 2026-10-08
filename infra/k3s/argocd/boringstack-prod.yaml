@@ -3,24 +3,10 @@ kind: Application
 metadata:
   name: boringstack-prod
   namespace: argocd
-  annotations:
-    # --- argocd-image-updater: auto-deploy new GHCR builds ----------------
-    # alias=full-image-path. The updater watches GHCR and writes the new tag
-    # back into overlays/prod/kustomization.yaml, which triggers a sync.
-    argocd-image-updater.argoproj.io/image-list: api=ghcr.io/boringstack-xyz/boringstack-api, ui=ghcr.io/boringstack-xyz/boringstack-ui
-    # Track the newest `sha-<short>` build. BoringStack's release workflows tag
-    # every push to main as `latest` + `sha-<short>` (and a semver tag on a
-    # changesets/`v*` release), so allow-tags matches the sha- form and ignores
-    # `latest`. To pin to releases instead, switch to `update-strategy: semver`
-    # with `allow-tags: regexp:^v?\d+\.\d+\.\d+$`.
-    argocd-image-updater.argoproj.io/api.update-strategy: newest-build
-    argocd-image-updater.argoproj.io/api.allow-tags: regexp:^sha-[0-9a-f]{7,40}$
-    argocd-image-updater.argoproj.io/ui.update-strategy: newest-build
-    argocd-image-updater.argoproj.io/ui.allow-tags: regexp:^sha-[0-9a-f]{7,40}$
-    # Commit the tag bump back to git (GitOps source of truth).
-    argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd/image-updater-git-creds
-    argocd-image-updater.argoproj.io/write-back-target: kustomization
-    argocd-image-updater.argoproj.io/git-branch: main
+  # No argocd-image-updater annotations. Image digests are promoted by
+  # .github/workflows/production-release.yml in one commit to
+  # overlays/prod/kustomization.yaml, and that commit is what Argo syncs.
+  # A per-image updater would ship one image ahead of the others.
 spec:
   project: default
   source:

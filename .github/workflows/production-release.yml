@@ -1,0 +1,129 @@
+name: Coordinated production release
+
+# The only workflow that publishes images for the Kubernetes (Argo) target.
+# It builds the API, migrations and UI for one commit as candidates. Only when
+# every build succeeds does one commit pin all three digests in
+# infra/k3s/overlays/prod/kustomization.yaml. Argo then syncs that single set,
+# so the UI can never run ahead of the API it needs.
+# Compose/WUD keeps its own publishers (apps-api-release.yml, apps-ui-release.yml).
+# They push :latest and sha-* tags that Kubernetes never references.
+# See docs/operations/production-release.md.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "scripts/release/**"
+      - ".github/workflows/**"
+      - "infra/k3s/**"
+      - "!infra/k3s/overlays/prod/kustomization.yaml"
+
+# Serialize releases. A stale source commit fails before promotion.
+concurrency:
+  group: production-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  release:
+    # Do not compete with PR checks for self-hosted runners.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write
+      actions: read
+      packages: write
+    steps:
+      - name: Require coordinated deployment activation
+        env:
+          RELEASE_MODE: ${{ vars.PRODUCTION_RELEASE_MODE }}
+        run: |
+          if [ "$RELEASE_MODE" != coordinated ]; then
+            echo '::error::Remove the argocd-image-updater annotations from the live Argo Application, then set PRODUCTION_RELEASE_MODE=coordinated. See docs/operations/production-release.md.'
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
+      - name: Wait for this commit's applicable CI checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bun scripts/release/release.mjs gate
+      - name: Reject superseded release
+        run: |
+          git fetch origin main
+          test "$(git rev-parse origin/main)" = "$GITHUB_SHA"
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Candidate tags only. Nothing moves `latest` or `sha-*`, and nothing is
+      # promoted until all three builds below have succeeded.
+      - name: Build API candidate
+        id: api
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: apps/api
+          file: apps/api/Dockerfile.prod
+          push: true
+          tags: ghcr.io/${{ github.repository }}-api:candidate-${{ github.sha }}
+          labels: org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=release-api
+          cache-to: type=gha,scope=release-api,mode=max
+      - name: Build migrations candidate
+        id: migrations
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: apps/api
+          file: apps/api/Dockerfile.prod
+          target: migrations
+          push: true
+          tags: ghcr.io/${{ github.repository }}-migrations:candidate-${{ github.sha }}
+          labels: org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=release-migrations
+          cache-to: type=gha,scope=release-migrations,mode=max
+      - name: Build UI candidate
+        id: ui
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: apps/ui
+          file: apps/ui/Dockerfile.prod
+          push: true
+          tags: ghcr.io/${{ github.repository }}-ui:candidate-${{ github.sha }}
+          # Same-origin API by default. Public URL, Sentry and VAPID values come
+          # from repository variables, so no product domain is hard-coded here.
+          build-args: |
+            VITE_API_URL=
+            VITE_PUBLIC_URL=${{ vars.VITE_PUBLIC_URL }}
+            VITE_SENTRY_DSN=${{ vars.VITE_SENTRY_DSN }}
+            VITE_VAPID_PUBLIC_KEY=${{ vars.VITE_VAPID_PUBLIC_KEY }}
+          labels: org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=release-ui
+          cache-to: type=gha,scope=release-ui,mode=max
+      - name: Promote complete image set in one GitOps commit
+        env:
+          API_DIGEST: ${{ steps.api.outputs.digest }}
+          MIGRATIONS_DIGEST: ${{ steps.migrations.outputs.digest }}
+          UI_DIGEST: ${{ steps.ui.outputs.digest }}
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          # No force pushes, rebases, partial promotions or stale release retries.
+          test "$(git rev-parse origin/main)" = "$GITHUB_SHA"
+          bun scripts/release/release.mjs pin
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add infra/k3s/overlays/prod/kustomization.yaml
+          git commit -m "deploy: promote complete release $GITHUB_SHA"
+          git push origin HEAD:main
+          echo "Promoted three images from $GITHUB_SHA. Argo rollout health must still be checked." >> "$GITHUB_STEP_SUMMARY"

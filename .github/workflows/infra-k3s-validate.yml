@@ -28,11 +28,20 @@ jobs:
           filters: |
             code:
               - 'infra/k3s/**'
+              - 'scripts/release/**'
+              - 'apps/api/Dockerfile.prod'
               - '.github/workflows/infra-k3s-validate.yml'
+              - '.github/workflows/production-release.yml'
 
       - name: Install kubectl (bundles kustomize)
         if: steps.filter.outputs.code == 'true'
         uses: azure/setup-kubectl@829323503d1be3d00ca8346e5391ca0b07a9ab0d # v5.1.0
+
+      - name: Set up Bun
+        if: steps.filter.outputs.code == 'true'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
 
       # `kubectl kustomize` renders base + prod overlay offline. Catches the
       # realistic breakage: bad resource refs, malformed YAML, broken patches,
@@ -59,3 +68,10 @@ jobs:
           printf 'JWT_SECRET=x\nVALKEY_PASSWORD=x\n' > infra/k3s/overlays/prod/secrets/plain/secret.env
           trap 'rm -f infra/k3s/overlays/prod/secrets/plain/secret.env' EXIT
           kubectl kustomize infra/k3s/overlays/prod/secrets/plain > /dev/null
+
+      # Release invariants on the real render: digest-pinned images, no
+      # image-updater, a migrate-only Job, a read-only API, and the release
+      # script's pin contract. See docs/operations/production-release.md.
+      - name: Test production release invariants
+        if: steps.filter.outputs.code == 'true'
+        run: bun test infra/k3s/tests scripts/release
