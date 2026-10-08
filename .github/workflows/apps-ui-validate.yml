@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - "apps/ui/**"
+      - "packages/**"
       - ".github/workflows/apps-ui-validate.yml"
 
 concurrency:
@@ -26,6 +27,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history: the budget gate diffs .size-limit.json against the merge-base.
+          fetch-depth: 0
 
       - name: Detect relevant changes
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -34,6 +38,7 @@ jobs:
           filters: |
             code:
               - 'apps/ui/**'
+              - 'packages/**'
               - '.github/workflows/apps-ui-validate.yml'
 
       - name: Set up Bun
@@ -62,6 +67,10 @@ jobs:
         if: steps.filter.outputs.code == 'true'
         run: bun run check
 
+      - name: Shared packages validate
+        if: steps.filter.outputs.code == 'true'
+        run: bash -c 'source ../../scripts/stack-lib.sh && validate_packages'
+
       - name: Unit + integration tests
         if: steps.filter.outputs.code == 'true'
         run: bun run test:ci
@@ -85,6 +94,10 @@ jobs:
       - name: Bundle size budget
         if: steps.filter.outputs.code == 'true'
         run: bun run size:check
+
+      - name: Bundle budget reasons
+        if: steps.filter.outputs.code == 'true'
+        run: bun run check:size-budget
 
       - name: Modulepreload size coverage
         if: steps.filter.outputs.code == 'true'
