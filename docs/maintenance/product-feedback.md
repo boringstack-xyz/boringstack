@@ -94,3 +94,33 @@ agent-built product. Existing security and coverage gates remain enforced.
 | 81     | Wins.                                                                                                                                              | Preserve: reported win; no corrective change requested.                                                                                                                                                                                                                                                       |
 | 82     | `component-folder-structure` treats every `const X: FC` in a folder as a component needing its own siblings.                                       | Implemented upstream: `eslint-plugin-react-component-architecture` 0.3.1 exempts `.tsx` files that export nothing; the anatomy applies once a file gains an export (boringstack-xyz/eslint-plugins#15). Component anatomy guide updated.                                                                      |
 | 83     | Wins.                                                                                                                                              | Preserve: reported win; no corrective change requested.                                                                                                                                                                                                                                                       |
+
+## Report 2: Tinkercaster in production, 2026-09-14 to 2026-10-08
+
+Source: the Tinkercaster git history and its `docs/operations`, `docs/audits`
+and `docs/reviews` after the first report. The product went to production on
+k3s, added billing, a public site and an LLM assistant, and stopped taking
+template updates around 2026-09-15. Nothing from this period was reported back
+until this review, so the entries come from commits, not from a written
+report. The same rules apply: an entry is closed by a reproduction, a
+correction or a documented scope decision.
+
+| Report | Observation | Status / evidence |
+| ------ | ----------- | ----------------- |
+| 84 | argocd-image-updater bumped api and ui independently; the UI shipped before its API image existed, and one day produced 28 automatic update commits. | Implemented: `production-release.yml` builds api, migrations and ui as `candidate-<sha>` after CI passes at that commit, then pins all three digests in one commit; image-updater annotations removed; sync waves order config, data, migrations, api, ui. `scripts/release/release.test.ts`, `infra/k3s/tests/deployment.test.ts`. Activation needs `PRODUCTION_RELEASE_MODE=coordinated`. |
+| 85 | The migration Job was a PreSync hook that ran `db:seed` on every sync and reverted admin edits. | Implemented: Sync hook at wave -1 runs `db:migrate` only, from a migrations image, with no app secrets mounted. The superuser bootstrap is a documented one-off in `infra/k3s/README.md`. |
+| 86 | Migrations (drizzle-kit, node-postgres) did not verify the CNPG certificate while the runtime (postgres-js) did, so migrations passed and the app was refused. | Implemented: `src/lib/postgres/connection.ts` is the single TLS policy for the runtime client and `drizzle.config.ts`; both receive `DATABASE_SSL_CA` from `boringstack-db-ca`. `tests/lib/postgres/connection.test.ts`. |
+| 87 | The API crashed with EROFS on a read-only root filesystem because bun tried to install at startup. | Implemented: `bun --no-install`, a `/tmp` emptyDir with `TMPDIR`, and `readOnlyRootFilesystem: true` on the API and migrations; asserted by the deployment test. Smoke-tested with `docker run --read-only`. |
+| 88 | Every Vault key arrived in one env var. | Implemented: VSO `excludeRaw` on the app and registry secrets. |
+| 89 | Migration pods could not reach Postgres. | Implemented: the Postgres network policy admits `app: api-migrations`. |
+| 90 | The DNS-01 ClusterIssuer covered another zone. | Documented: `overlays/prod/certificate.yaml` and the k3s README. |
+| 91 | The public site built inside the container at start and crash-looped on an empty config value. | Scope: the template ships no public site app. Guidance is to build in CI and validate config at build time; open until a site app exists. |
+| 92 | Accepting test inventories was a third of the first three days' commits, then was skipped and the protection lapsed. | Implemented: feature verification records additions-only inventory changes itself; removals, renames and empty runs still block and print one acknowledgement command. `tools/agent/inventory.test.ts`. Open: CI does not compare observed cases with the committed inventories. |
+| 93 | `packages/wiring-engine` and `apps/site` sat outside every gate; tooling hard-coded the app list. | Implemented: root check and pre-push validate each `packages/*`, pre-push discovers `apps/*`, dependency scans skip missing apps, Dependabot covers packages; `apps/ui/docs/agents/shared-packages.md`. Open: lint-meta does not scan `packages/`. |
+| 94 | `.size-limit.json` was raised in 30 commits (CSS 12 KB to 26.5 KB) despite the per-feature review policy (12, 29, 44). | Implemented: `check:size-budget` fails a raise or a new entry without a new reason line in `apps/ui/budgets.md`; runs in validate, pre-push and CI. `tests/scripts/check-size-budget-raises.test.ts`. |
+| 95 | After the agent harness changed, conventional commit subjects fell from 98% to 13% and the agent guides were not updated again. | Implemented: `commit-msg` hook and `pr-title` workflow share `scripts/ci/check-commit-title.sh`; squash title is the PR title; AGENTS.md states the harness-neutral rule. `tools/agent/commit-title.test.ts`. |
+| 96 | Generated wiring-library content made the largest PRs (+544k lines in one). | Documented: AGENTS.md keeps generated artifacts out of hand-written PRs. |
+| 97 | The product moved CI to a self-hosted runner through a `CI_RUNNER` variable. | Open: needs a decision. Self-hosted runners on `pull_request` workflows run fork code, so the template should not offer it without a public-repo guard. |
+| 98 | Database restore has never been exercised. | Open: no restore drill in the template. |
+| 99 | A release was blocked by an e2e asserting heading copy. | Open: needs a product fixture before any lint or guide change. |
+| 100 | Found in this review: in Compose production the API enables TLS for Postgres, but the Compose Postgres has no TLS, and postgres-js refuses a server that declines TLS. Migrations now share the runtime policy, so they fail the same way. | Open: reproduce with the `prod` profile, then either give Compose Postgres TLS or make the policy explicit per target. |
