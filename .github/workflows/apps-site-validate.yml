@@ -22,7 +22,7 @@ jobs:
     defaults:
       run:
         working-directory: apps/site
-    runs-on: ubuntu-24.04
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 15
     steps:
       - name: Checkout

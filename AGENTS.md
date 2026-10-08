@@ -61,6 +61,12 @@ checks types, lint and formatting and is also included in root `check`.
 
 CI: `.github/workflows/` at repo root with path filters.
 
+Self-hosted runners: set the repository variable `CI_RUNNER` to a runner label
+and every job moves off GitHub-hosted minutes. Pull requests from forks always
+stay on `ubuntu-24.04`, so outside code never runs on your machines, and
+`production-release.yml` always runs GitHub-hosted. The lint-meta rule
+`github-actions-runner-pinned` rejects a `vars.CI_RUNNER` without that guard.
+
 Remote: https://github.com/boringstack-xyz/boringstack
 
 ## Scaffold manifest: keep it in sync
