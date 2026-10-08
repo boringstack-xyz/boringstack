@@ -146,6 +146,7 @@ CI runs the same gates and a pre-push hook mirrors them.
 | Env access goes through the validator             | No direct `process.env` / `import.meta.env`. One typed entry point, and the schema must match `.env.example`.                                                           |
 | UI talks to the API only via the generated client | No raw `fetch` outside `src/lib/api`. Regenerate with `bun run regen` after an API change.                                                                              |
 | Dependencies are exact-pinned                     | No ranges. New packages face a 7-day `minimumReleaseAge` quarantine, so a fresh malicious release cannot land.                                                          |
+| Commits and PR titles are Conventional Commits    | `type(scope): summary`, checked by the `commit-msg` hook and the `pr-title` workflow. Main is squash-merged, so the PR title is what lands.                              |
 
 After changing anything cross-cutting: `bun run regen` then `bun run check`.
 

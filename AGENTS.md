@@ -94,3 +94,26 @@ cross-checks this manifest against the real `.env.example` files and FAILS if a
 watched toggle is neither modelled here nor waived via `watchIgnore`. A drifted
 manifest is a red build, not a silent gap. The `_about` field at the top of the
 JSON restates this for anyone who opens the file directly.
+
+## Commits and pull requests
+
+Every commit subject and PR title is a Conventional Commit:
+`<type>(<scope>)!?: <summary>`, at most 100 characters, for example
+`fix(api): keep the session after refresh`. This is a gate, not a guideline.
+The `commit-msg` hook (installed by `bun install`) and the `pr-title` workflow
+both run `scripts/ci/check-commit-title.sh`. Main is squash-merged, so the PR
+title is the commit that lands.
+
+These instructions are harness-neutral. Codex, Claude Code and other agents all
+start here, and `CLAUDE.md` only points at this file. Put a convention a
+product depends on into a hook, a lint rule or CI, and keep this file in sync
+with it. Prose that only one harness reads stops being followed when the
+harness changes.
+
+## Generated content and data
+
+Large generated artifacts, such as content libraries, catalogue imports and
+rendered diagrams, do not belong in the same commit or PR as hand-written
+code. Commit the generator and its source data, then regenerate in a separate
+`chore(content): ...` change, or build the artifacts in CI. A 500k-line diff
+cannot be reviewed, and it hides the code change that travels with it.
