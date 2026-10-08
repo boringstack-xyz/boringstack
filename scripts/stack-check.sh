@@ -47,6 +47,9 @@ fi
 run_check "ui lint-meta docs" bash -c "cd \"$BORINGSTACK_UI_DIR\" && bun run check:lint-meta-docs"
 run_check "ui scripts docs" bash -c "cd \"$BORINGSTACK_UI_DIR\" && bun run check:scripts-docs"
 
+# Packages are discovered, so a product without packages/ skips this silently.
+run_check "packages validate" validate_packages
+
 if [[ "$HAS_DOCS" == "1" ]]; then
   run_check "docs data" bash -c "cd \"$BORINGSTACK_DOCS_DIR\" && BORINGSTACK_API_DIR=\"$BORINGSTACK_API_DIR\" BORINGSTACK_UI_DIR=\"$BORINGSTACK_UI_DIR\" bun run check:docs-data"
 fi

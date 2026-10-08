@@ -25,6 +25,7 @@ focused pattern guides under [`docs/agents/`](docs/agents/).
 | Catching `ApiError`, error boundaries, Sentry                             | [errors](docs/agents/errors.md)                       |
 | Adding a shadcn primitive; `@theme` token wiring                          | [shadcn](docs/agents/shadcn.md)                       |
 | Adding an allowlist entry; debugging a security workflow                  | [security-pipeline](docs/agents/security-pipeline.md) |
+| Sharing code across apps; a `packages/` workspace; consuming it           | [shared-packages](docs/agents/shared-packages.md)     |
 | Starting a UI feature or a vertical slice (`/build-feature`)              | [feature-skills](docs/agents/feature-skills.md)       |
 | Reviewing a diff or running instance for security                         | [security-skills](docs/agents/security-skills.md)     |
 

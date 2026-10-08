@@ -38,6 +38,9 @@ jobs:
       - name: Detect relevant changes
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
+        # An app that was removed from the checkout has no lockfile: skip its scan
+        # (every later step gates on this filter's output).
+        if: hashFiles('apps/ui/bun.lock') != ''
         with:
           filters: |
             code:

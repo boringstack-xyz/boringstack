@@ -55,6 +55,7 @@ checks types, lint and formatting and is also included in root `check`.
 | `apps/docs`       | Astro docs site        |
 | `infra/compose`   | Docker Compose runtime |
 | `infra/bootstrap` | OpenTofu bootstrap     |
+| `packages/*`      | Shared code used by more than one app ([guide](apps/ui/docs/agents/shared-packages.md)) |
 | `.tsforge`        | tsforge scaffold manifest (see below) |
 
 CI: `.github/workflows/` at repo root with path filters.

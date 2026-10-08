@@ -120,12 +120,23 @@ bash "$ROOT/scripts/ci/pre-push-smoke.sh"
 
 RAN_ANY=0
 
-for app in api ui docs; do
+for app_path in "$ROOT"/apps/*/; do
+  [[ -d "$app_path" ]] || continue
+  app="$(basename "$app_path")"
   if app_changed "$app"; then
     run_app_gate "$app"
     RAN_ANY=1
   fi
 done
+
+# Shared packages run their own validate; they borrow the UI toolchain, so a
+# change to them is gated here whether or not any app changed.
+if [[ -z "$CHANGED_PATHS" ]] || grep -q '^packages/' <<< "$CHANGED_PATHS"; then
+  step "Running shared packages validate"
+  bash -c 'source "$1/scripts/stack-lib.sh" && validate_packages' _ "$ROOT"
+  ok "shared packages validate passed"
+  RAN_ANY=1
+fi
 
 if infra_compose_changed; then
   step "Running infra/compose pre-push gate (compose config + shellcheck + yamllint)"

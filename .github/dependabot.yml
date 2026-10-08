@@ -121,6 +121,31 @@ updates:
       - dependency-name: "@astrojs/cloudflare"
         update-types: ["version-update:semver-major"]
 
+  # Shared workspace packages under packages/. The glob matches nothing when the
+  # directory is absent, so products without packages/ get no entry in effect.
+  - package-ecosystem: bun
+    directories:
+      - /packages/*
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 4
+    labels: ["dependencies"]
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    cooldown:
+      default-days: 7
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+        patterns: ["*"]
+      development-dependencies:
+        dependency-type: "development"
+        patterns: ["*"]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
