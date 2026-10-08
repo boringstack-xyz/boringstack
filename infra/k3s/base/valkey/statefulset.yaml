@@ -37,16 +37,16 @@ spec:
           command:
             - valkey-server
           args:
-            # Cache + BullMQ queue backend. Light persistence (RDB) to /data so
-            # queued jobs survive a restart; flip --save "" + --appendonly no for
-            # a pure cache. requirepass must equal the password the API sends.
+            # Cache + BullMQ queue backend. AOF with fsync every second bounds
+            # queued-job loss to about a second on restart; RDB snapshots alone
+            # can lose minutes of queue mutations. For a pure cache, drop the
+            # appendonly flags. requirepass must equal the password the API sends.
             - --dir
             - /data
-            - --save
-            - "60"
-            - "1000"
             - --appendonly
-            - "no"
+            - "yes"
+            - --appendfsync
+            - everysec
             - --maxmemory-policy
             - noeviction
             - --requirepass
