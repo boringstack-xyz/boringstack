@@ -38,16 +38,18 @@
     "typescript": "6.0.3"
   },
   "overrides": {
-    "devalue": "5.8.1",
+    "devalue": "5.9.3",
     "postcss": "8.5.23",
-    "sharp": "0.35.4",
-    "undici": "7.29.0"
+    "sharp": "0.35.5",
+    "undici": "7.29.1",
+    "fflate": "0.8.3"
   },
   "//overrides": {
     "_": "Pins patched transitive versions, mirroring apps/docs. Build-time tooling only: the deployed site is static nginx output.",
-    "devalue": "Patched build-time serialization (GHSA-77vg-94rm-hx3p). Pulled in by Astro.",
+    "devalue": "Patched build-time serialization (GHSA-77vg-94rm-hx3p, then GHSA-4q55-j62x-fr9h, GHSA-9rgm-9g3h-6x36, GHSA-hx4r-w6wj-j8fg, GHSA-j22f-vq7h-c4qm, GHSA-mcm9-63f2-9j32, GHSA-r9w8-h9r3-54w4, GHSA-wf3x-273g-mvxv, GHSA-x5rw-q4pp-hg5g). 5.8.1 is vulnerable; 5.9.3 patches them. Pulled in by Astro.",
     "postcss": "Patched CSS tooling (GHSA-r28c-9q8g-f849). Build-time only.",
-    "sharp": "Patched image processing (GHSA-rgj7-g3m4-5g8c). Build-time social-card rendering only.",
-    "undici": "Patched undici (GHSA-vmh5-mc38-953g). Build-time fetch tooling only."
+    "sharp": "Patched image processing (GHSA-rgj7-g3m4-5g8c, GHSA-wq5f-xc86-pv6w). 0.35.4 is vulnerable; 0.35.5 patches it. Build-time social-card rendering only.",
+    "undici": "Patched undici (GHSA-vmh5-mc38-953g, and the 7.29.0 batch fixed in 7.29.1). Build-time fetch tooling only. Mirrors the docs and UI app pins.",
+    "fflate": "Patched fflate (GHSA-px8p-9vwx-vf98, infinite loop on malformed ZIP64 archives). 0.7.3 is vulnerable; 0.8.3 patches it. satori pins fflate exactly to 0.7.3 in every release, so this forces the patched line for the OG image renderer. Build-time social-card rendering only."
   }
 }
