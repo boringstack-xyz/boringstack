@@ -46,13 +46,18 @@ if (
           `${result.profile}: ${result.status}`,
           ...result.checks.map((check) =>
             [
-              `${check.checkId}: ${check.status} (${check.reason})`,
-              check.durationMs === undefined
-                ? ""
-                : `${(check.durationMs / 1000).toFixed(1)}s`,
+              [
+                `${check.checkId}: ${check.status} (${check.reason})`,
+                check.durationMs === undefined
+                  ? ""
+                  : `${(check.durationMs / 1000).toFixed(1)}s`,
+              ]
+                .filter(Boolean)
+                .join(" "),
+              check.remediation ?? "",
             ]
               .filter(Boolean)
-              .join(" ")
+              .join("\n")
           ),
         ].join("\n")
   );

@@ -67,15 +67,15 @@ This applies committed migrations to the owned sandbox, builds test templates an
 
 The ordinary API, UI and browser suites compare observed test identities, including multiplicity, with `tools/agent/inventories/*.json`. This rejects missing or substituted tests even when the reported total looks plausible.
 
-A complete passing underlying suite records an observation even when new tests cause an inventory mismatch. Preview only the changed lanes:
+New tests need no separate step. When a feature verification run observes the committed inventory plus new cases and nothing removed, it rewrites that lane's `tools/agent/inventories/*.json` and reports `test_inventory_additions_recorded`. Commit the updated inventory with the feature change and review it in the diff against the actual tests.
+
+Removed, renamed or substituted cases block the lane. The failure output lists each removed identity and prints one acknowledgement command:
 
 ```sh
-bun run agent:inventory -- api.tests ui.tests ui.e2e
+bun run agent:inventory -- api.tests --accept=<token> --allow-removals=<token>
 ```
 
-The preview prints exact additions/removals and a review token without writing. Apply the reviewed diff with `--accept=<token>`. If it removes any case, also pass `--allow-removals=<token>`; this includes duplicate removal and same-count substitutions. Both approvals bind that exact checkout and diff, so changed observations or source invalidate them.
-
-Name fewer lanes when appropriate. Approve multiple changed lanes together, review the committed diff against the actual tests, then rerun verification. Do not approve an unexpected shrink to obtain a green result. The security suite has its own [per-case manifest](/topics/security-spec/).
+Run it only after reviewing the listed removals, then rerun verification. The token binds that exact checkout and diff, so changed observations or source invalidate it. Zero observed cases always block. Do not acknowledge an unexpected shrink to obtain a green result. The security suite has its own [per-case manifest](/topics/security-spec/).
 
 ## Tooling maintenance and boundaries
 

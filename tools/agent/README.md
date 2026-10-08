@@ -111,30 +111,56 @@ The desired repository settings list `agent verification contract` as required. 
 ## Updating the expected test inventory
 
 Ordinary API, UI and browser lanes compare every observed case identity, including
-multiplicity, against `tools/agent/inventories/*.json`. Missing, substituted and
-unexpected cases block verification. This deliberately requires review when tests
-are added or removed, including generated feature tests.
+multiplicity, against `tools/agent/inventories/*.json`. The protocol:
 
-Run the feature profile first. A complete passing underlying suite writes a private
-observation even if its inventory disagrees. Then explicitly run:
+- **Additions are recorded automatically.** When a lane's observation is the baseline
+  plus new cases and nothing is removed, the feature verification run rewrites that
+  lane's baseline after the checkout is confirmed unchanged. The lane reports
+  `test_inventory_additions_recorded`. Commit the updated `tools/agent/inventories/*.json`
+  with the feature change; no separate accept step is needed.
+- **Removals block and are never recorded.** A removed, renamed or same-count
+  substituted case (including one fewer occurrence of a duplicate) fails the lane with
+  `test_inventory_disagrees`. The failure output lists each removed identity and prints
+  one command. Run it, then rerun verification:
 
-```sh
-bun run agent:inventory -- api.tests ui.tests ui.e2e
-```
+  ```sh
+  bun run agent:inventory -- api.tests --accept=<token> --allow-removals=<token>
+  ```
 
-This first command is a preview: it prints exact added/removed identities and a
-review token without updating files. Approve the same diff explicitly:
+  The token binds the checkout, the old baseline and the fresh observation, so any
+  source or test change invalidates it. Review the printed identities before running it.
+  Acknowledgement only updates the baseline; it does not declare the run verified.
 
-```sh
-bun run agent:inventory -- api.tests ui.tests ui.e2e --accept=<token>
-```
+- **Zero observed cases block** with `test_inventory_empty`; they are never recorded
+  and cannot be acknowledged. Fix the lane so it runs its tests.
+- **Preview** is still available and writes nothing:
+  `bun run agent:inventory -- api.tests ui.tests ui.e2e`.
 
-If any cases are removed (including one occurrence of a duplicate or a same-count
-replacement), also supply `--allow-removals=<token>`. This acknowledges the exact
-removals already displayed; it is not a blanket permission for future reductions.
-The token binds the checkout, old baseline and fresh observation. Any change
-invalidates approval. Choose only changed lanes, approve them together, review the
-committed diff, then rerun verification. Approval never declares the update verified.
+A run writes baselines only when no lane has removals, and only from observations
+bound to the run's own fingerprint. The run's reported checkout fingerprint describes
+the tree before that write, so review the inventory diff as part of the feature diff.
+
+Limitation: CI does not compare observed cases with the committed inventories. See
+"CI enforcement" below.
+
+### CI enforcement
+
+CI does not enforce that the committed inventories match what a run observed.
+Verified facts:
+
+- `.github/workflows/agent-verification.yml` runs `agent:check`, `agent:check:docker`
+  and `agent:eval --deterministic`. None of these runs the API, UI or browser lanes, so
+  no JUnit report and no observation is produced there.
+- `apps-api-ci.yml` runs `bun run test` against Postgres, and the UI workflows run their
+  own test scripts. None writes JUnit or reads `tools/agent/inventories`.
+- Running the `feature` profile in CI would need the owned Docker sandbox, migrations,
+  Chromium and every suite. That is not cheap, so it was not added.
+
+What CI does enforce: `agent:check` asserts that each committed baseline parses and is
+non-empty. That catches an emptied or deleted baseline. It does not catch a removed test
+whose baseline was left stale, or a feature change merged without running feature
+verification. Closing that gap needs a CI job that runs the feature profile, or a JUnit
+comparison in the API workflow.
 
 Owned browser invocations disable retries. A retry attachment is blocked if fed
 back as evidence. Coverage/forbidden-warning gate failures are reported as failures

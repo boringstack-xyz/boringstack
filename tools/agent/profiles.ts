@@ -5,6 +5,7 @@ import { now } from "../../apps/api/src/lib/time/now";
 import { identifyCheckout } from "./checkout";
 import { RELEASE_CHECKS, STATIC_CHECKS, type Profile } from "./checks";
 import { openApiUrl } from "./environment";
+import { settleInventories } from "./inventory";
 import { orderChecks } from "./lanes";
 import { executionBudget } from "./scheduling";
 import { runTasks } from "./scheduler";
@@ -132,6 +133,12 @@ export async function runProfile(
         status: "passed",
         reason: "checkout_unchanged",
       });
+      // Writes happen only after the stability check, so the run's fingerprint still describes what was tested.
+      result.checks = settleInventories(
+        root,
+        result.checks,
+        result.checkout.fingerprint
+      );
     }
 
     if (isAborted(signal)) {

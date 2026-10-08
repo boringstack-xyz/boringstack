@@ -43,7 +43,7 @@ The shared account-switch mutation cancels outstanding queries, resets account d
 
 ## Verify
 
-Run the `feature` profile, review any intentional test-inventory additions, then rerun it. Run `release-local` for the broader local gate. Cover owner/admin writes, member/viewer reads, revoked membership, cross-account reads and writes, forged ownership and account-switch cache isolation.
+Run the `feature` profile. Commit any test-inventory additions it records with the change, acknowledge any reported removals, then rerun it. Run `release-local` for the broader local gate. Cover owner/admin writes, member/viewer reads, revoked membership, cross-account reads and writes, forged ownership and account-switch cache isolation.
 
 The generated list is bounded to 100 records. Design a pagination contract before relying on larger lists. Audit writes follow the existing best-effort convention; this generator does not add a durable outbox or deletion behavior.
 
