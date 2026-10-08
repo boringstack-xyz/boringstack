@@ -1,0 +1,6 @@
+# osv-scanner accepted-risk allowlist for the BoringStack public site.
+#
+# The site is a static build (Astro output: "static") served by nginx. Its
+# runtime has no server-side code, no database and no user-input handling.
+# Every dependency here is build-time tooling. Add an entry only with a reason
+# and an ignoreUntil date, and re-evaluate it when the dependency is bumped.

@@ -1,0 +1,61 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { siteHref } from "../../lib/site-config";
+import { siteName } from "../../lib/site";
+
+export async function getStaticPaths() {
+  const posts = await getCollection(
+    "blog",
+    ({ data }) => !data.draft && data.publishedAt <= new Date(),
+  );
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const published = post.data.publishedAt.toISOString().slice(0, 10);
+const updated = post.data.updatedAt?.toISOString().slice(0, 10);
+
+const structuredData = [
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.data.title,
+    description: post.data.description,
+    datePublished: published,
+    ...(updated ? { dateModified: updated } : {}),
+    author: { "@type": "Organization", name: post.data.author },
+    publisher: { "@type": "Organization", name: siteName, url: siteHref("/") },
+    mainEntityOfPage: siteHref(`/blog/${post.id}`),
+    image: siteHref(`/og/blog/${post.id}.png`),
+  },
+];
+---
+
+<BaseLayout
+  title={post.data.title}
+  description={post.data.description}
+  type="article"
+  image={`/og/blog/${post.id}.png`}
+  imageAlt={post.data.title}
+  article={{
+    publishedAt: post.data.publishedAt,
+    updatedAt: post.data.updatedAt,
+  }}
+  structuredData={structuredData}
+>
+  <article class="prose">
+    <p class="meta">
+      <a href="/blog">Blog</a> · <time datetime={published}>{published}</time>
+      {updated && (
+        <>
+          {" "}
+          · updated <time datetime={updated}>{updated}</time>
+        </>
+      )}
+    </p>
+    <h1>{post.data.title}</h1>
+    <Content />
+  </article>
+</BaseLayout>

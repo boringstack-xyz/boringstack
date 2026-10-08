@@ -1,0 +1,78 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { appHref, siteConfig } from "../lib/site-config";
+import { siteName, siteTagline } from "../lib/site";
+
+const features = [
+  {
+    title: "Placeholder feature one",
+    body: "Describe the first thing your product does for people.",
+  },
+  {
+    title: "Placeholder feature two",
+    body: "Describe the second benefit in one or two plain sentences.",
+  },
+  {
+    title: "Placeholder feature three",
+    body: "Describe the third benefit, or remove this card.",
+  },
+];
+
+const structuredData = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: siteName,
+    url: siteConfig.siteUrl,
+    logo: `${siteConfig.siteUrl}/brand-mark.svg`,
+    ...(siteConfig.contactEmail ? { email: siteConfig.contactEmail } : {}),
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteName,
+    url: siteConfig.siteUrl,
+  },
+];
+---
+
+<BaseLayout
+  title={siteName}
+  description={siteTagline}
+  structuredData={structuredData}
+>
+  <section class="hero hero-top">
+    <h1>{siteName}: a placeholder headline for your product</h1>
+    <p>
+      {siteTagline} Replace this paragraph with the promise your product keeps.
+    </p>
+    <a class="button" href={appHref("/signup")}>
+      Create an account
+    </a>
+  </section>
+
+  <section aria-labelledby="features-heading">
+    <h2 id="features-heading">Features</h2>
+    <div class="cards">
+      {features.map((feature) => (
+        <article class="card">
+          <h3>{feature.title}</h3>
+          <p>{feature.body}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section aria-labelledby="cta-heading">
+    <h2 id="cta-heading">Ready to start?</h2>
+    <p class="placeholder">
+      Placeholder call to action: one sentence that explains the next step.
+    </p>
+    <a class="button" href={appHref("/signup")}>
+      Sign up
+    </a>
+    <a class="button button-secondary gap-start" href="/pricing">
+      See pricing
+    </a>
+  </section>
+</BaseLayout>

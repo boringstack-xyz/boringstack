@@ -1,0 +1,24 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteName } from "../lib/site";
+---
+
+<BaseLayout
+  title="About"
+  description={`About ${siteName}. Placeholder company story.`}
+>
+  <article class="prose">
+    <h1>About {siteName}</h1>
+    <p class="placeholder">
+      Placeholder: explain who builds this product and why, in your own words.
+    </p>
+    <h2>What we believe</h2>
+    <p class="placeholder">
+      Placeholder: one or two principles that guide the product.
+    </p>
+    <h2>Where we are</h2>
+    <p class="placeholder">
+      Placeholder: the company address, if you publish one.
+    </p>
+  </article>
+</BaseLayout>

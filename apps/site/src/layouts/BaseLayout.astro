@@ -1,0 +1,83 @@
+---
+import "../styles/global.css";
+import Seo from "../components/Seo.astro";
+import ConsentBanner from "../components/ConsentBanner.astro";
+import { siteConfig, appHref } from "../lib/site-config";
+import { navigation, legalLinks, siteName, siteTagline } from "../lib/site";
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  imageAlt?: string;
+  type?: "website" | "article";
+  noindex?: boolean;
+  article?: { publishedAt: Date; updatedAt?: Date };
+  structuredData?: unknown[];
+}
+
+const { structuredData, ...seo } = Astro.props;
+const year = new Date().getFullYear();
+const path = Astro.url.pathname;
+const isCurrent = (href: string) =>
+  href === "/" ? path === "/" : path === href || path.startsWith(`${href}/`);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f5f0" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <Seo {...seo} structuredData={structuredData} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    <header class="site-header">
+      <div class="container">
+        <a class="brand" href="/">
+          {siteName}
+        </a>
+        <nav class="nav" aria-label="Main">
+          {navigation.map((item) => (
+            <a
+              href={item.href}
+              aria-current={isCurrent(item.href) ? "page" : undefined}
+            >
+              {item.label}
+            </a>
+          ))}
+          <a href={appHref("/login")}>Sign in</a>
+          <a href={appHref("/signup")} class="button">
+            Sign up
+          </a>
+        </nav>
+      </div>
+    </header>
+    <main id="main" class="container">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="container">
+        <nav aria-label="Legal">
+          {legalLinks.map((item) => (
+            <a href={item.href}>{item.label}</a>
+          ))}
+          <a href="/contact">Contact</a>
+          {siteConfig.analytics && (
+            <button type="button" class="link-button" data-cookie-preferences>
+              Cookie preferences
+            </button>
+          )}
+        </nav>
+        <p>
+          {siteTagline} © {year} {siteName}.
+        </p>
+      </div>
+    </footer>
+    <ConsentBanner />
+  </body>
+</html>

@@ -1,0 +1,37 @@
+---
+import { siteConfig } from "../lib/site-config";
+
+// Rendered only when analytics is configured. Without an analytics script
+// there is nothing to consent to, so the banner is absent.
+const enabled = siteConfig.analytics !== null;
+---
+
+{enabled && (
+  <>
+    <section
+      class="consent"
+      aria-label="Cookie and analytics choice"
+      data-consent-banner
+      hidden
+    >
+      <div class="container">
+        <p>
+          We would like to measure visits to improve this site. Analytics stays
+          off unless you accept. Your choice is stored in this browser only. See
+          our <a href="/privacy">privacy notice</a>.
+        </p>
+        <div class="actions">
+          <button type="button" data-consent-decline>
+            Decline
+          </button>
+          <button type="button" class="primary" data-consent-accept>
+            Accept analytics
+          </button>
+        </div>
+      </div>
+    </section>
+    <script>
+      import "../scripts/consent";
+    </script>
+  </>
+)}

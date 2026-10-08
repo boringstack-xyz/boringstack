@@ -1,6 +1,6 @@
 # BoringStack monorepo
 
-Single repository: `apps/api`, `apps/ui`, `apps/docs`, `infra/compose`, `infra/bootstrap`.
+Single repository: `apps/api`, `apps/ui`, `apps/docs`, `apps/site`, `infra/compose`, `infra/bootstrap`.
 
 <!-- template-onboarding:start -->
 ## Starting a new project from this template
@@ -53,6 +53,7 @@ checks types, lint and formatting and is also included in root `check`.
 | `apps/api`        | Bun + Elysia API       |
 | `apps/ui`         | Vite + React UI        |
 | `apps/docs`       | Astro docs site        |
+| `apps/site`       | Astro public marketing site (static, nginx) |
 | `infra/compose`   | Docker Compose runtime |
 | `infra/bootstrap` | OpenTofu bootstrap     |
 | `packages/*`      | Shared code used by more than one app ([guide](apps/ui/docs/agents/shared-packages.md)) |

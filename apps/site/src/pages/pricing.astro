@@ -1,0 +1,41 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { appHref } from "../lib/site-config";
+import { siteName } from "../lib/site";
+
+const plans = [
+  {
+    name: "Free",
+    price: "Placeholder price",
+    body: "Replace with what the free plan includes.",
+  },
+  {
+    name: "Pro",
+    price: "Placeholder price",
+    body: "Replace with what the paid plan adds, and who it is for.",
+  },
+];
+---
+
+<BaseLayout
+  title="Pricing"
+  description={`Placeholder pricing for ${siteName}. Replace the plans and prices before launch.`}
+>
+  <h1>Pricing</h1>
+  <p class="placeholder prose">
+    Placeholder: replace these plans and prices before launch. Do not publish
+    invented prices.
+  </p>
+  <div class="cards">
+    {plans.map((plan) => (
+      <article class="card">
+        <h2 class="flush-top">{plan.name}</h2>
+        <p class="placeholder">{plan.price}</p>
+        <p>{plan.body}</p>
+        <a class="button" href={appHref("/signup")}>
+          Sign up
+        </a>
+      </article>
+    ))}
+  </div>
+</BaseLayout>
