@@ -20,6 +20,43 @@ COPY . .
 # the API into /app/dist. Both are needed at runtime.
 RUN bun run build
 
+# Migration image (`--target migrations`): drizzle-kit is a devDependency, so it
+# is installed here and kept out of the lean runtime image. The Kubernetes
+# migration Job runs it. This stage must stay before `production`: a plain
+# `docker build` builds the last stage, and that must be the API.
+FROM oven/bun:1.4.2-alpine@sha256:d888c0ae6c86d7866ff10c5aafdd9077b36aee6455b33dd270fb93c0dd5cef6f AS migrations
+
+RUN apk add --no-cache dumb-init
+
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S app -u 1001 -G nodejs
+
+WORKDIR /app
+
+ENV HUSKY=0
+
+COPY package.json bun.lock* ./
+
+RUN bun install --frozen-lockfile
+
+# Only what `db:migrate` reads: the drizzle config, the SQL history, and the
+# env/connection modules the config imports for the shared TLS policy.
+COPY drizzle.config.ts ./
+COPY drizzle ./drizzle
+COPY src/lib/postgres/connection.ts ./src/lib/postgres/connection.ts
+COPY src/config/env ./src/config/env
+
+# Set after install so `bun install` above still sees devDependencies.
+ENV NODE_ENV=production
+
+RUN chown -R app:nodejs /app
+
+USER app
+
+ENTRYPOINT ["dumb-init", "--"]
+
+CMD ["bun", "run", "db:migrate"]
+
 # Production stage
 FROM oven/bun:1.4.2-alpine@sha256:d888c0ae6c86d7866ff10c5aafdd9077b36aee6455b33dd270fb93c0dd5cef6f AS production
 
@@ -53,4 +90,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 
 ENTRYPOINT ["dumb-init", "--"]
 
-CMD ["bun", "run", "dist/index.js"]
+# --no-install: bun must never try to install packages at startup. Production
+# root filesystems are read-only (readOnlyRootFilesystem), so an install attempt
+# crashes with EROFS. Writable scratch space is /tmp, mounted by the manifests.
+CMD ["bun", "--no-install", "run", "dist/index.js"]
