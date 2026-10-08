@@ -72,7 +72,7 @@ jobs:
 
       # Release invariants on the real render: digest-pinned images, no
       # image-updater, a migrate-only Job, a read-only API, and the release
-      # script's pin contract. See docs/operations/production-release.md.
+      # script's pin contract. See infra/k3s/README.md.
       - name: Test production release invariants
         if: steps.filter.outputs.code == 'true'
         run: bun test infra/k3s/tests scripts/release
