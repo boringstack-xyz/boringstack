@@ -7,7 +7,7 @@ name: Coordinated production release
 # so the UI can never run ahead of the API it needs.
 # Compose/WUD keeps its own publishers (apps-api-release.yml, apps-ui-release.yml).
 # They push :latest and sha-* tags that Kubernetes never references.
-# See docs/operations/production-release.md.
+# See infra/k3s/README.md.
 
 on:
   push:
@@ -44,7 +44,7 @@ jobs:
           RELEASE_MODE: ${{ vars.PRODUCTION_RELEASE_MODE }}
         run: |
           if [ "$RELEASE_MODE" != coordinated ]; then
-            echo '::error::Remove the argocd-image-updater annotations from the live Argo Application, then set PRODUCTION_RELEASE_MODE=coordinated. See docs/operations/production-release.md.'
+            echo '::error::Remove the argocd-image-updater annotations from the live Argo Application, then set PRODUCTION_RELEASE_MODE=coordinated. See infra/k3s/README.md.'
             exit 1
           fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

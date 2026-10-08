@@ -55,11 +55,15 @@ The prod overlay routes:
 - `site-pdb` keeps one replica available. `patches/site-replicas.yaml` runs two replicas
   with spread constraints.
 
-Image updates: `argocd-image-updater` tracks `ghcr.io/<owner>/<repo>-site` `sha-*` tags.
+Image updates: `.github/workflows/production-release.yml` builds the site as a
+`candidate-<sha>` image with the API, migrations and UI, and pins all four digests
+in one commit. Nothing watches tags.
 
 ## Release
 
-`.github/workflows/apps-site-release.yml` builds and pushes the image on main, with the
-build arguments from `infra/k3s/overlays/prod/site-build.env`.
+For Kubernetes, `.github/workflows/production-release.yml` builds the site image with
+the build arguments from `infra/k3s/overlays/prod/site-build.env`. For the Compose/WUD
+path, `.github/workflows/apps-site-release.yml` publishes `latest` and `sha-*` tags
+built from the same file.
 `.github/workflows/apps-site-validate.yml` runs `bun run validate`, builds the same
 image and smoke-tests it read-only.

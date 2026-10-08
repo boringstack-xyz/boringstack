@@ -5,10 +5,20 @@ k3s/Kubernetes cluster. This is the cluster alternative to the single-host
 [`infra/compose`](../compose) and [`infra/bootstrap`](../bootstrap) targets.
 Pick the one that fits; you don't need all three.
 
-Push code. The production release workflow builds the API, migrations and UI
-images for that commit, then pins all three digests in one commit. ArgoCD syncs
-that set. The full app (api, ui, Postgres, Valkey, GlitchTip) runs in one
-namespace with HA, autoscaling, and TLS.
+Push code. The production release workflow builds the API, migrations, UI and
+public site images for that commit, then pins all four digests in one commit.
+ArgoCD syncs that set. The full app (site, api, ui, Postgres, Valkey, GlitchTip)
+runs in one namespace with HA, autoscaling, and TLS.
+
+## Domain split
+
+The public site (`apps/site`, static Astro) answers on the apex domain
+(`boringstack.example.com`) so it can be indexed. The authenticated app answers
+on `app.boringstack.example.com`: the UI at `/` and the API at `/api` and
+`/health`. Set `FRONTEND_URL` and the UI's public URL to the app origin. The
+site makes no API calls, so `ALLOWED_ORIGINS` does not change. Both hosts are on
+the one certificate in `overlays/prod/certificate.yaml`, and the site's
+build-time values live in `overlays/prod/site-build.env`.
 
 > This target is Compose-first BoringStack's opt-in cluster path. It is kept in
 > its own `infra/k3s/` subtree precisely so it never blurs the simpler Compose
@@ -114,15 +124,15 @@ this target. On every push to `main` that touches the app or this target, it:
 1. Waits, up to 45 minutes, for every applicable push workflow at the same
    commit to succeed. Missing, cancelled, failed and timed-out checks block the
    release. A newer `main` commit supersedes an older one.
-2. Builds three **candidate** images for that commit: `boringstack-api`,
-   `boringstack-migrations` and `boringstack-ui`, tagged `candidate-<sha>`.
-   Nothing moves `latest` or `sha-*` for this target.
-3. Only after all three builds succeed, makes **one** commit that pins all three
+2. Builds four **candidate** images for that commit: `boringstack-api`,
+   `boringstack-migrations`, `boringstack-ui` and `boringstack-site`, tagged
+   `candidate-<sha>`. Nothing moves `latest` or `sha-*` for this target.
+3. Only after all four builds succeed, makes **one** commit that pins all four
    digests in `overlays/prod/kustomization.yaml`. A failed or interrupted build
    leaves production unchanged. A non-fast-forward push fails without retry.
 
-The Compose/WUD path is unchanged. `apps-api-release.yml` and
-`apps-ui-release.yml` still publish `latest` and `sha-*` for WUD. Kubernetes never
+The Compose/WUD path is unchanged. `apps-api-release.yml`, `apps-ui-release.yml`
+and `apps-site-release.yml` still publish `latest` and `sha-*` for WUD. Kubernetes never
 references those tags, so a partial Compose publish cannot reach this target.
 
 ### Activation (required before the first release)
@@ -150,7 +160,7 @@ references those tags, so a partial Compose publish cannot reach this target.
   finished. Check Synced/Healthy, then smoke-test sign-in and the main screens.
 - API and database changes must stay compatible with the previous UI during the
   rollout.
-- To roll back application images, restore **all three digests from one previous
+- To roll back application images, restore **all four digests from one previous
   promotion** in a reviewed commit, then sync the whole Application.
 - Migrations are not reversed automatically. Confirm the previous API works with
   the current schema before rolling back.
@@ -191,13 +201,13 @@ data it writes lands on a live database. For that reason:
    - `kubectl apply -f infra/k3s/argocd/boringstack-prod.yaml`, or
    - add `argocd/app-of-apps-registration.example.yaml` to your app-of-apps repo.
 4. Complete [activation](#activation-required-before-the-first-release).
-5. Merge to `main`. The release workflow publishes the three candidates and
+5. Merge to `main`. The release workflow publishes the four candidates and
    promotes them in one commit. Argo then syncs. Watch the Application reach
    Healthy.
 6. Run the one-off superuser bootstrap if you want a first admin.
 
 Startup order is set by waves: namespace and secrets (-4), Postgres and Valkey
-(-2), migrations (-1), API (0), UI (1).
+(-2), migrations (-1), API (0), UI and site (1).
 
 ## Verify
 
@@ -212,8 +222,9 @@ bun test infra/k3s/tests scripts/release
 
 # Live
 kubectl -n boringstack-prod get pods
-curl -sI https://<domain>/health        # 200 from the api
-curl -sI https://<domain>/              # 200 from the ui (SPA)
+curl -sI https://app.<domain>/health    # 200 from the api
+curl -sI https://app.<domain>/          # 200 from the ui (SPA)
+curl -sI https://<domain>/              # 200 from the public site
 ```
 
 ## Runtime notes
