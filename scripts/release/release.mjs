@@ -3,7 +3,7 @@ import { Glob, YAML } from "bun";
 
 // Every image the production overlay pins. Keep in sync with the `images:`
 // block in infra/k3s/overlays/prod/kustomization.yaml (the tests enforce it).
-const images = ["api", "migrations", "ui"];
+const images = ["api", "migrations", "ui", "site"];
 const releasePath = ".github/workflows/production-release.yml";
 const overlayPath = "infra/k3s/overlays/prod/kustomization.yaml";
 

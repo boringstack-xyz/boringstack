@@ -1,0 +1,88 @@
+name: release
+
+# Builds and publishes the public site's serving image to GitHub Container
+# Registry on every push to main (tags: latest + sha-<7>), for the Compose/WUD
+# path. Kubernetes never uses these tags: production-release.yml builds the site
+# as a candidate and pins its digest together with the API, migrations and UI.
+# The build-time public configuration comes from
+# infra/k3s/overlays/prod/site-build.env, so a configuration change rebuilds the
+# image.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/site/**"
+      - "infra/k3s/overlays/prod/site-build.env"
+      - ".github/workflows/apps-site-release.yml"
+
+concurrency:
+  group: apps-site-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Load production site configuration
+        id: config
+        run: |
+          set -a
+          . infra/k3s/overlays/prod/site-build.env
+          set +a
+          {
+            echo "site_url=$SITE_URL"
+            echo "app_url=$APP_URL"
+            echo "contact_email=$CONTACT_EMAIL"
+            echo "analytics_script_url=$ANALYTICS_SCRIPT_URL"
+            echo "analytics_website_id=$ANALYTICS_WEBSITE_ID"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image metadata
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}-site
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.title=BoringStack site
+            org.opencontainers.image.description=Static marketing site served by nginx
+
+      - name: Build and push
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: apps/site
+          file: apps/site/Dockerfile
+          target: production
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            SITE_URL=${{ steps.config.outputs.site_url }}
+            APP_URL=${{ steps.config.outputs.app_url }}
+            CONTACT_EMAIL=${{ steps.config.outputs.contact_email }}
+            ANALYTICS_SCRIPT_URL=${{ steps.config.outputs.analytics_script_url }}
+            ANALYTICS_WEBSITE_ID=${{ steps.config.outputs.analytics_website_id }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

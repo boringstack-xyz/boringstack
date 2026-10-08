@@ -63,11 +63,30 @@ describe("production release contracts", () => {
     expect(renderedText).not.toMatch(/image: \S+:latest\b/);
   });
 
-  test("the three release images are the ones the release workflow pins", () => {
+  test("the four release images are the ones the release workflow pins", () => {
     const names = images().map((image) => image.split("@")[0]);
     expect(names).toContain("ghcr.io/boringstack-xyz/boringstack-api");
     expect(names).toContain("ghcr.io/boringstack-xyz/boringstack-migrations");
     expect(names).toContain("ghcr.io/boringstack-xyz/boringstack-ui");
+    expect(names).toContain("ghcr.io/boringstack-xyz/boringstack-site");
+  });
+
+  test("the public site is prebuilt, read-only and rolls out with the UI", async () => {
+    const site = resource("Deployment", "site");
+    const app = container(site, "site");
+    expect(app.securityContext.readOnlyRootFilesystem).toBe(true);
+    expect(app.securityContext.allowPrivilegeEscalation).toBe(false);
+    expect(podSpec(site).securityContext.runAsNonRoot).toBe(true);
+    expect(wave(site)).toBe(wave(resource("Deployment", "ui")));
+    expect(wave(resource("Deployment", "api"))).toBeLessThan(wave(site));
+    // Tinkercaster's site crash-looped because it built at container start.
+    // The image builds at image build time and only serves files at runtime.
+    const dockerfile = await Bun.file(
+      new URL("../../../apps/site/Dockerfile", import.meta.url),
+    ).text();
+    const runtime = dockerfile.slice(dockerfile.lastIndexOf("\nFROM "));
+    expect(runtime).toContain("nginx");
+    expect(runtime).not.toMatch(/astro build|bun run build/);
   });
 
   test("argocd-image-updater annotations are gone from the Application and the render", async () => {

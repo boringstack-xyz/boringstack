@@ -28,6 +28,17 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
+  name: site-pdb
+  namespace: boringstack-prod
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: site
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
   name: postgres-pdb
   namespace: boringstack-prod
 spec:

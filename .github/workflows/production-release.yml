@@ -1,8 +1,8 @@
 name: Coordinated production release
 
 # The only workflow that publishes images for the Kubernetes (Argo) target.
-# It builds the API, migrations and UI for one commit as candidates. Only when
-# every build succeeds does one commit pin all three digests in
+# It builds the API, migrations, UI and public site for one commit as
+# candidates. Only when every build succeeds does one commit pin all four digests in
 # infra/k3s/overlays/prod/kustomization.yaml. Argo then syncs that single set,
 # so the UI can never run ahead of the API it needs.
 # Compose/WUD keeps its own publishers (apps-api-release.yml, apps-ui-release.yml).
@@ -68,7 +68,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       # Candidate tags only. Nothing moves `latest` or `sha-*`, and nothing is
-      # promoted until all three builds below have succeeded.
+      # promoted until all four builds below have succeeded.
       - name: Build API candidate
         id: api
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
@@ -110,11 +110,45 @@ jobs:
           labels: org.opencontainers.image.revision=${{ github.sha }}
           cache-from: type=gha,scope=release-ui
           cache-to: type=gha,scope=release-ui,mode=max
+      # Public site configuration is build-time only (validated by the Astro
+      # build); the values live in git so a change rebuilds the image.
+      - name: Load production site configuration
+        id: site_config
+        run: |
+          set -a
+          . infra/k3s/overlays/prod/site-build.env
+          set +a
+          {
+            echo "site_url=$SITE_URL"
+            echo "app_url=$APP_URL"
+            echo "contact_email=$CONTACT_EMAIL"
+            echo "analytics_script_url=$ANALYTICS_SCRIPT_URL"
+            echo "analytics_website_id=$ANALYTICS_WEBSITE_ID"
+          } >> "$GITHUB_OUTPUT"
+      - name: Build site candidate
+        id: site
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: apps/site
+          file: apps/site/Dockerfile
+          target: production
+          push: true
+          tags: ghcr.io/${{ github.repository }}-site:candidate-${{ github.sha }}
+          build-args: |
+            SITE_URL=${{ steps.site_config.outputs.site_url }}
+            APP_URL=${{ steps.site_config.outputs.app_url }}
+            CONTACT_EMAIL=${{ steps.site_config.outputs.contact_email }}
+            ANALYTICS_SCRIPT_URL=${{ steps.site_config.outputs.analytics_script_url }}
+            ANALYTICS_WEBSITE_ID=${{ steps.site_config.outputs.analytics_website_id }}
+          labels: org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=release-site
+          cache-to: type=gha,scope=release-site,mode=max
       - name: Promote complete image set in one GitOps commit
         env:
           API_DIGEST: ${{ steps.api.outputs.digest }}
           MIGRATIONS_DIGEST: ${{ steps.migrations.outputs.digest }}
           UI_DIGEST: ${{ steps.ui.outputs.digest }}
+          SITE_DIGEST: ${{ steps.site.outputs.digest }}
         run: |
           set -euo pipefail
           git fetch origin main
@@ -126,4 +160,4 @@ jobs:
           git add infra/k3s/overlays/prod/kustomization.yaml
           git commit -m "deploy: promote complete release $GITHUB_SHA"
           git push origin HEAD:main
-          echo "Promoted three images from $GITHUB_SHA. Argo rollout health must still be checked." >> "$GITHUB_STEP_SUMMARY"
+          echo "Promoted four images from $GITHUB_SHA. Argo rollout health must still be checked." >> "$GITHUB_STEP_SUMMARY"

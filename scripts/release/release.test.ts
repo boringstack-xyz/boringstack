@@ -3,8 +3,8 @@ import { YAML } from "bun";
 import { checkRuns, expectedWorkflows, pinImages } from "./release.mjs";
 
 const repository = "boringstack-xyz/boringstack";
-const imageNames = ["api", "migrations", "ui"];
-const hexFor = { api: "a", migrations: "b", ui: "c" } as const;
+const imageNames = ["api", "migrations", "ui", "site"];
+const hexFor = { api: "a", migrations: "b", ui: "c", site: "d" } as const;
 const digestOf = (name: string) =>
   "sha256:" + hexFor[name as keyof typeof hexFor].repeat(64);
 const digests = Object.fromEntries(
@@ -86,10 +86,10 @@ describe("coordinated release", () => {
       ),
     ).toBe(false);
   });
-  test("pins all three images or changes nothing; preserves unrelated configuration", () => {
+  test("pins every image or changes nothing; preserves unrelated configuration", () => {
     const text = placeholderOverlay();
     const result = pinImages(text, repository, digests);
-    expect(result.match(/digest: sha256:/g)).toHaveLength(3);
+    expect(result.match(/digest: sha256:/g)).toHaveLength(imageNames.length);
     expect(result).not.toContain("newTag");
     expect(result).toContain("patches: []");
     expect(result).toContain("resources:\n  - ../../base");
@@ -151,19 +151,20 @@ test("release configuration has one k8s publisher, requires activation, checks a
   const builds = steps.filter((step) =>
     step.uses?.startsWith("docker/build-push-action"),
   );
-  expect(builds).toHaveLength(3);
+  expect(builds).toHaveLength(imageNames.length);
   expect(gate).toBeGreaterThan(-1);
   expect(gate).toBeLessThan(steps.indexOf(builds[0]));
   expect(builds.every((step) => step.with?.tags?.includes(":candidate-"))).toBe(
     true,
   );
   expect(
-    builds.map((step) => step.with?.tags?.match(/-(api|migrations|ui):/)?.[1]),
+    builds.map((step) => step.with?.tags?.match(/-(api|migrations|ui|site):/)?.[1]),
   ).toEqual(imageNames);
   const promotion = steps.at(-1);
   expect(Object.keys(promotion?.env ?? {}).sort()).toEqual([
     "API_DIGEST",
     "MIGRATIONS_DIGEST",
+    "SITE_DIGEST",
     "UI_DIGEST",
   ]);
   expect(promotion?.run).toContain(
@@ -174,6 +175,7 @@ test("release configuration has one k8s publisher, requires activation, checks a
   for (const file of [
     ".github/workflows/apps-api-release.yml",
     ".github/workflows/apps-ui-release.yml",
+    ".github/workflows/apps-site-release.yml",
     ".github/workflows/infra-k3s-validate.yml",
   ]) {
     expect(await Bun.file(file).text()).not.toContain(

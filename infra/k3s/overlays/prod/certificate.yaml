@@ -1,4 +1,4 @@
-# TLS certificate for the app + GlitchTip subdomain.
+# TLS certificate for the apex site, the app host and the GlitchTip subdomain.
 # Prerequisites:
 #   - cert-manager installed in the cluster
 #   - a DNS-01-capable ClusterIssuer (verify name: kubectl get clusterissuer)
@@ -19,4 +19,5 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - boringstack.example.com
+    - app.boringstack.example.com
     - glitchtip.boringstack.example.com

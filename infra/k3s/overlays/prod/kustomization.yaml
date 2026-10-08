@@ -41,7 +41,7 @@ resources:
   # - scheduled-backup.yaml
 
 # Digests come from ONE coordinated release: .github/workflows/production-release.yml
-# builds every image for a commit, then pins all three digests here in a single
+# builds every image for a commit, then pins all four digests here in a single
 # commit. Never edit these by hand, and never use mutable tags.
 # The all-zero digests are a bootstrap placeholder: pulls fail closed until the
 # first release has run.
@@ -52,6 +52,8 @@ images:
     digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
   - name: ghcr.io/boringstack-xyz/boringstack-ui
     digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+  - name: ghcr.io/boringstack-xyz/boringstack-site
+    digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
 
 patches:
   # Argo sync waves. A full sync applies in this order:
@@ -59,7 +61,7 @@ patches:
   #   -2 database and cache (kept on prune)
   #   -1 migrations (Sync hook, base/api/migration-job.yaml)
   #    0 api, plus the edge and monitoring resources
-  #    1 ui, once the api is healthy
+  #    1 ui and the public site, once the api is healthy
   # Ordering is what makes a first sync work: a PreSync hook would run before
   # the database exists.
   - target:
@@ -79,7 +81,7 @@ patches:
           argocd.argoproj.io/sync-options: Delete=false,Prune=false
   - target:
       kind: Deployment
-      name: ui
+      name: ui|site
     patch: |-
       - op: add
         path: /metadata/annotations
@@ -111,6 +113,10 @@ patches:
     target:
       kind: Deployment
       name: ui
+  - path: patches/site-replicas.yaml
+    target:
+      kind: Deployment
+      name: site
   - path: patches/postgres-ha.yaml
     target:
       kind: Cluster
