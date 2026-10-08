@@ -45,6 +45,7 @@ render_full_config() {
     -f docker-compose.glitchtip.yml \
     -f docker-compose.bullmq.yml \
     -f docker-compose.wud.yml \
+    -f docker-compose.site.yml \
     --profile prod \
     --profile observability \
     --profile glitchtip-prod \

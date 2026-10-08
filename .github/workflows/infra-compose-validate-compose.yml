@@ -25,6 +25,7 @@ on:
       # lockfile edits.
       - "apps/api/**"
       - "apps/ui/**"
+      - "apps/site/**"
   pull_request:
     branches: [main]
 
@@ -141,6 +142,31 @@ jobs:
         # so CI and local guardrails cannot drift.
         run: ../scripts/validate-guardrails.sh prod-image-tags
         working-directory: infra/compose/compose
+      - name: Validate — dev + site
+        if: steps.filter.outputs.code == 'true'
+        working-directory: infra/compose/compose
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.development-labels.yml \
+            -f docker-compose.site.yml \
+            --profile dev config --quiet
+
+      - name: Validate — prod + site (+ prod labels)
+        if: steps.filter.outputs.code == 'true'
+        working-directory: infra/compose/compose
+        env:
+          PUBLIC_SITE_HOST: example.com
+          PUBLIC_UI_HOST: app.example.com
+          SITE_CONTACT_EMAIL: hello@example.com
+          SITE_IMAGE_TAG: v0.1.0
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f docker-compose.production-labels.yml \
+            -f docker-compose.site.yml \
+            --profile prod config --quiet
+
       - name: Validate — dev + observability
         if: steps.filter.outputs.code == 'true'
         working-directory: infra/compose/compose
@@ -203,6 +229,7 @@ jobs:
             -f docker-compose.glitchtip.yml \
             -f docker-compose.bullmq.yml \
             -f docker-compose.wud.yml \
+            -f docker-compose.site.yml \
             --profile dev \
             --profile observability \
             --profile glitchtip-dev \
