@@ -324,7 +324,7 @@
       "id": "github-actions-runner-pinned",
       "category": "ci",
       "ciCritical": false,
-      "description": "Workflows must pin runner images to an explicit OS version instead of floating *-latest labels."
+      "description": "Workflows must pin runner images to an explicit OS version instead of floating *-latest labels, and guard vars.CI_RUNNER against fork pull requests."
     },
     {
       "id": "github-actions-security-no-cancel",
