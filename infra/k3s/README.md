@@ -36,7 +36,7 @@ The target cluster must provide these (all common, operator-installable):
 | cert-manager + a DNS-01 `ClusterIssuer` | TLS certs |
 | Traefik (k3s default) with `web`/`websecure` entrypoints | ingress |
 | a default/persistent StorageClass | Postgres and Valkey volumes |
-| (optional) kube-prometheus-stack | the ServiceMonitor and Grafana dashboards |
+| (optional) kube-prometheus-stack | the ServiceMonitor, the database PodMonitor and the Grafana dashboards |
 | a secrets backend | Vault+VSO (default), or the SealedSecrets controller |
 
 ## The knobs to edit (per fork)
@@ -206,7 +206,8 @@ Startup order is set by waves: namespace and secrets (-4), Postgres and Valkey
 kubectl kustomize infra/k3s/overlays/prod | head
 
 # Release invariants on the real render (digest pins, no image-updater,
-# migrate-only Job, read-only API, CA wiring, network policy, release script)
+# migrate-only Job, read-only API, CA wiring, network policy, release script,
+# business-metrics queries against the drizzle schema and grants)
 bun test infra/k3s/tests scripts/release
 
 # Live

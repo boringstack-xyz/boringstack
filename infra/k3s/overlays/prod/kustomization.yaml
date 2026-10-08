@@ -115,6 +115,11 @@ patches:
     target:
       kind: Cluster
       name: boringstack-db
+  # Business metrics: loads the CNPG custom queries from monitoring/.
+  - path: patches/postgres-monitoring.yaml
+    target:
+      kind: Cluster
+      name: boringstack-db
   # Opt-in barman backup store (enable with scheduled-backup.yaml above):
   # - path: patches/postgres-backup.yaml
   #   target:

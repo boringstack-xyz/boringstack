@@ -1,0 +1,14 @@
+# Loads the business metric queries into the CNPG exporter. The list replaces
+# the operator default, so cnpg-default-monitoring is repeated to keep the
+# standard health metrics.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: boringstack-db
+spec:
+  monitoring:
+    customQueriesConfigMap:
+      - name: cnpg-default-monitoring
+        key: queries
+      - name: boringstack-db-business-metrics
+        key: queries

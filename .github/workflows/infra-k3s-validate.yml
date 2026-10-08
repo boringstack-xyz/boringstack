@@ -30,6 +30,7 @@ jobs:
               - 'infra/k3s/**'
               - 'scripts/release/**'
               - 'apps/api/Dockerfile.prod'
+              - 'apps/api/drizzle/**'
               - '.github/workflows/infra-k3s-validate.yml'
               - '.github/workflows/production-release.yml'
 

@@ -1,0 +1,23 @@
+# Scrapes CloudNativePG's exporter on every instance: the default database
+# health metrics (cnpg_collector_up, replication lag, backends, database size)
+# plus the business queries in cnpg-business-queries.yaml, which run on the
+# primary only.
+#
+# Created by hand rather than via spec.monitoring.enablePodMonitor: that field
+# is deprecated. Like the ServiceMonitor, it needs the label your Prometheus
+# `podMonitorSelector` matches (often `release: <helm-release>`), or the stack
+# is installed with `podMonitorSelectorNilUsesHelmValues=false`.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: boringstack-db
+  labels:
+    # release: kube-prometheus-stack
+    app: postgres
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: boringstack-db
+  podMetricsEndpoints:
+    - port: metrics
+      interval: 30s
