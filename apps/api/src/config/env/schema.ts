@@ -56,10 +56,11 @@ export const envSchema = t.Object({
   NOTIFICATION_SETTINGS_URL: t.String({ default: "" }),
 
   /*
-   * Optional first-boot superuser bootstrap. When both are set, the migrate
-   * job creates this user with admin role on first run. Empty = no user
-   * created; the operator signs up via the registration flow or sets these
-   * and re-runs `bun run db:seed`.
+   * Optional superuser bootstrap, applied by `bun run db:seed`. When both are
+   * set, that run creates this user with admin role; an existing user is left
+   * alone. The k3s migration Job runs db:migrate only, so production applies
+   * this as an explicit one-off (infra/k3s/README.md). Empty = no user
+   * created; the operator signs up via the registration flow.
    */
   SUPERUSER_EMAIL: t.String({ default: "" }),
   SUPERUSER_PASSWORD: t.String({ default: "" }),

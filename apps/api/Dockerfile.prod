@@ -39,12 +39,14 @@ COPY package.json bun.lock* ./
 
 RUN bun install --frozen-lockfile
 
-# Only what `db:migrate` reads: the drizzle config, the SQL history, and the
-# env/connection modules the config imports for the shared TLS policy.
+# `db:migrate` reads the drizzle config and SQL history. The source is here for
+# an explicit one-off `bun run db:seed` (first admin only). The migration Job
+# never runs it. The runtime image has no source tree, so seeds cannot run there.
+COPY tsconfig.json ./
 COPY drizzle.config.ts ./
 COPY drizzle ./drizzle
-COPY src/lib/postgres/connection.ts ./src/lib/postgres/connection.ts
-COPY src/config/env ./src/config/env
+COPY scripts/db ./scripts/db
+COPY src ./src
 
 # Set after install so `bun install` above still sees devDependencies.
 ENV NODE_ENV=production
