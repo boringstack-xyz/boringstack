@@ -10,6 +10,8 @@
 #   - "API Template" (Swagger title)        → <Project>
 #   - noreply@example.com                   → noreply@<domain>
 #   - demo@example.com (seeded demo user)   → demo@<domain>
+#   - PUBLIC_UI_HOST / PUBLIC_SITE_HOST     → app.<domain> / <domain>
+#     (compose/.env.example prod host placeholders)
 #
 # The compose stack name (boringstack-infra) and all container/volume
 # names rename via the bare boringstack → <project> rule below.
@@ -108,6 +110,8 @@ printf '  %-26s → %s\n' "boringstack-xyz"    "$GHCR_OWNER"
 printf '  %-26s → %s\n' "API Template"       "$PROJECT_TITLE"
 printf '  %-26s → %s\n' "noreply@example.com" "noreply@$DOMAIN"
 printf '  %-26s → %s\n' "demo@example.com"   "demo@$DOMAIN"
+printf '  %-26s → %s\n' "PUBLIC_UI_HOST (prod)" "app.$DOMAIN"
+printf '  %-26s → %s\n' "PUBLIC_SITE_HOST (prod)" "$DOMAIN"
 echo
 
 # Inventory-driven: rewrite EVERY file that carries an upstream identifier,
@@ -206,9 +210,40 @@ See \`AGENTS.md\` for structured verification and \`CONTRIBUTING.md\` for polici
 EOF
 fi
 
+# The compose prod host placeholders are not upstream identifiers, so they sit
+# outside the inventory. Rewrite only the two uncommented host lines, keyed on
+# the placeholder values: the app lives on app.<domain>, the marketing site on
+# the apex <domain>. A rerun finds no placeholder left and is a no-op.
+apply_prod_hosts() {
+  local file="infra/compose/compose/.env.example"
+
+  [[ -f "$file" ]] || return 0
+  if ! grep -qE '^PUBLIC_(UI|SITE)_HOST=example\.com$|^PUBLIC_UI_HOST=app\.example\.com$' "$file"; then
+    return 0
+  fi
+
+  if [[ "$DRY_RUN" == "1" ]]; then
+    echo "  would edit: $file (prod hosts: app.${DOMAIN}, ${DOMAIN})"
+    return 0
+  fi
+
+  if sed --version >/dev/null 2>&1; then
+    sed_inplace=(-i)
+  else
+    sed_inplace=(-i '')
+  fi
+
+  sed "${sed_inplace[@]}" \
+    -e "s/^PUBLIC_UI_HOST=app\.example\.com$/PUBLIC_UI_HOST=app.${DOMAIN}/" \
+    -e "s/^PUBLIC_SITE_HOST=example\.com$/PUBLIC_SITE_HOST=${DOMAIN}/" \
+    "$file"
+}
+
 while IFS= read -r path; do
   apply_to_file "$path"
 done < <(inventory_files)
+
+apply_prod_hosts
 
 if [[ "$DRY_RUN" == "1" ]]; then
   echo

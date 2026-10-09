@@ -1,11 +1,12 @@
-# Public marketing site overlay: merged by dev.sh when WITH_SITE=1 (default in dev).
+# Public marketing site overlay: merged by dev.sh when WITH_SITE=1 (default in dev and prod).
+# WITH_SITE=0 opts out and keeps the single-host layout.
 #
 # dev  (profile dev):  site-dev runs the Astro dev server with live reload at
 #                      http://localhost:7333. Sign-up links point at the UI on :7331.
-# prod (profile prod): site serves the pre-built static site from nginx. Traefik
-#                      routes the apex host PUBLIC_SITE_HOST to it. The app stays on
-#                      PUBLIC_UI_HOST (app.<domain>), so the two hosts never share
-#                      cookies or indexing. See infra/k3s/README.md for the split.
+# prod (profile prod, default): site serves the pre-built static site from nginx.
+#                      Traefik routes the apex host PUBLIC_SITE_HOST to it. The app
+#                      stays on PUBLIC_UI_HOST (app.<domain>), so the two hosts never
+#                      share cookies or indexing. See infra/k3s/README.md for the split.
 #
 # Build-time configuration (SITE_URL, APP_URL, CONTACT_EMAIL, analytics) is baked
 # into the prod image. Invalid values fail `docker build`, not container start.

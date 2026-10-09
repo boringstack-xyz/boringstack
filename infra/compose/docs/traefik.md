@@ -32,16 +32,18 @@ The SPA runs on Vite's dev server. Any request to `/api/*` is proxied server-sid
 
 ## Prod stack (`STACK=prod`)
 
-Builds `api` and `ui` from sibling clones using `Dockerfile.prod`, wires Let's Encrypt on `web` (HTTP-01), and terminates TLS on `websecure`. Traefik routes:
+Builds `api` and `ui` from sibling clones using `Dockerfile.prod`, wires Let's Encrypt on `web` (HTTP-01), and terminates TLS on `websecure`. Traefik routes (the apex/app split is the default; see `docker-compose.production-labels.yml`):
 
 | Rule | Goes to | Notes |
 | --- | --- | --- |
 | `Host(${PUBLIC_UI_HOST}) && (PathPrefix(/api) || Path(/health))` | `api` | Higher priority — matches first. No path stripping; Elysia already serves at `/api/v1/*`. |
 | `Host(${PUBLIC_UI_HOST})` | `ui` | Fallback for the SPA shell and its assets. |
+| `Host(${PUBLIC_SITE_HOST})` | `site` | Static marketing site on the apex. On by default; `WITH_SITE=0` opts out. |
 
 1. Set in `compose/.env`:
    - `STACK=prod`
-   - `PUBLIC_UI_HOST` (real FQDN, e.g. `example.com`)
+   - `PUBLIC_SITE_HOST` (apex FQDN for the marketing site, e.g. `example.com`)
+   - `PUBLIC_UI_HOST` (app FQDN, e.g. `app.example.com`; use the apex here only with `WITH_SITE=0`)
    - `ACME_EMAIL` (contact for Let's Encrypt)
 
 2. Copy [compose/api.prod.env.example](../compose/api.prod.env.example) to `compose/api.prod.env` and fill in the API's environment.

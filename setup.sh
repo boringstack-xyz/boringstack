@@ -80,7 +80,7 @@ print_dev_urls() {
   row "UI"            "http://localhost:7331"
   row "API"           "http://localhost:7330"
   row "API OpenAPI"   "http://localhost:7330/swagger"
-  # Public marketing site defaults on in dev; opt out with WITH_SITE=0.
+  # Public marketing site defaults on (dev and prod); opt out with WITH_SITE=0.
   [[ "$with_site" != "0" ]] && row "Site"          "http://localhost:7333"
 
   # Dev defaults: Mailpit + Bull-board are on unless explicitly disabled.
