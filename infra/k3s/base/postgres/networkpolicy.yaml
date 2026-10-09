@@ -11,11 +11,15 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # From the API and GlitchTip pods.
+    # From the API, the migration Job (its own pod label, so it is not covered
+    # by `app: api`) and GlitchTip pods.
     - from:
         - podSelector:
             matchLabels:
               app: api
+        - podSelector:
+            matchLabels:
+              app: api-migrations
         - podSelector:
             matchLabels:
               app: glitchtip

@@ -1,0 +1,55 @@
+{
+  "name": "boringstack-site",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Public, static marketing site for BoringStack. Astro, output static, served by nginx.",
+  "engines": {
+    "node": ">=24.0.0",
+    "bun": "1.4.2"
+  },
+  "packageManager": "bun@1.4.2",
+  "scripts": {
+    "dev": "env SITE_URL=http://localhost:7333 APP_URL=http://localhost:7331 astro dev",
+    "build": "astro build",
+    "build:ci": "env SITE_URL=https://boringstack.example.com APP_URL=https://app.boringstack.example.com CONTACT_EMAIL=hello@boringstack.example.com sh -c 'astro build && node scripts/render-nginx.mjs'",
+    "preview": "env SITE_URL=https://boringstack.example.com APP_URL=https://app.boringstack.example.com CONTACT_EMAIL=hello@boringstack.example.com astro preview --port 7333",
+    "render:nginx": "node scripts/render-nginx.mjs",
+    "check": "env SITE_URL=https://boringstack.example.com APP_URL=https://app.boringstack.example.com CONTACT_EMAIL=hello@boringstack.example.com astro check",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "bun test tests/unit",
+    "test:output": "bun test tests/output",
+    "validate": "bun run format:check && bun run check && bun run test && bun run build:ci && bun run test:output"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "3.7.4",
+    "@fontsource/manrope": "5.3.0",
+    "astro": "7.3.1",
+    "satori": "0.33.4",
+    "sharp": "0.35.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@types/bun": "1.4.2",
+    "@types/node": "24.13.3",
+    "prettier": "3.9.6",
+    "prettier-plugin-astro": "1.0.1",
+    "typescript": "6.0.3"
+  },
+  "overrides": {
+    "devalue": "5.9.3",
+    "postcss": "8.5.23",
+    "sharp": "0.35.5",
+    "undici": "7.29.1",
+    "fflate": "0.8.3"
+  },
+  "//overrides": {
+    "_": "Pins patched transitive versions, mirroring apps/docs. Build-time tooling only: the deployed site is static nginx output.",
+    "devalue": "Patched build-time serialization (GHSA-77vg-94rm-hx3p, then GHSA-4q55-j62x-fr9h, GHSA-9rgm-9g3h-6x36, GHSA-hx4r-w6wj-j8fg, GHSA-j22f-vq7h-c4qm, GHSA-mcm9-63f2-9j32, GHSA-r9w8-h9r3-54w4, GHSA-wf3x-273g-mvxv, GHSA-x5rw-q4pp-hg5g). 5.8.1 is vulnerable; 5.9.3 patches them. Pulled in by Astro.",
+    "postcss": "Patched CSS tooling (GHSA-r28c-9q8g-f849). Build-time only.",
+    "sharp": "Patched image processing (GHSA-rgj7-g3m4-5g8c, GHSA-wq5f-xc86-pv6w). 0.35.4 is vulnerable; 0.35.5 patches it. Build-time social-card rendering only.",
+    "undici": "Patched undici (GHSA-vmh5-mc38-953g, and the 7.29.0 batch fixed in 7.29.1). Build-time fetch tooling only. Mirrors the docs and UI app pins.",
+    "fflate": "Patched fflate (GHSA-px8p-9vwx-vf98, infinite loop on malformed ZIP64 archives). 0.7.3 is vulnerable; 0.8.3 patches it. satori pins fflate exactly to 0.7.3 in every release, so this forces the patched line for the OG image renderer. Build-time social-card rendering only."
+  }
+}

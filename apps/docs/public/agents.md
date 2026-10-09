@@ -70,9 +70,25 @@ curl -fsSL https://bun.sh/install | bash -s "bun-v1.4.2"
 ```
 
 
-Ports: `7331` UI, `7330` API, `5432` Postgres, `6379` Valkey. Optional overlays, all on by
-default in dev: `7332` bull-board, `8025` Mailpit, `8055` GlitchTip, `3010` Grafana,
+Ports: `7331` UI, `7330` API, `7333` public site, `5432` Postgres, `6379` Valkey. Optional overlays,
+all on by default in dev: `7332` bull-board, `8025` Mailpit, `8055` GlitchTip, `3010` Grafana,
 `9090` Prometheus, `9093` Alertmanager. Turn any of them off with `WITH_*=0`.
+
+## Layout
+
+| Path              | Role                                                                             |
+| ----------------- | -------------------------------------------------------------------------------- |
+| `apps/api`        | Bun + Elysia API, Drizzle schema and migrations                                  |
+| `apps/ui`         | Vite + React SPA, served on `app.<domain>` in prod                               |
+| `apps/site`       | Astro static marketing site and Markdown blog, served on the apex domain in prod |
+| `apps/docs`       | Astro Starlight docs (this site)                                                 |
+| `packages/*`      | Code shared by more than one app; discovered by `bun run check`, when present    |
+| `infra/compose`   | Docker Compose runtime, the default deploy path                                  |
+| `infra/k3s`       | Optional Kustomize + ArgoCD target for a Kubernetes cluster                      |
+| `infra/bootstrap` | Optional OpenTofu for a Hetzner VPS                                              |
+
+In prod the marketing site and the app are separate origins: `<domain>` serves `apps/site`, and
+`app.<domain>` serves `apps/ui` and `/api`. They share no cookies. The site makes no API calls.
 
 ## Verify it worked
 
@@ -118,6 +134,7 @@ The toggles you are most likely to be asked for, all in `infra/compose/compose/.
 | `WITH_GLITCHTIP`             | self-hosted error tracking                         |
 | `WITH_MAILPIT`               | catches outbound mail in dev                       |
 | `WITH_BULLMQ`                | bull-board queue UI                                |
+| `WITH_SITE`                  | public marketing site: on in dev (`:7333`), off in prod |
 | `BILLING_ENABLED`            | Stripe checkout + webhooks                         |
 | `EMAIL_PROVIDER`             | `resend` \| `sendgrid` \| `smtp`                   |
 | `OAUTH_PROVIDERS`            | e.g. `google,github`                               |
@@ -146,6 +163,8 @@ CI runs the same gates and a pre-push hook mirrors them.
 | Env access goes through the validator             | No direct `process.env` / `import.meta.env`. One typed entry point, and the schema must match `.env.example`.                                                           |
 | UI talks to the API only via the generated client | No raw `fetch` outside `src/lib/api`. Regenerate with `bun run regen` after an API change.                                                                              |
 | Dependencies are exact-pinned                     | No ranges. New packages face a 7-day `minimumReleaseAge` quarantine, so a fresh malicious release cannot land.                                                          |
+| Commits and PR titles are Conventional Commits    | `type(scope): summary`, checked by the `commit-msg` hook and the `pr-title` workflow. Main is squash-merged, so the PR title is what lands.                              |
+| Bundle budgets go up only with a recorded reason  | `bun run check:size-budget` fails when a UI limit is raised or an entry is added, unless `apps/ui/budgets.md` has a reason for it in the same change. Lowering needs none. |
 
 After changing anything cross-cutting: `bun run regen` then `bun run check`.
 
@@ -162,6 +181,7 @@ Verbs, not nouns. Find what you are about to do:
 | Looking for an env var                   | <https://boringstack.xyz/reference/env-vars/>                            |
 | Adding a job, upload, service, or Stripe | <https://boringstack.xyz/recipes/add-background-job/> and siblings       |
 | Deploying                                | <https://boringstack.xyz/topics/deployment/>                             |
+| Changing the public marketing site       | <https://boringstack.xyz/site/overview/>                                 |
 | Giving the agent runtime visibility      | <https://boringstack.xyz/reference/mcp-servers/>                         |
 | Working inside the repo                  | `AGENTS.md` at the root, then `apps/api/AGENTS.md` / `apps/ui/AGENTS.md` |
 

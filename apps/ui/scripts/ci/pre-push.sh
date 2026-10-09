@@ -7,7 +7,7 @@
 #   2. Dependency    : osv-scanner against bun.lock
 #   3. Tests         : vitest run --coverage (no services needed)
 #   4. Build         : vite build (catches type-level regressions through routes)
-#   5. Size          : size-limit budget
+#   5. Size          : size-limit budget and budget raise reasons
 #   6. OpenAPI drift : if apps/api is reachable on :7330, ensure schema is fresh
 #
 # Set ALLOW_OPENAPI_DRIFT_SKIP=false to fail instead of skip when the API is
@@ -66,6 +66,7 @@ RAN=$((RAN + 1))
 step "5/${TOTAL} Bundle size budgets"
 bun run size:check
 bun run size:check:modulepreload
+bun run check:size-budget
 ok "size budgets met"
 RAN=$((RAN + 1))
 

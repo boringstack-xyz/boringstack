@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import {
   acceptInventories,
+  acknowledgeCommand,
   isInventoryLane,
   reviewInventories,
 } from "./inventory";
@@ -40,7 +41,7 @@ try {
       {
         fingerprint: review.fingerprint,
         token: review.token,
-        acceptCommand: `bun run agent:inventory -- ${lanes.join(" ")} --accept=${review.token}${review.changes.some((change) => change.removed.length > 0) ? ` --allow-removals=${review.token}` : ""}`,
+        acceptCommand: acknowledgeCommand(lanes, review),
         changes: review.changes.map((change) => ({
           lane: change.lane,
           beforeCount: change.before.length,

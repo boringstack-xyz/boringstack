@@ -12,7 +12,7 @@ every runtime, so you need no local Postgres and no local Node. You do
 need Bun to *develop* once it is up, because every root script
 (`bun run check`, `bun run regen`, `bun run rename:project`) runs on it.
 
-After boot you have a register/login UI at `http://localhost:7331`,
+After boot you have a register/login UI at `http://localhost:7331`, the marketing site at `http://localhost:7333`,
 the API at `http://localhost:7330/api/*` (OpenAPI spec served at
 `/swagger`), Postgres with migrations applied, Valkey for cache and
 BullMQ, and a generated TypeScript client wired into `apps/ui` that
@@ -195,6 +195,7 @@ the default. See [Spec loop](/skills/spec-loop/) for the deep dive.
 - **api-migrate (one-shot)**: runs `db:push` and the optional superuser seed, then exits.
 - **api-dev (port 7330)**: Bun + Elysia API with hot reload via bind mount.
 - **ui-dev (port 7331)**: Vite dev server; proxies `/api/*` to `api-dev`.
+- **site-dev (port 7333)**: Astro dev server for the public marketing site in `apps/site`. On by default in dev; set `WITH_SITE=0` to skip it. See [Public site](/site/overview/).
 
 Traefik runs only in the prod profile. In prod it terminates TLS and
 path-routes `/api/*` plus `/health` to the api container, everything

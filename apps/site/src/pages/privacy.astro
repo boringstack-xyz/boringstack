@@ -1,0 +1,35 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../lib/site-config";
+---
+
+<BaseLayout
+  title="Privacy"
+  description="How this site handles cookies, consent and analytics."
+>
+  <article class="prose">
+    <h1>Privacy</h1>
+    <p class="placeholder">
+      Placeholder legal text. Have counsel review this page before launch. The
+      owner, retention periods and processors still need to be filled in.
+    </p>
+    <h2>Cookies and storage</h2>
+    <p>
+      This site sets no cookies. Your consent choice is kept in this browser's
+      local storage.
+    </p>
+    <h2>Analytics</h2>
+    {siteConfig.analytics ? (
+      <p>
+        Analytics loads only after you accept it in the consent banner. You can
+        change your choice at any time with Cookie preferences in the footer.
+      </p>
+    ) : (
+      <p>No analytics is configured for this site, so none runs.</p>
+    )}
+    <h2>Contact</h2>
+    <p>
+      Privacy questions: <a href="/contact">contact us</a>.
+    </p>
+  </article>
+</BaseLayout>

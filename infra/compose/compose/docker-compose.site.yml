@@ -1,0 +1,111 @@
+# Public marketing site overlay: merged by dev.sh when WITH_SITE=1 (default in dev).
+#
+# dev  (profile dev):  site-dev runs the Astro dev server with live reload at
+#                      http://localhost:7333. Sign-up links point at the UI on :7331.
+# prod (profile prod): site serves the pre-built static site from nginx. Traefik
+#                      routes the apex host PUBLIC_SITE_HOST to it. The app stays on
+#                      PUBLIC_UI_HOST (app.<domain>), so the two hosts never share
+#                      cookies or indexing. See infra/k3s/README.md for the split.
+#
+# Build-time configuration (SITE_URL, APP_URL, CONTACT_EMAIL, analytics) is baked
+# into the prod image. Invalid values fail `docker build`, not container start.
+
+services:
+  site-dev:
+    profiles: [dev]
+    build:
+      context: ../../../apps/site
+      dockerfile: Dockerfile
+      target: dev
+    restart: "no"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    working_dir: /app
+    command: ["bun", "run", "dev"]
+    volumes:
+      - ../../../apps/site:/app
+      - site_dev_node_modules:/app/node_modules
+    environment:
+      HOST: 0.0.0.0
+      SITE_URL: ${SITE_DEV_ORIGIN:-http://localhost:7333}
+      APP_URL: ${SITE_DEV_APP_ORIGIN:-http://localhost:7331}
+      CONTACT_EMAIL: ${SITE_DEV_CONTACT_EMAIL:-}
+    networks:
+      - frontend
+    ports:
+      - "${SITE_HOST_PORT:-7333}:7333"
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "${SITE_DEV_LIMITS_CPUS:-1.0}"
+          memory: "${SITE_DEV_LIMITS_MEMORY:-1G}"
+        reservations:
+          cpus: "${SITE_DEV_RESERVATIONS_CPUS:-0.1}"
+          memory: "${SITE_DEV_RESERVATIONS_MEMORY:-128M}"
+
+  site:
+    profiles: [prod]
+    image: ${SITE_IMAGE:-ghcr.io/${IMAGE_OWNER:-boringstack-xyz}/${SITE_IMAGE_NAME:-boringstack-site}:${SITE_IMAGE_TAG:-latest}}
+    build:
+      context: ../../../apps/site
+      dockerfile: Dockerfile
+      target: production
+      args:
+        # Origins only. The apex site and the app are separate hosts.
+        SITE_URL: https://${PUBLIC_SITE_HOST:-}
+        APP_URL: https://${PUBLIC_UI_HOST:-}
+        CONTACT_EMAIL: ${SITE_CONTACT_EMAIL:-}
+        ANALYTICS_SCRIPT_URL: ${SITE_ANALYTICS_SCRIPT_URL:-}
+        ANALYTICS_WEBSITE_ID: ${SITE_ANALYTICS_WEBSITE_ID:-}
+    labels:
+      - "wud.watch=true"
+      - "wud.trigger.include=docker.app,discord.1,slack.alerts"
+      - "traefik.enable=true"
+      - "traefik.http.routers.site.rule=Host(`${PUBLIC_SITE_HOST:-site.invalid}`)"
+      - "traefik.http.routers.site.priority=1"
+      - "traefik.http.routers.site.entrypoints=websecure"
+      - "traefik.http.routers.site.tls=true"
+      - "traefik.http.routers.site.tls.certresolver=myresolver"
+      - "traefik.http.services.site.loadbalancer.server.port=8080"
+      - "traefik.http.routers.site.middlewares=boringstack-security-headers,boringstack-compress"
+      - "traefik.docker.network=frontend"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - frontend
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://127.0.0.1:8080/healthz",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "${SITE_LIMITS_CPUS:-0.5}"
+          memory: "${SITE_LIMITS_MEMORY:-128M}"
+        reservations:
+          cpus: "${SITE_RESERVATIONS_CPUS:-0.1}"
+          memory: "${SITE_RESERVATIONS_MEMORY:-32M}"
+
+volumes:
+  site_dev_node_modules:

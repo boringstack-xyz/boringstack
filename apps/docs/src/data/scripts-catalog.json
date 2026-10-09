@@ -38,6 +38,12 @@
         "invocation": "tsx scripts/quality/check-modulepreload-size-coverage.ts"
       },
       {
+        "command": "check:size-budget",
+        "script": "quality/check-size-budget-raises.ts",
+        "description": "Bundle budget gate.",
+        "invocation": "tsx scripts/quality/check-size-budget-raises.ts"
+      },
+      {
         "command": "lint:meta",
         "script": "lint-meta/cli.ts",
         "description": "Static checks for files ESLint can't parse as JavaScript.",

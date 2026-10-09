@@ -1,0 +1,30 @@
+name: pr-title
+
+# Squash merges make the PR title the commit subject on main. The commit-msg
+# hook only sees local commits, so the title gets the same check here.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  title:
+    name: pull request title (conventional commit)
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: scripts/ci
+      - name: Check the title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: bash scripts/ci/check-commit-title.sh "$TITLE"

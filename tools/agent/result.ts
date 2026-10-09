@@ -12,6 +12,8 @@ export interface ICheckResult {
   cases?: { passed: number; failed: number; skipped: number };
   status: Status;
   reason: string;
+  /** Operator guidance for a blocked check, such as the acknowledgement command. */
+  remediation?: string;
 }
 
 export interface IVerificationResult {

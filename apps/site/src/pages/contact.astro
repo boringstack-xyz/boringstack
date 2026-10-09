@@ -1,0 +1,29 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { siteConfig } from "../lib/site-config";
+---
+
+<BaseLayout
+  title="Contact"
+  description="How to reach the team behind this product."
+>
+  <article class="prose">
+    <h1>Contact</h1>
+    {siteConfig.contactEmail ? (
+      <p>
+        Email us at{" "}
+        <a href={`mailto:${siteConfig.contactEmail}`}>
+          {siteConfig.contactEmail}
+        </a>
+        .
+      </p>
+    ) : (
+      <p class="placeholder">
+        No contact address is configured for this build.
+      </p>
+    )}
+    <p class="placeholder">
+      Placeholder: add response times and what to include in a message.
+    </p>
+  </article>
+</BaseLayout>

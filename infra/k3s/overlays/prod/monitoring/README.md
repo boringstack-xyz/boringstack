@@ -11,10 +11,33 @@ cluster's existing [kube-prometheus-stack](https://github.com/prometheus-communi
   2. Prometheus is allowed to discover ServiceMonitors in `boringstack-prod`
      (its `serviceMonitorNamespaceSelector` must match this namespace).
 
+- Database and business metrics. `podmonitor.yaml` scrapes the CloudNativePG
+  exporter on every Postgres instance (the same label rule as above, for
+  `podMonitorSelector`). `cnpg-business-queries.yaml` is loaded into that
+  exporter by `patches/postgres-monitoring.yaml`. It runs aggregate queries over
+  the `auth`, `audit` and `billing` tables, once per scrape on the primary:
+
+  | Metric | What it counts |
+  | ------ | -------------- |
+  | `cnpg_boringstack_signups_daily_users` | Accounts created per UTC day (90 days) |
+  | `cnpg_boringstack_active_users_last_{1d,7d,30d}` | Distinct users with a successful sign-in |
+  | `cnpg_boringstack_account_plans_accounts` | Paid or granted plans by plan, status and source |
+  | `cnpg_boringstack_churn_daily_canceled` | Subscriptions canceled per UTC day (approximate) |
+  | `cnpg_boringstack_stripe_webhooks_events` | Stored Stripe webhook events by type |
+
+  Only aggregates leave the database. The exporter's role is granted specific
+  columns in `apps/api/drizzle/0002_metrics_exporter_grants.sql`. It cannot read
+  emails, names, IP addresses, user agents, audit metadata, secrets or Stripe
+  identifiers. `infra/k3s/tests/business-metrics.test.ts` enforces this and the
+  schema contract. Plans have no price in the database, so MRR is not derived.
+  The Free plan has no row per account, so it is not counted.
+
 - Logs. Promtail/Alloy in the cluster already scrapes pod stdout by
   namespace/pod labels; no per-app manifest needed. The pods log to stdout.
 
-- Dashboards. The BoringStack Grafana dashboards live in
+- Dashboards. `dashboards/boringstack-business.json` ("Business metrics") is
+  generated into a ConfigMap by `kustomization.yaml` on every render, so it needs
+  no copy step. The other BoringStack Grafana dashboards live in
   `infra/compose/compose/grafana/dashboards/`. To auto-import them into the
   cluster Grafana (sidecar discovery), copy the JSON files into
   `./dashboards/` here and uncomment the `configMapGenerator` in

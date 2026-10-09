@@ -9,7 +9,8 @@
     "delete_branch_on_merge": true,
     "allow_squash_merge": true,
     "allow_merge_commit": false,
-    "allow_rebase_merge": false
+    "allow_rebase_merge": false,
+    "squash_merge_commit_title": "PR_TITLE"
   },
   "branch_protection_main": {
     "required_status_check_contexts": [
@@ -23,7 +24,8 @@
       "typecheck + lint + test",
       "validate",
       "yamllint (compose + workflows)",
-      "agent verification contract"
+      "agent verification contract",
+      "pull request title (conventional commit)"
     ],
     "required_approving_review_count": 0,
     "dismiss_stale_reviews": true,

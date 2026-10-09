@@ -3,7 +3,37 @@ title: What's new
 description: "Recent changes to BoringStack: docs, templates, and tooling. Reverse-chronological; the top entry is the most recent."
 ---
 
-A log of substantial changes to the docs, templates, and tooling. For per-commit detail, see the git history of each [workspace app](https://github.com/boringstack-xyz). For the latest released images, see the [Image updates runbook](/runbooks/image-updates/).
+A log of substantial changes to the docs, templates, and tooling. For per-commit detail, see the git history of each [workspace app](https://github.com/boringstack-xyz). For released images, see the [Image updates runbook](/runbooks/image-updates/) (Compose) and [Production releases](/runbooks/production-release/) (k3s).
+
+## 2026-10
+
+### Lessons from the first product (Tinkercaster)
+
+A first product built on the template reported where the template slowed it down or let
+problems through. The fixes are tracked in the repository's product feedback ledger.
+
+- **Coordinated production release (k3s).** One workflow builds the API, migrations, UI and
+  public site for a commit and pins all four digests in one GitOps commit. The Argo
+  Application no longer uses `argocd-image-updater`. The migration Job runs `db:migrate` only,
+  as a Sync hook, and the API and migration roots are read-only. See
+  [Production releases](/runbooks/production-release/).
+- **Public marketing site.** New `apps/site`, an Astro static site on the apex domain with a
+  Markdown blog, consent-gated analytics and an nginx image. The app moves to `app.<domain>`.
+  Local dev is on `:7333` with `WITH_SITE=1`. See [Public site](/site/overview/).
+- **Business metrics.** CloudNativePG runs aggregate queries over sign-ups, active users,
+  plans, cancellations and Stripe events, with a Grafana dashboard. Only aggregates leave the
+  database. See [Observability](/topics/observability/#business-metrics-k3s).
+- **Conventional Commits gate.** Commit subjects and PR titles are checked by the `commit-msg`
+  hook and the `pr-title` workflow. See [Agent docs](/architecture/agent-docs/#conventions-that-are-gates-not-prose).
+- **Shared packages.** `packages/*` workspaces are discovered by `bun run check`, the pre-push
+  hook and Dependabot. See [Repository layout](/architecture/monorepo-layout/#shared-packages).
+- **Bundle budget reasons.** A raised UI budget or a new budget entry needs a recorded reason
+  in `apps/ui/budgets.md`. See [Lint as the contract](/architecture/lint-as-contract/#bundle-budgets-need-a-recorded-reason).
+- **Self-hosted CI runners.** `CI_RUNNER` moves jobs to self-hosted runners. Fork pull requests
+  always stay on GitHub-hosted runners, and a lint-meta rule enforces that guard. See
+  [Security pipeline](/topics/security/#self-hosted-runners).
+- **Structured verification.** Feature runs record new test-inventory cases automatically.
+  Removed cases still need an explicit acknowledgement. See [Verified workflow](/skills/verified-workflow/).
 
 ## 2026-09
 

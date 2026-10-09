@@ -33,7 +33,7 @@ async function main(): Promise<void> {
   if (email === "" || password === "") {
     console.log(
       "[seed-superuser] SUPERUSER_EMAIL or SUPERUSER_PASSWORD unset — skipping. " +
-        "Set both to create a privileged user on first migrate, or sign up via the UI. " +
+        "Set both, then run `bun run db:seed`, to create a privileged user, or sign up via the UI. " +
         "Running under docker-compose? The api-migrate service interpolates these " +
         "from compose/.env (NOT apps/api/.env)."
     );

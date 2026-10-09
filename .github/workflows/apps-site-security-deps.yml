@@ -1,0 +1,97 @@
+name: security-deps
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/site/**"
+      - ".github/workflows/apps-site-security-deps.yml"
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "29 6 * * 1"
+
+concurrency:
+  group: apps-site-security-deps-security-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    name: dep vuln scan (osv + audit)
+    defaults:
+      run:
+        working-directory: apps/site
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 10
+
+    env:
+      OSV_SCANNER_VERSION: "2.3.8"
+      OSV_SCANNER_SHA256: "bc98e15319ed0d515e3f9235287ba53cdc5535d576d24fd573978ecfe9ab92dc"
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'apps/site/**'
+              - '.github/workflows/apps-site-security-deps.yml'
+
+      - name: Install osv-scanner CLI
+        if: steps.filter.outputs.code == 'true'
+        run: |
+          set -euo pipefail
+          curl -sSL -o /tmp/osv-scanner \
+            "https://github.com/google/osv-scanner/releases/download/v${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
+          echo "${OSV_SCANNER_SHA256}  /tmp/osv-scanner" | sha256sum -c -
+          chmod +x /tmp/osv-scanner
+          sudo mv /tmp/osv-scanner /usr/local/bin/
+          osv-scanner --version
+
+      - name: Run osv-scanner
+        if: steps.filter.outputs.code == 'true'
+        run: |
+          set +e
+          osv-scanner \
+            --config=osv-scanner.toml \
+            --lockfile=bun.lock \
+            --format=sarif \
+            --output-file=osv-results.sarif
+          echo "OSV_EXIT=$?" >> "$GITHUB_ENV"
+          set -e
+
+      - name: Upload osv SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@7c1e4cf0b20d7c1872b26569c00ba908797a59bf # v4
+        with:
+          sarif_file: osv-results.sarif
+          category: osv-scanner-site
+        continue-on-error: true
+
+      - name: Fail on osv findings
+        if: steps.filter.outputs.code == 'true'
+        run: |
+          # The SARIF is the source of truth: only findings not documented in
+          # osv-scanner.toml fail the build.
+          if [ ! -f osv-results.sarif ]; then
+            echo "osv-results.sarif missing: osv-scanner failed to write output."
+            exit 1
+          fi
+
+          UNFILTERED=$(jq -r '[.runs[].results[]?] | length' osv-results.sarif)
+          echo "Unfiltered osv-scanner findings: ${UNFILTERED}"
+
+          if [ "${UNFILTERED}" != "0" ]; then
+            echo "osv-scanner reported ${UNFILTERED} unfiltered vulnerabilities. See SARIF in the Security tab."
+            exit 1
+          fi
+
+      # Dependency audit runs through osv-scanner above, with the same allowlist.
+      # The site is a static build with no runtime code, so osv alone is the gate.

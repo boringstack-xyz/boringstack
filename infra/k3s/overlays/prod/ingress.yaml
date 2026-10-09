@@ -1,8 +1,11 @@
-# Single-domain, same-origin path routing (mirrors infra/compose prod):
-#   Host(domain) && (PathPrefix(/api) || Path(/health))  -> api:7330
-#   Host(domain)                                          -> ui:8080  (SPA fallback)
-# One domain, one TLS cert, no CORS. The api route has higher priority so it
-# matches before the ui catch-all. Replace boringstack.example.com everywhere.
+# Domain split (see infra/k3s/README.md "Domain split"):
+#   Host(site)                                            -> site:8080 (static marketing site, apex)
+#   Host(app) && (PathPrefix(/api) || Path(/health))      -> api:7330
+#   Host(app)                                             -> ui:8080   (SPA fallback)
+# site = boringstack.example.com (apex), app = app.boringstack.example.com.
+# The app keeps one origin with /api (same-origin, no CORS). The site makes no
+# API calls, and the two hosts share no cookies. Replace boringstack.example.com
+# everywhere (rename-project.sh does this for the project name).
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
@@ -12,12 +15,12 @@ spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`boringstack.example.com`)
+    - match: Host(`boringstack.example.com`) || Host(`app.boringstack.example.com`)
       kind: Rule
       middlewares:
         - name: redirect-https
       services:
-        - name: ui
+        - name: site
           port: 8080
 ---
 apiVersion: traefik.io/v1alpha1
@@ -30,7 +33,7 @@ spec:
     - websecure
   routes:
     # API, must precede the UI catch-all.
-    - match: Host(`boringstack.example.com`) && (PathPrefix(`/api`) || Path(`/health`))
+    - match: Host(`app.boringstack.example.com`) && (PathPrefix(`/api`) || Path(`/health`))
       kind: Rule
       priority: 10
       middlewares:
@@ -39,14 +42,37 @@ spec:
       services:
         - name: api
           port: 7330
-    # UI, host-wide fallback (SPA shell + assets).
-    - match: Host(`boringstack.example.com`)
+    # UI, host-wide fallback for the app host (SPA shell + assets).
+    - match: Host(`app.boringstack.example.com`)
       kind: Rule
       priority: 1
       middlewares:
         - name: security-headers
       services:
         - name: ui
+          port: 8080
+  tls:
+    secretName: boringstack-tls
+---
+# Apex marketing site. Traefik adds HSTS and the frame deny here; nginx sets the
+# CSP and the other headers. Both sides set X-Frame-Options and X-Content-Type-Options.
+# Check a live response for duplicated header values after the first deploy.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: boringstack-site
+  namespace: boringstack-prod
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`boringstack.example.com`)
+      kind: Rule
+      priority: 1
+      middlewares:
+        - name: security-headers
+      services:
+        - name: site
           port: 8080
   tls:
     secretName: boringstack-tls

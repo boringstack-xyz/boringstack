@@ -1,0 +1,120 @@
+---
+title: Site configuration and deployment
+description: Build-time configuration for apps/site, why invalid values fail the build and not the container, the nginx image, and how the site runs in Compose and on k3s.
+---
+
+The site's configuration is fixed when the image is built. There is no runtime
+configuration and no secret. Each value is validated by the Astro build, so a bad
+value stops `astro build` (and `docker build`) rather than publishing pages with the
+wrong canonical origin or contact address.
+
+## Configuration
+
+| Variable               | Required      | Rule                                                                      |
+| ---------------------- | ------------- | ------------------------------------------------------------------------- |
+| `SITE_URL`             | yes           | Origin only, no path. https outside localhost. Canonical origin for every URL. |
+| `APP_URL`              | yes           | Origin only. Must differ from `SITE_URL`.                                 |
+| `CONTACT_EMAIL`        | public origin | Valid email. Required when `SITE_URL` is not localhost.                   |
+| `ANALYTICS_SCRIPT_URL` | no            | https origin of an analytics script. Set both analytics variables or neither. |
+| `ANALYTICS_WEBSITE_ID` | no            | 1 to 64 letters, digits, `-` or `_`. Sent as `data-website-id`.           |
+
+The validated values reach pages as a global (`__SITE_CONFIG__`), so pages never read
+`process.env`. `astro.config.mjs` and the nginx renderer share one implementation,
+`src/lib/config-core.mjs`. The template is in `apps/site/.env.example`.
+
+Rules that must not regress:
+
+- Invalid configuration throws during `astro build`. Nothing validates at container start.
+- Localhost builds are `noindex` and `Disallow: /`.
+- The consent banner exists only when analytics is configured.
+
+## Production values
+
+The production values live in `infra/k3s/overlays/prod/site-build.env`. Changing any value
+rebuilds the image.
+
+- `.github/workflows/production-release.yml` reads the file and passes the values as build
+  arguments to the candidate image in the coordinated release.
+- `.github/workflows/apps-site-release.yml` reads the same file for the Compose and WUD
+  path, and runs on changes to it.
+- Compose builds the site from `PUBLIC_SITE_HOST`, `SITE_CONTACT_EMAIL` and the
+  `SITE_ANALYTICS_*` variables.
+
+## The image
+
+`apps/site/Dockerfile` has four stages:
+
+1. `deps`: `bun install --frozen-lockfile`.
+2. `dev`: the Astro dev server, used by Compose `site-dev` on port 7333.
+3. `build`: `astro build`, then `render-nginx.mjs`, which writes the nginx configuration with
+   the CSP derived from the same validated configuration.
+4. `production`: `nginx:1.31-alpine`, pinned by digest, running as the non-root user `app`
+   (uid 1001) on port 8080. The build runs `nginx -t`.
+
+The container writes only to `/tmp`. Build it and run it read-only:
+
+```bash
+docker build -t boringstack-site \
+  --build-arg SITE_URL=https://example.com \
+  --build-arg APP_URL=https://app.example.com \
+  --build-arg CONTACT_EMAIL=hello@example.com .
+docker run --rm --read-only --tmpfs /tmp -p 8080:8080 boringstack-site
+curl -si http://localhost:8080/healthz
+```
+
+`GET /healthz` serves readiness and liveness.
+
+## nginx headers and cache
+
+Security headers are declared once at server level, because an `add_header` inside a
+location replaces the server's headers. They are the CSP, `X-Content-Type-Options`,
+`X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` and `Cross-Origin-Opener-Policy`.
+HSTS is set by the ingress, which terminates TLS.
+
+Cache policy, keyed on status and path:
+
+- `/_astro/*` (hashed assets): `public, max-age=31536000, immutable`.
+- Successful images and fonts: `public, max-age=86400`.
+- HTML and everything else: `no-cache`.
+- Errors: `no-store`.
+
+## Docker Compose
+
+`infra/compose/compose/docker-compose.site.yml` is merged when `WITH_SITE=1`. The default is
+`1` in dev and `0` in prod. `dev.sh` applies it.
+
+- Dev: `site-dev` on `SITE_HOST_PORT` (default `7333`).
+- Prod: `site` is routed by Traefik on `Host(PUBLIC_SITE_HOST)`. The app stays on
+  `PUBLIC_UI_HOST`, so the two origins never share cookies. `dev.sh` requires
+  `PUBLIC_SITE_HOST` (different from the app host), `SITE_CONTACT_EMAIL` and a pinned
+  `SITE_IMAGE_TAG` (a version or `sha-*`, never `latest`). A full pinned `SITE_IMAGE`
+  reference can replace the tag.
+
+`infra/compose/scripts/validate-guardrails.sh` renders the site overlay with the other prod
+services, so the healthcheck and `no-new-privileges` checks apply to `site` too.
+
+## Kubernetes (k3s)
+
+`infra/k3s/base/site` holds the Deployment, Service, NetworkPolicy and ServiceAccount. The
+Deployment has a read-only root filesystem, drops all capabilities, runs as uid 1001,
+probes `/healthz`, and mounts `/tmp` as an `emptyDir`. The NetworkPolicy allows ingress
+from Traefik and DNS egress only.
+
+The prod overlay routes:
+
+- `Host(<domain>)` to `site:8080` (IngressRoute `boringstack-site`).
+- `Host(app.<domain>)` to `api` for `/api` and `/health`, and to `ui` for everything else.
+- The certificate covers the apex, `app.<domain>` and the GlitchTip host.
+
+The site is in sync wave 1, with the UI, after the API is healthy. `site-pdb` keeps one
+replica available, and `patches/site-replicas.yaml` runs two replicas with spread
+constraints.
+
+The image is `ghcr.io/<owner>/<project>-site`. Its digest is pinned in
+`infra/k3s/overlays/prod/kustomization.yaml` by the coordinated release, together with the
+API, migrations and UI digests. See [Production releases](/runbooks/production-release/).
+The `latest` and `sha-*` tags that `apps-site-release.yml` publishes are for the Compose
+path only. Kubernetes never references them.
+
+`.github/workflows/apps-site-validate.yml` runs `bun run validate`, builds the same image and
+smoke-tests it read-only.

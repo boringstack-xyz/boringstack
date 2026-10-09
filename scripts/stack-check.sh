@@ -47,6 +47,9 @@ fi
 run_check "ui lint-meta docs" bash -c "cd \"$BORINGSTACK_UI_DIR\" && bun run check:lint-meta-docs"
 run_check "ui scripts docs" bash -c "cd \"$BORINGSTACK_UI_DIR\" && bun run check:scripts-docs"
 
+# Packages are discovered, so a product without packages/ skips this silently.
+run_check "packages validate" validate_packages
+
 if [[ "$HAS_DOCS" == "1" ]]; then
   run_check "docs data" bash -c "cd \"$BORINGSTACK_DOCS_DIR\" && BORINGSTACK_API_DIR=\"$BORINGSTACK_API_DIR\" BORINGSTACK_UI_DIR=\"$BORINGSTACK_UI_DIR\" bun run check:docs-data"
 fi
@@ -54,6 +57,10 @@ fi
 if [[ "$FULL" == "--full" ]]; then
   run_check "api validate" bash -c "cd \"$BORINGSTACK_API_DIR\" && bun run validate"
   run_check "ui validate" bash -c "cd \"$BORINGSTACK_UI_DIR\" && bun run validate"
+  # The public site is a product app in every fork, so it is checked whenever present.
+  if [[ -d "$BORINGSTACK_SITE_DIR" ]]; then
+    run_check "site validate" bash -c "cd \"$BORINGSTACK_SITE_DIR\" && bun run validate"
+  fi
   if [[ "$HAS_DOCS" == "1" ]]; then
     run_check "docs build:ci" bash -c "cd \"$BORINGSTACK_DOCS_DIR\" && BORINGSTACK_API_DIR=\"$BORINGSTACK_API_DIR\" BORINGSTACK_UI_DIR=\"$BORINGSTACK_UI_DIR\" bun run build:ci"
   fi

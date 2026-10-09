@@ -16,6 +16,15 @@ transitive tree.
 """
 
 [[IgnoredVulns]]
+id = "GHSA-vfj7-8cjw-p6xm"
+ignoreUntil = "2026-11-18T00:00:00Z"
+reason = """
+braces 3.0.3 (no fixed release yet). Reached only through micromatch 4.0.5 in
+build and lint tooling (vite, eslint plugins, fast-glob). Never in the shipped
+bundle and never reached by user input. Remove once braces is patched.
+"""
+
+[[IgnoredVulns]]
 id = "GHSA-48c2-rrv3-qjmp"
 ignoreUntil = "2026-11-18T00:00:00Z"
 reason = """

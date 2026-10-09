@@ -1,0 +1,121 @@
+# Business metrics for the cluster Grafana, aggregated from the template's own
+# auth, audit and billing tables. Aggregates only: no row-level data, no emails,
+# names, IPs, user agents, metadata or Stripe identifiers leave the database.
+#
+# CloudNativePG's built-in exporter runs these on every scrape and publishes
+# them as cnpg_<query>_<column>. Prometheus keeps 7 days, so the per-day series
+# are rebuilt on every scrape from the source tables instead of stored.
+#
+# Read access is column-level, granted to pg_monitor in drizzle migration
+# 0002_metrics_exporter_grants. A query touching any other column fails with
+# "permission denied" in the instance log and simply produces no series.
+# Every column reference below is table-qualified so
+# infra/k3s/tests/business-metrics.test.ts can check it against the schema and
+# the grants.
+#
+# primary: true everywhere, so the three instances don't triple-count.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: boringstack-db-business-metrics
+  labels:
+    # Tells CNPG to reload the queries when this ConfigMap changes.
+    cnpg.io/reload: ""
+data:
+  queries: |
+    boringstack_signups_daily:
+      query: |
+        SELECT to_char(u.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS day,
+               count(*) AS users
+        FROM auth.users u
+        WHERE u.created_at >= date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' - interval '89 days'
+        GROUP BY 1
+      primary: true
+      target_databases: ["boringstack"]
+      metrics:
+        - day:
+            usage: "LABEL"
+            description: "UTC day, YYYY-MM-DD"
+        - users:
+            usage: "GAUGE"
+            description: "Accounts created on this day (last 90 days)"
+
+    boringstack_active_users:
+      query: |
+        SELECT count(DISTINCT al.user_id) FILTER (WHERE al.created_at >= now() - interval '1 day') AS last_1d,
+               count(DISTINCT al.user_id) FILTER (WHERE al.created_at >= now() - interval '7 days') AS last_7d,
+               count(DISTINCT al.user_id) AS last_30d
+        FROM audit.audit_log al
+        WHERE al.created_at >= now() - interval '30 days'
+          AND al.user_id IS NOT NULL
+          AND al.action IN ('auth.login_success', 'auth.oauth_login', 'auth.mfa_login_success')
+      primary: true
+      target_databases: ["boringstack"]
+      metrics:
+        - last_1d:
+            usage: "GAUGE"
+            description: "Distinct users who signed in during the last 24h"
+        - last_7d:
+            usage: "GAUGE"
+            description: "Distinct users who signed in during the last 7 days"
+        - last_30d:
+            usage: "GAUGE"
+            description: "Distinct users who signed in during the last 30 days"
+
+    boringstack_account_plans:
+      query: |
+        SELECT p.name AS plan, ap.status AS status, ap.source AS source, count(*) AS accounts
+        FROM billing.account_plans ap
+        JOIN billing.plans p ON p.id = ap.plan_id
+        WHERE ap.revoked_at IS NULL
+        GROUP BY 1, 2, 3
+      primary: true
+      target_databases: ["boringstack"]
+      metrics:
+        - plan:
+            usage: "LABEL"
+            description: "Plan name"
+        - status:
+            usage: "LABEL"
+            description: "Subscription status (active, trialing, past_due, canceled, ...)"
+        - source:
+            usage: "LABEL"
+            description: "stripe, or admin_grant for manually granted plans"
+        - accounts:
+            usage: "GAUGE"
+            description: "Accounts currently holding this plan"
+
+    boringstack_churn_daily:
+      # Approximation: updated_at on a canceled row is the day it was last
+      # written, which for a cancellation is the day it was canceled.
+      query: |
+        SELECT to_char(ap.updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS day,
+               count(*) AS canceled
+        FROM billing.account_plans ap
+        WHERE ap.status = 'canceled'
+          AND ap.updated_at >= date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' - interval '89 days'
+        GROUP BY 1
+      primary: true
+      target_databases: ["boringstack"]
+      metrics:
+        - day:
+            usage: "LABEL"
+            description: "UTC day, YYYY-MM-DD"
+        - canceled:
+            usage: "GAUGE"
+            description: "Paid subscriptions canceled on this day (last 90 days, approximate)"
+
+    boringstack_stripe_webhooks:
+      query: |
+        SELECT swe.type AS type, count(*) AS events
+        FROM billing.stripe_webhook_events swe
+        GROUP BY 1
+      primary: true
+      target_databases: ["boringstack"]
+      metrics:
+        - type:
+            usage: "LABEL"
+            description: "Stripe event type, e.g. invoice.paid, invoice.payment_failed"
+        - events:
+            usage: "GAUGE"
+            description: "Stripe webhook events received and stored"

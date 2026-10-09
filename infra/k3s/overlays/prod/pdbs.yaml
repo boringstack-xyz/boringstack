@@ -4,7 +4,12 @@ metadata:
   name: api-pdb
   namespace: boringstack-prod
 spec:
-  minAvailable: 2
+  # maxUnavailable, not minAvailable: 2. The api runs 3 replicas with
+  # preferred (not required) anti-affinity, so on a small cluster they can
+  # land 2/1 across nodes. Draining the node that holds two then never
+  # satisfies minAvailable: 2, and node maintenance blocks indefinitely.
+  # maxUnavailable: 1 expresses the same intent and drains cleanly.
+  maxUnavailable: 1
   selector:
     matchLabels:
       app: api
@@ -19,6 +24,17 @@ spec:
   selector:
     matchLabels:
       app: ui
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: site-pdb
+  namespace: boringstack-prod
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: site
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget

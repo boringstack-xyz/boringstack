@@ -4,8 +4,12 @@ metadata:
   name: api-migrations
   namespace: boringstack
   annotations:
-    # Runs before every sync, so schema is migrated before new pods roll out.
-    argocd.argoproj.io/hook: PreSync
+    # A Sync hook at wave -1 runs after the database (wave -2) exists and
+    # before the API Deployment (wave 0). It runs on every sync, so it must
+    # only migrate. Never add db:seed or db:prepare here: they re-assert seed
+    # data over admin edits. See infra/k3s/README.md, "Migrations and seeds".
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "-1"
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   ttlSecondsAfterFinished: 300
@@ -15,6 +19,9 @@ spec:
       labels:
         app: api-migrations
     spec:
+      # Release workflows publish linux/amd64 images only.
+      nodeSelector:
+        kubernetes.io/arch: amd64
       restartPolicy: OnFailure
       serviceAccountName: api
       imagePullSecrets:
@@ -26,37 +33,43 @@ spec:
         fsGroup: 1001
         seccompProfile:
           type: RuntimeDefault
+      volumes:
+        - name: runtime-tmp
+          emptyDir:
+            sizeLimit: 256Mi
       containers:
         - name: migrate
-          image: ghcr.io/boringstack-xyz/boringstack-api:latest
+          image: ghcr.io/boringstack-xyz/boringstack-migrations:latest
           imagePullPolicy: Always
-          command:
-            - /bin/sh
-            - -c
-            - |
-              echo "Running Drizzle migrations..."
-              bun run db:migrate
-              echo "Seeding..."
-              bun run db:seed
-              echo "Migrations complete."
-          envFrom:
-            - secretRef:
-                name: boringstack-secrets
+          # ENTRYPOINT is dumb-init. The migrations image also runs
+          # `bun run db:migrate` by default; this is explicit on purpose.
+          args: ["bun", "run", "db:migrate"]
+          volumeMounts:
+            - name: runtime-tmp
+              mountPath: /tmp
+          # Deliberately no envFrom: migrations need only the database
+          # connection, so the app secret set (JWT, Stripe, email keys) is not
+          # mounted into this pod.
           env:
+            - name: TMPDIR
+              value: /tmp
+            - name: NODE_ENV
+              value: production
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: boringstack-db-app
                   key: uri
-            - name: VALKEY_HOST
-              value: valkey
-            - name: VALKEY_PORT
-              value: "6379"
-            - name: NODE_ENV
-              value: production
+            # Same CA as the API runtime client, so drizzle-kit verifies the
+            # CNPG server certificate the same way (src/lib/postgres/connection.ts).
+            - name: DATABASE_SSL_CA
+              valueFrom:
+                secretKeyRef:
+                  name: boringstack-db-ca
+                  key: ca.crt
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL

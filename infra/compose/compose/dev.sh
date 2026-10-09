@@ -172,6 +172,31 @@ if [[ "$WITH_GLITCHTIP" == "1" && -f "$ROOT/docker-compose.glitchtip.yml" ]]; th
   fi
 fi
 
+# Public marketing site (apps/site). On by default in dev (site-dev on :7333).
+# Off by default in prod: enabling it puts the static site on the apex host and
+# moves the app to PUBLIC_UI_HOST (app.<domain>). The validation is below.
+if [[ "${WITH_SITE:-}" == "" ]]; then
+  if [[ "$STACK" == "dev" ]]; then WITH_SITE=1; else WITH_SITE=0; fi
+fi
+if [[ "$WITH_SITE" == "1" && -f "$ROOT/docker-compose.site.yml" ]]; then
+  if [[ "$STACK" == "prod" ]]; then
+    : "${PUBLIC_SITE_HOST:?PUBLIC_SITE_HOST required when WITH_SITE=1 in prod. Bare apex DNS name, e.g. example.com. The app moves to PUBLIC_UI_HOST, e.g. app.example.com.}"
+    : "${SITE_CONTACT_EMAIL:?SITE_CONTACT_EMAIL required when WITH_SITE=1 in prod. The mailbox shown on the contact page.}"
+    if [[ "$PUBLIC_SITE_HOST" == "$PUBLIC_UI_HOST" ]]; then
+      echo "[ERROR] PUBLIC_SITE_HOST and PUBLIC_UI_HOST must differ when WITH_SITE=1: the site is the apex, the app is app.<domain>." >&2
+      exit 1
+    fi
+    if [[ -z "${SITE_IMAGE:-}" ]]; then
+      : "${SITE_IMAGE_TAG:?SITE_IMAGE_TAG required in prod when WITH_SITE=1 (semver like v0.1.0 or sha-<digest>; never latest). Or set SITE_IMAGE to a full pinned reference.}"
+    fi
+    if [[ "${SITE_IMAGE_TAG:-}" == "latest" || "${SITE_IMAGE:-}" == *:latest ]]; then
+      echo "[ERROR] Site image must be pinned in prod: SITE_IMAGE_TAG=latest (or SITE_IMAGE ending :latest) is not allowed." >&2
+      exit 1
+    fi
+  fi
+  COMPOSE_ARGS+=(-f "$ROOT/docker-compose.site.yml")
+fi
+
 if [[ "${WITH_BULLMQ:-}" == "" && "$STACK" == "dev" ]]; then
   WITH_BULLMQ=1
 fi

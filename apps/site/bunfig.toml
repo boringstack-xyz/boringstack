@@ -1,0 +1,3 @@
+[install]
+# Quarantine newly published releases for seven days, as the other apps do.
+minimumReleaseAge = 604800

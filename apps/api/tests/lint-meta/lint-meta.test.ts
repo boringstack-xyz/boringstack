@@ -748,11 +748,35 @@ describe("checkWorkflowRunnerPinned", () => {
           "  matrix:",
           "    runs-on: ${{ matrix.os }}",
           "    steps: []",
+          "  selfhosted:",
+          "    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}",
+          "    steps: []",
           "",
         ].join("\n")
       );
 
       expect(checkWorkflowRunnerPinned(file)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("flags a self-hosted runner variable without the fork guard", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-runner-pin-"));
+
+    try {
+      const file = writeNamedWorkflow(
+        root,
+        "wf.yml",
+        "jobs:\n  build:\n    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}\n    steps: []\n"
+      );
+
+      const messages = checkWorkflowRunnerPinned(file).map(
+        (row) => row.message
+      );
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0]).toContain("fork guard");
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

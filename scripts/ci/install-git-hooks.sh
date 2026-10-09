@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Install the root-level git pre-push hook for the monorepo.
+# Install the root-level git pre-push and commit-msg hooks for the monorepo.
 #
 # Run automatically by the root `package.json` postinstall on
 # `bun install`. Safe to run manually:
 #
 #   bun run scripts/ci/install-git-hooks.sh
 #
-# The hook delegates to scripts/ci/pre-push.sh, which fans out to each
+# pre-push delegates to scripts/ci/pre-push.sh, which fans out to each
 # app's own husky gate based on what changed since `origin/main`.
+# commit-msg delegates to scripts/ci/check-commit-title.sh.
 
 set -euo pipefail
 
@@ -46,3 +47,14 @@ EOF
 
 chmod +x "$HOOK_FILE"
 echo "[install-git-hooks] Installed root pre-push hook → $HOOK_FILE"
+
+COMMIT_MSG_HOOK="$HOOKS_DIR/commit-msg"
+
+cat > "$COMMIT_MSG_HOOK" <<'EOF'
+#!/usr/bin/env bash
+# Auto-installed by scripts/ci/install-git-hooks.sh: Conventional Commits titles.
+exec "$(git rev-parse --show-toplevel)/scripts/ci/check-commit-title.sh" --file "$1"
+EOF
+
+chmod +x "$COMMIT_MSG_HOOK"
+echo "[install-git-hooks] Installed root commit-msg hook → $COMMIT_MSG_HOOK"

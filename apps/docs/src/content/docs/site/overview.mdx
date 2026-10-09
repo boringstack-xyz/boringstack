@@ -1,0 +1,100 @@
+---
+title: Public site
+description: apps/site, the static marketing site on the apex domain. Pages, the domain split with the app, the blog, and consent-gated analytics.
+---
+
+`apps/site` is the public marketing site: a landing page, pricing, about, contact,
+privacy and terms pages, and a blog written in Markdown. Astro renders every page at
+build time and nginx serves the output. The site has no server code, sets no cookies,
+and calls no API. The authenticated product stays in `apps/ui` and `apps/api`.
+
+## Domain split
+
+| Origin                  | Serves                                       |
+| ----------------------- | -------------------------------------------- |
+| `https://<domain>`      | `apps/site` (static, apex, indexable)        |
+| `https://app.<domain>`  | `apps/ui` and `/api` (the authenticated app) |
+
+`SITE_URL` and `APP_URL` must be different origins, so public pages and app pages never
+share cookies or search indexing. The site's sign-up and sign-in links point at `APP_URL`.
+The app's `FRONTEND_URL` and `VITE_PUBLIC_URL` should equal `APP_URL`. The site makes no
+API calls, so it needs no entry in the API's `ALLOWED_ORIGINS`.
+
+## Pages
+
+- `/` (landing), `/pricing`, `/about`, `/contact`, `/privacy`, `/terms`.
+- `/blog` and `/blog/<slug>`, built from Markdown.
+- A 404 page, marked `noindex`.
+
+Copy marked "Placeholder" is template text. Replace it before launch.
+
+## Local development
+
+With the Compose dev stack (`WITH_SITE=1` by default in dev), `site-dev` serves the site
+with live reload at `http://localhost:7333`. Sign-up links point at the UI on
+`http://localhost:7331`.
+
+Outside Docker:
+
+```bash
+cd apps/site
+bun install --frozen-lockfile
+bun run dev
+```
+
+`bun run dev` supplies localhost values for `SITE_URL` and `APP_URL`. Localhost builds are
+`noindex`, and `robots.txt` disallows everything, so a dev build cannot be indexed.
+
+Validation is one command:
+
+```bash
+bun run validate
+```
+
+It runs the format check, `astro check`, unit tests (including builds with invalid
+configuration that must fail), the production-config build with the nginx render, and
+output checks against `dist/`. The root `bun run check:full` runs the same gate whenever
+`apps/site` is present.
+
+## Blog
+
+Posts are flat Markdown files in `src/content/blog`, validated by `src/content.config.ts`.
+Frontmatter fields: `title`, `description`, `publishedAt` (`YYYY-MM-DD`), optional
+`updatedAt`, `author`, and `draft`, which defaults to `true`.
+
+- A draft is absent from the index, the post route, the sitemap and the social card routes.
+- A post with a future `publishedAt` stays hidden until a build on or after that date.
+  The site is static, so the post appears on the next build after its date.
+- The filename is the permanent URL. Renaming a published post breaks its link.
+
+The starter post is `src/content/blog/hello-world.md`.
+
+## SEO and social cards
+
+Every page renders through `BaseLayout`, which supplies the head through `Seo.astro`.
+`title` and `description` are required. Structured data:
+
+- Home: `Organization` and `WebSite` JSON-LD.
+- Posts: `BlogPosting`.
+- Every page: `WebPage`.
+
+Social cards are 1200x630 PNGs rendered at build time from `src/lib/social-card.ts`, at
+`/og/default.png` and `/og/blog/<slug>.png`. `@astrojs/sitemap` emits `sitemap-index.xml`
+and excludes `/404` and `/og/`.
+
+## Privacy and analytics
+
+No cookies are set. Analytics is off unless `ANALYTICS_SCRIPT_URL` and
+`ANALYTICS_WEBSITE_ID` are both set. When both are set:
+
+- A consent banner appears, and the analytics script loads only after the visitor accepts.
+- The Content-Security-Policy allows the analytics origin for `script-src` and `connect-src`.
+  Otherwise the policy is `'self'` only.
+
+With analytics off there is nothing to consent to, so no banner is rendered.
+
+## Where it runs
+
+The site runs in Compose (`site-dev` in dev, `site` behind Traefik in prod) and in the
+k3s prod overlay on the apex host. Configuration, the image, headers and the release path
+are in [Site configuration and deployment](/site/deployment/).

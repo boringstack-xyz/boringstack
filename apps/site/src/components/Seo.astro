@@ -1,0 +1,80 @@
+---
+import { siteConfig, siteHref } from "../lib/site-config";
+import { canonicalPath, jsonLd } from "../lib/seo";
+import { siteName } from "../lib/site";
+
+interface Props {
+  title: string;
+  description: string;
+  /** Path of the social card image, relative to the site origin. */
+  image?: string;
+  imageAlt?: string;
+  type?: "website" | "article";
+  noindex?: boolean;
+  article?: { publishedAt: Date; updatedAt?: Date };
+  structuredData?: unknown[];
+}
+
+const {
+  title,
+  description,
+  image = "/og/default.png",
+  imageAlt = `${siteName}: placeholder social card`,
+  type = "website",
+  noindex = false,
+  article,
+  structuredData = [],
+} = Astro.props;
+
+const canonical = siteHref(canonicalPath(Astro.url.pathname));
+const imageUrl = siteHref(image);
+const robots =
+  noindex || !siteConfig.indexable ? "noindex, nofollow" : "index, follow";
+---
+
+<title>{title === siteName ? siteName : `${title} · ${siteName}`}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+<meta name="robots" content={robots} />
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content={siteName} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={imageUrl} />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={imageAlt} />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={imageUrl} />
+<meta name="twitter:image:alt" content={imageAlt} />
+{article && (
+  <>
+    <meta
+      property="article:published_time"
+      content={article.publishedAt.toISOString()}
+    />
+    {article.updatedAt && (
+      <meta
+        property="article:modified_time"
+        content={article.updatedAt.toISOString()}
+      />
+    )}
+  </>
+)}
+<script
+  type="application/ld+json"
+  set:html={jsonLd({
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: title,
+    description,
+    url: canonical,
+  })}
+></script>
+{structuredData.map((item) => (
+  <script type="application/ld+json" set:html={jsonLd(item)}></script>
+))}

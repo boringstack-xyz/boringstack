@@ -70,6 +70,26 @@ The docs explain the _why_; the plugins block the _what_.
 
 So `AGENTS.md` answers "which page is the why?" and nothing else.
 
+## Conventions that are gates, not prose
+
+`AGENTS.md` is harness-neutral. Codex, Claude Code and other agents all start there, and
+`CLAUDE.md` only points at it. A convention that a product depends on belongs in a hook,
+a lint rule or CI. Prose that only one harness reads stops being followed when the harness
+changes.
+
+Two conventions in the root `AGENTS.md` are gates:
+
+- **Conventional Commits.** Every commit subject and PR title is
+  `<type>(<scope>)!?: <summary>`, at most 100 characters, for example
+  `fix(api): keep the session after refresh`. The `commit-msg` hook (installed by
+  `bun install`) and the `pr-title` workflow both run `scripts/ci/check-commit-title.sh`.
+  Main is squash-merged, so the PR title is the commit that lands. Git's own `fixup!`,
+  `squash!`, `amend!`, merge and revert subjects pass.
+- **Generated content stays out of hand-written changes.** Large generated artifacts
+  (content libraries, catalogue imports, rendered diagrams) do not share a commit or PR
+  with hand-written code. Commit the generator and its source data, then regenerate in a
+  separate `chore(content): ...` change, or build the artifacts in CI.
+
 ## Where to look in this repo
 
 - `apps/api/AGENTS.md`: 30 lines, one table, points at 16 guides

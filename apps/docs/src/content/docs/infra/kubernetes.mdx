@@ -8,8 +8,9 @@ description: Optional GitOps deployment target for any ArgoCD-managed k3s/Kubern
 paths. Pick the one that fits your operating model; you don't need all three.
 
 It ships BoringStack to any ArgoCD-managed k3s/Kubernetes cluster as GitOps: push
-code, CI builds and pushes a GHCR image, argocd-image-updater bumps the tag, and
-ArgoCD syncs. The whole app runs in one namespace with HA, autoscaling, and TLS.
+code, one release workflow builds the API, migration and UI images and pins their
+digests together, and ArgoCD syncs that set. The whole app runs in one namespace
+with HA, autoscaling, and TLS.
 
 BoringStack is Compose-first on purpose, so this target lives in its own
 `infra/k3s/` subtree and is entirely opt-in. It never sits in the default deploy
@@ -21,33 +22,38 @@ path.
 |---|---|---|
 | api | `base/api/` | Bun/Elysia, port 7330, `/health` (liveness) and `/ready` (readiness) |
 | ui | `base/ui/` | nginx static SPA, port 8080 |
+| site | `base/site/` | Public marketing site (`apps/site`), nginx static, port 8080, on the apex domain |
 | Postgres | `base/postgres/` | CloudNativePG `Cluster`, 1 instance (3 in prod) |
 | Valkey | `base/valkey/` | in-namespace cache and BullMQ backend |
 | GlitchTip | `overlays/prod/glitchtip/` | per-project error tracking (web and worker) |
-| migrations | `base/api/migration-job.yaml` | ArgoCD PreSync Job: `db:migrate && db:seed` |
+| migrations | `base/api/migration-job.yaml` | ArgoCD Sync hook at wave -1: `db:migrate` only. Seeds are a deliberate one-off. |
 
-Routing mirrors Compose prod: one domain with same-origin path routing.
-`Host && (/api or /health)` goes to the api; everything else goes to the ui
-(the SPA).
+Routing splits the public site from the app:
+
+- `Host(<domain>)` goes to the site, the static marketing site.
+- `Host(app.<domain>) && (/api or /health)` goes to the api, and everything else on
+  `app.<domain>` goes to the ui (the SPA). The app keeps same-origin `/api`.
+
+The two origins share no cookies. See [Public site](/site/deployment/).
 
 ## Layout
 
 ```
 infra/k3s/
-├── argocd/        ArgoCD Application (+ image-updater) and registration example
+├── argocd/        ArgoCD Application and registration example
 ├── base/          env-agnostic manifests: namespace, api, ui, valkey, postgres
 └── overlays/prod/ HA + TLS + secrets + GlitchTip + monitoring + patches
     └── secrets/   swappable backend: vault (default) | sealed | plain
 ```
 
 `base/` is generic. The prod overlay adds replicas and anti-affinity (api ×3,
-ui ×2, Postgres ×3), HPAs, PDBs, a ResourceQuota/LimitRange, Traefik middleware,
+ui ×2, site ×2, Postgres ×3), HPAs, PDBs, a ResourceQuota/LimitRange, Traefik middleware,
 the TLS `Certificate`, GlitchTip, and the monitoring integration.
 
 ## Prerequisites
 
-The cluster must provide ArgoCD + argocd-image-updater, the CloudNativePG
-operator, cert-manager with a DNS-01 `ClusterIssuer`, Traefik (k3s default), and
+The cluster must provide ArgoCD, the CloudNativePG operator, cert-manager with a
+DNS-01 `ClusterIssuer` whose credential covers your zone, Traefik (k3s default), and
 a persistent StorageClass. Optionally kube-prometheus-stack (for the
 ServiceMonitor and Grafana dashboards) and your chosen secrets backend.
 
@@ -72,6 +78,10 @@ The target does not deploy Prometheus/Grafana/Loki. It plugs into the cluster's
 kube-prometheus-stack via a `ServiceMonitor` that scrapes the api, plus optional
 Grafana dashboard ConfigMaps. See `overlays/prod/monitoring/README.md`.
 
+The prod overlay also adds business metrics: CloudNativePG runs aggregate queries over
+the sign-up, billing and audit tables, and a Grafana dashboard ConfigMap shows them. See
+[Observability](/topics/observability/#business-metrics-k3s).
+
 ## Get started
 
 Full knob list and walkthrough: [Provisioning with k3s](/topics/provisioning-with-k3s/)
@@ -80,7 +90,7 @@ and `infra/k3s/README.md`.
 ## Related
 
 - [Provisioning with k3s](/topics/provisioning-with-k3s/); zero to live on a cluster.
-- [ArgoCD image updater](/runbooks/argocd-image-updater/); the auto-deploy loop.
+- [Production releases](/runbooks/production-release/); the coordinated auto-deploy loop.
 - [Secrets backends (VSO / Sealed / plain)](/runbooks/vault-secrets-operator/).
 - [Postgres backups (CNPG)](/runbooks/cnpg-backups/).
 - [Infra overview](/infra/overview/); the Compose-first single-host target.

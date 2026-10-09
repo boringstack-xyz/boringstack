@@ -2,19 +2,8 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { env } from "../../config/env";
 import { logger } from "../../config/logger";
+import { buildPostgresSsl } from "../../lib/postgres/connection";
 import * as schema from "./schema";
-
-const buildSslConfig = ():
-  false | { rejectUnauthorized: boolean; ca?: string } => {
-  if (!env.isProduction) {
-    return false;
-  }
-
-  return {
-    rejectUnauthorized: env.DATABASE_SSL_REJECT_UNAUTHORIZED,
-    ...(env.DATABASE_SSL_CA !== "" && { ca: env.DATABASE_SSL_CA }),
-  };
-};
 
 const client = postgres(env.DATABASE_URL, {
   max: env.DATABASE_POOL_SIZE,
@@ -22,7 +11,11 @@ const client = postgres(env.DATABASE_URL, {
   connect_timeout: env.isTest ? 1 : 10,
   max_lifetime: 60 * 30,
   prepare: true,
-  ssl: buildSslConfig(),
+  ssl: buildPostgresSsl({
+    isProduction: env.isProduction,
+    rejectUnauthorized: env.DATABASE_SSL_REJECT_UNAUTHORIZED,
+    ca: env.DATABASE_SSL_CA,
+  }),
   onnotice: (notice) => {
     if (!env.isDevelopment) {
       return;

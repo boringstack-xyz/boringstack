@@ -11,12 +11,22 @@
 # transitive versions have patched.
 
 [[IgnoredVulns]]
-id = "GHSA-vwc7-r8mq-g2x9"
-ignoreUntil = "2026-12-09T00:00:00Z"
+id = "GHSA-vfj7-8cjw-p6xm"
+ignoreUntil = "2026-11-18T00:00:00Z"
 reason = """
-adm-zip path traversal. 0.6.0 is the newest release and no patched version
-exists yet, so the existing override cannot clear it. Pulled in transitively
-by the wrangler/miniflare dev toolchain, which only unpacks archives it
-fetches from Cloudflare's own CDN — never user-supplied input — and never runs
-in the published static site. Re-evaluate when adm-zip ships a fix.
+braces 3.0.3 (no fixed release yet). Reached only through micromatch 4.0.5 in
+the Astro/Starlight build toolchain. Build-time pattern matching over repo
+files; never in the published static output and never reached by user input.
+Remove once braces is patched.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-ch52-4w7c-c8xp"
+ignoreUntil = "2026-11-18T00:00:00Z"
+reason = """
+http-cache-semantics 4.2.0 max-stale cache disclosure (no fixed release). Pulled
+in by astro's build-time dependency graph. The vulnerable path needs a shared
+HTTP cache serving several users; this build runs in CI with no shared cache,
+and the deployed site is static Cloudflare Pages output. Remove once astro
+moves to a patched http-cache-semantics.
 """

@@ -47,7 +47,8 @@ existing database contents.
 
 The development Compose migrator uses schema push and seeding. That does not test
 migration history. Validate generated migrations against a fresh owned database
-before release; production uses `db:prepare` and committed migrations.
+before release. Production applies committed migrations with `db:migrate` only;
+seeds run as a deliberate one-off, never on every deploy.
 
 ## Recover interrupted verification
 
@@ -64,10 +65,10 @@ partially committed test data. Recreate the disposable sandbox if its state is
 uncertain. `sandbox_not_found` means the descriptor is absent; use `sandbox:up`
 to create an owned runtime before retrying.
 
-Inventory previews include an `acceptCommand` tied to the reviewed diff. Removed
-cases require an additional acknowledgement, included in that command. Review
-case identities before accepting; shrinking an inventory cannot repair tests
-that failed to execute.
+Additions to a test inventory are recorded by the feature run itself. Removed
+cases block the lane and the failure output prints the acknowledgement command
+with its removal token. Review the listed identities before running it; shrinking
+an inventory cannot repair tests that failed to execute.
 
 ## Use the same Compose project
 

@@ -53,10 +53,10 @@ done
 #
 # --- Section 2: merge settings
 #
-MERGE_CURRENT=$(gh api "repos/$REPO" --jq '{delete_branch_on_merge, allow_squash_merge, allow_merge_commit, allow_rebase_merge}')
+MERGE_CURRENT=$(gh api "repos/$REPO" --jq '{delete_branch_on_merge, allow_squash_merge, allow_merge_commit, allow_rebase_merge, squash_merge_commit_title}')
 MERGE_DESIRED=$(jq -c '.merge' "$DESIRED")
 
-for key in delete_branch_on_merge allow_squash_merge allow_merge_commit allow_rebase_merge; do
+for key in delete_branch_on_merge allow_squash_merge allow_merge_commit allow_rebase_merge squash_merge_commit_title; do
   want=$(echo "$MERGE_DESIRED" | jq -r --arg k "$key" '.[$k]')
   have=$(echo "$MERGE_CURRENT" | jq -r --arg k "$key" '.[$k]')
   if [[ "$have" != "$want" ]]; then

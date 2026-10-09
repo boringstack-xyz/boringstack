@@ -60,17 +60,19 @@ row() {
 read_env() {
   local key="$1" file="$2"
   if [[ -f "$file" ]]; then
-    grep -E "^${key}=" "$file" | tail -n1 | sed "s/^${key}=//"
+    # A missing key is an empty value, not an error (pipefail is on).
+    grep -E "^${key}=" "$file" | tail -n1 | sed "s/^${key}=//" || true
   fi
 }
 
 print_dev_urls() {
   local env_file="$INFRA/compose/.env"
-  local with_obs with_glitch with_bullmq with_mailpit
+  local with_obs with_glitch with_bullmq with_mailpit with_site
   with_obs="$(read_env WITH_OBSERVABILITY "$env_file")"
   with_glitch="$(read_env WITH_GLITCHTIP "$env_file")"
   with_bullmq="$(read_env WITH_BULLMQ "$env_file")"
   with_mailpit="$(read_env WITH_MAILPIT "$env_file")"
+  with_site="$(read_env WITH_SITE "$env_file")"
 
   echo
   echo "BoringStack is up. Open these:"
@@ -78,6 +80,8 @@ print_dev_urls() {
   row "UI"            "http://localhost:7331"
   row "API"           "http://localhost:7330"
   row "API OpenAPI"   "http://localhost:7330/swagger"
+  # Public marketing site defaults on in dev; opt out with WITH_SITE=0.
+  [[ "$with_site" != "0" ]] && row "Site"          "http://localhost:7333"
 
   # Dev defaults: Mailpit + Bull-board are on unless explicitly disabled.
   [[ "$with_mailpit" != "0" ]] && row "Mailpit"     "http://localhost:8025"

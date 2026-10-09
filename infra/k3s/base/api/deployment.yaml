@@ -18,7 +18,16 @@ spec:
       labels:
         app: api
     spec:
+      # Release workflows publish linux/amd64 images only.
+      nodeSelector:
+        kubernetes.io/arch: amd64
       serviceAccountName: api
+      # The root filesystem is read-only. /tmp is the only writable scratch
+      # space, and Bun's transpiler cache lives there too (see env below).
+      volumes:
+        - name: runtime-tmp
+          emptyDir:
+            sizeLimit: 256Mi
       terminationGracePeriodSeconds: 30
       securityContext:
         runAsNonRoot: true
@@ -35,8 +44,13 @@ spec:
             capabilities:
               drop:
                 - ALL
+          # Tag is a placeholder: overlays/prod pins a digest from one
+          # coordinated release. The image CMD is `bun --no-install run dist/index.js`.
           image: ghcr.io/boringstack-xyz/boringstack-api:latest
           imagePullPolicy: Always
+          volumeMounts:
+            - name: runtime-tmp
+              mountPath: /tmp
           ports:
             - name: http
               containerPort: 7330
@@ -49,12 +63,23 @@ spec:
             - secretRef:
                 name: boringstack-secrets
           env:
+            - name: TMPDIR
+              value: /tmp
+            - name: BUN_RUNTIME_TRANSPILER_CACHE_PATH
+              value: /tmp/bun-transpiler
             # CloudNativePG publishes the app connection string here.
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: boringstack-db-app
                   key: uri
+            # CloudNativePG's CA. The runtime client and the migration Job both
+            # verify the server certificate against it (src/lib/postgres/connection.ts).
+            - name: DATABASE_SSL_CA
+              valueFrom:
+                secretKeyRef:
+                  name: boringstack-db-ca
+                  key: ca.crt
             # Infra topology (not secret): the in-namespace Valkey Service.
             - name: VALKEY_HOST
               value: valkey

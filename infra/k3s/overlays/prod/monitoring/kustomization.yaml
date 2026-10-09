@@ -3,12 +3,26 @@ kind: Kustomization
 
 # Integrates with the cluster's existing kube-prometheus-stack, it does NOT
 # deploy Prometheus/Grafana/Loki. The ServiceMonitor gets the api scraped by
-# the cluster Prometheus. See README.md to also surface the BoringStack Grafana
-# dashboards via the Grafana sidecar.
+# the cluster Prometheus. The PodMonitor scrapes the CloudNativePG exporter, and
+# cnpg-business-queries.yaml turns the template's own tables into aggregate
+# business metrics. See README.md to also surface the dashboards via the Grafana
+# sidecar.
 resources:
   - servicemonitor.yaml
+  - podmonitor.yaml
+  - cnpg-business-queries.yaml
 
-# --- Grafana dashboards (optional) ---------------------------------------
+# Business metrics dashboard, auto-imported by the cluster Grafana sidecar.
+configMapGenerator:
+  - name: boringstack-business-dashboard
+    files:
+      - dashboards/boringstack-business.json
+    options:
+      labels:
+        grafana_dashboard: "1"
+      disableNameSuffixHash: true
+
+# --- Grafana dashboards from compose (optional) --------------------------
 # The BoringStack dashboards live in infra/compose/compose/grafana/dashboards/.
 # To have the cluster Grafana auto-import them, generate a ConfigMap labelled
 # `grafana_dashboard: "1"`. Cross-tree file refs need ArgoCD/kustomize's

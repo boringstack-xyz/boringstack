@@ -24,3 +24,43 @@ micromatch; our usage is internal build-time tooling (vite, tsconfig
 resolution). No path from user input to micromatch in api source. Awaiting
 upstream patch via vite/jest transitive deps.
 """
+
+[[IgnoredVulns]]
+id = "GHSA-vfj7-8cjw-p6xm"
+ignoreUntil = "2026-11-18T00:00:00Z"
+reason = """
+braces 3.0.3 (no fixed release yet). Reached only through micromatch 4.0.5 in
+the @boring-stack-pkg ESLint plugins: lint-time tooling, never in the
+production image or reached by request input. Remove once braces is patched.
+"""
+
+# Handlebars has no release that is both patched and past the 7-day quarantine
+# (4.7.10 was published 2026-10-05, eligible from 2026-10-12). Bump
+# handlebars to 4.7.10 when it ages in, then drop these three entries.
+[[IgnoredVulns]]
+id = "GHSA-8r5x-fm3f-whwj"
+ignoreUntil = "2026-10-16T00:00:00Z"
+reason = """
+Handlebars compile-path JavaScript injection (bypass of CVE-2026-33937), fixed
+in 4.7.10. Templates are compiled only at build time (src/templates/email/build.ts,
+preview.ts) from files we own; runtime rendering uses precompiled templates via
+handlebars/runtime. No user-supplied template source reaches compile().
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-p8wg-vrv2-v86f"
+ignoreUntil = "2026-10-16T00:00:00Z"
+reason = """
+Handlebars own-property check bypass leading to JavaScript injection, fixed in
+4.7.10. Same usage as GHSA-8r5x-fm3f-whwj: compile() runs only over owned
+templates at build time; no attacker-controlled template or helper source.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-xw65-4hp5-5hc7"
+ignoreUntil = "2026-10-16T00:00:00Z"
+reason = """
+Handlebars unsafe inline embedding of precompiled templates, fixed in 4.7.10.
+Only precompiled, repo-owned templates are embedded; no template content is
+derived from request input. Same expiry as GHSA-8r5x-fm3f-whwj.
+"""

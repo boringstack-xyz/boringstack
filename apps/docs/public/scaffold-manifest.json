@@ -69,6 +69,15 @@
       "addsServices": { "1": ["bullmq-dashboard"] }
     },
     {
+      "key": "WITH_SITE",
+      "kind": "toggle",
+      "group": "infra",
+      "label": "Public marketing site (apps/site). Dev: Astro dev server on 7333. Prod: static site on the apex host, app on app.<domain>",
+      "devDefault": "1",
+      "prodDefault": "0",
+      "addsServices": { "1": ["site-dev", "site"] }
+    },
+    {
       "key": "WUD",
       "kind": "toggle",
       "group": "infra",

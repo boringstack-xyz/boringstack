@@ -1,0 +1,17 @@
+# osv-scanner accepted-risk allowlist for the BoringStack public site.
+#
+# The site is a static build (Astro output: "static") served by nginx. Its
+# runtime has no server-side code, no database and no user-input handling.
+# Every dependency here is build-time tooling. Add an entry only with a reason
+# and an ignoreUntil date, and re-evaluate it when the dependency is bumped.
+
+[[IgnoredVulns]]
+id = "GHSA-ch52-4w7c-c8xp"
+ignoreUntil = "2026-11-18T00:00:00Z"
+reason = """
+http-cache-semantics 4.2.0 max-stale cache disclosure (no fixed release). Pulled
+in by astro's build-time dependency graph. The vulnerable path needs a shared
+HTTP cache serving several users; this build runs in CI with no shared cache,
+and the public site is a static nginx build. Remove once astro moves to a
+patched http-cache-semantics.
+"""

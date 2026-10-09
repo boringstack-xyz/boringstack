@@ -18,6 +18,9 @@ spec:
       labels:
         app: ui
     spec:
+      # Release workflows publish linux/amd64 images only.
+      nodeSelector:
+        kubernetes.io/arch: amd64
       serviceAccountName: ui
       terminationGracePeriodSeconds: 30
       securityContext:
