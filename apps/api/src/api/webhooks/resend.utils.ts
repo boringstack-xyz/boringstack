@@ -153,11 +153,9 @@ const isResendEventShape = (value: unknown): value is IResendEventBase => {
     return false;
   }
 
-  if (!("type" in value)) {
-    return false;
-  }
-
-  return typeof Reflect.get(value, "type") === "string";
+  return !("type" in value)
+    ? false
+    : typeof Reflect.get(value, "type") === "string";
 };
 
 /**
@@ -196,11 +194,7 @@ const extractRecipient = (event: IResendEventBase): string | null => {
     return typeof to[0] === "string" && to[0] !== "" ? to[0] : null;
   }
 
-  if (typeof to === "string" && to !== "") {
-    return to;
-  }
-
-  return null;
+  return typeof to === "string" && to !== "" ? to : null;
 };
 
 /**

@@ -11,11 +11,9 @@ import type {
 export const expirationToIso = (
   value: number | null | undefined
 ): string | null => {
-  if (value === undefined || value === null) {
-    return null;
-  }
-
-  return new Date(value).toISOString();
+  return value === undefined || value === null
+    ? null
+    : new Date(value).toISOString();
 };
 
 /**

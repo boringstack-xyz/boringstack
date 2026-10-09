@@ -25,11 +25,9 @@ const apiTemplateRoot = resolve(import.meta.dir, "../..");
 const resolveUiTemplateRoot = (): string => {
   const fromEnv = process.env.BORINGSTACK_UI_DIR;
 
-  if (fromEnv !== undefined && fromEnv !== "") {
-    return resolve(fromEnv);
-  }
-
-  return resolve(apiTemplateRoot, "..", "ui");
+  return fromEnv !== undefined && fromEnv !== ""
+    ? resolve(fromEnv)
+    : resolve(apiTemplateRoot, "..", "ui");
 };
 
 const HEADER = `/*

@@ -37,15 +37,11 @@ export const dispatchJoinRequestCreatedEmail = async (
 };
 
 const parseStatus = (value: string): JoinRequestStatus => {
-  if (
-    value === JOIN_REQUEST_STATUS.pending ||
+  return value === JOIN_REQUEST_STATUS.pending ||
     value === JOIN_REQUEST_STATUS.approved ||
     value === JOIN_REQUEST_STATUS.denied
-  ) {
-    return value;
-  }
-
-  return JOIN_REQUEST_STATUS.pending;
+    ? value
+    : JOIN_REQUEST_STATUS.pending;
 };
 
 export const toJoinRequest = (

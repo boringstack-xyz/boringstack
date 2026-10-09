@@ -18,9 +18,5 @@ export const buildPersonalAccountName = (
 ): string => {
   const fullName = `${input.firstName ?? ""} ${input.lastName ?? ""}`.trim();
 
-  if (fullName === "") {
-    return input.email;
-  }
-
-  return fullName;
+  return fullName === "" ? input.email : fullName;
 };

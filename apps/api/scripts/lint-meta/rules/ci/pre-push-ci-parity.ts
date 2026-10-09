@@ -22,15 +22,11 @@ function readPrePushManifest(manifestPath: string): {
   const ciWorkflow = parsed.ciWorkflow;
   const requiredCommands = parsed.requiredCommands;
 
-  if (
-    typeof ciWorkflow !== "string" ||
+  return typeof ciWorkflow !== "string" ||
     !Array.isArray(requiredCommands) ||
     !requiredCommands.every((entry) => typeof entry === "string")
-  ) {
-    return null;
-  }
-
-  return { ciWorkflow, requiredCommands };
+    ? null
+    : { ciWorkflow, requiredCommands };
 }
 
 /*

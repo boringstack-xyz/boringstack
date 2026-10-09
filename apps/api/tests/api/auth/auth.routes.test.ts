@@ -76,18 +76,14 @@ const isAuthEnvelope = (value: unknown): value is IAuthEnvelope =>
   "user" in value.data;
 
 const isUserProfile = (value: unknown): value is IUserProfile => {
-  if (
-    value === null ||
+  return value === null ||
     typeof value !== "object" ||
     !("user" in value) ||
     value.user === null ||
     typeof value.user !== "object" ||
     !("email" in value.user)
-  ) {
-    return false;
-  }
-
-  return typeof value.user.email === "string";
+    ? false
+    : typeof value.user.email === "string";
 };
 
 const extractCookiePair = (setCookie: string | null, name: string): string => {

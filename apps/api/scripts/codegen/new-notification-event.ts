@@ -52,11 +52,7 @@ const toExportIdentifier = (eventName: string): string => {
   const camelBody = eventName
     .split(/[._-]/)
     .map((part, idx) => {
-      if (idx === 0) {
-        return part;
-      }
-
-      return part.charAt(0).toUpperCase() + part.slice(1);
+      return idx === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1);
     })
     .join("");
 

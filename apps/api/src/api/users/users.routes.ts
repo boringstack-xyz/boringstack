@@ -25,11 +25,9 @@ const meRoutes = tryAuth()
   .get(
     "/me",
     async ({ user, accountId }) => {
-      if (user === null || accountId === null) {
-        return { user: null };
-      }
-
-      return usersService.getMe(user.id, accountId);
+      return user === null || accountId === null
+        ? { user: null }
+        : usersService.getMe(user.id, accountId);
     },
     {
       response: MeResponse,

@@ -60,11 +60,7 @@ const urlOf = (input: RequestInfo | URL): string => {
     return input.url;
   }
 
-  if (input instanceof URL) {
-    return input.href;
-  }
-
-  return input;
+  return input instanceof URL ? input.href : input;
 };
 
 /**

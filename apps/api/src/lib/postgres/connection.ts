@@ -22,11 +22,9 @@ export const buildPostgresSsl = ({
   rejectUnauthorized,
   ca,
 }: IPostgresTlsSettings): PostgresSsl => {
-  if (!isProduction) {
-    return false;
-  }
-
-  return { rejectUnauthorized, ...(ca !== "" && { ca }) };
+  return !isProduction
+    ? false
+    : { rejectUnauthorized, ...(ca !== "" && { ca }) };
 };
 
 export type DrizzleCredentials =

@@ -29,11 +29,9 @@ export const parseNotificationsLimit = (raw: string | undefined): number => {
 
   const parsed = Number.parseInt(raw, 10);
 
-  if (Number.isNaN(parsed) || parsed < 1) {
-    return NOTIFICATIONS_DEFAULT_LIMIT;
-  }
-
-  return parsed;
+  return Number.isNaN(parsed) || parsed < 1
+    ? NOTIFICATIONS_DEFAULT_LIMIT
+    : parsed;
 };
 
 /** Read a string field from a jsonb-derived record, defaulting to empty. */

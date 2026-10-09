@@ -208,10 +208,6 @@ export const tryAuth = () =>
           cookie[AUTH_COOKIE_NAME]?.value
         );
 
-        if (session === null) {
-          return { user: null, accountId: null };
-        }
-
-        return session;
+        return session ?? { user: null, accountId: null };
       }
     );

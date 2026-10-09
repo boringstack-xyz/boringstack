@@ -24,11 +24,9 @@ const buildOpenAI = (): IAIProvider | null => {
 };
 
 const buildAnthropic = (): IAIProvider | null => {
-  if (env.ANTHROPIC_API_KEY === "") {
-    return null;
-  }
-
-  return new AnthropicProvider(env.ANTHROPIC_API_KEY);
+  return env.ANTHROPIC_API_KEY === ""
+    ? null
+    : new AnthropicProvider(env.ANTHROPIC_API_KEY);
 };
 
 /**

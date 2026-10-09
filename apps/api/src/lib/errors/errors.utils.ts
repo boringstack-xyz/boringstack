@@ -9,11 +9,9 @@ import type { IApiSuccessResponse } from "./errors.types";
  */
 export const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) {
-    if (error.cause instanceof Error && error.cause.message !== "") {
-      return `${error.message} (caused by: ${error.cause.message})`;
-    }
-
-    return error.message;
+    return error.cause instanceof Error && error.cause.message !== ""
+      ? `${error.message} (caused by: ${error.cause.message})`
+      : error.message;
   }
 
   if (typeof error === "string") {

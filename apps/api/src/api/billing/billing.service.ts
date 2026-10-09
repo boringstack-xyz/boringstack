@@ -58,11 +58,9 @@ const isOlderStripeEvent = (
 ): boolean => {
   const lastEventAt = current?.lastStripeEventAt;
 
-  if (lastEventAt === undefined || lastEventAt === null) {
-    return false;
-  }
-
-  return Date.parse(lastEventAt) > eventCreated * 1000;
+  return lastEventAt === undefined || lastEventAt === null
+    ? false
+    : Date.parse(lastEventAt) > eventCreated * 1000;
 };
 
 const STRIPE_REQUEST_TIMEOUT_MS = 10_000;

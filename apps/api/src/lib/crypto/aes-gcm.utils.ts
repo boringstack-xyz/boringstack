@@ -146,9 +146,7 @@ export const constantTimeEqual = (left: string, right: string): boolean => {
   const leftBuf = Buffer.from(left, "utf8");
   const rightBuf = Buffer.from(right, "utf8");
 
-  if (leftBuf.length !== rightBuf.length) {
-    return false;
-  }
-
-  return timingSafeEqual(leftBuf, rightBuf);
+  return leftBuf.length !== rightBuf.length
+    ? false
+    : timingSafeEqual(leftBuf, rightBuf);
 };

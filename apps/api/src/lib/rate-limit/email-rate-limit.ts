@@ -135,11 +135,9 @@ class ValkeyEmailRateLimiter {
 
       const count = typeof countRaw === "number" ? countRaw : Number(countRaw);
 
-      if (Number.isNaN(count)) {
-        return this.fallback.check(key);
-      }
-
-      return count <= MAX_ATTEMPTS;
+      return Number.isNaN(count)
+        ? this.fallback.check(key)
+        : count <= MAX_ATTEMPTS;
     } catch (error: unknown) {
       logger.warn(
         "Email rate-limit Valkey check failed; falling back to in-memory",
@@ -166,11 +164,9 @@ class EmailRateLimiter {
   check(email: string): Promise<boolean> {
     const key = email.toLowerCase().trim();
 
-    if (env.CACHE_ENABLED && env.CACHE_PROVIDER === "valkey") {
-      return this.valkey.check(key);
-    }
-
-    return Promise.resolve(this.inMemory.check(key));
+    return env.CACHE_ENABLED && env.CACHE_PROVIDER === "valkey"
+      ? this.valkey.check(key)
+      : Promise.resolve(this.inMemory.check(key));
   }
 
   sweep(): void {

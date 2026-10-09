@@ -81,11 +81,9 @@ function calleeBaseName(expression: ts.Expression): string | undefined {
     return calleeBaseName(expression.expression);
   }
 
-  if (ts.isCallExpression(expression)) {
-    return calleeBaseName(expression.expression);
-  }
-
-  return undefined;
+  return ts.isCallExpression(expression)
+    ? calleeBaseName(expression.expression)
+    : undefined;
 }
 
 /** The title, when it is a literal the rule can read at lint time. */
@@ -96,11 +94,9 @@ function staticTitle(call: ts.CallExpression): string | undefined {
     return undefined;
   }
 
-  if (ts.isStringLiteral(first) || ts.isNoSubstitutionTemplateLiteral(first)) {
-    return first.text;
-  }
-
-  return undefined;
+  return ts.isStringLiteral(first) || ts.isNoSubstitutionTemplateLiteral(first)
+    ? first.text
+    : undefined;
 }
 
 function callbackOf(call: ts.CallExpression): ts.Node | undefined {

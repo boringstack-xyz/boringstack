@@ -66,11 +66,7 @@ export function buildAbility(
 }
 
 const describeSubject = (resource: AppSubject): string => {
-  if (typeof resource === "string") {
-    return resource;
-  }
-
-  return resource.__caslSubjectType__;
+  return typeof resource === "string" ? resource : resource.__caslSubjectType__;
 };
 
 export function requireAbility(

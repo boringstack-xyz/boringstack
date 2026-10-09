@@ -30,16 +30,12 @@ export class SendGridEmailService implements IEmailService {
   }
 
   private static extractMessageId(rawHeaders: unknown): string {
-    if (
-      rawHeaders !== null &&
+    return rawHeaders !== null &&
       typeof rawHeaders === "object" &&
       "x-message-id" in rawHeaders &&
       typeof rawHeaders["x-message-id"] === "string"
-    ) {
-      return rawHeaders["x-message-id"];
-    }
-
-    return "";
+      ? rawHeaders["x-message-id"]
+      : "";
   }
 
   async send(message: IEmailMessage): Promise<IEmailResult> {

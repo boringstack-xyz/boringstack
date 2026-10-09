@@ -22,16 +22,12 @@ import type { IErrorHandlerArgs } from "./error-handler.types";
 const extractFieldErrors = (
   error: unknown
 ): Record<string, string> | undefined => {
-  if (
-    error instanceof Error &&
+  return error instanceof Error &&
     "field" in error &&
     typeof error.field === "string" &&
     error.field !== ""
-  ) {
-    return { [error.field]: "Invalid value" };
-  }
-
-  return undefined;
+    ? { [error.field]: "Invalid value" }
+    : undefined;
 };
 
 const FRAMEWORK_SAFE_MESSAGES: Record<string, string> = {
@@ -51,11 +47,7 @@ const FRAMEWORK_SAFE_MESSAGES: Record<string, string> = {
 const safeMessageFor = (code: string, error: unknown): string => {
   const framework = FRAMEWORK_SAFE_MESSAGES[code];
 
-  if (framework !== undefined) {
-    return framework;
-  }
-
-  return getErrorMessage(error);
+  return framework ?? getErrorMessage(error);
 };
 
 const isClientErrorCode = (code: string): boolean =>

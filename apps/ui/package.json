@@ -152,6 +152,8 @@
     "body-parser": "Pin patched body-parser (GHSA-v422-hmwv-36x6). 1.20.5 is vulnerable; 1.20.6 patches it. Transitive via @lhci/cli (CI-only).",
     "js-yaml": "Pin patched js-yaml (GHSA-52cp-r559-cp3m, GHSA-5p4m-2wfm-xmqj, GHSA-2883-xcg3-v3hh). 4.3.1 and earlier are vulnerable; 4.3.2 patches the maxTotalMergeKeys CPU-exhaustion case. Build-time config loading only.",
     "postcss": "Pin patched postcss (GHSA-r28c-9q8g-f849, GHSA-fxqj-rqcc-2cmp). 8.5.18 is vulnerable; 8.5.23 patches it. Build-time CSS tooling via vite/tailwind.",
+    "seroval": "Pin patched seroval (GHSA-p6vx-979v-rg4c, GHSA-jp82-f5mq-hwhp). 1.5.6 is vulnerable; 1.6.3 patches both. Reached only through solid-js under @tanstack/react-query-devtools, which is not in the production bundle. solid-js 1.9.16 moves to ~1.6.8 itself; drop this pin once it passes the release-age quarantine.",
+    "seroval-plugins": "Moves with the seroval pin above; seroval-plugins declares a peer on the matching seroval line.",
     "ws": "Pin patched ws (GHSA-58qx-3vcg-4xpx) pulled via lighthouse dev tooling; mirrors the docs app pin.",
     "qs": "Pin patched qs (GHSA-q8mj-m7cp-5q26, GHSA-4mjr-xmp4-gh2g, GHSA-x5fp-wj9c-mxmx). 6.15.2 is vulnerable; 6.16.0 patches it. Pulled via dev tooling; mirrors the docs app pin.",
     "tmp": "Pin patched tmp (GHSA-7c78-jf6q-g5cm type-confusion path traversal); 0.2.6 is now vulnerable, 0.2.7 patches it. Transitive dev-tooling dep via @lhci/cli. Mirrors the docs app pin.",
@@ -170,8 +172,10 @@
     "react-dom": "Mirror the react pin so the renderer never drifts from React itself (\"mismatching versions of React and the renderer\")."
   },
   "overrides": {
-    "@types/react": "19.2.18",
-    "@types/react-dom": "19.2.5",
+    "seroval-plugins": "1.6.8",
+    "seroval": "1.6.8",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "@typescript-eslint/utils": "8.61.1",
     "basic-ftp": "6.2.1",
     "body-parser": "1.20.6",
@@ -181,13 +185,13 @@
     "postcss": "8.5.23",
     "proxy-addr": "2.0.8",
     "qs": "6.16.0",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "shell-quote": "1.11.0",
     "smol-toml": "1.9.0",
     "source-map-js": "1.2.2",
     "tmp": "0.2.7",
     "undici": "7.29.1",
-    "ws": "8.21.3"
+    "ws": "8.22.0"
   }
 }

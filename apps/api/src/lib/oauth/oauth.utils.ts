@@ -86,11 +86,7 @@ export const readString = (obj: unknown, key: string): string => {
 };
 
 export const readBoolean = (obj: unknown, key: string): boolean => {
-  if (!isRecord(obj)) {
-    return false;
-  }
-
-  return obj[key] === true;
+  return !isRecord(obj) ? false : obj[key] === true;
 };
 
 /**
@@ -205,16 +201,12 @@ export const canDisconnect = (
   ).length;
 
   if (providerName === emailProviderKey) {
-    if (oauthCount === 0) {
-      return { ok: false, reason: KEEP_ONE_METHOD_REASON };
-    }
-
-    return { ok: true, action: "clear-password" };
+    return oauthCount === 0
+      ? { ok: false, reason: KEEP_ONE_METHOD_REASON }
+      : { ok: true, action: "clear-password" };
   }
 
-  if (!hasPassword && oauthCount <= 1) {
-    return { ok: false, reason: KEEP_ONE_METHOD_REASON };
-  }
-
-  return { ok: true, action: "delete" };
+  return !hasPassword && oauthCount <= 1
+    ? { ok: false, reason: KEEP_ONE_METHOD_REASON }
+    : { ok: true, action: "delete" };
 };

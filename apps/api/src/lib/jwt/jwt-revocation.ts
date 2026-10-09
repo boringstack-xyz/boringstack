@@ -111,11 +111,7 @@ const isUserRevokedSince = async (
   try {
     const cutoff = await cacheService.get<number>(userRevokeKey(userId));
 
-    if (cutoff === null) {
-      return false;
-    }
-
-    return issuedAtSeconds < cutoff;
+    return cutoff === null ? false : issuedAtSeconds < cutoff;
   } catch (error: unknown) {
     logger.warn("JWT revocation user check failed", {
       event: "auth.jwt.revoke_user_check_failed",

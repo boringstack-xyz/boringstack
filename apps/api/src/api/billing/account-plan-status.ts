@@ -26,11 +26,9 @@ export const selectEffectiveFeatures = (
     case "trialing":
       return paidFeatures;
     case "canceled":
-      if (currentPeriodEnd !== null && currentPeriodEnd.getTime() > nowMs) {
-        return paidFeatures;
-      }
-
-      return freeFeatures;
+      return currentPeriodEnd !== null && currentPeriodEnd.getTime() > nowMs
+        ? paidFeatures
+        : freeFeatures;
     /*
      * Delinquency ends entitlement immediately, per the security-review
      * decision. There is no grace period at a higher layer, and nothing
@@ -83,19 +81,15 @@ export const isPlanEntitling = (
     return false;
   }
 
-  if (!isKnownPlanStatus(status)) {
-    return false;
-  }
-
-  return (
-    selectEffectiveFeatures(
-      status,
-      PAID_SENTINEL,
-      FREE_SENTINEL,
-      currentPeriodEnd,
-      nowMs
-    ) === PAID_SENTINEL
-  );
+  return !isKnownPlanStatus(status)
+    ? false
+    : selectEffectiveFeatures(
+        status,
+        PAID_SENTINEL,
+        FREE_SENTINEL,
+        currentPeriodEnd,
+        nowMs
+      ) === PAID_SENTINEL;
 };
 
 /*

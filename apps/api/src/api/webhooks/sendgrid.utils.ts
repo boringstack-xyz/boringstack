@@ -120,21 +120,17 @@ export const sendGridEventToReason = (
     case "bounce": {
       const type = (event.type ?? "").toLowerCase();
 
-      if (type === "bounce" || type === "blocked") {
-        return EMAIL_SUPPRESSION_REASONS.HARD_BOUNCE;
-      }
-
-      return null;
+      return type === "bounce" || type === "blocked"
+        ? EMAIL_SUPPRESSION_REASONS.HARD_BOUNCE
+        : null;
     }
 
     case "dropped": {
       const reason = (event.reason ?? "").toLowerCase();
 
-      if (reason.includes("bounced address") || reason.includes("invalid")) {
-        return EMAIL_SUPPRESSION_REASONS.HARD_BOUNCE;
-      }
-
-      return null;
+      return reason.includes("bounced address") || reason.includes("invalid")
+        ? EMAIL_SUPPRESSION_REASONS.HARD_BOUNCE
+        : null;
     }
 
     default:

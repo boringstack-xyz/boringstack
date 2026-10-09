@@ -24,13 +24,11 @@ function isLogicFile(root: string, file: string): boolean {
     return true;
   }
 
-  if (file.endsWith("/index.ts") || file.endsWith(".types.ts")) {
-    return false;
-  }
-
-  return LOGIC_DIR_SEGMENTS.some((segment) =>
-    file.startsWith(`${join(root, segment)}/`)
-  );
+  return file.endsWith("/index.ts") || file.endsWith(".types.ts")
+    ? false
+    : LOGIC_DIR_SEGMENTS.some((segment) =>
+        file.startsWith(`${join(root, segment)}/`)
+      );
 }
 
 export function checkLogicFilesHaveTests(root: string): IViolation[] {

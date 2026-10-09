@@ -61,11 +61,9 @@ const ACTIVITY_LABELS: Record<string, string> = {
 const deriveActionLabel = (action: string): string => {
   const words = action.replace(/[._]/g, " ").trim();
 
-  if (words === "") {
-    return "Activity";
-  }
-
-  return words.charAt(0).toUpperCase() + words.slice(1);
+  return words === ""
+    ? "Activity"
+    : words.charAt(0).toUpperCase() + words.slice(1);
 };
 
 /**
@@ -80,11 +78,9 @@ export const formatActivityTitle = (
 ): string => {
   const label = ACTIVITY_LABELS[action] ?? deriveActionLabel(action);
 
-  if (resource !== null && resource !== "") {
-    return `${label} — ${resource}`;
-  }
-
-  return label;
+  return resource !== null && resource !== ""
+    ? `${label} — ${resource}`
+    : label;
 };
 
 /**
@@ -99,9 +95,7 @@ export const parseDashboardLimit = (raw: string | undefined): number => {
 
   const parsed = Number.parseInt(raw, 10);
 
-  if (Number.isNaN(parsed) || parsed < 1) {
-    return DASHBOARD_ACTIVITY_DEFAULT_LIMIT;
-  }
-
-  return Math.min(parsed, DASHBOARD_ACTIVITY_MAX_LIMIT);
+  return Number.isNaN(parsed) || parsed < 1
+    ? DASHBOARD_ACTIVITY_DEFAULT_LIMIT
+    : Math.min(parsed, DASHBOARD_ACTIVITY_MAX_LIMIT);
 };

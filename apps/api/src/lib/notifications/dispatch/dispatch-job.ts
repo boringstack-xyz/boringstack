@@ -144,11 +144,7 @@ const pickChannels = (
   event: IRegisteredEvent,
   channelsOverride: readonly string[] | undefined
 ): readonly string[] => {
-  if (channelsOverride !== undefined) {
-    return channelsOverride;
-  }
-
-  return event.defaultChannels;
+  return channelsOverride ?? event.defaultChannels;
 };
 
 const renderInApp = (

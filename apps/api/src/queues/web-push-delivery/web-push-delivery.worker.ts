@@ -99,11 +99,9 @@ const settleDelivery = async (
     return settleSent(deliveryId, result.attempted);
   }
 
-  if (result.attempted === 0 || result.pruned === result.attempted) {
-    return settleSuppressed(deliveryId);
-  }
-
-  return settleFailed(deliveryId, result.attempted);
+  return result.attempted === 0 || result.pruned === result.attempted
+    ? settleSuppressed(deliveryId)
+    : settleFailed(deliveryId, result.attempted);
 };
 
 const shouldRetryTransientFailure = (

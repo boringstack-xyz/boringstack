@@ -88,18 +88,14 @@ const parseAllFilesRow = (output: string): ICoverageResult | null => {
   const functionPct = parseFloat(parts[1] ?? "");
   const linePct = parseFloat(parts[2] ?? "");
 
-  if (
-    !Number.isFinite(linePct) ||
+  return !Number.isFinite(linePct) ||
     !Number.isFinite(functionPct) ||
     linePct < 0 ||
     linePct > 100 ||
     functionPct < 0 ||
     functionPct > 100
-  ) {
-    return null;
-  }
-
-  return { linePct: linePct / 100, functionPct: functionPct / 100 };
+    ? null
+    : { linePct: linePct / 100, functionPct: functionPct / 100 };
 };
 
 const formatPct = (value: number): string => `${(value * 100).toFixed(2)}%`;

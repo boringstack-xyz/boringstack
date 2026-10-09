@@ -14,11 +14,7 @@ const isBoolValue = (raw: unknown): raw is { bool: boolean } => {
     return false;
   }
 
-  if (!("bool" in raw)) {
-    return false;
-  }
-
-  return typeof raw.bool === "boolean";
+  return !("bool" in raw) ? false : typeof raw.bool === "boolean";
 };
 
 const isNumberValue = (raw: unknown): raw is { number: number } => {
@@ -26,11 +22,7 @@ const isNumberValue = (raw: unknown): raw is { number: number } => {
     return false;
   }
 
-  if (!("number" in raw)) {
-    return false;
-  }
-
-  return typeof raw.number === "number";
+  return !("number" in raw) ? false : typeof raw.number === "number";
 };
 
 const isActiveOverride = (row: IFeatureOverrideRow, now: Date): boolean => {
@@ -61,11 +53,9 @@ const findValueForKey = (
 
   const planRow = planFeatures.find((row) => row.featureKey === key);
 
-  if (planRow !== undefined) {
-    return { source: "plan", value: planRow.value };
-  }
-
-  return null;
+  return planRow !== undefined
+    ? { source: "plan", value: planRow.value }
+    : null;
 };
 
 const resolveBooleanFeature = (

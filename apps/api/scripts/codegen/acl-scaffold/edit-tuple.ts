@@ -36,11 +36,7 @@ function usesRoleReferences(body: string): boolean {
 }
 
 function formatTupleItem(body: string, item: string): string {
-  if (usesRoleReferences(body)) {
-    return `ROLE.${item}`;
-  }
-
-  return `"${item}"`;
+  return usesRoleReferences(body) ? `ROLE.${item}` : `"${item}"`;
 }
 
 /**
