@@ -19,9 +19,10 @@ If you provisioned via [OpenTofu](/topics/provisioning-with-tofu/), the Hetzner 
 
 ## Prerequisites
 
-- Your domain's DNS is on Cloudflare in proxied mode (orange cloud).
+- Your domain's DNS is on Cloudflare in proxied mode (orange cloud), with records for the apex and `app`.
 - The server has a static IPv4 address.
 - An ACME contact email (real address; Let's Encrypt rejects `example.com`).
+- An `app` record for the app host, proxied, alongside the apex record.
 
 <Aside type="caution">
 The script `infra/compose/scripts/ufw.example.sh` resets your UFW configuration. Read it before running against a production server. It requires `CONFIRM=yes` to prevent accidents.
@@ -30,11 +31,16 @@ The script `infra/compose/scripts/ufw.example.sh` resets your UFW configuration.
 ## 1. Configure the domain and ACME email
 
 ```bash
-echo 'PUBLIC_UI_HOST=example.com' >> compose/.env
+echo 'PUBLIC_SITE_HOST=example.com' >> compose/.env
+echo 'PUBLIC_UI_HOST=app.example.com' >> compose/.env
+echo 'SITE_CONTACT_EMAIL=hello@example.com' >> compose/.env
+echo 'SITE_IMAGE_TAG=v0.1.0' >> compose/.env
 echo 'ACME_EMAIL=ops@example.com' >> compose/.env
 ```
 
-The domain must resolve to this server via a Cloudflare proxied A/AAAA record on the apex. BoringStack routes `/api/*` and `/*` to the same Traefik instance on one cert.
+The apex (`example.com`) serves the public site. The app lives on `app.example.com`, and Traefik routes `/api/*` and `/health` on that host to the API and everything else on it to the UI. Both hosts need a Cloudflare proxied A/AAAA record pointing at this server. Traefik issues one Let's Encrypt certificate per host.
+
+To keep the single-domain layout instead, set `WITH_SITE=0` and `PUBLIC_UI_HOST=example.com`, and add only the apex record.
 
 ## 2. Boot the production stack
 
@@ -66,20 +72,23 @@ Ports 80,443: ALLOW from Cloudflare ranges only
 
 ## 4. Verify
 
-Three checks:
+Three checks against the app host, plus one for the apex:
 
 ```bash
 # Local (self-signed OK)
-curl -sI -H 'Host: example.com' https://localhost/health -k
+curl -sI -H 'Host: app.example.com' https://localhost/health -k
 
 # Via Cloudflare (the normal path)
-curl -sI https://example.com/health
+curl -sI https://app.example.com/health
 
 # Direct to server IP (should timeout  - UFW is working)
-curl -sI --resolve example.com:443:<your-vps-ip> https://example.com/health --max-time 5
+curl -sI --resolve app.example.com:443:<your-vps-ip> https://app.example.com/health --max-time 5
+
+# Public site on the apex
+curl -sI https://example.com/
 ```
 
-Expected results: first two return 200, third times out. The timeout proves the firewall is blocking direct access.
+Expected results: the first two and the apex return 200, the third times out. The timeout proves the firewall is blocking direct access.
 
 ## Updating Cloudflare IP ranges
 

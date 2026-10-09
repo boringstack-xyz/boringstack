@@ -33,18 +33,14 @@ const isMeBody = (
     return false;
   }
 
-  if (!("user" in value) || !isProfileBody(value.user)) {
-    return false;
-  }
-
-  return (
-    "account" in value &&
-    "role" in value &&
-    "memberships" in value &&
-    Array.isArray(value.memberships) &&
-    "features" in value &&
-    "capabilities" in value
-  );
+  return !("user" in value) || !isProfileBody(value.user)
+    ? false
+    : "account" in value &&
+        "role" in value &&
+        "memberships" in value &&
+        Array.isArray(value.memberships) &&
+        "features" in value &&
+        "capabilities" in value;
 };
 
 const extractCookiePair = (setCookie: string | null, name: string): string => {

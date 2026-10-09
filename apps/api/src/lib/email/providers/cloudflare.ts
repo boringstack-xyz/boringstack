@@ -59,19 +59,15 @@ export class CloudflareEmailService implements IEmailService {
       return "";
     }
 
-    if (
-      parsed !== null &&
+    return parsed !== null &&
       typeof parsed === "object" &&
       "result" in parsed &&
       parsed.result !== null &&
       typeof parsed.result === "object" &&
       "id" in parsed.result &&
       typeof parsed.result.id === "string"
-    ) {
-      return parsed.result.id;
-    }
-
-    return "";
+      ? parsed.result.id
+      : "";
   }
 
   async send(message: IEmailMessage): Promise<IEmailResult> {

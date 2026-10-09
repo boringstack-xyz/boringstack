@@ -195,7 +195,7 @@ export function HeroSection() {
         </div>
 
         <div className="bs-hero-tech" aria-label="Built with">
-          <span>React + Vite</span>
+          <span>Astro + React</span>
           <span>Bun + Elysia</span>
           <span>Postgres</span>
           <span>Compose</span>

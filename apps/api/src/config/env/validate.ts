@@ -99,22 +99,16 @@ export const toFloat = (
 };
 
 export const nonEmpty = (raw: string | undefined, fallback: string): string => {
-  if (raw === undefined || raw === "") {
-    return fallback;
-  }
-
-  return raw;
+  return raw === undefined || raw === "" ? fallback : raw;
 };
 
 export const toCsv = (raw: string | undefined): string[] => {
-  if (raw === undefined || raw === "") {
-    return [];
-  }
-
-  return raw
-    .split(",")
-    .map((segment) => segment.trim())
-    .filter((segment) => segment.length > 0);
+  return raw === undefined || raw === ""
+    ? []
+    : raw
+        .split(",")
+        .map((segment) => segment.trim())
+        .filter((segment) => segment.length > 0);
 };
 
 /*
@@ -552,11 +546,9 @@ const isPlaceholderSecret = (value: string): boolean => {
     return true;
   }
 
-  if (PLACEHOLDER_SECRET_PREFIXES.some((prefix) => lower.startsWith(prefix))) {
-    return true;
-  }
-
-  return lower.includes("placeholder");
+  return PLACEHOLDER_SECRET_PREFIXES.some((prefix) => lower.startsWith(prefix))
+    ? true
+    : lower.includes("placeholder");
 };
 
 const PLACEHOLDER_SECRET_FIELDS: readonly {

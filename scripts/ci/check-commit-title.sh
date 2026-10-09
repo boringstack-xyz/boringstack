@@ -13,6 +13,10 @@ set -euo pipefail
 
 TYPES='feat|fix|perf|refactor|test|docs|build|ci|chore|style|revert|deps'
 PATTERN="^(${TYPES})(\([a-z0-9][a-z0-9._/-]*\))?!?: [^ ].*$"
+# The pr-title workflow raises the limit for Dependabot, whose generated
+# titles ("... in the docker-images group across 1 directory") run long.
+MAX_LENGTH="${COMMIT_TITLE_MAX_LENGTH:-100}"
+[[ "$MAX_LENGTH" =~ ^[1-9][0-9]*$ ]] || { echo "check-commit-title: bad COMMIT_TITLE_MAX_LENGTH: $MAX_LENGTH" >&2; exit 2; }
 
 if [[ "${1:-}" == "--file" ]]; then
   [[ -n "${2:-}" && -f "$2" ]] || { echo "check-commit-title: no message file: ${2:-}" >&2; exit 2; }
@@ -28,7 +32,7 @@ case "$title" in
   "fixup! "* | "squash! "* | "amend! "* | "Merge "* | "Revert \""*) exit 0 ;;
 esac
 
-if [[ "$title" =~ $PATTERN ]] && (( ${#title} <= 100 )); then
+if [[ "$title" =~ $PATTERN ]] && (( ${#title} <= MAX_LENGTH )); then
   exit 0
 fi
 
@@ -37,7 +41,7 @@ Commit title does not follow Conventional Commits:
 
   $title
 
-Expected: <type>(<optional scope>)!?: <summary>, at most 100 characters.
+Expected: <type>(<optional scope>)!?: <summary>, at most ${MAX_LENGTH} characters.
 Types: ${TYPES//|/, }
 Example: feat(api): invoices can be voided
 EOF

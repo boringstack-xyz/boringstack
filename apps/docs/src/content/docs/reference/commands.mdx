@@ -90,7 +90,7 @@ WITH_OBSERVABILITY=0 ./scripts/compose-up.sh    # skip observability
 WITH_GLITCHTIP=0 ./scripts/compose-up.sh        # skip error tracking
 WITH_MAILPIT=1 ./scripts/compose-up.sh          # add local email catcher
 WITH_BULLMQ=1 ./scripts/compose-up.sh           # add queue dashboard (dev only)
-WITH_SITE=0 ./scripts/compose-up.sh             # skip the public marketing site (on in dev)
+WITH_SITE=0 ./scripts/compose-up.sh             # skip the public marketing site (on in dev and prod)
 ```
 
 Minimal: `WITH_OBSERVABILITY=0 WITH_GLITCHTIP=0 ./scripts/compose-up.sh` boots Postgres + Valkey + apps only.

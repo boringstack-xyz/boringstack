@@ -280,6 +280,17 @@ variable "acme_email" {
   }
 }
 
+variable "site_contact_email" {
+  type        = string
+  description = "Mailbox shown on the public marketing site's contact page. Empty falls back to acme_email. Must be a real address when set; example.com domains are rejected."
+  default     = ""
+
+  validation {
+    condition     = var.site_contact_email == "" || (length(regexall("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$", var.site_contact_email)) > 0 && length(regexall("@example\\.(com|org|net)$", lower(var.site_contact_email))) == 0)
+    error_message = "site_contact_email must be empty (falls back to acme_email) or a real email address, not an example.com/org/net placeholder."
+  }
+}
+
 # ============================================================================
 # Optional integrations
 # ============================================================================

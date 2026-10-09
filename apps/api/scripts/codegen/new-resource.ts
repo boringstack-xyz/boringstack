@@ -100,11 +100,9 @@ export const ${filePrefix} = app.table(
    * plus the new table. Once at least one table exists, future calls
    * just append.
    */
-  if (!content.includes('from "drizzle-orm/pg-core"')) {
-    return APP_SCHEMA_HEADER + block;
-  }
-
-  return content.trimEnd() + "\n" + block;
+  return !content.includes('from "drizzle-orm/pg-core"')
+    ? APP_SCHEMA_HEADER + block
+    : content.trimEnd() + "\n" + block;
 };
 
 const patchAuditConstants = (

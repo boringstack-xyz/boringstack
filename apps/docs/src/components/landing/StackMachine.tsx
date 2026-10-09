@@ -13,9 +13,9 @@ const railX = board.cx - board.halfWidth - 20;
 const labelX = 444;
 const layers = [
   {
-    name: "Interface",
-    path: "apps/ui",
-    detail: "React + Vite · generated OpenAPI client",
+    name: "Web",
+    path: "apps/site + apps/ui",
+    detail: "Astro site on domain · React app on app.domain",
     wire: "typed client",
   },
   {
@@ -326,7 +326,7 @@ export function StackMachine() {
                 {index === 1 && stage === 1
                   ? "missing accountId"
                   : [
-                      "React + Vite",
+                      "Astro + React",
                       "Bun + Elysia + Drizzle",
                       "Postgres + Valkey",
                       "OpenTofu + cloud-init",

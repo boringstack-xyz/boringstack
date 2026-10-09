@@ -64,11 +64,9 @@ function declaredResolvers(config: unknown): string[] {
 
   const resolver = settings["import/resolver"];
 
-  if (typeof resolver !== "object" || resolver === null) {
-    return [];
-  }
-
-  return Object.keys(resolver);
+  return typeof resolver !== "object" || resolver === null
+    ? []
+    : Object.keys(resolver);
 }
 
 test("tooling lint pins its import resolver inside the repo", async () => {

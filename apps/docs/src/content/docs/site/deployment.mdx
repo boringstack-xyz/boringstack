@@ -81,11 +81,12 @@ Cache policy, keyed on status and path:
 ## Docker Compose
 
 `infra/compose/compose/docker-compose.site.yml` is merged when `WITH_SITE=1`. The default is
-`1` in dev and `0` in prod. `dev.sh` applies it.
+`1` in dev and prod. `WITH_SITE=0` opts out and keeps the single-domain layout, with the app on
+`PUBLIC_UI_HOST`. `dev.sh` applies it.
 
 - Dev: `site-dev` on `SITE_HOST_PORT` (default `7333`).
-- Prod: `site` is routed by Traefik on `Host(PUBLIC_SITE_HOST)`. The app stays on
-  `PUBLIC_UI_HOST`, so the two origins never share cookies. `dev.sh` requires
+- Prod: `site` is routed by Traefik on `Host(PUBLIC_SITE_HOST)` (the apex). The app is on
+  `PUBLIC_UI_HOST` (`app.<domain>`), so the two origins never share cookies. `dev.sh` requires
   `PUBLIC_SITE_HOST` (different from the app host), `SITE_CONTACT_EMAIL` and a pinned
   `SITE_IMAGE_TAG` (a version or `sha-*`, never `latest`). A full pinned `SITE_IMAGE`
   reference can replace the tag.

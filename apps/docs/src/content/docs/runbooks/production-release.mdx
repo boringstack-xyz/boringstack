@@ -39,8 +39,8 @@ main screens.
 2. If an older Argo Application still has `argocd-image-updater` annotations,
    remove them first. Otherwise a per-image updater can overwrite the coordinated
    digests.
-3. Set the repository variable `PRODUCTION_RELEASE_MODE=coordinated`. Without it,
-   the release fails before any image is built.
+3. Set the repository variable `PRODUCTION_RELEASE_MODE=coordinated`. Until it is
+   set, the release job is skipped and no image is built.
 4. Allow the release bot to push the promotion commit to `main`. Do not disable
    branch protection to make a release pass.
 

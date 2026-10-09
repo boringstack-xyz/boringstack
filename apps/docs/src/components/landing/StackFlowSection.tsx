@@ -3,7 +3,7 @@ import { stackLayers } from "./landingContent";
 import { SectionHeading } from "./LandingPrimitives";
 
 export function StackFlowSection() {
-  const [selected, setSelected] = useState(1);
+  const [selected, setSelected] = useState(2);
   const panelId = useId();
   const layer = stackLayers[selected];
   return (
@@ -19,7 +19,7 @@ export function StackFlowSection() {
           <span>
             <span className="bs-status-dot" /> BORINGSTACK / REPOSITORY
           </span>
-          <span>FOUR LAYERS. ONE SYSTEM.</span>
+          <span>FIVE LAYERS. ONE SYSTEM.</span>
         </div>
         <div className="bs-repo-workspace">
           <div className="bs-repo-tree" aria-label="Explore repository layers">
@@ -33,7 +33,7 @@ export function StackFlowSection() {
                 onClick={() => setSelected(index)}
               >
                 <span className="bs-tree-branch" aria-hidden="true">
-                  {index === 3 ? "└" : "├"}─
+                  {index === stackLayers.length - 1 ? "└" : "├"}─
                 </span>
                 <span>
                   <strong>{item.path}/</strong>

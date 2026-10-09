@@ -45,31 +45,23 @@ const isReadinessReport = (
 const isLivenessReport = (
   value: unknown
 ): value is { status: string; timestamp: string } => {
-  if (value === null || typeof value !== "object") {
-    return false;
-  }
-
-  return (
-    "status" in value &&
-    typeof value.status === "string" &&
-    "timestamp" in value &&
-    typeof value.timestamp === "string"
-  );
+  return value === null || typeof value !== "object"
+    ? false
+    : "status" in value &&
+        typeof value.status === "string" &&
+        "timestamp" in value &&
+        typeof value.timestamp === "string";
 };
 
 const isRootReport = (
   value: unknown
 ): value is { name: string; status: string } => {
-  if (value === null || typeof value !== "object") {
-    return false;
-  }
-
-  return (
-    "name" in value &&
-    typeof value.name === "string" &&
-    "status" in value &&
-    typeof value.status === "string"
-  );
+  return value === null || typeof value !== "object"
+    ? false
+    : "name" in value &&
+        typeof value.name === "string" &&
+        "status" in value &&
+        typeof value.status === "string";
 };
 
 describe("Health probes", () => {

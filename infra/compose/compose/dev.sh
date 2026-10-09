@@ -77,9 +77,9 @@ case "$STACK" in
     : "${POSTGRES_DB:?POSTGRES_DB required in prod. Set in compose/.env or via terraform.tfvars.}"
     : "${JWT_SECRET:?JWT_SECRET required in prod (>=32 chars). Generate with: openssl rand -base64 48}"
     : "${MFA_ENCRYPTION_KEY:?MFA_ENCRYPTION_KEY required in prod once users enable MFA (base64 32 bytes). Generate with: openssl rand -base64 32}"
-    : "${FRONTEND_URL:?FRONTEND_URL required in prod. e.g. https://example.com}"
-    : "${PUBLIC_API_URL:?PUBLIC_API_URL required in prod. Same-origin example: https://example.com/api}"
-    : "${PUBLIC_UI_HOST:?PUBLIC_UI_HOST required in prod. Bare DNS name, e.g. example.com}"
+    : "${FRONTEND_URL:?FRONTEND_URL required in prod. The app origin, e.g. https://app.example.com}"
+    : "${PUBLIC_API_URL:?PUBLIC_API_URL required in prod. Origin only, e.g. https://app.example.com (the SPA appends /api/v1)}"
+    : "${PUBLIC_UI_HOST:?PUBLIC_UI_HOST required in prod. Bare DNS name for the app, e.g. app.example.com (with the site on, the default) or example.com with WITH_SITE=0}"
     : "${ACME_EMAIL:?ACME_EMAIL required in prod for ACME/Lets Encrypt. e.g. you@example.com}"
     if [[ "$WITH_GLITCHTIP" == "1" ]]; then
       : "${GLITCHTIP_SECRET_KEY:?GLITCHTIP_SECRET_KEY required in prod when GlitchTip is enabled. Generate with: openssl rand -base64 50. Set WITH_GLITCHTIP=0 to skip GlitchTip entirely.}"
@@ -172,22 +172,23 @@ if [[ "$WITH_GLITCHTIP" == "1" && -f "$ROOT/docker-compose.glitchtip.yml" ]]; th
   fi
 fi
 
-# Public marketing site (apps/site). On by default in dev (site-dev on :7333).
-# Off by default in prod: enabling it puts the static site on the apex host and
-# moves the app to PUBLIC_UI_HOST (app.<domain>). The validation is below.
+# Public marketing site (apps/site). On by default for dev (site-dev on :7333)
+# and prod (static site on the apex host, app on PUBLIC_UI_HOST = app.<domain>),
+# matching the k3s domain split. Opt out with WITH_SITE=0 to keep the single-host
+# legacy layout. Smoke stays off: it has no site profile. The validation is below.
 if [[ "${WITH_SITE:-}" == "" ]]; then
-  if [[ "$STACK" == "dev" ]]; then WITH_SITE=1; else WITH_SITE=0; fi
+  if [[ "$STACK" == "smoke" ]]; then WITH_SITE=0; else WITH_SITE=1; fi
 fi
 if [[ "$WITH_SITE" == "1" && -f "$ROOT/docker-compose.site.yml" ]]; then
   if [[ "$STACK" == "prod" ]]; then
-    : "${PUBLIC_SITE_HOST:?PUBLIC_SITE_HOST required when WITH_SITE=1 in prod. Bare apex DNS name, e.g. example.com. The app moves to PUBLIC_UI_HOST, e.g. app.example.com.}"
-    : "${SITE_CONTACT_EMAIL:?SITE_CONTACT_EMAIL required when WITH_SITE=1 in prod. The mailbox shown on the contact page.}"
+    : "${PUBLIC_SITE_HOST:?PUBLIC_SITE_HOST required in prod (the site is on by default; set WITH_SITE=0 to opt out). Bare apex DNS name, e.g. example.com. The app moves to PUBLIC_UI_HOST, e.g. app.example.com.}"
+    : "${SITE_CONTACT_EMAIL:?SITE_CONTACT_EMAIL required in prod while the site is on. The mailbox shown on the contact page. Set WITH_SITE=0 to skip the site.}"
     if [[ "$PUBLIC_SITE_HOST" == "$PUBLIC_UI_HOST" ]]; then
-      echo "[ERROR] PUBLIC_SITE_HOST and PUBLIC_UI_HOST must differ when WITH_SITE=1: the site is the apex, the app is app.<domain>." >&2
+      echo "[ERROR] PUBLIC_SITE_HOST and PUBLIC_UI_HOST must differ while the site is on: the site is the apex, the app is app.<domain>. Set WITH_SITE=0 for the single-host layout." >&2
       exit 1
     fi
     if [[ -z "${SITE_IMAGE:-}" ]]; then
-      : "${SITE_IMAGE_TAG:?SITE_IMAGE_TAG required in prod when WITH_SITE=1 (semver like v0.1.0 or sha-<digest>; never latest). Or set SITE_IMAGE to a full pinned reference.}"
+      : "${SITE_IMAGE_TAG:?SITE_IMAGE_TAG required in prod while the site is on (semver like v0.1.0 or sha-<digest>; never latest). Or set SITE_IMAGE to a full pinned reference. Set WITH_SITE=0 to skip the site.}"
     fi
     if [[ "${SITE_IMAGE_TAG:-}" == "latest" || "${SITE_IMAGE:-}" == *:latest ]]; then
       echo "[ERROR] Site image must be pinned in prod: SITE_IMAGE_TAG=latest (or SITE_IMAGE ending :latest) is not allowed." >&2

@@ -242,9 +242,11 @@ check_prod_image_tags() {
     POSTGRES_DB=app
     JWT_SECRET=ci-guardrail-placeholder-padded-to-32-chars
     MFA_ENCRYPTION_KEY=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
-    FRONTEND_URL=https://example.com
-    PUBLIC_API_URL=https://example.com/api
-    PUBLIC_UI_HOST=example.com
+    FRONTEND_URL=https://app.example.com
+    PUBLIC_API_URL=https://app.example.com
+    PUBLIC_UI_HOST=app.example.com
+    PUBLIC_SITE_HOST=example.com
+    SITE_CONTACT_EMAIL=hello@example.com
     ACME_EMAIL=ops@example.com
     VALKEY_PASSWORD=ci-guardrail-placeholder
     ENV_FILE=/tmp/guardrails-empty.env
@@ -270,8 +272,20 @@ check_prod_image_tags() {
     || fail "latest rejection message missing: $output"
 
   # 3. Pinned tags pass.
-  env "${guard_env[@]}" API_IMAGE_TAG=v0.1.0 UI_IMAGE_TAG=v0.1.0 ./dev.sh config --quiet \
+  env "${guard_env[@]}" API_IMAGE_TAG=v0.1.0 UI_IMAGE_TAG=v0.1.0 SITE_IMAGE_TAG=v0.1.0 ./dev.sh config --quiet \
     || fail "prod rejected properly pinned tags"
+
+  # 4. The site is on by default in prod, so an unpinned site image must fail
+  #    closed and name the missing var.
+  if output=$(env "${guard_env[@]}" API_IMAGE_TAG=v0.1.0 UI_IMAGE_TAG=v0.1.0 ./dev.sh config --quiet 2>&1); then
+    fail "prod accepted an unset site image tag with the site on by default"
+  fi
+  echo "$output" | grep -q "SITE_IMAGE_TAG" \
+    || fail "error does not mention SITE_IMAGE_TAG: $output"
+
+  # 5. WITH_SITE=0 is the explicit opt-out: no site tag or contact needed.
+  env "${guard_env[@]}" API_IMAGE_TAG=v0.1.0 UI_IMAGE_TAG=v0.1.0 WITH_SITE=0 ./dev.sh config --quiet \
+    || fail "prod rejected WITH_SITE=0 without site settings"
 
   ok "prod-image-tags"
 }

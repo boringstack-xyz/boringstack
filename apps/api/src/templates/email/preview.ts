@@ -99,11 +99,9 @@ const getDummyValue = (varName: string): string => {
     return "View Details";
   }
 
-  if (lowercased.includes("description")) {
-    return "This is a sample description.";
-  }
-
-  return "Sample Value";
+  return lowercased.includes("description")
+    ? "This is a sample description."
+    : "Sample Value";
 };
 
 const processValue = (value: unknown): ProcessedValue => {
@@ -131,11 +129,9 @@ const processValue = (value: unknown): ProcessedValue => {
     return out;
   }
 
-  if (typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
-
-  return "";
+  return typeof value === "number" || typeof value === "boolean"
+    ? String(value)
+    : "";
 };
 
 const generateDummyData = (variablesPath: string): Record<string, unknown> => {
@@ -143,11 +139,9 @@ const generateDummyData = (variablesPath: string): Record<string, unknown> => {
   const parsed: unknown = JSON.parse(fileContent);
   const processed = processValue(parsed);
 
-  if (typeof processed === "object" && !Array.isArray(processed)) {
-    return processed;
-  }
-
-  return {};
+  return typeof processed === "object" && !Array.isArray(processed)
+    ? processed
+    : {};
 };
 
 const findTemplates = (dir: string, fileList: string[] = []): string[] => {

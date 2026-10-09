@@ -13,11 +13,9 @@ const buildHistory = (options: IAIChatOptions): IChatMessage[] => {
     return options.messages;
   }
 
-  if (options.userMessage !== undefined && options.userMessage !== "") {
-    return [{ role: "user", content: options.userMessage }];
-  }
-
-  return [];
+  return options.userMessage !== undefined && options.userMessage !== ""
+    ? [{ role: "user", content: options.userMessage }]
+    : [];
 };
 
 export const toOpenAIMessages = (options: IAIChatOptions): IOpenAIMessage[] => [

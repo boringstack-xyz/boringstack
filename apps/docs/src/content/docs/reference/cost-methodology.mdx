@@ -25,7 +25,7 @@ The MAU number is the dial that matters most; everything else derives from typic
 
 ## Column 1: BoringStack (VPS + Cloudflare + B2)
 
-The runtime is the BoringStack default: one Hetzner Cloud VPS running the full Compose stack (Postgres, Valkey, API, UI, Traefik), Cloudflare proxying the apex domain (free plan), and Backblaze B2 for daily Postgres backups.
+The runtime is the BoringStack default: one Hetzner Cloud VPS running the full Compose stack (Postgres, Valkey, API, UI, Traefik), Cloudflare proxying the apex and `app` hosts (free plan), and Backblaze B2 for daily Postgres backups.
 
 | Stage    | Host          | Monthly cost           |
 | -------- | ------------- | ---------------------- |

@@ -72,10 +72,14 @@
       "key": "WITH_SITE",
       "kind": "toggle",
       "group": "infra",
-      "label": "Public marketing site (apps/site). Dev: Astro dev server on 7333. Prod: static site on the apex host, app on app.<domain>",
+      "label": "Public marketing site (apps/site). Dev: Astro dev server on 7333. Prod: static site on the apex host, app on app.<domain>. Set 0 for the single-host layout.",
       "devDefault": "1",
-      "prodDefault": "0",
-      "addsServices": { "1": ["site-dev", "site"] }
+      "prodDefault": "1",
+      "addsServices": { "1": ["site-dev", "site"] },
+      "requiresSecrets": {
+        "1": ["PUBLIC_SITE_HOST", "SITE_CONTACT_EMAIL", "SITE_IMAGE_TAG"]
+      },
+      "requiresSecretsProdOnly": true
     },
     {
       "key": "WUD",

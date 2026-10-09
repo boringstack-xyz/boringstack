@@ -22,13 +22,9 @@ const ROLE_LITERAL_FILE_ALLOWLIST = [
 const ROLE_LITERAL_PATH_SKIP = [/\.test\.(ts|tsx)$/u, /\.stories\.(tsx|ts)$/u];
 
 function isRoleLiteralAllowedPath(relativePath: string): boolean {
-  if (ROLE_LITERAL_PATH_SKIP.some((pattern) => pattern.test(relativePath))) {
-    return true;
-  }
-
-  return ROLE_LITERAL_FILE_ALLOWLIST.some((pattern) =>
-    pattern.test(relativePath)
-  );
+  return ROLE_LITERAL_PATH_SKIP.some((pattern) => pattern.test(relativePath))
+    ? true
+    : ROLE_LITERAL_FILE_ALLOWLIST.some((pattern) => pattern.test(relativePath));
 }
 
 export function checkNoRawRoleLiterals(

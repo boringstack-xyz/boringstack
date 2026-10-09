@@ -53,11 +53,9 @@ const ALLOWED_KEYS = new Set(["tokenhash", "tokentype", "tokenexpiresat"]);
 const isSensitiveKey = (key: string): boolean => {
   const lower = key.toLowerCase();
 
-  if (ALLOWED_KEYS.has(lower)) {
-    return false;
-  }
-
-  return SENSITIVE_KEY_PARTS.some((part) => lower.includes(part));
+  return ALLOWED_KEYS.has(lower)
+    ? false
+    : SENSITIVE_KEY_PARTS.some((part) => lower.includes(part));
 };
 
 /*
@@ -110,11 +108,9 @@ const redactValue = (value: unknown, depth: number): unknown => {
     return DEPTH_LIMIT;
   }
 
-  if (Array.isArray(value)) {
-    return value.map((entry: unknown) => redactValue(entry, depth + 1));
-  }
-
-  return redactRecord(value, depth + 1);
+  return Array.isArray(value)
+    ? value.map((entry: unknown) => redactValue(entry, depth + 1))
+    : redactRecord(value, depth + 1);
 };
 
 export const redactRecord = (

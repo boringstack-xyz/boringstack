@@ -56,13 +56,11 @@ const isPrivateIpv4 = (host: string): boolean => {
     [192, 168, 168], // 192.168.0.0/16 private
   ];
 
-  if (first >= 224) {
-    return true;
-  }
-
-  return PRIVATE_BLOCKS.some(
-    ([net, low, high]) => first === net && second >= low && second <= high
-  );
+  return first >= 224
+    ? true
+    : PRIVATE_BLOCKS.some(
+        ([net, low, high]) => first === net && second >= low && second <= high
+      );
 };
 
 /*

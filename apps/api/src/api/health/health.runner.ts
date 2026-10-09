@@ -10,11 +10,7 @@ export const rollupStatus = (statuses: ReadinessStatus[]): ReadinessStatus => {
     return "down";
   }
 
-  if (statuses.includes("degraded")) {
-    return "degraded";
-  }
-
-  return "ok";
+  return statuses.includes("degraded") ? "degraded" : "ok";
 };
 
 /**

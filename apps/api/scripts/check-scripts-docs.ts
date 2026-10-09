@@ -31,11 +31,7 @@ function readPackageScriptKeys(): string[] {
         return false;
       }
 
-      if (typeof value !== "string") {
-        return false;
-      }
-
-      return referencesScriptsDir(value);
+      return typeof value !== "string" ? false : referencesScriptsDir(value);
     })
     .map(([key]) => key);
 }

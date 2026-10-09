@@ -98,8 +98,8 @@ Packages are discovered, not listed:
 - `scripts/ci/pre-push.sh` runs the same gate when anything under `packages/` changed,
   even if no app changed.
 - `.github/workflows/apps-ui-validate.yml` runs it on `packages/**` changes.
-- Dependabot has a `bun` entry for `/packages/*`. It matches nothing until the directory
-  exists.
+- Dependabot has no entry for `packages/`, because it fails on a directory that does not
+  exist. Add a `bun` entry for the package's directory when you create it.
 
 Wiring a package into `apps/ui` (tsconfig `paths`, `server.fs.allow`, `resolve.dedupe`) is
 a separate step, described in the same guide. Note that `lint:meta` does not scan

@@ -7,6 +7,15 @@ A log of substantial changes to the docs, templates, and tooling. For per-commit
 
 ## 2026-10
 
+### Domain split is the default
+
+- **Split layout on Compose and OpenTofu.** The public site is on the apex (`https://<domain>`)
+  and the app is on `https://app.<domain>`. `WITH_SITE` is on in dev and prod. Set
+  `PUBLIC_SITE_HOST`, `PUBLIC_UI_HOST=app.<domain>`, `SITE_CONTACT_EMAIL` and a pinned
+  `SITE_IMAGE_TAG` in prod. OpenTofu creates an `app` DNS record and outputs `site_url`,
+  `app_url` and `api_url`. Set `WITH_SITE=0` to keep the single-domain layout.
+  See [Public site](/site/overview/) and [Deployment](/topics/deployment/).
+
 ### Lessons from the first product (Tinkercaster)
 
 A first product built on the template reported where the template slowed it down or let
@@ -19,14 +28,14 @@ problems through. The fixes are tracked in the repository's product feedback led
   [Production releases](/runbooks/production-release/).
 - **Public marketing site.** New `apps/site`, an Astro static site on the apex domain with a
   Markdown blog, consent-gated analytics and an nginx image. The app moves to `app.<domain>`.
-  Local dev is on `:7333` with `WITH_SITE=1`. See [Public site](/site/overview/).
+  Local dev is on `:7333`, and `WITH_SITE` is on by default in dev and prod. See [Public site](/site/overview/).
 - **Business metrics.** CloudNativePG runs aggregate queries over sign-ups, active users,
   plans, cancellations and Stripe events, with a Grafana dashboard. Only aggregates leave the
   database. See [Observability](/topics/observability/#business-metrics-k3s).
 - **Conventional Commits gate.** Commit subjects and PR titles are checked by the `commit-msg`
   hook and the `pr-title` workflow. See [Agent docs](/architecture/agent-docs/#conventions-that-are-gates-not-prose).
-- **Shared packages.** `packages/*` workspaces are discovered by `bun run check`, the pre-push
-  hook and Dependabot. See [Repository layout](/architecture/monorepo-layout/#shared-packages).
+- **Shared packages.** `packages/*` workspaces are discovered by `bun run check` and the pre-push
+  hook. See [Repository layout](/architecture/monorepo-layout/#shared-packages).
 - **Bundle budget reasons.** A raised UI budget or a new budget entry needs a recorded reason
   in `apps/ui/budgets.md`. See [Lint as the contract](/architecture/lint-as-contract/#bundle-budgets-need-a-recorded-reason).
 - **Self-hosted CI runners.** `CI_RUNNER` moves jobs to self-hosted runners. Fork pull requests

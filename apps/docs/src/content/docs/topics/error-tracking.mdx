@@ -80,6 +80,8 @@ Change only the DSN. No SDK changes. The infrastructure is the variable, not the
 - API: `SENTRY_DSN=https://...@glitchtip.example.com/...`
 - UI: `VITE_SENTRY_DSN=https://...@glitchtip.example.com/...`
 
+The public site (`apps/site`) ships no error tracking. It makes no API calls, so there is no DSN to set for it.
+
 <Aside type="tip" title="When to use Sentry vs GlitchTip">
 **Hosted Sentry:** best if you'd rather delegate operations and pay a monthly subscription fee after the free tier expires. **GlitchTip:** best if you're already running your own self-hosted stack and another container's overhead is essentially free. The developer experience is identical on both paths because they use the same SDK.
 </Aside>

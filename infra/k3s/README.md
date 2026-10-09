@@ -144,8 +144,8 @@ references those tags, so a partial Compose publish cannot reach this target.
    overwrite the coordinated digests with per-image tags. Let any running
    per-image release finish, and record the current digests for rollback.
 3. Set the GitHub repository variable `PRODUCTION_RELEASE_MODE=coordinated`.
-   Without it, the release fails before any image is built. The variable is an
-   operator assertion, not a live check.
+   Until it is set, the release job is skipped and no image is built. The
+   variable is an operator assertion, not a live check.
 4. Repository policy must allow `github-actions[bot]` to push the promotion
    commit to `main`. If branch protection blocks it, promotion fails closed.
    Do not disable protection to make a release pass.

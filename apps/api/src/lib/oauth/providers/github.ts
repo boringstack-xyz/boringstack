@@ -102,11 +102,7 @@ class GithubProvider implements IOAuthProviderModule {
       return String(value);
     }
 
-    if (typeof value === "string") {
-      return value;
-    }
-
-    return "";
+    return typeof value === "string" ? value : "";
   }
 
   buildAuthorizationURL(

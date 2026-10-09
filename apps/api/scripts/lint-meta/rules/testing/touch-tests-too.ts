@@ -83,10 +83,8 @@ export const touchTestsTooRule: IMetaRule = {
   run({ root }) {
     const baseRef = process.env.LINT_META_TOUCHED_BASE;
 
-    if (baseRef === undefined || baseRef === "") {
-      return [];
-    }
-
-    return checkTouchedTests(baseRef, root);
+    return baseRef === undefined || baseRef === ""
+      ? []
+      : checkTouchedTests(baseRef, root);
   },
 };

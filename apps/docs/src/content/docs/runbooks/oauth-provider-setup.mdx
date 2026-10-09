@@ -7,24 +7,24 @@ Set up OAuth with Google, GitHub, and/or LinkedIn so users can sign in with thei
 
 ## Base URLs
 
-Before creating OAuth apps, decide your domain and set these env vars:
+Before creating OAuth apps, decide your domain and set these env vars. The app lives on `app.<domain>`. The public site on the apex does not handle sign-in, so OAuth callbacks, `FRONTEND_URL` and `PUBLIC_API_URL` all use the app host:
 
 ```bash
-FRONTEND_URL=https://example.com
-PUBLIC_API_URL=https://example.com/api
+FRONTEND_URL=https://app.example.com
+PUBLIC_API_URL=https://app.example.com   # origin only; the API appends /api/v1
 ```
 
 All three providers will ask for redirect URIs. The pattern is:
 
 ```
-https://example.com/api/v1/auth/oauth/{provider}/callback
+https://app.example.com/api/v1/auth/oauth/{provider}/callback
 ```
 
 Where `{provider}` is `google`, `github`, or `linkedin`.
 
 ## Local development setup
 
-During development, Traefik runs on `localhost:7331`. Register these **additional** redirect URIs in each provider console:
+During development, the UI runs on `localhost:7331` and proxies `/api` to the API. Register these **additional** redirect URIs in each provider console:
 
 ```
 http://localhost:7331/api/v1/auth/oauth/google/callback
@@ -51,7 +51,7 @@ After changing env, restart the API:
 3. **Authorized redirect URIs**: add:
 
 ```
-https://example.com/api/v1/auth/oauth/google/callback
+https://app.example.com/api/v1/auth/oauth/google/callback
 ```
 
 4. Note the **Client ID** and **Client secret**.
@@ -71,12 +71,12 @@ Google requests scopes `openid`, `email`, and `profile` automatically. BoringSta
 
 1. GitHub → **Settings** → **Developer settings** → **OAuth Apps** → **New OAuth App**.
 
-2. **Homepage URL**: `https://example.com`
+2. **Homepage URL**: `https://app.example.com`
 
 3. **Authorization callback URL**:
 
 ```
-https://example.com/api/v1/auth/oauth/github/callback
+https://app.example.com/api/v1/auth/oauth/github/callback
 ```
 
 4. Generate a **Client secret**.
@@ -99,7 +99,7 @@ BoringStack requests `read:user` and `user:email` scopes.
 2. Under **Auth** → **OAuth 2.0 settings** → **Authorized redirect URLs**:
 
 ```
-https://example.com/api/v1/auth/oauth/linkedin/callback
+https://app.example.com/api/v1/auth/oauth/linkedin/callback
 ```
 
 3. Request the **Sign In with LinkedIn using OpenID Connect** product (required for the `openid` scope).

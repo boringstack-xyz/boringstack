@@ -33,7 +33,7 @@ WITH_GLITCHTIP=0 ./dev.sh up -d        # skip glitchtip
 WITH_BULLMQ=1 ./dev.sh up -d           # add bull board (opt-in)
 WITH_WUD=1 ./dev.sh up -d              # add WUD image-update detector (opt-in)
 WITH_MAILPIT=1 ./dev.sh up -d          # add Mailpit local SMTP (opt-in)
-WITH_SITE=0 ./dev.sh up -d             # skip the public marketing site (on in dev, off in prod)
+WITH_SITE=0 ./dev.sh up -d             # skip the public marketing site (on in dev and prod)
 ```
 
 The default stack includes Prometheus, Grafana, Loki, and GlitchTip. Niche tooling (Bull Board, WUD, Mailpit) is opt-in. See [Profiles & overlays](/infra/profiles-and-overlays/).

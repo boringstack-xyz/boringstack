@@ -27,6 +27,12 @@ variable "acme_email" {
   type = string
 }
 
+# Mailbox shown on the public site's contact page. The root module falls back
+# to acme_email when the operator leaves it empty.
+variable "site_contact_email" {
+  type = string
+}
+
 # Optional integrations (each may be empty)
 
 variable "email_provider" {

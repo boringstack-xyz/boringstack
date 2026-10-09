@@ -236,8 +236,10 @@ or larger. Paste your SSH public key. Buy.
 
 **Configure DNS in Cloudflare.** On the target zone, add:
 
-- `A` record on the apex (`@`) pointing at the VPS IPv4. **Proxied**.
-- `AAAA` record on the apex pointing at the VPS IPv6. **Proxied**.
+- `A` and `AAAA` records on the apex (`@`) pointing at the VPS. **Proxied**.
+  The apex serves the public site.
+- `A` and `AAAA` records on `app` pointing at the same VPS. **Proxied**.
+  The app (UI and `/api`) serves from `app.<your-domain>`.
 - `CNAME` for `www` pointing at `@`, if you want www-to-apex (optional).
 
 Then **SSL/TLS → Overview → Full (strict)** and **Edge Certificates →
@@ -262,7 +264,12 @@ POSTGRES_USER=app
 POSTGRES_PASSWORD=op://Production/Postgres/password
 POSTGRES_DB=app
 
-PUBLIC_UI_HOST=your-domain.example
+# Domain split: the app is on app.<domain>, the public site is on the apex.
+PUBLIC_UI_HOST=app.your-domain.example
+PUBLIC_SITE_HOST=your-domain.example
+SITE_CONTACT_EMAIL=hello@your-domain.example
+# Pinned site image tag (semver or sha-<digest>; never latest)
+SITE_IMAGE_TAG=v0.1.0
 ACME_EMAIL=op://Production/ACME/email
 
 # Your fork's GHCR org (lowercase). Defaults point at upstream boringstack.
@@ -271,18 +278,19 @@ IMAGE_OWNER=your-github-org
 # UI_IMAGE_NAME=your-fork-ui
 ```
 
-The public marketing site is off in prod by default (`WITH_SITE=0`). To serve it, set
-`WITH_SITE=1`, `PUBLIC_SITE_HOST` to the apex domain, `SITE_CONTACT_EMAIL`, and a pinned
-`SITE_IMAGE_TAG`. Then set `PUBLIC_UI_HOST` to `app.<your-domain>`, because the app moves to
-its own origin. The [Public site](/site/deployment/) page lists the rules.
+The split layout is the default. `WITH_SITE` is on in prod too, so the public site
+is served from the apex and the app from `app.<your-domain>`. The site needs
+`PUBLIC_SITE_HOST` (the apex), `SITE_CONTACT_EMAIL`, and a pinned `SITE_IMAGE_TAG`.
+To keep the old single-domain layout, set `WITH_SITE=0` and point `PUBLIC_UI_HOST`
+at the apex. The [Public site](/site/deployment/) page lists the rules.
 
 ```bash
 # compose/api.prod.env.tpl  (gitignored; renders to compose/api.prod.env)
 JWT_SECRET=op://Production/Auth/jwt_secret
 MFA_ENCRYPTION_KEY=op://Production/Auth/mfa_encryption_key
 
-FRONTEND_URL=https://your-domain.example
-PUBLIC_API_URL=https://your-domain.example
+FRONTEND_URL=https://app.your-domain.example
+PUBLIC_API_URL=https://app.your-domain.example
 ALLOWED_ORIGINS=
 
 # Email; optional. See /runbooks/cloudflare-email-setup/
@@ -325,21 +333,28 @@ end-to-end; not needed for the first run.
 
 ## 4. Verify
 
-Three checks. All three must pass before you trust the deploy.
+Three checks, plus the public site. All must pass before you trust the deploy.
 
 ```bash
-# Check 1: HTTPS through Cloudflare
-curl -sI https://<your-domain>/health
+# Check 1: HTTPS through Cloudflare, app host
+curl -sI https://app.<your-domain>/health
 # Expect: HTTP/2 200; server: cloudflare; cf-ray: <id>
 
 # Check 2: Cert is from Let's Encrypt, not Cloudflare Universal SSL
-echo | openssl s_client -connect <your-domain>:443 -servername <your-domain> 2>/dev/null \
+echo | openssl s_client -connect app.<your-domain>:443 -servername app.<your-domain> 2>/dev/null \
   | openssl x509 -noout -issuer
 # Expect: issuer=... Let's Encrypt ...
 
 # Check 3: Direct origin access is blocked (firewall is doing its job)
 curl -sI http://<vps-ipv4>/health --max-time 5
 # Expect: connection timeout or connection refused
+```
+
+Then check the apex, which serves the public site:
+
+```bash
+curl -sI https://<your-domain>/
+# Expect: HTTP/2 200 from the site (static, no cookies)
 ```
 
 If check 1 fails, the most common cause on a fresh apply is that DNS
@@ -368,7 +383,7 @@ Cloudflare IPs automatically, but the manual path requires the [Firewall
 & TLS runbook's](/runbooks/firewall-and-tls/) ufw rules to do the
 same job.
 
-When all three checks pass, open `https://<your-domain>` and register
+When all three checks pass, open `https://app.<your-domain>` and register
 the first user.
 
 ### After the first deploy
@@ -433,5 +448,5 @@ first; see [Backups](/runbooks/backups/).
 - [Provisioning with OpenTofu](/topics/provisioning-with-tofu/), the full reference for path A.
 - [Firewall & TLS](/runbooks/firewall-and-tls/), the ufw rules referenced by path B.
 - [Backups](/runbooks/backups/), [Image updates](/runbooks/image-updates/), [OAuth provider setup](/runbooks/oauth-provider-setup/), [Cloudflare Email setup](/runbooks/cloudflare-email-setup/).
-- [Architecture decisions](/architecture/decisions/), the reasoning behind single-host first, GHCR images, and same-origin routing.
+- [Architecture decisions](/architecture/decisions/), the reasoning behind single-host first, GHCR images, and same-origin routing under the app host.
 - [Env backup and secrets](/runbooks/env-backup-and-secrets/), the vault-backup discipline so the day you lose your 1Password vault isn't the day you also lose production.

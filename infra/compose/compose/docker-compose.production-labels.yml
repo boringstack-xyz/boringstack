@@ -1,15 +1,22 @@
 # Prod overlay: merged by dev.sh when STACK=prod.
 #
-# Routing model: same-origin path routing.
-#   - Host(PUBLIC_UI_HOST):                          → ui (nginx static + SPA)
+# Routing model: with the marketing site on (dev.sh default, WITH_SITE=1), the
+# apex is the site and the app lives on its own host:
+#   - Host(PUBLIC_SITE_HOST)                          → site (static nginx, docker-compose.site.yml)
+#   - Host(PUBLIC_UI_HOST = app.<domain>):            → ui (nginx static + SPA)
 #   - Host(PUBLIC_UI_HOST) && PathPrefix(/api):       → api (Elysia at /api/v1/*)
 #   - Host(PUBLIC_UI_HOST) && Path(/health):          → api (health probe)
 #
-# One domain, one TLS cert, no CORS. The api router has a higher priority so
-# it matches before the ui fallback. The api container does NOT have a prefix
-# stripped, Elysia already serves under /api/v1/*, so the path stays intact.
+# With WITH_SITE=0 the legacy single-host layout applies: PUBLIC_UI_HOST serves
+# the ui and the api, and no site router exists.
 #
-# Required env: PUBLIC_UI_HOST, ACME_EMAIL.
+# Same-origin for the app: the SPA and /api share PUBLIC_UI_HOST, so no CORS.
+# Each router gets its own certificate from the ACME resolver. The api router has
+# a higher priority so it matches before the ui fallback. The api container does
+# NOT have a prefix stripped, Elysia already serves under /api/v1/*, so the path
+# stays intact.
+#
+# Required env: PUBLIC_UI_HOST, ACME_EMAIL. With the site on: PUBLIC_SITE_HOST.
 
 services:
   traefik:

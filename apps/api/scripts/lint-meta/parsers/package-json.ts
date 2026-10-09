@@ -84,9 +84,5 @@ export function readApiPackageJson(
 
   const bun = engines.bun;
 
-  if (typeof bun !== "string") {
-    return { engines: {} };
-  }
-
-  return { engines: { bun } };
+  return typeof bun !== "string" ? { engines: {} } : { engines: { bun } };
 }

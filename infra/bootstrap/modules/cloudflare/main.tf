@@ -1,16 +1,21 @@
 # ============================================================================
 # Cloudflare: DNS records + opinionated zone settings + www→apex redirect.
 #
-# Records:
-#   apex      A     -> server IPv4 (proxied)
+# Records (all four A/AAAA point at the same Hetzner server; Traefik picks the
+# router by Host header):
+#   apex      A     -> server IPv4 (proxied)   public marketing site (static)
 #   apex      AAAA  -> server IPv6 (proxied)
+#   app       A     -> server IPv4 (proxied)   app: React UI + /api/* + /health
+#   app       AAAA  -> server IPv6 (proxied)
 #   www.apex CNAME  -> apex      (proxied; redirect-rule sends www → apex)
 #
-# Same-origin routing: Traefik path-routes /api/* on the apex to the api
-# container, so there is no api.<domain> record. If you need a separate api
-# subdomain (cross-origin deployment), re-add the A/AAAA pair and update
-# infra/compose/compose/docker-compose.production-labels.yml
-# to use Host(`${PUBLIC_API_HOST}`) on the api router.
+# Host split (the default): PUBLIC_SITE_HOST=<domain> serves the site,
+# PUBLIC_UI_HOST=app.<domain> serves the app. The two hosts never share
+# cookies. Path-based edge rules below are zone-wide on purpose, so they cover
+# app.<domain> (where /api/* lives). Rules that only make sense for one host
+# are scoped with http.host.
+#
+# The API has no separate subdomain: /api/* is path-routed on app.<domain>.
 #
 # Zone settings match what production-labels.yml expects from Traefik upstream:
 #   SSL mode             strict        (CF↔origin uses real Let's Encrypt cert)
@@ -48,6 +53,26 @@ resource "cloudflare_dns_record" "apex_aaaa" {
   proxied = true
   ttl     = 1
   comment = "BoringStack apex (managed by OpenTofu)"
+}
+
+resource "cloudflare_dns_record" "app_a" {
+  zone_id = var.zone_id
+  name    = "app"
+  type    = "A"
+  content = var.server_ip
+  proxied = true
+  ttl     = 1
+  comment = "BoringStack app (managed by OpenTofu)"
+}
+
+resource "cloudflare_dns_record" "app_aaaa" {
+  zone_id = var.zone_id
+  name    = "app"
+  type    = "AAAA"
+  content = var.server_ip6
+  proxied = true
+  ttl     = 1
+  comment = "BoringStack app (managed by OpenTofu)"
 }
 
 resource "cloudflare_dns_record" "www_cname" {
@@ -209,6 +234,10 @@ resource "cloudflare_ruleset" "bot_block" {
 # endpoints, in front of the API's own Valkey limiter. Uses Cloudflare's one
 # free rate-limiting rule. Managed Challenge lets real users through while
 # stalling scripted abuse.
+#
+# Zone-wide on purpose: /api/auth/* is served only on app.<domain>. The apex
+# is static and has no API route, so this covers the app host without a
+# host clause.
 # ----------------------------------------------------------------------------
 
 resource "cloudflare_ruleset" "auth_rate_limit" {
@@ -238,9 +267,12 @@ resource "cloudflare_ruleset" "auth_rate_limit" {
 }
 
 # ----------------------------------------------------------------------------
-# Edge cache: cache Vite's content-hashed build assets aggressively, and never
-# cache the API. Hashed asset filenames change on every deploy, so a long edge
-# TTL is safe; index.html / dynamic HTML stay uncached by Cloudflare default.
+# Edge cache: cache content-hashed build assets aggressively, and never cache
+# the API. Two hashed-asset paths:
+#   /assets/*  Vite build output, served on app.<domain> (zone-wide match).
+#   /_astro/*  Astro build output, served on the apex only (host-scoped).
+# Hashed filenames change on every deploy, so a long edge TTL is safe;
+# index.html / dynamic HTML stay uncached by Cloudflare default.
 # ----------------------------------------------------------------------------
 
 resource "cloudflare_ruleset" "edge_cache" {
@@ -265,8 +297,26 @@ resource "cloudflare_ruleset" "edge_cache" {
     },
     {
       ref         = "cache_hashed_assets"
-      description = "Cache Vite's content-hashed assets for a year"
+      description = "Cache Vite's content-hashed assets for a year (app host)"
       expression  = "(starts_with(http.request.uri.path, \"/assets/\"))"
+      action      = "set_cache_settings"
+      enabled     = true
+      action_parameters = {
+        cache = true
+        edge_ttl = {
+          mode    = "override_origin"
+          default = 31536000
+        }
+        browser_ttl = {
+          mode    = "override_origin"
+          default = 31536000
+        }
+      }
+    },
+    {
+      ref         = "cache_site_hashed_assets"
+      description = "Cache Astro's content-hashed site assets for a year (apex host)"
+      expression  = "(http.host eq \"${var.domain}\" and starts_with(http.request.uri.path, \"/_astro/\"))"
       action      = "set_cache_settings"
       enabled     = true
       action_parameters = {

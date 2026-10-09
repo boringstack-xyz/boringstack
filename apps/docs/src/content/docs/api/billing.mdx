@@ -92,6 +92,10 @@ Sensitive subscription reads recheck membership and return 403 for a revoked mem
   `.env`.
 </Aside>
 
+In production the webhook endpoint is on the app host, not the apex:
+`https://app.<domain>/api/v1/billing/stripe/webhooks`. Register that URL in the Stripe
+dashboard. Checkout and portal return URLs use `FRONTEND_URL` (`https://app.<domain>`).
+
 ## Source
 
 [`src/api/billing/`](https://github.com/boringstack-xyz/boringstack/tree/main/apps/api/src/api/billing) and [`src/clients/postgres/schema/billing.schema.ts`](https://github.com/boringstack-xyz/boringstack/blob/main/apps/api/src/clients/postgres/schema/billing.schema.ts) on GitHub.

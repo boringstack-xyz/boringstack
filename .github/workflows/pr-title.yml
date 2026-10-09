@@ -27,4 +27,5 @@ jobs:
       - name: Check the title
         env:
           TITLE: ${{ github.event.pull_request.title }}
+          COMMIT_TITLE_MAX_LENGTH: ${{ github.event.pull_request.user.login == 'dependabot[bot]' && '200' || '100' }}
         run: bash scripts/ci/check-commit-title.sh "$TITLE"

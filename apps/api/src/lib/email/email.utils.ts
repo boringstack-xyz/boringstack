@@ -20,11 +20,7 @@ import type {
  */
 
 export const isValidEmail = (email: string): boolean => {
-  if (email.trim().length === 0) {
-    return false;
-  }
-
-  return EMAIL_REGEX.test(email.trim());
+  return email.trim().length === 0 ? false : EMAIL_REGEX.test(email.trim());
 };
 
 /**

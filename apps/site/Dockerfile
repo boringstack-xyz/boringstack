@@ -33,7 +33,7 @@ ENV SITE_URL=$SITE_URL \
     ANALYTICS_WEBSITE_ID=$ANALYTICS_WEBSITE_ID
 RUN bun run build && bun run render:nginx
 
-FROM nginx:1.31-alpine@sha256:72ba65eb42c10344912a84ff42408db7d34f2feb642204570ab8fc5ffd29f1d3 AS production
+FROM nginx:1.31-alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2 AS production
 RUN addgroup -g 1001 -S app \
  && adduser -S app -u 1001 -G app
 COPY --from=build /app/.build/nginx.conf /etc/nginx/nginx.conf

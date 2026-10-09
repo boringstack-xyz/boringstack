@@ -132,6 +132,7 @@ test("release configuration has one k8s publisher, requires activation, checks a
     jobs: {
       release: {
         "runs-on": string;
+        if?: string;
         steps: Array<{
           run?: string;
           uses?: string;
@@ -143,8 +144,8 @@ test("release configuration has one k8s publisher, requires activation, checks a
   };
   const release = workflow.jobs.release;
   expect(release["runs-on"]).toBe("ubuntu-24.04");
+  expect(release.if).toBe("vars.PRODUCTION_RELEASE_MODE == 'coordinated'");
   const steps = release.steps;
-  expect(steps[0].run).toContain('"$RELEASE_MODE" != coordinated');
   const gate = steps.findIndex((step) =>
     step.run?.includes("release.mjs gate"),
   );

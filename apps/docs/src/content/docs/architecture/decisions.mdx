@@ -131,7 +131,7 @@ Every choice in BoringStack, written up the same way: **Choice / Why / What we g
 
 **Choice.** Traefik v3 as the reverse proxy in production.
 
-**Why.** First-class Docker label-driven config means container restarts auto-update routes: no config file edits, no reload commands. ACME (Let's Encrypt) HTTP-01 built in. Same-origin path routing (/ for SPA, /api/* for API) on one cert is a two-label change.
+**Why.** First-class Docker label-driven config means container restarts auto-update routes: no config file edits, no reload commands. ACME (Let's Encrypt) HTTP-01 built in. Same-origin path routing on the app host (`/api/*` and `/health` to the API, everything else to the UI) is a few labels. The apex serves the public site from its own router and cert.
 
 **What we gave up.** Nginx's broader OSS deployment history. Caddy's tighter config syntax.
 
@@ -206,6 +206,18 @@ Every choice in BoringStack, written up the same way: **Choice / Why / What we g
 **If reversed.** Sentry vendor costs; hosted SaaS vendor dependence; limited feature set on free tier.
 
 ---
+
+## Domain split: public site on the apex, app on its own host
+
+**Choice.** `https://<domain>` serves the static public site (`apps/site`). `https://app.<domain>` serves the React app and its `/api` on one origin.
+
+**Why.** The marketing site can be indexed, cached and shipped without cookies or API calls. The app keeps same-origin routing, so there is no CORS and `SameSite=Strict` cookies stay on the app host. Sharing no cookies between the two keeps the site from touching session state.
+
+**What we gave up.** One more DNS record and one more certificate. Cross-host links need absolute URLs.
+
+**When we'd reconsider.** If the marketing site must sit behind the same login as the app, or if a single-domain product has no public pages. Set `WITH_SITE=0` to keep the single-domain layout.
+
+**If reversed.** Public pages and the app share a host; more care needed for cookie scope and indexing.
 
 ## WUD hybrid image updates
 

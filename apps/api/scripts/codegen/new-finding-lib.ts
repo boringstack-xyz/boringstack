@@ -80,11 +80,9 @@ export const parseArgs = (argv: readonly string[]): ParseResult => {
     };
   }
 
-  if (!isSeverity(severity)) {
-    return { ok: false, error: `Invalid severity "${severity}".\n${USAGE}` };
-  }
-
-  return { ok: true, args: { id, severity, title } };
+  return !isSeverity(severity)
+    ? { ok: false, error: `Invalid severity "${severity}".\n${USAGE}` }
+    : { ok: true, args: { id, severity, title } };
 };
 
 export const specFileName = (args: IArgs): string =>
@@ -166,11 +164,9 @@ export const parseError = (
 
   const [first] = diagnostics ?? [];
 
-  if (first === undefined) {
-    return undefined;
-  }
-
-  return ts.flattenDiagnosticMessageText(first.messageText, " ");
+  return first === undefined
+    ? undefined
+    : ts.flattenDiagnosticMessageText(first.messageText, " ");
 };
 
 /*
