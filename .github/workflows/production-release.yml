@@ -31,6 +31,10 @@ permissions:
 
 jobs:
   release:
+    # Off until an operator opts in. A fresh template has no cluster, and an
+    # older install may still run argocd-image-updater, which would overwrite
+    # the coordinated digests. See infra/k3s/README.md for the activation steps.
+    if: vars.PRODUCTION_RELEASE_MODE == 'coordinated'
     # Do not compete with PR checks for self-hosted runners.
     runs-on: ubuntu-24.04
     timeout-minutes: 90
@@ -39,14 +43,6 @@ jobs:
       actions: read
       packages: write
     steps:
-      - name: Require coordinated deployment activation
-        env:
-          RELEASE_MODE: ${{ vars.PRODUCTION_RELEASE_MODE }}
-        run: |
-          if [ "$RELEASE_MODE" != coordinated ]; then
-            echo '::error::Remove the argocd-image-updater annotations from the live Argo Application, then set PRODUCTION_RELEASE_MODE=coordinated. See infra/k3s/README.md.'
-            exit 1
-          fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
