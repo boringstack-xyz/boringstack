@@ -12,6 +12,12 @@ const script = fileURLToPath(
 const check = (...args: string[]): number =>
   spawnSync("/bin/bash", [script, ...args], { encoding: "utf8" }).status ?? -1;
 
+const checkWithMax = (max: string, title: string): number =>
+  spawnSync("/bin/bash", [script, title], {
+    encoding: "utf8",
+    env: { ...process.env, COMMIT_TITLE_MAX_LENGTH: max },
+  }).status ?? -1;
+
 test("conventional titles pass", () => {
   for (const title of [
     "feat(api): invoices can be voided",
@@ -54,4 +60,14 @@ test("message files are read from their first non-comment line", () => {
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("the length limit can be raised for generated titles, but not bypassed", () => {
+  const long =
+    "chore(docker): bump nginx from `72ba65e` to `df221db` in /apps/ui in the docker-images group across 1 directory";
+
+  expect(check(long)).toBe(1);
+  expect(checkWithMax("200", long)).toBe(0);
+  expect(checkWithMax("200", "chore(deps)(deps-dev): bump the group")).toBe(1);
+  expect(checkWithMax("nope", long)).toBe(2);
 });

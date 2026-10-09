@@ -25,8 +25,8 @@ problems through. The fixes are tracked in the repository's product feedback led
   database. See [Observability](/topics/observability/#business-metrics-k3s).
 - **Conventional Commits gate.** Commit subjects and PR titles are checked by the `commit-msg`
   hook and the `pr-title` workflow. See [Agent docs](/architecture/agent-docs/#conventions-that-are-gates-not-prose).
-- **Shared packages.** `packages/*` workspaces are discovered by `bun run check`, the pre-push
-  hook and Dependabot. See [Repository layout](/architecture/monorepo-layout/#shared-packages).
+- **Shared packages.** `packages/*` workspaces are discovered by `bun run check` and the pre-push
+  hook. See [Repository layout](/architecture/monorepo-layout/#shared-packages).
 - **Bundle budget reasons.** A raised UI budget or a new budget entry needs a recorded reason
   in `apps/ui/budgets.md`. See [Lint as the contract](/architecture/lint-as-contract/#bundle-budgets-need-a-recorded-reason).
 - **Self-hosted CI runners.** `CI_RUNNER` moves jobs to self-hosted runners. Fork pull requests

@@ -10,7 +10,8 @@ updates:
     open-pull-requests-limit: 8
     labels: ["dependencies"]
     commit-message:
-      prefix: "chore(deps)"
+      # include: scope appends (deps) or (deps-dev), giving chore(deps): ...
+      prefix: "chore"
       include: scope
     cooldown:
       default-days: 7
@@ -61,7 +62,8 @@ updates:
     open-pull-requests-limit: 8
     labels: ["dependencies"]
     commit-message:
-      prefix: "chore(deps)"
+      # include: scope appends (deps) or (deps-dev), giving chore(deps): ...
+      prefix: "chore"
       include: scope
     cooldown:
       default-days: 7
@@ -102,7 +104,8 @@ updates:
     open-pull-requests-limit: 4
     labels: ["dependencies"]
     commit-message:
-      prefix: "chore(deps)"
+      # include: scope appends (deps) or (deps-dev), giving chore(deps): ...
+      prefix: "chore"
       include: scope
     cooldown:
       default-days: 7
@@ -120,31 +123,11 @@ updates:
       # which is not exported by Astro 5). Stay on 12.x until we bump Astro.
       - dependency-name: "@astrojs/cloudflare"
         update-types: ["version-update:semver-major"]
-
-  # Shared workspace packages under packages/. The glob matches nothing when the
-  # directory is absent, so products without packages/ get no entry in effect.
-  - package-ecosystem: bun
-    directories:
-      - /packages/*
-    schedule:
-      interval: weekly
-      day: monday
-      time: "09:00"
-      timezone: Europe/Berlin
-    open-pull-requests-limit: 4
-    labels: ["dependencies"]
-    commit-message:
-      prefix: "chore(deps)"
-      include: scope
-    cooldown:
-      default-days: 7
-    groups:
-      production-dependencies:
-        dependency-type: "production"
-        patterns: ["*"]
-      development-dependencies:
-        dependency-type: "development"
-        patterns: ["*"]
+      # astro-mermaid declares a peer of mermaid ^10 || ^11, and mermaid 12
+      # pulls lodash-es 4.17.23 (GHSA-r5fr-rjxr-66jc) through chevrotain's
+      # exact pin. Move together once astro-mermaid supports 12.
+      - dependency-name: "mermaid"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: bun
     directory: /apps/site
@@ -156,7 +139,8 @@ updates:
     open-pull-requests-limit: 4
     labels: ["dependencies"]
     commit-message:
-      prefix: "chore(deps)"
+      # include: scope appends (deps) or (deps-dev), giving chore(deps): ...
+      prefix: "chore"
       include: scope
     cooldown:
       default-days: 7
@@ -167,6 +151,10 @@ updates:
       development-dependencies:
         dependency-type: "development"
         patterns: ["*"]
+    ignore:
+      # astro check does not support TypeScript 7 yet.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
