@@ -14,13 +14,18 @@ output "ssh_command" {
 }
 
 output "site_url" {
-  description = "Where BoringStack will be reachable once cloud-init finishes (a minute or two after apply completes)."
+  description = "Public marketing site (apex). Reachable a minute or two after cloud-init finishes."
   value       = "https://${var.domain}"
 }
 
+output "app_url" {
+  description = "Application (React UI). Same origin as the API for /api/* on app.<domain>."
+  value       = "https://app.${var.domain}"
+}
+
 output "api_url" {
-  description = "API base URL (same-origin path routing on the apex)."
-  value       = "https://${var.domain}/api"
+  description = "API base URL (path routing on the app host, app.<domain>)."
+  value       = "https://app.${var.domain}/api"
 }
 
 output "dns_records" {
@@ -37,7 +42,13 @@ output "next_steps" {
     1. Wait ~3-5 minutes for cloud-init to finish on first boot.
        Check progress:  ssh root@${module.hetzner.ipv4} 'cloud-init status --wait'
 
-    2. Verify the site:  curl -sI https://${var.domain}/health
+    2. Verify the app:   curl -sI https://app.${var.domain}/health
+       Verify the site:  curl -sI https://${var.domain}/
+
+       Image tags are not rendered by tofu. dev.sh refuses to start prod until
+       API_IMAGE_TAG, UI_IMAGE_TAG and SITE_IMAGE_TAG are set (never latest).
+       Append them to /opt/boringstack/infra/compose/compose/.env, then run
+       docker compose up -d there. Do not re-run bootstrap.sh: it rewrites .env.
 
     3. Manual steps that stay manual (none of these block the deploy, but the
        relevant features stay disabled until you complete them):

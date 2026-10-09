@@ -27,18 +27,22 @@ locals {
   )
   _monorepo_parts = split("/", local._normalized_monorepo_repo)
 
-  image_owner    = lower(element(local._monorepo_parts, 0))
-  repo_name      = lower(element(local._monorepo_parts, 1))
-  api_image_name = "${local.repo_name}-api"
-  ui_image_name  = "${local.repo_name}-ui"
+  image_owner     = lower(element(local._monorepo_parts, 0))
+  repo_name       = lower(element(local._monorepo_parts, 1))
+  api_image_name  = "${local.repo_name}-api"
+  ui_image_name   = "${local.repo_name}-ui"
+  site_image_name = "${local.repo_name}-site"
 
   compose_env_values = {
     stack                        = "prod"
-    public_ui_host               = var.domain
+    public_site_host             = var.domain
+    public_ui_host               = "app.${var.domain}"
     acme_email                   = var.acme_email
+    site_contact_email           = var.site_contact_email
     image_owner                  = local.image_owner
     api_image_name               = local.api_image_name
     ui_image_name                = local.ui_image_name
+    site_image_name              = local.site_image_name
     postgres_password            = var.postgres_password
     valkey_password              = var.valkey_password
     jwt_secret                   = var.jwt_secret

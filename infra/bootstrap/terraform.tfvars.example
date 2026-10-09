@@ -20,6 +20,8 @@ cloudflare_zone_id   = ""  # Zone overview page, right sidebar
 # Domain + access  (required)
 # ----------------------------------------------------------------------------
 
+# Domain split: the apex (domain) serves the marketing site, app.<domain> serves
+# the app. Both get DNS records automatically.
 domain          = "example.com"
 ssh_public_key  = ""  # paste full key including "ssh-ed25519 ..."
 ssh_allowed_ips = []  # REQUIRED: your admin CIDRs, e.g. ["203.0.113.7/32"].
@@ -35,7 +37,8 @@ ssh_allowed_ips = []  # REQUIRED: your admin CIDRs, e.g. ["203.0.113.7/32"].
 #     list against your routes; never include /.well-known/acme-challenge.
 #   - auth rate limit: Managed Challenge on /api/auth/* (Cloudflare's one free
 #     rate-limiting rule). If your plan rejects it, set enable_auth_rate_limit=false.
-#   - edge cache: cache Vite's hashed /assets/* for a year, bypass /api/*.
+#   - edge cache: cache hashed /assets/* (app) and /_astro/* (site) for a year,
+#     bypass /api/*.
 #   - DNSSEC: auto at Cloudflare Registrar; else add the dnssec_ds_record DS
 #     output at your registrar once.
 # ----------------------------------------------------------------------------
@@ -73,6 +76,9 @@ jwt_secret        = ""  # 32+ chars; openssl rand -base64 32
 postgres_password = ""  # openssl rand -base64 32
 valkey_password   = ""  # openssl rand -base64 32
 acme_email        = "ops@example.com"  # real address; Let's Encrypt rejects example.com
+
+# Public marketing site contact mailbox (optional). Empty falls back to acme_email.
+# site_contact_email = "hello@example.com"
 
 # ----------------------------------------------------------------------------
 # Repo to clone on first boot (override for forks)

@@ -5,7 +5,7 @@
 #   1. bootstrap  - renders cloud-init YAML from variables + bootstrap.sh
 #   2. hetzner    - creates the VPS (passes the cloud-init as user_data) + SSH
 #                   key + firewall scoped to Cloudflare IPs
-#   3. cloudflare - DNS records + opinionated zone settings + www→apex redirect
+#   3. cloudflare - DNS records (apex = site, app. = app) + zone settings + www→apex redirect
 #
 # Run order is implicit from data dependencies: bootstrap renders first, the
 # Hetzner module consumes it as user_data, Cloudflare records point at the
@@ -87,6 +87,9 @@ module "bootstrap" {
   valkey_password   = var.valkey_password
   acme_email        = var.acme_email
 
+  # Public marketing site contact mailbox. Falls back to acme_email when unset.
+  site_contact_email = var.site_contact_email != "" ? var.site_contact_email : var.acme_email
+
   # Optional integrations
   email_provider               = var.email_provider
   email_from                   = var.email_from
@@ -139,7 +142,7 @@ module "hetzner" {
 }
 
 # ----------------------------------------------------------------------------
-# Cloudflare: A/AAAA for apex + api., CNAME for www., zone settings + redirect.
+# Cloudflare: A/AAAA for apex (site) + app. (app), CNAME for www., zone settings + redirect.
 # ----------------------------------------------------------------------------
 
 module "cloudflare" {

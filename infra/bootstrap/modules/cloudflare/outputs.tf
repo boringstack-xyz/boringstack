@@ -1,7 +1,8 @@
 output "records" {
   description = "The DNS records this module created."
   value = {
-    apex = "${var.domain}      -> ${var.server_ip} / ${var.server_ip6} (proxied)"
+    apex = "${var.domain}      -> ${var.server_ip} / ${var.server_ip6} (proxied, marketing site)"
+    app  = "app.${var.domain}  -> ${var.server_ip} / ${var.server_ip6} (proxied, app + /api)"
     www  = "www.${var.domain}  -> CNAME ${var.domain} (proxied, 301 to apex)"
   }
 }
@@ -11,7 +12,7 @@ output "edge_security" {
   value = {
     bot_block       = var.enable_bot_blocking ? "blocking scanner paths + dotfiles${var.block_suspicious_user_agents ? " + bad user-agents" : ""}" : "disabled"
     auth_rate_limit = var.enable_auth_rate_limit ? "${var.auth_rate_limit_requests} req / ${var.auth_rate_limit_period}s on /api/auth/* (managed challenge)" : "disabled"
-    edge_cache      = var.enable_edge_cache ? "hashed assets cached at edge; /api bypassed" : "disabled"
+    edge_cache      = var.enable_edge_cache ? "hashed assets (/assets/ on app, /_astro/ on apex) cached at edge; /api bypassed" : "disabled"
     dnssec          = var.enable_dnssec ? "enabled" : "disabled"
   }
 }
