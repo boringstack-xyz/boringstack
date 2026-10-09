@@ -23,14 +23,21 @@ function redactedTail(stderr: string, args: readonly string[]): string {
   return tail.replace(/\s+/g, " ");
 }
 
+/**
+ * Secrets travel in the Docker client's environment, never in its arguments:
+ * `-e NAME` without a value makes Docker read NAME from that environment, so
+ * a password never appears in a process list or in an argument echo.
+ */
 export async function docker(
   root: string,
   args: string[],
-  timeoutMs = 120_000
+  timeoutMs = 120_000,
+  secrets: Readonly<Record<string, string>> = {}
 ): Promise<string> {
   const result = await runProcess(["docker", ...args], {
     cwd: root,
     timeoutMs,
+    env: { ...process.env, ...secrets },
   });
 
   if (result.status !== "completed" || result.code !== 0) {
