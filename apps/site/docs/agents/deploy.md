@@ -30,7 +30,7 @@ Cache policy, keyed on status and path:
 
 ## Compose
 
-`docker-compose.site.yml` is merged when `WITH_SITE=1` (default in dev, `0` in prod).
+`docker-compose.site.yml` is merged when `WITH_SITE=1` (default in dev and prod; `0` opts out).
 
 - Dev: `site-dev` on `SITE_HOST_PORT` (default 7333).
 - Prod: `site` routed by Traefik on `Host(PUBLIC_SITE_HOST)`. The app stays on

@@ -37,7 +37,7 @@ Prometheus alert rules and Alertmanager receivers ship with the observability st
 
 ### boringstack-edge
 
-- `TraefikDown` (page): Traefik metrics endpoint unreachable for 2min. Traefik is the only path into the stack in prod, so this firing means the site is down.
+- `TraefikDown` (page): Traefik metrics endpoint unreachable for 2min. Traefik is the only path into the stack in prod, so this firing means the app and the public site are down.
 
 Thresholds are conservative defaults for a single-host BoringStack deployment. Tune per workload. A busy app may legitimately push error counts or latency above what a quiet baseline catches.
 

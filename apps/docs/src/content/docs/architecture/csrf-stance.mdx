@@ -5,14 +5,14 @@ description: BoringStack relies on SameSite=Strict cookies plus a same-origin de
 
 import { Aside } from "@astrojs/starlight/components";
 
-BoringStack ships **without CSRF token middleware**. Session cookies are `SameSite=Strict` in production, and the default deployment topology keeps the API and the SPA on the same registrable domain. With both in place, a CSRF attack can't reach the surface we ship.
+BoringStack ships **without CSRF token middleware**. Session cookies are `SameSite=Strict` in production, and the default deployment topology keeps the API and the SPA on one origin, `app.<domain>`. With both in place, a CSRF attack can't reach the surface we ship.
 
 This page exists because SameSite=Strict is a deployment constraint. It disallows certain topologies, and operators forking the template need to know that before they ship.
 
 ## What's actually deployed
 
 - **Session cookies**: `HttpOnly`, `Secure`, `SameSite=Strict`, signed. Set by the API on `/auth/login` and refreshed by `/auth/refresh`. See `apps/api/src/lib/cookies/cookie-utils.ts`.
-- **CORS**: `credentials: true` is enabled, but only when `ALLOWED_ORIGINS` is non-empty. The compose default leaves it empty. Traefik routes `/api/*` on the same host that serves the SPA, so no cross-origin call ever happens. See `apps/api/src/config/security/security.ts`.
+- **CORS**: `credentials: true` is enabled, but only when `ALLOWED_ORIGINS` is non-empty. The compose default leaves it empty. Traefik routes `/api/*` on the same host that serves the SPA (`app.<domain>`), so no cross-origin call ever happens. See `apps/api/src/config/security/security.ts`.
 - **No CSRF token middleware**. There is no `X-CSRF-Token` header, no double-submit cookie, no synchroniser pattern.
 
 ## Why this is safe
@@ -26,6 +26,7 @@ Rails 7+ ships this for default cookie sessions. MDN and OWASP both recommend Sa
 ## What this topology supports
 
 - **Same-origin deployment**: SPA at `app.example.com`, API at `app.example.com/api`. This is the compose default, and what `infra/compose/compose/production-labels.yml` ships.
+- **Public site on the apex**: `example.com` serves the static marketing site. It sets no cookies and makes no API calls, so it never sends or receives the app's session cookies. Cookies are host-only on `app.example.com`.
 - **Apex + subdomain on the same registrable domain**: SPA at `app.example.com`, API at `api.example.com`. Still same-site under the registrable-domain rule, still safe with `SameSite=Strict`. Cookie `Domain=.example.com`.
 
 ## What this topology excludes

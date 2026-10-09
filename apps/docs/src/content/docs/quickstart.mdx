@@ -197,9 +197,11 @@ the default. See [Spec loop](/skills/spec-loop/) for the deep dive.
 - **ui-dev (port 7331)**: Vite dev server; proxies `/api/*` to `api-dev`.
 - **site-dev (port 7333)**: Astro dev server for the public marketing site in `apps/site`. On by default in dev; set `WITH_SITE=0` to skip it. See [Public site](/site/overview/).
 
-Traefik runs only in the prod profile. In prod it terminates TLS and
-path-routes `/api/*` plus `/health` to the api container, everything
-else to the ui container, all on one domain.
+Traefik runs only in the prod profile. In prod it terminates TLS on two
+hosts. The public site (`apps/site`) is on the apex. The app is on
+`app.<domain>`, where `/api/*` plus `/health` go to the api container and
+everything else goes to the ui container. Set `WITH_SITE=0` to serve the
+app from the apex instead, with no marketing site.
 
 ## Common next steps
 

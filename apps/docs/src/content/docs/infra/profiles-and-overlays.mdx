@@ -50,7 +50,7 @@ These run unless you explicitly turn them off. They're the surface a `push to ma
 | `WITH_WUD` | What's Up Docker image-update daemon | ON in prod, OFF in dev | `WITH_WUD=0 STACK=prod ./scripts/compose-up.sh` |
 | `WITH_BULLMQ` | Bull-board queue UI | ON in dev only | `WITH_BULLMQ=0 ./dev.sh up -d` |
 | `WITH_MAILPIT` | Local SMTP catcher (`:8025` web UI) | ON in dev only | `WITH_MAILPIT=0 ./dev.sh up -d` |
-| `WITH_SITE` | Public marketing site (`apps/site`): `site-dev` on `:7333` in dev, `site` on the apex host in prod | ON in dev, OFF in prod | `WITH_SITE=0 ./dev.sh up -d` |
+| `WITH_SITE` | Public marketing site (`apps/site`): `site-dev` on `:7333` in dev, `site` on the apex host in prod | ON (dev + prod) | `WITH_SITE=0 ./dev.sh up -d` |
 
 WUD is what makes `git push origin main` deploy. It polls GHCR, pulls new app image tags, and recreates the container. See [Image updates](/runbooks/image-updates/) for the hybrid policy (app images auto-deploy, base images notify-only).
 
@@ -69,8 +69,8 @@ Never run WITH_BULLMQ=1 in a public production environment. The BullMQ dashboard
 ## STACK=dev vs STACK=prod
 
 - **API + UI.** Dev: bind-mounted source, hot reload. Prod: pre-built images pulled from GHCR.
-- **Traefik.** Dev: not started; Vite dev-server proxies `/api/*` directly. Prod: terminates TLS, path-routes `/api/*` and `/health` to the api container, everything else to ui.
-- **Host(s).** Dev: `http://localhost:7331`. Prod: `https://${PUBLIC_UI_HOST}` (one domain, same-origin). With `WITH_SITE=1` in prod, the marketing site takes the apex `PUBLIC_SITE_HOST` and the app moves to `PUBLIC_UI_HOST`, so the two origins stay separate. See [Public site](/site/deployment/).
+- **Traefik.** Dev: not started; Vite dev-server proxies `/api/*` directly. Prod: terminates TLS, path-routes `/api/*` and `/health` on the app host to the api container, everything else on the app host to ui. The apex routes to the site.
+- **Host(s).** Dev: UI on `http://localhost:7331`, API on `:7330`, site on `http://localhost:7333`. Prod: the app on `https://${PUBLIC_UI_HOST}` (`app.<domain>`), and the marketing site on the apex `https://${PUBLIC_SITE_HOST}`. The two origins stay separate. With `WITH_SITE=0` in prod, the app stays on `PUBLIC_UI_HOST` and that host can be the apex (single-domain layout). See [Public site](/site/deployment/).
 - **TLS.** Dev: none. Prod: Let's Encrypt ACME via Traefik.
 - **Data ports.** Dev: Postgres on `:5432`, Valkey on `:6379` published to host. Prod: internal-only, not published.
 

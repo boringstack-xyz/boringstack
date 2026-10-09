@@ -3,7 +3,7 @@ title: "UI template: overview"
 description: Vite + React 19 + TanStack Query + shadcn/ui + Zustand. A typed OpenAPI client and an ESLint-enforced component anatomy.
 ---
 
-The UI is a Vite + React single-page app with a typed OpenAPI client: fast local feedback and a compile-time contract with the API. Architecture rules keep feature folders small enough for humans and agents to change safely.
+The UI is a Vite + React single-page app with a typed OpenAPI client: fast local feedback and a compile-time contract with the API. In production it is served from `app.<domain>`, on the same origin as `/api`. The public site on the apex is a separate static app (see [Public site](/site/overview/)). Architecture rules keep feature folders small enough for humans and agents to change safely.
 
 A production-shaped SPA. Architecture rules (component anatomy, queries vs stores, OpenAPI client) keep features from turning into 600-line `.tsx` blobs as the codebase grows.
 

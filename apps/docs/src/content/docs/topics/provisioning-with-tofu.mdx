@@ -3,7 +3,7 @@ title: Provisioning with OpenTofu
 description: Optional OpenTofu bootstrap for the monorepo. One `tofu apply` provisions a Hetzner VPS, configures Cloudflare DNS, and bootstraps the docker-compose stack.
 ---
 
-One declarative `tofu apply` provisions a Hetzner VPS, configures Cloudflare DNS and a Hetzner firewall scoped to Cloudflare IP ranges, installs Docker runtime, and bootstraps your full-stack docker-compose environment. Minutes later, the site is live at `https://<your-domain>` with HTTPS valid and optional superuser seeded.
+One declarative `tofu apply` provisions a Hetzner VPS, configures Cloudflare DNS and a Hetzner firewall scoped to Cloudflare IP ranges, installs Docker runtime, and bootstraps your full-stack docker-compose environment. Minutes later, the public site is live at `https://<your-domain>` and the app at `https://app.<your-domain>`, with HTTPS valid and optional superuser seeded.
 
 BoringStack's [Deployment](/topics/deployment/) path is manual: SSH into a VPS, install Docker, clone the monorepo, then `compose pull && compose up -d`. Some operators prefer this flow. The OpenTofu stack is the alternative for teams who'd rather drive the same outcome from a single declarative apply. Source lives in [`infra/bootstrap`](https://github.com/boringstack-xyz/boringstack/tree/main/infra/bootstrap).
 
@@ -47,10 +47,11 @@ ssh root@$(tofu output -raw vps_ipv4) 'cloud-init status --wait'
 When it returns `status: done`, test connectivity:
 
 ```bash
-curl -sI $(tofu output -raw site_url)/health
+curl -sI $(tofu output -raw app_url)/health
+curl -sI $(tofu output -raw site_url)/
 ```
 
-Expect HTTP/2 200 from Cloudflare.
+The first check hits the app host (`app.<domain>`, where `/health` lives). The second hits the apex, which serves the public site. Expect HTTP/2 200 from Cloudflare for both.
 
 ## How it works
 
@@ -59,10 +60,10 @@ flowchart LR
   tfvars["terraform.tfvars<br/>tokens · domain · sizing"]
   apply["tofu apply"]
   hetz["Hetzner<br/>VPS · SSH key · firewall"]
-  cf["Cloudflare<br/>A records · zone settings"]
+  cf["Cloudflare<br/>A records (apex, app) · zone settings"]
   init["cloud-init on first boot<br/>installs Docker + git<br/>runs bootstrap.sh"]
   script["bootstrap.sh from repo<br/>clones monorepo<br/>renders compose/.env<br/>compose pull && compose up -d"]
-  live["live site"]
+  live["public site + app"]
   tfvars --> apply
   apply --> hetz
   apply --> cf
@@ -121,7 +122,7 @@ Everything in `terraform.tfvars.example` ships with comments explaining what it'
 
 - **main.tf**: top-level composition. Wires modules to variables and declares outputs.
 - **variables.tf**: input variable declarations with type and description.
-- **outputs.tf**: VPS IP, DNS records, ready-to-paste SSH command, site URL.
+- **outputs.tf**: VPS IP, DNS records, ready-to-paste SSH command, `site_url` (apex), `app_url` and `api_url` (app host).
 - **terraform.tfvars.example**: all knobs with comments. Copy to `terraform.tfvars` and fill in.
 - **modules/hetzner/**: VPS, SSH key, firewall, cloud-init injection.
 - **modules/cloudflare/**: DNS records, sane zone setting defaults, redirect rules, and edge security/performance — a bot/scanner WAF block rule, an auth rate-limit rule, an asset cache rule, and DNSSEC.
@@ -207,9 +208,9 @@ The `apply` step is required: Hetzner won't honour a delete while the API lock i
 
 - **apply fails on a Hetzner resource**: check Hetzner API status and token scope (must be Read and Write).
 - **apply fails on a Cloudflare resource**: verify token scope (`Zone:DNS:Edit`, etc.) and that zone ID matches the domain.
-- **apply succeeds but site is unreachable**: run `ssh ... 'cloud-init status'`. Bootstrap may still be running.
-- **Site returns 522 from Cloudflare**: origin not responding. Check `docker compose logs traefik api` on the server.
-- **Site returns 525 from Cloudflare on first apply**: expected for the first 2-5 minutes. Traefik needs DNS to propagate globally before Let's Encrypt can complete the HTTP-01 challenge. Until the cert lands, Cloudflare can't validate the origin and serves 525. Traefik retries on its own. Confirm with `docker compose logs traefik | grep -i acme`. If it's still failing past 10 minutes, check that the apex A/AAAA records resolve publicly: `dig +short @1.1.1.1 <domain>`.
+- **apply succeeds but the app is unreachable**: run `ssh ... 'cloud-init status'`. Bootstrap may still be running.
+- **App returns 522 from Cloudflare**: origin not responding. Check `docker compose logs traefik api` on the server.
+- **App or site returns 525 from Cloudflare on first apply**: expected for the first 2-5 minutes. Traefik needs DNS to propagate globally before Let's Encrypt can complete the HTTP-01 challenge. Until the cert lands, Cloudflare can't validate the origin and serves 525. Traefik retries on its own. Confirm with `docker compose logs traefik | grep -i acme`. If it's still failing past 10 minutes, check that the apex A/AAAA records resolve publicly: `dig +short @1.1.1.1 <domain>`.
 - **Unexpected attribute errors in the editor**: stale OpenTofu language-server cache. Run `tofu init` once and re-open.
 - **Cron backups do not run**: run `rclone config` on the server. The cron entry references a remote that must be configured.
 
@@ -228,7 +229,7 @@ The runtime repos work fine without this one. It's a convenience layer, not a de
 - **Hetzner module first, others swappable**: Hetzner is the cheapest production-viable VPS. The bootstrap module is provider-agnostic (cloud-init is universal), so replacing the VPS module is all that changes for DigitalOcean, OVH, or Linode.
 - **Single vps_type variable using provider-native size names**: `cx32`, `s-2vcpu-4gb`. The same names the provider docs, support, and billing page use.
 - **Sane Cloudflare zone defaults**: SSL strict, HSTS 6 months, TLS min 1.2, browser integrity on. Matches what `production-labels.yml` expects. Each setting is one override away.
-- **DNS: apex and www only**: one A/AAAA pair on the apex serves both the SPA and `/api/*` via same-origin path routing. `www.` is a CNAME to apex with a redirect rule. No `api.` subdomain. Traefik path-routes `/api/*` on the same host.
+- **DNS: apex, app and www**: the apex A/AAAA pair serves the public site. A second proxied A/AAAA pair on `app` serves the React app and `/api/*` on the same host (same-origin path routing, so no CORS and cookies stay on the app host). `www.` is a CNAME to apex with a redirect rule. No `api.` subdomain.
 - **Edge bot-blocking, on by default**: a single Cloudflare WAF custom rule (`http_request_firewall_custom`) blocks common scanner probes — `/.env`, `/.git/`, `/wp-admin`, `/xmlrpc`, … — at the edge, so they never reach Traefik or the API. Configurable via `bot_block_paths`; disable with `enable_bot_blocking = false`. Works on the Cloudflare Free plan.
 - **State stays local by default, R2 one step away**: single-operator default is a local state file. `main.tf` ships a pre-wired, commented Cloudflare R2 backend (S3-compatible, native locking, no DynamoDB); enabling it is `cp backend.hcl.example backend.hcl`, uncomment the block, and `tofu init -migrate-state`. See [State management](#state-management).
 - **Production is hard to nuke, on purpose**: the VPS carries OpenTofu `prevent_destroy` *and* Hetzner API-level `delete_protection`/`rebuild_protection`, both gated behind a single `prevent_server_destroy` variable (default on). Defense in depth — destroying or replacing the box (and the Postgres, ACME, and GlitchTip volumes it holds) takes a deliberate, explicit gate-lowering, not a stray `tofu destroy` or a misclick in the Hetzner console. See [Destroying](#destroying).

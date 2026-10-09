@@ -71,7 +71,7 @@ Runtime and dev dependencies, what each does, and why each piece exists. BoringS
 
 - **IaC: OpenTofu.** Terraform-compatible fork (MPL).
 - **VPS: Hetzner Cloud.** EU-friendly API and pricing.
-- **DNS + edge.** Cloudflare apex + www; proxied; same-origin routing.
+- **DNS + edge.** Cloudflare apex, `app` and www; all proxied. Apex serves the site, `app` serves the UI and `/api` on one origin.
 - **Firewall.** Hetzner cloud firewall; Cloudflare IP ranges at plan time.
 - **First boot.** cloud-init + `bootstrap.sh`; clone infra, `compose pull && up -d`.
 - **Backups (optional).** rclone via cron at apply time.

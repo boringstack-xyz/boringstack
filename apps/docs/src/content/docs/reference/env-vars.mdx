@@ -36,7 +36,13 @@ These deserve special handling because they affect security, availability, or st
 
 **DATABASE_URL**: Postgres connection string. Must include TLS mode for production (`?ssl=require`). In development defaults to `localhost`; in production, points to a managed provider or socket.
 
-**PUBLIC_UI_HOST**: Apex domain name for production routing via Traefik. Traefik uses this to request Let's Encrypt certificates. Same-origin deployments route `/api/*` and all other paths from one domain.
+**PUBLIC_UI_HOST**: Hostname for the app in production, `app.<domain>` in the default split layout. Traefik uses this to request Let's Encrypt certificates and routes `/api/*` and `/health` on this host to the API, everything else to the UI. Same-origin: the app and its API share one host, so no CORS and cookies stay on the app host. With `WITH_SITE=0`, set it to the apex instead to keep the single-domain layout.
+
+**FRONTEND_URL**, **PUBLIC_API_URL**: In the split layout both are `https://app.<domain>`. `FRONTEND_URL` is where OAuth callbacks, Stripe return URLs and email links point. `PUBLIC_API_URL` is the origin only; the API appends `/api/v1`.
+
+**PUBLIC_SITE_HOST**: Apex hostname for the public marketing site in production (for example `example.com`). Required when `WITH_SITE=1`. Must differ from `PUBLIC_UI_HOST`.
+
+**SITE_CONTACT_EMAIL**, **SITE_IMAGE_TAG**: Required in production when `WITH_SITE=1`. The contact mailbox shown on the site, and a pinned image tag (semver or `sha-<digest>`, never `latest`). `SITE_IMAGE` can replace the tag with a full pinned reference.
 
 **EMAIL_PROVIDER + EMAIL_FROM**: Sender identity and service. Cloudflare is the default; Resend and SendGrid are drop-in alternatives. Set both to avoid bounce errors.
 
@@ -62,7 +68,7 @@ Env validation is strict. The API process will refuse to start if a required var
 - **Error tracking**: set `WITH_GLITCHTIP=0` to opt out (on by default)
 - **Queue dashboard**: set `WITH_BULLMQ=1` (dev only, no auth)
 - **Email catcher**: set `WITH_MAILPIT=1` (dev only)
-- **Public marketing site**: `WITH_SITE` is on in dev and off in prod. Prod also needs `PUBLIC_SITE_HOST`, `SITE_CONTACT_EMAIL` and `SITE_IMAGE_TAG`. See [Public site](/site/deployment/)
+- **Public marketing site**: `WITH_SITE` is on in dev and prod. Dev serves it on `:7333`. Prod needs `PUBLIC_SITE_HOST`, `SITE_CONTACT_EMAIL` and `SITE_IMAGE_TAG`. Set `WITH_SITE=0` to opt out. See [Public site](/site/deployment/)
 
 ## Related
 

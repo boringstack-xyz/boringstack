@@ -6,7 +6,7 @@ The site has no server code and calls no API.
 
 ## Local development
 
-Run the Compose dev stack (`infra/compose/compose/dev.sh`, `WITH_SITE=1` by default),
+Run the Compose dev stack (`infra/compose/compose/dev.sh`, where `WITH_SITE` is on by default),
 which starts `site-dev` at http://localhost:7333 with live reload. Or outside Docker:
 
 ```bash

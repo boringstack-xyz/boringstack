@@ -94,6 +94,7 @@ In prod the marketing site and the app are separate origins: `<domain>` serves `
 
 ```sh
 curl -si http://localhost:7331/                  # 200
+curl -si http://localhost:7333/                  # 200, public marketing site (WITH_SITE on)
 curl -si http://localhost:7330/swagger/json      # 200, OpenAPI document
 ```
 
@@ -134,7 +135,7 @@ The toggles you are most likely to be asked for, all in `infra/compose/compose/.
 | `WITH_GLITCHTIP`             | self-hosted error tracking                         |
 | `WITH_MAILPIT`               | catches outbound mail in dev                       |
 | `WITH_BULLMQ`                | bull-board queue UI                                |
-| `WITH_SITE`                  | public marketing site: on in dev (`:7333`), off in prod |
+| `WITH_SITE`                  | public marketing site: on in dev (`:7333`) and prod (apex); `0` keeps the single-domain layout |
 | `BILLING_ENABLED`            | Stripe checkout + webhooks                         |
 | `EMAIL_PROVIDER`             | `resend` \| `sendgrid` \| `smtp`                   |
 | `OAUTH_PROVIDERS`            | e.g. `google,github`                               |

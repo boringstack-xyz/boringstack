@@ -31,9 +31,9 @@ Successful email verification clears any prior suppression row, since proving in
 
 Cloudflare needs no wiring; its rejection at send time triggers the local mirror automatically.
 
-For **Resend**: Set `RESEND_WEBHOOK_SECRET=whsec_xxxxx` in env, then point Resend at `POST /api/v1/webhooks/resend` and select `email.bounced` and `email.complained` events.
+For **Resend**: Set `RESEND_WEBHOOK_SECRET=whsec_xxxxx` in env, then point Resend at `POST https://app.<domain>/api/v1/webhooks/resend` in production (the app host) and select `email.bounced` and `email.complained` events.
 
-For **SendGrid**: Set `SENDGRID_WEBHOOK_PUBLIC_KEY` (the PEM public key) in env, then enable the signed event webhook in Settings > Mail Settings > Event Webhook, point it to `POST /api/v1/webhooks/sendgrid`.
+For **SendGrid**: Set `SENDGRID_WEBHOOK_PUBLIC_KEY` (the PEM public key) in env, then enable the signed event webhook in Settings > Mail Settings > Event Webhook, point it to `POST https://app.<domain>/api/v1/webhooks/sendgrid` in production (the app host).
 
 Both routes verify the timestamp (5 minutes for Resend, 10 minutes for SendGrid; outside that window returns 401) and parse the raw request body. Reverse proxies must not mutate the payload.
 

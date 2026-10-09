@@ -12,13 +12,39 @@ export const githubOrg = {
 
 export const stackLayers = [
   {
+    name: "Public site",
+    path: "apps/site",
+    href: "/site/overview/",
+    symbol: "01",
+    title: "Your marketing site, on your domain.",
+    description:
+      "An SEO-ready marketing site and blog on the apex domain. Static pages, no cookies, no API calls.",
+    technology: "Astro / static HTML / nginx",
+    connection: ["Static build", "nginx", "Your domain"],
+    features: [
+      ["Pages & blog", "Landing, pricing, and Markdown blog posts."],
+      [
+        "SEO built in",
+        "Canonical URLs, sitemap, JSON-LD, and social cards generated at build.",
+      ],
+      [
+        "Consent-gated analytics",
+        "Off by default. Loads only after the visitor opts in.",
+      ],
+      [
+        "Hardened nginx",
+        "CSP, security headers, and a read-only root filesystem.",
+      ],
+    ],
+  },
+  {
     name: "Interface",
     path: "apps/ui",
     href: "/ui/overview/",
-    symbol: "01",
+    symbol: "02",
     title: "Your product starts here.",
     description:
-      "A React application with the everyday plumbing already connected to the API. Spend your first day on the feature.",
+      "A React application on app.<your domain>, with the everyday plumbing already connected to the API. Spend your first day on the feature.",
     technology: "React / Vite / TanStack Query",
     connection: ["API schema", "OpenAPI client", "Interface"],
     features: [
@@ -41,7 +67,7 @@ export const stackLayers = [
     name: "Application",
     path: "apps/api",
     href: "/api/overview/",
-    symbol: "02",
+    symbol: "03",
     title: "The difficult parts, wired in.",
     description:
       "Tenant-aware data, auth, and billing belong in the first clone. The API brings them together with rules that check the boundaries.",
@@ -64,7 +90,7 @@ export const stackLayers = [
     name: "Services",
     path: "infra/compose",
     href: "/infra/overview/",
-    symbol: "03",
+    symbol: "04",
     title: "A home for your runtime.",
     description:
       "Compose brings the application and its supporting services together. Local development and deployment share a recognizable shape.",
@@ -87,7 +113,7 @@ export const stackLayers = [
     name: "Infrastructure",
     path: "infra/bootstrap",
     href: "/topics/provisioning-with-tofu/",
-    symbol: "04",
+    symbol: "05",
     title: "Your server. Your rules.",
     description:
       "Optional OpenTofu bootstraps the host. Deployment scripts and runbooks make the operational work part of the repository.",

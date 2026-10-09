@@ -252,8 +252,9 @@ case "$target_dir" in
       "paths outside that set break the --json output and need shell quoting" ;;
 esac
 
-# The domain is only cosmetic here (it seeds the noreply@ and demo@ mailboxes),
-# but the renamer rejects a malformed one, so it has to be caught before the
+# The domain seeds the noreply@ and demo@ mailboxes and the production hosts
+# in compose/.env.example (the site on <domain>, the app on app.<domain>).
+# The renamer rejects a malformed one, so it has to be caught before the
 # repo exists. Matching the renamer means matching it per label:
 #
 #   ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$
