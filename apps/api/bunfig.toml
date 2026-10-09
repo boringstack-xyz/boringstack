@@ -50,6 +50,11 @@ minimumReleaseAgeExcludes = [
   # we override `form-data` directly to clear `bun audit`. The patched release
   # is <7 days old, so exempt it from the quarantine window.
   "form-data",
+  # handlebars 4.7.10 (2026-10-05) is the only release patching two critical
+  # JavaScript-injection advisories (GHSA-8r5x-fm3f-whwj, GHSA-p8wg-vrv2-v86f)
+  # and GHSA-xw65-4hp5-5hc7. A known critical fix outweighs the quarantine
+  # window for this one release; remove the entry once it is past 7 days.
+  "handlebars",
 ]
 
 [test]

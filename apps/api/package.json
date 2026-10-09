@@ -76,7 +76,7 @@
     "elysia": "1.4.30",
     "elysia-rate-limit": "4.6.3",
     "fs-extra": "11.4.1",
-    "handlebars": "4.7.9",
+    "handlebars": "4.7.10",
     "ioredis": "5.11.1",
     "nodemailer": "10.0.13",
     "openai": "7.27.0",
