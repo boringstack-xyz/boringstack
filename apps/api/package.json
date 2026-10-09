@@ -109,7 +109,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
     "@eslint/js": "10.0.1",
     "@types/fs-extra": "11.0.4",
-    "@types/nodemailer": "8.0.1",
+    "@types/nodemailer": "8.0.2",
     "@types/pg": "8.23.1",
     "@types/web-push": "3.6.4",
     "bun-types": "1.4.2",
