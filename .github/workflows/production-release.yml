@@ -57,7 +57,7 @@ jobs:
         run: |
           git fetch origin main
           test "$(git rev-parse origin/main)" = "$GITHUB_SHA"
-      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
@@ -67,7 +67,7 @@ jobs:
       # promoted until all four builds below have succeeded.
       - name: Build API candidate
         id: api
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: apps/api
           file: apps/api/Dockerfile.prod
@@ -78,7 +78,7 @@ jobs:
           cache-to: type=gha,scope=release-api,mode=max
       - name: Build migrations candidate
         id: migrations
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: apps/api
           file: apps/api/Dockerfile.prod
@@ -90,7 +90,7 @@ jobs:
           cache-to: type=gha,scope=release-migrations,mode=max
       - name: Build UI candidate
         id: ui
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: apps/ui
           file: apps/ui/Dockerfile.prod
@@ -123,7 +123,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
       - name: Build site candidate
         id: site
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: apps/site
           file: apps/site/Dockerfile
