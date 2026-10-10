@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { CAPABILITIES_QUERY_KEY } from "@/lib/api/queries/capabilities.constants";
 import { resolveOAuthErrorMessage } from "@/lib/auth/oauth.errors";
+import { takeReturnTo } from "@/lib/auth/return-to";
 import { logger } from "@/lib/logger/logger";
 
 import { syncMeAfterSessionEstablished } from "@/features/auth/Auth.session.sync";
@@ -69,7 +70,7 @@ export function useOAuthCallbackPage(): IOAuthCallbackPageView {
       }
 
       logger.info({ event: "oauth.success" });
-      await navigate(POST_OAUTH_PATH, { replace: true });
+      await navigate(takeReturnTo() ?? POST_OAUTH_PATH, { replace: true });
     })();
 
     return (): void => {

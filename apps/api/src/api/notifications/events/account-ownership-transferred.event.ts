@@ -1,6 +1,6 @@
 import { t } from "elysia";
 
-import { defineNotificationEvent } from "../../../lib/notifications";
+import { defineNotificationEvent } from "../../../lib/notifications/events/define-event";
 
 /**
  * Notification event: an account ownership transfer just completed.

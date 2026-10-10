@@ -17,6 +17,7 @@ on:
       - "infra/compose/**"
       - "apps/api/**"
       - "apps/ui/**"
+      - "packages/**"
       - ".github/workflows/infra-compose-full-stack-smoke.yml"
   # Intentionally no `paths:` filter on pull_request: this job is a required
   # check in branch protection, and a path-filtered workflow that never runs
@@ -35,6 +36,7 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   smoke:
@@ -58,6 +60,7 @@ jobs:
             code:
               - 'apps/api/**'
               - 'apps/ui/**'
+              - 'packages/**'
               - 'infra/compose/**'
               - '.github/workflows/infra-compose-full-stack-smoke.yml'
 

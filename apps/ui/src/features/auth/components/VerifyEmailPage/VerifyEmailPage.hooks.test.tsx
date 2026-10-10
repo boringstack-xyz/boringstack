@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, StrictMode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import type * as ReactRouterDom from "react-router-dom";
 
@@ -82,5 +82,30 @@ describe("useVerifyEmailPage", () => {
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalled();
     });
+  });
+});
+
+describe("useVerifyEmailPage under StrictMode", () => {
+  it("posts the single-use token once and still reports success", async () => {
+    apiMock.POST.mockResolvedValueOnce({ data: { success: true } });
+
+    const { Wrapper } = makeWrapper("/verify-email?token=tok-strict");
+    const StrictWrapper = ({ children }: { children: ReactNode }) => (
+      <StrictMode>
+        <Wrapper>{children}</Wrapper>
+      </StrictMode>
+    );
+
+    const { result } = renderHook(() => useVerifyEmailPage(), {
+      wrapper: StrictWrapper
+    });
+
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(apiMock.POST).toHaveBeenCalledTimes(1);
+    expect(result.current.status).toBe("success");
+    expect(result.current.errorMessage).toBeNull();
   });
 });

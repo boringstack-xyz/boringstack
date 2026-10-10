@@ -151,6 +151,72 @@ describe("GET /api/v1/users/me", () => {
 
     expect(res.status).toBe(401);
   });
+
+  test("401s when only a refresh cookie is left, so the client refreshes the session", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const app = createApp();
+    const res = await app.handle(
+      new Request(ME_URL, {
+        headers: { cookie: "refresh_token=an-opaque-session-token" },
+      })
+    );
+
+    /*
+     * The access cookie expires after 15 minutes while the refresh session
+     * lives for 30 days. A 200 `{ user: null }` here would sign the user out
+     * on every reload; the 401 lets the client refresh and retry.
+     */
+    expect(res.status).toBe(401);
+  });
+
+  test("a refresh-only 401 recovers: the refreshed access cookie reads the profile", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const email = "refresh-renewal@example.com";
+
+    await seedVerifiedUser({
+      email,
+      password: PASSWORD,
+      firstName: "Renew",
+      lastName: "Me",
+    });
+
+    const app = createApp();
+    const loginRes = await app.handle(
+      new Request("http://localhost/api/v1/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, password: PASSWORD }),
+      })
+    );
+    const refreshCookie = extractCookiePair(
+      loginRes.headers.get("set-cookie"),
+      "refresh_token"
+    );
+
+    expect(refreshCookie).not.toBe("");
+
+    const renewed = await app.handle(
+      new Request("http://localhost/api/v1/auth/refresh", {
+        method: "POST",
+        headers: { cookie: refreshCookie },
+      })
+    );
+    const renewedAuth = extractCookiePair(
+      renewed.headers.get("set-cookie"),
+      "auth_token"
+    );
+    const me = await app.handle(
+      new Request(ME_URL, { headers: { cookie: renewedAuth } })
+    );
+
+    expect(me.status).toBe(200);
+  });
 });
 
 describe("PATCH /api/v1/users/me", () => {

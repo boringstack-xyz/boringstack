@@ -34,4 +34,7 @@ export interface IInvitationsPageView {
   readonly onRevoke: (invitationId: string) => void;
   readonly isResending: boolean;
   readonly isRevoking: boolean;
+  readonly isError: boolean;
+  readonly isRetrying: boolean;
+  readonly onRetry: () => void;
 }

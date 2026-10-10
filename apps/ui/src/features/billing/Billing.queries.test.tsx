@@ -33,8 +33,18 @@ describe("useBillingPlans", () => {
   it("loads billing plans when enabled", async () => {
     apiMock.GET.mockResolvedValueOnce({
       data: [
-        { id: 1, name: "Free", isDefault: true },
-        { id: 2, name: "Pro", isDefault: false }
+        {
+          id: 1,
+          name: "Free",
+          isDefault: true,
+          purchasableIntervals: ["month"]
+        },
+        {
+          id: 2,
+          name: "Pro",
+          isDefault: false,
+          purchasableIntervals: ["month", "year"]
+        }
       ]
     });
 
@@ -47,8 +57,13 @@ describe("useBillingPlans", () => {
     });
 
     expect(result.current.data).toEqual([
-      { id: 1, name: "Free", isDefault: true },
-      { id: 2, name: "Pro", isDefault: false }
+      { id: 1, name: "Free", isDefault: true, purchasableIntervals: ["month"] },
+      {
+        id: 2,
+        name: "Pro",
+        isDefault: false,
+        purchasableIntervals: ["month", "year"]
+      }
     ]);
     expect(apiMock.GET).toHaveBeenCalledWith("/api/v1/billing/plans");
   });

@@ -108,7 +108,23 @@ function isRefreshableEndpoint(url: string): boolean {
   return !url.includes("/auth/refresh") && !url.includes("/auth/login");
 }
 
+/*
+ * Serialized request bodies, keyed by the Request openapi-fetch dispatches.
+ * The body is read in `onRequest`, before dispatch, from a clone; by the time
+ * `onResponse` runs the original Request's body stream has been consumed, so
+ * it cannot be cloned or read again. Keeping the text here lets a retry
+ * re-send the same payload. A WeakMap releases each entry with its Request.
+ */
+const serializedBodies = new WeakMap<Request, string>();
+
 const tokenRefresh: Middleware = {
+  onRequest: async ({ request }) => {
+    if (request.body !== null && !["GET", "HEAD"].includes(request.method)) {
+      serializedBodies.set(request, await request.clone().text());
+    }
+
+    return undefined;
+  },
   onResponse: async ({ response, request }) => {
     if (response.status !== 401) {
       return response;
@@ -125,18 +141,14 @@ const tokenRefresh: Middleware = {
     }
 
     /*
-     * Re-issue the original request. `Request` is single-use after its body
-     * is read, but openapi-fetch hasn't consumed the body yet at this point,
-     * so a clone is enough. Falling back to the original lets reads-without-
-     * body (GET, DELETE) work too.
+     * Re-issue the original request with the body captured before dispatch.
+     * GET and HEAD have no body, so `body` stays null for them.
      */
     const retryInit: RequestInit = {
       method: request.method,
       headers: request.headers,
       credentials: "include",
-      body: ["GET", "HEAD"].includes(request.method)
-        ? null
-        : await request.clone().text()
+      body: serializedBodies.get(request) ?? null
     };
 
     return fetch(request.url, retryInit);

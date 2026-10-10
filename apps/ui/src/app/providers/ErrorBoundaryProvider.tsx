@@ -43,6 +43,10 @@ export class ErrorBoundaryProvider extends Component<
     window.location.reload();
   };
 
+  private readonly handleGoHome = (): void => {
+    window.location.assign("/");
+  };
+
   public override render(): ReactNode {
     if (this.state.hasError) {
       return (
@@ -57,13 +61,22 @@ export class ErrorBoundaryProvider extends Component<
             <p className='text-muted-foreground text-base'>
               {i18n.t("errors.boundary.body")}
             </p>
-            <button
-              type='button'
-              onClick={this.handleReload}
-              className='bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold transition'
-            >
-              {i18n.t("errors.boundary.retry")}
-            </button>
+            <div className='flex flex-wrap gap-3'>
+              <button
+                type='button'
+                onClick={this.handleReload}
+                className='bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold transition'
+              >
+                {i18n.t("errors.boundary.retry")}
+              </button>
+              <button
+                type='button'
+                onClick={this.handleGoHome}
+                className='border-border-strong/40 text-foreground hover:bg-panel inline-flex h-11 items-center justify-center rounded-xl border px-5 text-sm font-semibold transition'
+              >
+                {i18n.t("errors.boundary.home")}
+              </button>
+            </div>
           </div>
         </div>
       );

@@ -32,7 +32,11 @@ export function checkWorkflowConcurrencyExplicit(file: string): IViolation[] {
       continue;
     }
 
-    if (/^\s+cancel-in-progress:\s*(?:true|false)\s*(?:#.*)?$/u.test(line)) {
+    if (
+      /^\s+cancel-in-progress:\s*(?:true|false|\$\{\{.+\}\})\s*(?:#.*)?$/u.test(
+        line
+      )
+    ) {
       hasCancelKey = true;
     }
   }

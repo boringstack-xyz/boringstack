@@ -16,6 +16,33 @@ if (typeof globalThis.ResizeObserver === "undefined") {
 }
 
 /*
+ * jsdom has neither IntersectionObserver nor element scrolling. Components
+ * that lazy-load on visibility or scroll a row into view would throw on mount.
+ * The stubs never fire callbacks: tests that need visibility must drive it.
+ */
+if (typeof globalThis.IntersectionObserver === "undefined") {
+  class IntersectionObserverStub {
+    public readonly root = null;
+    public readonly rootMargin = "";
+    public readonly thresholds: readonly number[] = [];
+    public observe = vi.fn();
+    public unobserve = vi.fn();
+    public disconnect = vi.fn();
+    public takeRecords = vi.fn((): IntersectionObserverEntry[] => []);
+  }
+
+  vi.stubGlobal("IntersectionObserver", IntersectionObserverStub);
+}
+
+if (typeof Element.prototype.scrollIntoView !== "function") {
+  Object.defineProperty(Element.prototype, "scrollIntoView", {
+    configurable: true,
+    writable: true,
+    value: vi.fn()
+  });
+}
+
+/*
  * jsdom ships a stub `requestSubmit` that prints "Not implemented" the
  * first time React Hook Form (or any Enter-to-submit form path) calls
  * it. Replace it unconditionally with a spec-shaped polyfill so the

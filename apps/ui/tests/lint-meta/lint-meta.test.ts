@@ -1201,6 +1201,15 @@ describe("checkWorkflowConcurrencyExplicit", () => {
 
       expect(checkWorkflowConcurrencyExplicit(explicit)).toEqual([]);
 
+      const expression = join(root, "expression.yml");
+
+      writeFileSync(
+        expression,
+        "concurrency:\n  group: x-${{ github.ref }}\n  cancel-in-progress: ${{ github.event_name == 'pull_request' }}\n\njobs: {}\n"
+      );
+
+      expect(checkWorkflowConcurrencyExplicit(expression)).toEqual([]);
+
       const none = join(root, "none.yml");
 
       writeFileSync(none, "jobs: {}\n");

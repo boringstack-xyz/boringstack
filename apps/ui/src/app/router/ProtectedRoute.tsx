@@ -4,6 +4,7 @@ import { Navigate, useLocation } from "react-router-dom";
 
 import { useTranslation } from "react-i18next";
 
+import { storeReturnTo } from "@/lib/auth/return-to";
 import { useMe } from "@/lib/session";
 
 import { resolveAuthStatus } from "@/features/auth/Auth.queries.utils";
@@ -36,6 +37,25 @@ export const ProtectedRoute: FC<IProtectedRouteProps> = ({ children }) => {
   const isResolving =
     (isPending || (data == null && error == null && isFetching)) && !timedOut;
 
+  const status = resolveAuthStatus({ data, error });
+  const isLoggedOut =
+    !isResolving &&
+    (status === null ||
+      status.kind === "anonymous" ||
+      status.kind === "unauthorized");
+  const attemptedPath = `${location.pathname}${location.search}${location.hash}`;
+
+  /*
+   * Remember the page the visitor wanted, so login, email verification and
+   * the OAuth callback can send them back to it. `state.from` covers only the
+   * password login path; the stored value survives the OAuth round trip.
+   */
+  useEffect(() => {
+    if (isLoggedOut) {
+      storeReturnTo(attemptedPath);
+    }
+  }, [attemptedPath, isLoggedOut]);
+
   useEffect(() => {
     if (!isResolving) {
       return undefined;
@@ -66,8 +86,6 @@ export const ProtectedRoute: FC<IProtectedRouteProps> = ({ children }) => {
       </div>
     );
   }
-
-  const status = resolveAuthStatus({ data, error });
 
   if (status === null) {
     // Timed out before resolving: treat the same as "not authed".

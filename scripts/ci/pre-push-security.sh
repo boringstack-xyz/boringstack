@@ -48,7 +48,7 @@ paths_match() {
   if [[ -z "$CHANGED_PATHS" ]]; then
     return 0
   fi
-  echo "$CHANGED_PATHS" | grep -qE "$pattern"
+  grep -qE "$pattern" <<< "$CHANGED_PATHS"
 }
 
 # Discover every required scanner before starting any expensive scan.

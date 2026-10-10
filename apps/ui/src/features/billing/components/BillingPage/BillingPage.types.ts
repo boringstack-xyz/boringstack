@@ -1,4 +1,14 @@
-import type { IBillingPlan } from "../../Billing.types";
+import type { IBillingInterval, IBillingPlan } from "../../Billing.types";
+
+export interface IBillingIntervalOption {
+  readonly value: IBillingInterval;
+  readonly label: string;
+  readonly isSelected: boolean;
+  readonly onSelect: () => void;
+}
+
+export type ICheckoutOutcome =
+  "idle" | "polling" | "confirmed" | "timed_out" | "cancelled";
 
 export interface IBillingPageProps {
   readonly className?: string;
@@ -32,6 +42,13 @@ export interface IBillingPageView {
   readonly onManage: () => void;
   readonly upgradingPlanId: number | null;
   readonly isManaging: boolean;
+  readonly showIntervalChoice: boolean;
+  readonly intervalGroupLabel: string;
+  readonly intervalOptions: readonly IBillingIntervalOption[];
+  readonly checkoutOutcome: ICheckoutOutcome;
+  readonly checkoutMessage: string | null;
+  readonly checkoutRetryLabel: string;
+  readonly onRetryConfirmation: () => void;
 }
 
 export interface IBillingPlanRowProps {

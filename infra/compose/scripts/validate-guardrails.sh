@@ -261,14 +261,14 @@ check_prod_image_tags() {
   if output=$(env "${guard_env[@]}" ./dev.sh config --quiet 2>&1); then
     fail "prod accepted unset image tags"
   fi
-  echo "$output" | grep -q "API_IMAGE_TAG" \
+  grep -q "API_IMAGE_TAG" <<< "$output" \
     || fail "error does not mention API_IMAGE_TAG: $output"
 
   # 2. latest must be rejected explicitly.
   if output=$(env "${guard_env[@]}" API_IMAGE_TAG=latest UI_IMAGE_TAG=latest ./dev.sh config --quiet 2>&1); then
     fail "prod accepted latest image tags"
   fi
-  echo "$output" | grep -q "must be pinned in prod" \
+  grep -q "must be pinned in prod" <<< "$output" \
     || fail "latest rejection message missing: $output"
 
   # 3. Pinned tags pass.
@@ -280,7 +280,7 @@ check_prod_image_tags() {
   if output=$(env "${guard_env[@]}" API_IMAGE_TAG=v0.1.0 UI_IMAGE_TAG=v0.1.0 ./dev.sh config --quiet 2>&1); then
     fail "prod accepted an unset site image tag with the site on by default"
   fi
-  echo "$output" | grep -q "SITE_IMAGE_TAG" \
+  grep -q "SITE_IMAGE_TAG" <<< "$output" \
     || fail "error does not mention SITE_IMAGE_TAG: $output"
 
   # 5. WITH_SITE=0 is the explicit opt-out: no site tag or contact needed.

@@ -193,6 +193,8 @@ export const envSchema = t.Object({
   STRIPE_WEBHOOK_SECRET: t.String({ default: "" }),
   STRIPE_PRICE_ID_FREE: t.String({ default: "" }),
   STRIPE_PRICE_ID_PRO: t.String({ default: "" }),
+  /* Optional. Empty means the yearly interval is not offered. */
+  STRIPE_PRICE_ID_PRO_YEARLY: t.String({ default: "" }),
 
   QUEUES_ENABLED: t.Boolean({ default: true }),
   CACHE_ENABLED: t.Boolean({ default: true }),

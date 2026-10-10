@@ -20,18 +20,29 @@ sequenceDiagram
   UI->>API: POST /api/v1/billing/stripe/checkout-session
   API->>API: verify auth_token cookie + resolve active account
   API->>API: allowlist successUrl + cancelUrl against FRONTEND_URL origin
-  API->>DB: upsert Free / Pro plans from STRIPE_PRICE_ID_*
-  API->>Stripe: create checkout session (account.stripe_customer_id)
+  API->>DB: upsert Free / Pro plans and Pro's features from the plan catalog
+  API->>DB: lock the account row (SELECT ... FOR UPDATE)
+  API->>Stripe: 409 if the account already has a live subscription
+  API->>Stripe: reuse an open checkout session, or create one
   API->>DB: update account.stripe_customer_id when first needed
   API-->>UI: { url }
   UI->>Stripe: redirect browser to hosted checkout
 ```
 
+Checkout refuses the default (Free) plan, and returns 409 when the account
+already has a live subscription, locally or in Stripe (its webhook may not
+have arrived yet). Concurrent requests are serialized on the account row, so a
+double click yields one session. The body takes an optional `interval`
+(`month`, the default, or `year`); `year` needs `STRIPE_PRICE_ID_PRO_YEARLY`.
+
+After Stripe redirects back with `?checkout=success`, the billing page polls
+the subscription until the webhook has landed, then refreshes the session.
+
 The customer portal follows the same pattern: authenticated user, `returnUrl` allowlisted against `FRONTEND_URL`, Stripe returns a hosted URL.
 
 ## Design
 
-Billing is feature-flagged so local apps boot without Stripe credentials. Plans come from env (`STRIPE_PRICE_ID_FREE` and `STRIPE_PRICE_ID_PRO`) and upsert default plan rows without manual SQL. Customer routes (checkout, portal, plan reads) use the same cookie-auth OpenAPI contract as the rest of the API. Stripe-hosted flows may only return to the configured `FRONTEND_URL` origin.
+Billing is feature-flagged so local apps boot without Stripe credentials. Plans and what they grant live in one typed catalog, `apps/api/src/api/billing/billing.plans.ts`, with Stripe price ids from env. Every plan read upserts the plan rows and their `plan_features`, so a fresh database needs no manual SQL. Pro must give every feature key a value; the type check and a unit test fail until it does. `GET /billing/plans` is public, so a pricing page can read it without a session, and it answers even with billing off. Checkout, portal and subscription routes use cookie auth. Stripe-hosted flows may only return to the configured `FRONTEND_URL` origin.
 
 The webhook route passes the exact request payload to Stripe signature verification (raw body verification). Every Stripe event ID is claimed in the same transaction as the side effect, providing Postgres-backed idempotency.
 
@@ -55,10 +66,10 @@ sequenceDiagram
 
 Handled events:
 
-- `checkout.session.completed`: creates or updates `billing.account_plans` for the account and plan in session metadata.
-- `customer.subscription.updated`: maps the active Stripe price id back to a local plan and updates the account plan; also tracks `past_due`, `unpaid`, `paused`, `canceled`, `incomplete`, `trialing`, and `active` for the [feature resolver](/api/acl/#feature-gates).
+- `checkout.session.completed`: creates or updates `billing.account_plans` for the account and plan in session metadata. The plan is `active` only when `payment_status` is `paid` or `no_payment_required`; a delayed payment method (bank debit) leaves it `incomplete`, which grants nothing.
+- `checkout.session.async_payment_succeeded` / `checkout.session.async_payment_failed`: settle a delayed payment to `active` or `incomplete`.
+- `customer.subscription.updated`: maps the active Stripe price id (monthly or yearly) back to a local plan through the catalog and updates the account plan; also tracks `past_due`, `unpaid`, `paused`, `canceled`, `incomplete`, `trialing`, and `active` for the [feature resolver](/api/acl/#feature-gates).
 - `customer.subscription.deleted`: handles deletion only for the matching subscription; an older subscription cannot revoke its replacement. Effective access follows the resulting status and period.
-- `invoice.paid` / `invoice.payment_failed`: status transitions for the active plan row.
 
 Unknown event types are logged at debug level and ignored. Event identity prevents duplicate processing; ordering checks and subscription identity prevent stale deliveries from overwriting the current subscription. A deletion for an older subscription must not revoke its replacement. Same-second checkout and subscription updates preserve identity, status and period in either tested delivery order; a delayed checkout must not restore a delinquent subscription. These cases do not establish correctness for every possible provider event sequence.
 
@@ -83,7 +94,8 @@ Sensitive subscription reads recheck membership and return 403 for a revoked mem
 - `BILLING_ENABLED`: Turns the route group on; false means all billing paths return 404.
 - `STRIPE_SECRET_KEY`: Used by the Stripe SDK for Checkout, Portal, and webhook construction.
 - `STRIPE_WEBHOOK_SECRET`: Used to verify Stripe-Signature on raw webhook payloads.
-- `STRIPE_PRICE_ID_FREE` / `STRIPE_PRICE_ID_PRO`: Seeds and keeps the built-in plan rows aligned with Stripe.
+- `STRIPE_PRICE_ID_FREE` / `STRIPE_PRICE_ID_PRO`: Seeds and keeps the built-in plan rows aligned with Stripe. `STRIPE_PRICE_ID_PRO` is the monthly price.
+- `STRIPE_PRICE_ID_PRO_YEARLY` (optional): a yearly Pro price. Empty means yearly checkout is not offered.
 
 <Aside type="tip" title="Local webhook testing">
   Keep billing off unless you are actively testing Stripe. When billing is on
@@ -152,7 +164,7 @@ HAVING count(*) > 1;
 
 ## Related
 
-- [Authentication](/api/auth/); customer billing routes use cookie auth.
+- [Authentication](/api/auth/); customer billing routes use cookie auth, except the public plan list.
 - [ACL & feature resolution](/api/acl/); Stripe plan status drives the feature flags surfaced via `/me`.
 - [Multi-tenant model](/api/multi-tenant/); Stripe customer id and active plan live on `accounts`, not `users`.
 - [Audit log](/api/audit-log/); checkout and portal session creation write audit rows.

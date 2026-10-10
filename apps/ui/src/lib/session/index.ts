@@ -1,3 +1,4 @@
+export { fetchCurrentMe } from "./fetchMe";
 export { useMe } from "./useMe";
 export { isAuthenticatedMe } from "./session.utils";
 export { SESSION_QUERY_KEYS } from "./session.constants";

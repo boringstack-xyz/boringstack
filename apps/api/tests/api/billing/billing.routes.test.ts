@@ -77,7 +77,7 @@ describe("GET /api/v1/billing/plans", () => {
     await cleanDatabase();
   });
 
-  test("401 without an auth cookie", async () => {
+  test("200 without an auth cookie: the pricing page reads the catalog publicly", async () => {
     if (!(await requireDb())) {
       return;
     }
@@ -87,7 +87,7 @@ describe("GET /api/v1/billing/plans", () => {
       new Request("http://localhost/api/v1/billing/plans")
     );
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(200);
   });
 
   test("200 + plans array for an authenticated user", async () => {
@@ -239,6 +239,38 @@ describe("POST /api/v1/billing/stripe/checkout-session", () => {
         method: "POST",
         headers: { "content-type": "application/json", cookie },
         body: JSON.stringify({ planId: "not-a-number" }),
+      })
+    );
+
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(res.status).toBeLessThan(500);
+  });
+
+  test("rejects an interval other than month or year (TypeBox validation)", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const { password } = await seedVerifiedUser({
+      email: "checkout-interval@example.com",
+    });
+    const app = createApp();
+    const cookie = await loginCookie(
+      app,
+      "checkout-interval@example.com",
+      password
+    );
+
+    const res = await app.handle(
+      new Request("http://localhost/api/v1/billing/stripe/checkout-session", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie },
+        body: JSON.stringify({
+          planId: 1,
+          interval: "week",
+          successUrl: `${env.FRONTEND_URL}/billing/success`,
+          cancelUrl: `${env.FRONTEND_URL}/billing/cancel`,
+        }),
       })
     );
 

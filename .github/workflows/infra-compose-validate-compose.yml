@@ -25,6 +25,7 @@ on:
       # lockfile edits.
       - "apps/api/**"
       - "apps/ui/**"
+      - "packages/**"
   pull_request:
     branches: [main]
 
@@ -34,6 +35,7 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   compose-config:
@@ -478,8 +480,10 @@ jobs:
             code:
               # Dockerfile.prod runs COPY . .: the whole app tree is
               # image input, so app-only source changes must rebuild too.
+              # It also COPYs the packages/ named context.
               - 'apps/api/**'
               - 'apps/ui/**'
+              - 'packages/**'
               - 'infra/compose/**'
               - '.github/workflows/infra-compose-validate-compose.yml'
 
@@ -493,6 +497,8 @@ jobs:
         with:
           context: apps/api
           file: apps/api/Dockerfile.prod
+          build-contexts: |
+            packages=packages
           push: false
           load: true
           tags: boringstack-api:pr-build
@@ -505,6 +511,8 @@ jobs:
         with:
           context: apps/ui
           file: apps/ui/Dockerfile.prod
+          build-contexts: |
+            packages=packages
           push: false
           load: true
           tags: boringstack-ui:pr-build

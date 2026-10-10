@@ -1,9 +1,15 @@
 import { t } from "elysia";
 
+export const BillingIntervalSchema = t.Union([
+  t.Literal("month"),
+  t.Literal("year"),
+]);
+
 export const PlanResponse = t.Object({
   id: t.Number(),
   name: t.String(),
   isDefault: t.Boolean(),
+  purchasableIntervals: t.Array(BillingIntervalSchema),
 });
 
 export const PlanListResponse = t.Array(PlanResponse);
@@ -35,6 +41,8 @@ export const WebhookResponse = t.Object({
 
 export const CreateCheckoutSessionSchema = t.Object({
   planId: t.Number(),
+  /* Optional; omitted means "month". A yearly interval needs STRIPE_PRICE_ID_PRO_YEARLY. */
+  interval: t.Optional(BillingIntervalSchema),
   successUrl: t.String({ format: "uri" }),
   cancelUrl: t.String({ format: "uri" }),
 });

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { useTranslation } from "react-i18next";
 
+import { QueryErrorState } from "@/components/core/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -22,8 +23,15 @@ const NotificationCenterPopover: FC<INotificationCenterPopoverProps> = (
   props
 ) => {
   const { t } = useTranslation();
-  const { items, isLoading, isError, isEmpty, onMarkRead } =
-    useNotificationCenterPopover();
+  const {
+    items,
+    isLoading,
+    isError,
+    isEmpty,
+    isRetrying,
+    onRetry,
+    onMarkRead
+  } = useNotificationCenterPopover();
 
   const renderedItems = items.map((item) => (
     <NotificationListItem
@@ -51,9 +59,12 @@ const NotificationCenterPopover: FC<INotificationCenterPopoverProps> = (
           ) : null}
 
           {isError ? (
-            <p className='text-destructive px-4 py-6 text-sm'>
-              {t("notifications.loadError")}
-            </p>
+            <QueryErrorState
+              message={t("notifications.loadError")}
+              retryLabel={t("common.retry")}
+              onRetry={onRetry}
+              isRetrying={isRetrying}
+            />
           ) : null}
 
           {isEmpty ? (

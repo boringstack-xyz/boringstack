@@ -1,6 +1,8 @@
 import { QueryClient } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiError } from "@/lib/api/ApiError";
+
 import { syncMeAfterSessionEstablished } from "./Auth.session.sync";
 
 const apiMock = vi.hoisted(() => ({
@@ -98,5 +100,30 @@ describe("syncMeAfterSessionEstablished", () => {
 
     expect(cached).not.toBeNull();
     expect(cached).toMatchObject({ user: { id: "u1" } });
+  });
+
+  it("treats a 401 from /me as anonymous and keeps retrying until the session appears", async () => {
+    apiMock.GET.mockRejectedValueOnce(
+      new ApiError(401, { message: "Unauthorized" })
+    ).mockResolvedValueOnce(buildAuthedResponse());
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } }
+    });
+
+    const result = await syncMeAfterSessionEstablished(qc);
+
+    expect(result?.user.id).toBe("u1");
+    expect(apiMock.GET).toHaveBeenCalledTimes(2);
+  });
+
+  it("resolves null, not a rejection, when /me stays 401", async () => {
+    apiMock.GET.mockRejectedValue(
+      new ApiError(401, { message: "Unauthorized" })
+    );
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } }
+    });
+
+    await expect(syncMeAfterSessionEstablished(qc)).resolves.toBeNull();
   });
 });

@@ -11,8 +11,11 @@
  * Use an isolated migrated test database, never a development database containing
  * product data. Run the default lane with `bun run test`, not bare `bun test`.
  */
-import { sql } from "drizzle-orm";
+import { is, sql } from "drizzle-orm";
+import { getTableConfig, PgTable } from "drizzle-orm/pg-core";
+
 import { db } from "../../src/clients/postgres";
+import * as schema from "../../src/clients/postgres/schema";
 
 /**
  * True when a SELECT 1 succeeds against the configured DATABASE_URL.
@@ -86,10 +89,10 @@ export const requireDb = async (): Promise<boolean> => {
 
 /**
  * Tables to clear between tests, in child-first dependency order.
- * Seed-like tables (`billing.plans`, `billing.features`) are intentionally
- * omitted so fixtures referencing seeded plans keep resolving.
+ * Every user-data table in the Drizzle schema must appear here or in
+ * `REFERENCE_TABLES`; `tests/helpers/db.test.ts` fails otherwise.
  */
-const CLEANUP_TARGETS = [
+export const CLEANUP_TARGETS = [
   "audit.audit_log",
   "audit.redactions",
   /*
@@ -119,6 +122,32 @@ const CLEANUP_TARGETS = [
   "app.accounts",
   "auth.users",
 ] as const;
+
+/**
+ * Seed and reference tables that are deliberately never cleared, so fixtures
+ * referencing seeded plans keep resolving. Adding a table here means it is
+ * installed by migrations or seeding and is not created by tests; a table that
+ * holds per-user or per-test rows belongs in `CLEANUP_TARGETS` instead.
+ */
+export const REFERENCE_TABLES = [
+  // Plan catalogue seeded by billing migrations; fixtures assume these rows.
+  "billing.plans",
+  "billing.plan_features",
+] as const;
+
+/**
+ * Fully qualified `schema.table` name for every table defined in the Drizzle
+ * schema module. Derived from the schema itself so a new table cannot be
+ * missed by a hand-maintained list.
+ */
+export const schemaTableNames = (): string[] =>
+  Object.values(schema)
+    .filter((value) => is(value, PgTable))
+    .map((table) => {
+      const config = getTableConfig(table);
+
+      return `${config.schema ?? "public"}.${config.name}`;
+    });
 
 /*
  * Arbitrary 64-bit key for the advisory lock that serialises cleanup

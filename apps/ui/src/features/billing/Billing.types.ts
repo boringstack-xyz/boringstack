@@ -9,8 +9,12 @@ type SubscriptionResponse =
 export type IBillingPlan = PlansResponse[number];
 export type IBillingSubscription = SubscriptionResponse;
 
+export type IBillingInterval = "month" | "year";
+
 export interface IBillingCheckoutInput {
   readonly planId: number;
+  /** Omitted for plans that offer only one interval. */
+  readonly interval?: IBillingInterval;
   readonly successUrl: string;
   readonly cancelUrl: string;
 }

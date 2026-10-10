@@ -10,6 +10,8 @@ export interface INotificationCenterPopoverView {
   readonly isLoading: boolean;
   readonly isError: boolean;
   readonly isEmpty: boolean;
+  readonly isRetrying: boolean;
+  readonly onRetry: () => void;
   readonly onMarkRead: (id: string) => void;
 }
 
@@ -33,6 +35,10 @@ export function useNotificationCenterPopover(): INotificationCenterPopoverView {
     isLoading: list.isPending,
     isError: list.isError,
     isEmpty: !list.isPending && !list.isError && items.length === 0,
+    isRetrying: list.isFetching,
+    onRetry: (): void => {
+      void list.refetch();
+    },
     onMarkRead: markRead.mutate
   };
 }

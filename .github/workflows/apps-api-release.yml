@@ -14,6 +14,7 @@ on:
     tags: ["v*.*.*"]
     paths:
       - "apps/api/**"
+      - "packages/**"
       - ".github/workflows/apps-api-release.yml"
 
 concurrency:
@@ -72,6 +73,8 @@ jobs:
         with:
           context: apps/api
           file: apps/api/Dockerfile.prod
+          build-contexts: |
+            packages=packages
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

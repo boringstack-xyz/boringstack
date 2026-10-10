@@ -16,8 +16,8 @@ import type { IErrorHandlerArgs } from "./error-handler.types";
  * Reproducing that string in either the response OR the structured log
  * leaks user input to clients and observability, so we only ever
  * surface the field name (a schema-defined symbol the client already
- * knows about). The user-facing message stays generic; the developer
- * still gets the raw framework message in dev via the stack field.
+ * knows about). Framework stacks embed the same body, so they are omitted
+ * in every environment, including local development.
  */
 const extractFieldErrors = (
   error: unknown
@@ -49,6 +49,23 @@ const safeMessageFor = (code: string, error: unknown): string => {
 
   return framework ?? getErrorMessage(error);
 };
+
+const isFrameworkCode = (code: string): boolean =>
+  FRAMEWORK_SAFE_MESSAGES[code] !== undefined;
+
+/*
+ * The stack is developer detail for everything else. For framework
+ * VALIDATION/PARSE errors it embeds the submitted body, so it is never
+ * attached, in development or anywhere else.
+ */
+export const stackFor = (
+  code: string,
+  error: unknown,
+  isDevelopment: boolean
+): string | undefined =>
+  isDevelopment && !isFrameworkCode(code) && error instanceof Error
+    ? error.stack
+    : undefined;
 
 const isClientErrorCode = (code: string): boolean =>
   code === ElysiaErrorCodes.NOT_FOUND ||
@@ -106,8 +123,7 @@ export const errorHandler = ({
     statusCode: finalStatus,
     message:
       error instanceof ApiError ? error.message : safeMessageFor(code, error),
-    stack:
-      env.isDevelopment && error instanceof Error ? error.stack : undefined,
+    stack: stackFor(code, error, env.isDevelopment),
   };
 
   if (isClientError) {

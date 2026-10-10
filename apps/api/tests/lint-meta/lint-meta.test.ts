@@ -38,6 +38,7 @@ import {
   checkWorkflowConcurrencyExplicit,
   checkWorkflowExpressionSyntax,
   checkWorkflowPathsFilterParity,
+  checkWorkflowPathsFilterPermissions,
   checkWorkflowPipInstallPinned,
   checkWorkflowRunnerPinned,
   checkWorkflowSecurityNoCancel,
@@ -660,6 +661,141 @@ describe("checkWorkflowPathsFilterParity", () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
+  });
+});
+
+describe("checkWorkflowConcurrencyExplicit expressions", () => {
+  test("accepts a conditional cancel-in-progress expression as explicit", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-concurrency-expr-"));
+
+    try {
+      const file = writeNamedWorkflow(
+        root,
+        "wf.yml",
+        [
+          "concurrency:",
+          "  group: x-${{ github.ref }}",
+          "  cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
+          "",
+          "jobs: {}",
+          "",
+        ].join("\n")
+      );
+
+      expect(checkWorkflowConcurrencyExplicit(file)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("checkWorkflowPathsFilterPermissions", () => {
+  const CONTENTS_READ = "  contents: read";
+  const JOBS_HEADER = "jobs:";
+  const PERMISSIONS_HEADER = "permissions:";
+  const FILTER_STEP = [
+    "    steps:",
+    "      - uses: dorny/paths-filter@abc",
+    "        with:",
+    "          filters: |",
+    "            code:",
+    "              - 'apps/x/**'",
+  ];
+
+  const writeWorkflow = (lines: string[]): { root: string; file: string } => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-filter-perms-"));
+
+    return { root, file: writeNamedWorkflow(root, "wf.yml", lines.join("\n")) };
+  };
+
+  test("flags a paths-filter job without pull-requests read in effect", () => {
+    const { root, file } = writeWorkflow([
+      PERMISSIONS_HEADER,
+      CONTENTS_READ,
+      "",
+      JOBS_HEADER,
+      "  validate:",
+      ...FILTER_STEP,
+      "",
+    ]);
+
+    try {
+      const messages = checkWorkflowPathsFilterPermissions(file);
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0]?.rule).toBe("github-actions-paths-filter-permissions");
+      expect(messages[0]?.message).toContain("'validate'");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("accepts workflow-level, job-level, read-all and flow-style grants", () => {
+    const { root, file } = writeWorkflow([
+      PERMISSIONS_HEADER,
+      CONTENTS_READ,
+      "  pull-requests: read",
+      "",
+      JOBS_HEADER,
+      "  workflow-level:",
+      ...FILTER_STEP,
+      "  job-level:",
+      "    permissions:",
+      "      contents: read",
+      "      pull-requests: read",
+      ...FILTER_STEP,
+      "  read-all:",
+      "    permissions: read-all",
+      ...FILTER_STEP,
+      "  flow:",
+      "    permissions: {contents: read, pull-requests: read}",
+      ...FILTER_STEP,
+      "",
+    ]);
+
+    try {
+      expect(checkWorkflowPathsFilterPermissions(file)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("a job-level block replaces the workflow grant instead of merging", () => {
+    const { root, file } = writeWorkflow([
+      PERMISSIONS_HEADER,
+      CONTENTS_READ,
+      "  pull-requests: read",
+      "",
+      JOBS_HEADER,
+      "  narrowed:",
+      "    permissions:",
+      "      contents: read",
+      ...FILTER_STEP,
+      "  no-filter:",
+      "    steps:",
+      "      - run: echo hi",
+      "",
+    ]);
+
+    try {
+      const messages = checkWorkflowPathsFilterPermissions(file);
+
+      expect(messages).toHaveLength(1);
+      expect(messages[0]?.message).toContain("'narrowed'");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test("the shipped workflows all grant pull-requests read to their filter jobs", () => {
+    const workflowsDir = join(
+      dirname(fileURLToPath(import.meta.url)),
+      "../../../../.github/workflows"
+    );
+    const files = findWorkflows(workflowsDir);
+    const violations = files.flatMap(checkWorkflowPathsFilterPermissions);
+
+    expect(violations).toEqual([]);
   });
 });
 

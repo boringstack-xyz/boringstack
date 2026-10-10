@@ -10,6 +10,16 @@
 # https://mailpit.axllent.org
 
 services:
+  # Route the dev API's mail to the catcher whenever this overlay is merged,
+  # so `docker compose -f ... -f docker-compose.mailpit.yml` behaves the same
+  # as dev.sh with WITH_MAILPIT=1. The base file keeps the cloudflare default
+  # for the smoke profile, which shares api-dev but never merges this overlay.
+  api-dev:
+    environment:
+      EMAIL_PROVIDER: ${API_DEV_EMAIL_PROVIDER:-smtp}
+      SMTP_HOST: ${API_DEV_SMTP_HOST:-mailpit}
+      SMTP_PORT: ${API_DEV_SMTP_PORT:-1025}
+
   mailpit:
     image: axllent/mailpit:v1.21@sha256:81370195cd4a0eab9604d17c2617a7525b0486f9365555253b6c5376c6350f1a
     profiles: [mailpit]

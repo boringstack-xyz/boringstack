@@ -147,6 +147,8 @@ describe("toCsv", () => {
 
 type TestEnv = Record<string, string | undefined>;
 
+const STRIPE_WEBHOOK_TEST_SECRET = "test-stripe-webhook-secret";
+
 let testEnv: TestEnv;
 
 const seedValid = (): TestEnv => ({
@@ -375,7 +377,7 @@ describe("validateEnv", () => {
   it("rejects a placeholder Stripe secret when BILLING_ENABLED=true", () => {
     testEnv.BILLING_ENABLED = "true";
     testEnv.STRIPE_SECRET_KEY = "your-stripe-secret-key";
-    testEnv.STRIPE_WEBHOOK_SECRET = "test-stripe-webhook-secret";
+    testEnv.STRIPE_WEBHOOK_SECRET = STRIPE_WEBHOOK_TEST_SECRET;
     testEnv.STRIPE_PRICE_ID_FREE = "price_free";
     testEnv.STRIPE_PRICE_ID_PRO = "price_pro";
     testEnv.RESEND_API_KEY = "rk_test";
@@ -387,11 +389,47 @@ describe("validateEnv", () => {
   it("accepts real-looking Stripe secrets when BILLING_ENABLED=true", () => {
     testEnv.BILLING_ENABLED = "true";
     testEnv.STRIPE_SECRET_KEY = "sk_test_51RealKeyValue";
-    testEnv.STRIPE_WEBHOOK_SECRET = "test-stripe-webhook-secret";
+    testEnv.STRIPE_WEBHOOK_SECRET = STRIPE_WEBHOOK_TEST_SECRET;
     testEnv.STRIPE_PRICE_ID_FREE = "price_free";
     testEnv.STRIPE_PRICE_ID_PRO = "price_pro";
     testEnv.RESEND_API_KEY = "rk_test";
     expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
+  it("STRIPE_PRICE_ID_PRO_YEARLY is optional and defaults to empty (yearly not offered)", () => {
+    testEnv.BILLING_ENABLED = "true";
+    testEnv.STRIPE_SECRET_KEY = "sk_test_51RealKeyValue";
+    testEnv.STRIPE_WEBHOOK_SECRET = STRIPE_WEBHOOK_TEST_SECRET;
+    testEnv.STRIPE_PRICE_ID_FREE = "price_free";
+    testEnv.STRIPE_PRICE_ID_PRO = "price_pro";
+    testEnv.RESEND_API_KEY = "rk_test";
+    expect(validateEnv(testEnv).STRIPE_PRICE_ID_PRO_YEARLY).toBe("");
+  });
+
+  it("parses STRIPE_PRICE_ID_PRO_YEARLY when it differs from the monthly price", () => {
+    testEnv.BILLING_ENABLED = "true";
+    testEnv.STRIPE_SECRET_KEY = "sk_test_51RealKeyValue";
+    testEnv.STRIPE_WEBHOOK_SECRET = STRIPE_WEBHOOK_TEST_SECRET;
+    testEnv.STRIPE_PRICE_ID_FREE = "price_free";
+    testEnv.STRIPE_PRICE_ID_PRO = "price_pro";
+    testEnv.STRIPE_PRICE_ID_PRO_YEARLY = "price_pro_yearly";
+    testEnv.RESEND_API_KEY = "rk_test";
+    expect(validateEnv(testEnv).STRIPE_PRICE_ID_PRO_YEARLY).toBe(
+      "price_pro_yearly"
+    );
+  });
+
+  it("rejects STRIPE_PRICE_ID_PRO_YEARLY equal to the monthly Pro price", () => {
+    testEnv.BILLING_ENABLED = "true";
+    testEnv.STRIPE_SECRET_KEY = "sk_test_51RealKeyValue";
+    testEnv.STRIPE_WEBHOOK_SECRET = STRIPE_WEBHOOK_TEST_SECRET;
+    testEnv.STRIPE_PRICE_ID_FREE = "price_free";
+    testEnv.STRIPE_PRICE_ID_PRO = "price_pro";
+    testEnv.STRIPE_PRICE_ID_PRO_YEARLY = "price_pro";
+    testEnv.RESEND_API_KEY = "rk_test";
+    expect(() => validateEnv(testEnv)).toThrow(
+      /STRIPE_PRICE_ID_PRO_YEARLY must differ from STRIPE_PRICE_ID_PRO/
+    );
   });
 
   it("requires VALKEY_PASSWORD in production with QUEUES_ENABLED=true", () => {

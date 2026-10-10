@@ -7,7 +7,8 @@
   },
   "common": {
     "loading": "Wird geladen…",
-    "close": "Schließen"
+    "close": "Schließen",
+    "retry": "Erneut versuchen"
   },
   "offline": {
     "title": "Server nicht erreichbar",
@@ -221,6 +222,18 @@
     "badges": {
       "default": "Standard",
       "current": "Aktuell"
+    },
+    "checkout": {
+      "pending": "Zahlung wird bestätigt…",
+      "confirmed": "Dein Tarif wurde aktualisiert.",
+      "timeout": "Die Bestätigung dauert länger als erwartet. Deine Zahlung ist sicher; prüfe es gleich noch einmal.",
+      "retry": "Erneut prüfen",
+      "cancelled": "Der Checkout wurde abgebrochen. Dein Tarif wurde nicht geändert."
+    },
+    "interval": {
+      "label": "Abrechnungszeitraum",
+      "monthly": "Monatlich",
+      "yearly": "Jährlich"
     }
   },
   "theme": {
@@ -237,7 +250,8 @@
     "boundary": {
       "title": "Etwas ist schiefgelaufen",
       "body": "Bitte die Seite neu laden. Falls das Problem weiterhin auftritt, kontaktiere den Support.",
-      "retry": "Neu laden"
+      "retry": "Neu laden",
+      "home": "Zur Startseite"
     },
     "route": {
       "generic": "Diese Seite hat einen Aussetzer",
@@ -480,7 +494,8 @@
         "errorInvalid": "Diese Einladung ist nicht mehr gültig. Bitte um eine neue.",
         "errorGeneric": "Die Einladung konnte nicht angenommen werden. Versuche es erneut oder bitte um einen neuen Link.",
         "backToLogin": "Zurück zur Anmeldung"
-      }
+      },
+      "loadError": "Einladungen konnten nicht geladen werden. Versuche es erneut."
     },
     "ownershipTransfer": {
       "pageTitle": "Eigentumsübertragung annehmen",

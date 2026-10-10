@@ -284,6 +284,159 @@ describe("tokenRefresh middleware", () => {
   });
 });
 
+describe("tokenRefresh middleware: request bodies on retry", () => {
+  const refreshOk = () =>
+    jsonResponse(200, {
+      success: true,
+      data: {
+        user: {
+          id: "u1",
+          email: "u@example.com",
+          firstName: "U",
+          lastName: "Ser",
+          emailVerified: true
+        }
+      },
+      timestamp: "2026-06-01T00:00:00.000Z"
+    });
+
+  const subscribeBody = {
+    endpoint: "https://push.example.test/sub/1",
+    keys: { p256dh: "p256dh-key", auth: "auth-key" }
+  };
+
+  it("re-sends the original JSON body when a POST is retried after refresh", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(401, { message: "expired" })) // original
+      .mockResolvedValueOnce(refreshOk()) // refresh
+      .mockResolvedValueOnce(jsonResponse(200, { ok: true })); // retry
+    const client = await importClient();
+
+    await (
+      client as unknown as {
+        POST: (path: string, opts: unknown) => Promise<unknown>;
+      }
+    ).POST("/api/v1/notifications/push/subscribe", { body: subscribeBody });
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const [, , retry] = fetchMock.mock.calls;
+    const [retryUrl, retryInit] = retry ?? [];
+
+    const retryUrlText =
+      typeof retryUrl === "string" ? retryUrl : (retryUrl as Request).url;
+
+    expect(retryUrlText).toContain("/api/v1/notifications/push/subscribe");
+    expect(retryInit?.method).toBe("POST");
+    expect(retryInit?.body).toBe(JSON.stringify(subscribeBody));
+  });
+
+  it("still sends the original body on the first, pre-refresh attempt", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(401, { message: "expired" }))
+      .mockResolvedValueOnce(refreshOk())
+      .mockResolvedValueOnce(jsonResponse(200, { ok: true }));
+    const client = await importClient();
+
+    await (
+      client as unknown as {
+        POST: (path: string, opts: unknown) => Promise<unknown>;
+      }
+    ).POST("/api/v1/notifications/push/subscribe", { body: subscribeBody });
+
+    const [original] = fetchMock.mock.calls[0] ?? [];
+
+    expect(original).toBeInstanceOf(Request);
+    expect(await (original as Request).text()).toBe(
+      JSON.stringify(subscribeBody)
+    );
+  });
+
+  it("retries a GET after refresh without sending a body", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(401, { message: "expired" }))
+      .mockResolvedValueOnce(refreshOk())
+      .mockResolvedValueOnce(jsonResponse(200, { id: "u1" }));
+    const client = await importClient();
+
+    const { data } = await (
+      client as unknown as {
+        GET: (path: string) => Promise<{ data: unknown }>;
+      }
+    ).GET("/api/v1/users/me");
+
+    expect(data).toEqual({ id: "u1" });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const [, retryInit] = fetchMock.mock.calls[2] ?? [];
+
+    expect(retryInit?.body).toBeNull();
+  });
+});
+
+describe("/users/me through the refresh middleware (fetchCurrentMe)", () => {
+  const refreshedUser = {
+    success: true,
+    data: {
+      user: {
+        id: "u1",
+        email: "u@example.com",
+        firstName: "U",
+        lastName: "Ser",
+        emailVerified: true
+      }
+    },
+    timestamp: "2026-06-01T00:00:00.000Z"
+  };
+
+  async function importFetchCurrentMe() {
+    const mod = await import("@/lib/session/fetchMe");
+
+    return mod.fetchCurrentMe;
+  }
+
+  it("resolves to the user when the access cookie expired and the refresh succeeds", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(401, { message: "expired" }))
+      .mockResolvedValueOnce(jsonResponse(200, refreshedUser))
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          user: { id: "u1", email: "u@example.com" },
+          role: "owner"
+        })
+      );
+    const fetchCurrentMe = await importFetchCurrentMe();
+
+    const me = await fetchCurrentMe();
+
+    expect(me?.user.id).toBe("u1");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("resolves to null (logged out) when the refresh fails, without a second refresh", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(401, { message: "expired" }))
+      .mockResolvedValueOnce(
+        jsonResponse(200, {
+          success: true,
+          data: { user: null },
+          timestamp: "2026-06-01T00:00:00.000Z"
+        })
+      );
+    const fetchCurrentMe = await importFetchCurrentMe();
+
+    await expect(fetchCurrentMe()).resolves.toBeNull();
+
+    // Original /me + one anonymous refresh probe; no retry, no loop.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const refreshCalls = fetchMock.mock.calls.filter(([req]) => {
+      const url = typeof req === "string" ? req : (req as Request).url;
+
+      return url.includes("/auth/refresh");
+    });
+
+    expect(refreshCalls).toHaveLength(1);
+  });
+});
+
 describe("throwOnError middleware", () => {
   it("throws ApiError with parsed body fields on a non-2xx JSON response", async () => {
     fetchMock.mockResolvedValueOnce(

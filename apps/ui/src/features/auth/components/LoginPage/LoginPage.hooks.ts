@@ -10,6 +10,12 @@ import { toast } from "sonner";
 import { ApiError } from "@/lib/api/ApiError";
 import { useCapabilities } from "@/lib/api/queries/useCapabilities";
 import { type IOAuthProvider, startOAuth } from "@/lib/auth/oauth.service";
+import {
+  clearReturnTo,
+  peekReturnTo,
+  sanitizeReturnTo,
+  storeReturnTo
+} from "@/lib/auth/return-to";
 import { getErrorMessage } from "@/lib/errors/getErrorMessage";
 import { isRecord } from "@/lib/guards/isRecord";
 import { logger } from "@/lib/logger/logger";
@@ -31,18 +37,31 @@ function routePart(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
-function redirectTargetFromState(state: unknown): string {
+function redirectTargetFromState(state: unknown): string | null {
   if (!isRecord(state) || !isRecord(state.from)) {
-    return DEFAULT_REDIRECT_TO;
+    return null;
   }
 
-  const pathname = routePart(state.from.pathname);
+  return sanitizeReturnTo(
+    `${routePart(state.from.pathname)}${routePart(state.from.search)}${routePart(state.from.hash)}`
+  );
+}
 
-  if (!pathname.startsWith("/") || pathname.startsWith("//")) {
-    return DEFAULT_REDIRECT_TO;
-  }
-
-  return `${pathname}${routePart(state.from.search)}${routePart(state.from.hash)}`;
+/*
+ * Where to land after a successful login: an explicit prop, then the path
+ * ProtectedRoute bounced from (router state), then the path remembered for
+ * this tab (survives OAuth and signup→verify), then the default.
+ */
+function resolveRedirectTarget(
+  propTarget: string | undefined,
+  state: unknown
+): string {
+  return (
+    sanitizeReturnTo(propTarget) ??
+    redirectTargetFromState(state) ??
+    peekReturnTo() ??
+    DEFAULT_REDIRECT_TO
+  );
 }
 
 export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
@@ -84,8 +103,10 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
     defaultValues: { email: "", password: "" }
   });
 
-  const redirectTarget =
-    props.redirectTo ?? redirectTargetFromState(location.state);
+  const redirectTarget = resolveRedirectTarget(
+    props.redirectTo,
+    location.state
+  );
   const capabilityProviders = capabilities.data?.oauth.providers;
   const oauthProviders = useMemo<IOAuthProvider[]>(
     () => capabilityProviders ?? [],
@@ -114,6 +135,7 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
         }
 
         logger.info({ event: "auth.login_success" });
+        clearReturnTo();
         await navigate(redirectTarget, { replace: true });
       } catch (error) {
         if (applyServerErrors(error, setError, ["email", "password"])) {
@@ -165,6 +187,8 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
       }
 
       setOauthPending(provider);
+      // The OAuth round trip leaves this SPA, so the target must be stored.
+      storeReturnTo(redirectTarget);
 
       /*
        * startOAuth is synchronous (browser navigation): wrap in try/catch
@@ -183,7 +207,7 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
         });
       }
     },
-    [oauthProviders, t]
+    [oauthProviders, redirectTarget, t]
   );
 
   const onGoogle = useCallback((): void => {
@@ -239,6 +263,7 @@ export function useLoginPage(props: ILoginPageProps = {}): ILoginPageView {
           setMfaChallengeToken(null);
           setMfaPending(false);
           setMfaCode("");
+          clearReturnTo();
           void navigate(redirectTarget, { replace: true });
         },
         onError: (error: unknown) => {

@@ -97,6 +97,11 @@ export function useInvitationsPage(): IInvitationsPageView {
     onResend,
     onRevoke,
     isResending: resendMutation.isPending,
-    isRevoking: revokeMutation.isPending
+    isRevoking: revokeMutation.isPending,
+    isError: invitations.isError,
+    isRetrying: invitations.isFetching && !invitations.isPending,
+    onRetry: (): void => {
+      void invitations.refetch();
+    }
   };
 }
