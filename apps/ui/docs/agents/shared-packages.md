@@ -82,6 +82,41 @@ first one is, add:
 - `vite.config.ts`, `resolve.dedupe`: list every dependency that both the app and
   the package declare (for example `zod`), so the bundle carries one copy.
 
+## Images and dev containers
+
+An app image or dev container sees only its own directory unless the packages
+are passed in. The template wires them in as follows, so a package import works
+the same in tests, dev containers and prod images.
+
+- **Layout.** Apps sit two levels below the repo root (`apps/<app>`), so the
+  relative path `../../packages/<name>` resolves from the app's `/app` to
+  `/packages/<name>` inside a container. The prod images copy the packages to
+  `/packages`, and the dev containers mount them there.
+- **Prod images.** `apps/api/Dockerfile.prod` and `apps/ui/Dockerfile.prod`
+  take `packages/` as the BuildKit named context `packages`
+  (`COPY --from=packages . /packages`). Each package with a `package.json`
+  then runs `bun install --production` in its own directory, so its runtime
+  dependencies resolve from inside the package. Needs BuildKit, the default
+  since Docker 23.
+- **Build from an app directory** (for example to check an image by hand):
+
+  ```bash
+  cd apps/ui
+  docker build --build-context packages=../../packages -f Dockerfile.prod .
+  ```
+
+  Compose (`additional_contexts`), `docker/build-push-action`
+  (`build-contexts`) and the release workflows already pass this context.
+
+- **Dev containers.** `api-dev`, `api-migrate-dev` and `ui-dev` mount
+  `packages/` read-only at `/packages`. Run `bun install` inside a package that
+  has runtime dependencies, on the host, before the containers start. The
+  mount carries the package's `node_modules` with it.
+- **Triggers.** The API and UI CI, the release workflows, the compose gate and
+  the UI bundle diff all run when `packages/**` changes.
+- `packages/README.md` keeps the directory present in a fresh checkout. It is
+  a file, not a package, so it is not validated.
+
 ## Known gaps
 
 - `lint:meta` scans only `src/`, `tests/`, `e2e/` and `.storybook/`

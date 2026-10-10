@@ -71,6 +71,8 @@ jobs:
         with:
           context: apps/api
           file: apps/api/Dockerfile.prod
+          build-contexts: |
+            packages=packages
           push: true
           tags: ghcr.io/${{ github.repository }}-api:candidate-${{ github.sha }}
           labels: org.opencontainers.image.revision=${{ github.sha }}
@@ -82,6 +84,8 @@ jobs:
         with:
           context: apps/api
           file: apps/api/Dockerfile.prod
+          build-contexts: |
+            packages=packages
           target: migrations
           push: true
           tags: ghcr.io/${{ github.repository }}-migrations:candidate-${{ github.sha }}
@@ -94,6 +98,8 @@ jobs:
         with:
           context: apps/ui
           file: apps/ui/Dockerfile.prod
+          build-contexts: |
+            packages=packages
           push: true
           tags: ghcr.io/${{ github.repository }}-ui:candidate-${{ github.sha }}
           # Same-origin API by default. Public URL, Sentry and VAPID values come

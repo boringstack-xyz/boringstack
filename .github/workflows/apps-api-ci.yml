@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "apps/api/**"
+      - "packages/**"
       - ".github/workflows/apps-api-ci.yml"
   pull_request:
     branches: [main]
@@ -16,6 +17,7 @@ concurrency:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   validate:
@@ -85,6 +87,7 @@ jobs:
           filters: |
             code:
               - 'apps/api/**'
+              - 'packages/**'
               - '.github/workflows/apps-api-ci.yml'
 
       - name: Set up Bun
@@ -122,13 +125,10 @@ jobs:
         if: steps.filter.outputs.code == 'true'
         run: bun run check
 
-      - name: Tests
-        if: steps.filter.outputs.code == 'true'
-        env:
-          REQUIRE_INTEGRATION_DB: "true"
-        run: bun run test
-
-      - name: Test coverage report
+      # One run: test:coverage runs the same suite as `bun run test` (same
+      # preload, NODE_ENV, LOG_LEVEL, and the same forbidden-warning-output
+      # gate) and adds the coverage floor.
+      - name: Tests and coverage
         if: steps.filter.outputs.code == 'true'
         env:
           REQUIRE_INTEGRATION_DB: "true"

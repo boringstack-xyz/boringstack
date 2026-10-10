@@ -158,6 +158,8 @@ services:
     volumes:
       - ../../../apps/api:/app
       - api_dev_node_modules:/app/node_modules
+      # Shared code (repo packages/), read-only, at the path ../../packages resolves to from /app.
+      - ../../../packages:/packages:ro
     command:
       - "sh"
       - "-c"
@@ -232,6 +234,8 @@ services:
     volumes:
       - ../../../apps/api:/app
       - api_dev_node_modules:/app/node_modules
+      # Shared code (repo packages/), read-only, at the path ../../packages resolves to from /app.
+      - ../../../packages:/packages:ro
       - api_dev_email_templates:/app/src/templates/email/dist
     command:
       [
@@ -261,10 +265,11 @@ services:
       # turning it on in dev so the operator can exercise the live
       # notification path without flipping a flag.
       NOTIFICATIONS_SSE_ENABLED: ${API_DEV_NOTIFICATIONS_SSE_ENABLED:-true}
-      # Email provider defaults are profile-aware: dev.sh exports
-      # smtp + mailpit when STACK=dev (so transactional mail is caught
-      # at http://localhost:8025). Smoke doesn't run mailpit, so the
-      # fallback is the schema default `cloudflare` (provider noops
+      # Email provider defaults are profile-aware: the mailpit overlay
+      # (docker-compose.mailpit.yml, merged by dev.sh when WITH_MAILPIT=1)
+      # sets smtp + mailpit for api-dev, so transactional mail is caught at
+      # http://localhost:8025. Smoke never merges that overlay, so the
+      # fallback here stays the schema default `cloudflare` (provider noops
       # with empty creds, which is the desired smoke behaviour).
       # SMTP_PORT must be a valid integer for the env validator; the
       # `25` fallback is harmless when EMAIL_PROVIDER != smtp.
@@ -359,6 +364,8 @@ services:
     volumes:
       - ../../../apps/ui:/app
       - ui_dev_node_modules:/app/node_modules
+      # Shared code (repo packages/), read-only, at the path ../../packages resolves to from /app.
+      - ../../../packages:/packages:ro
     command: ["bun", "--no-install", "./node_modules/.bin/vite"]
     environment:
       CI: "true"
@@ -400,6 +407,9 @@ services:
     build:
       context: ../../../apps/ui
       dockerfile: Dockerfile.prod
+      additional_contexts:
+        # Shared code (repo packages/). Prod Dockerfiles COPY it from this named context.
+        packages: ../../../packages
       # Empty VITE_API_URL = same-origin: the SPA hits relative `/api/*`
       # paths and this service's nginx proxies them to api-dev.
       args:
@@ -436,6 +446,9 @@ services:
     build:
       context: ../../../apps/api
       dockerfile: Dockerfile.prod
+      additional_contexts:
+        # Shared code (repo packages/). Prod Dockerfiles COPY it from this named context.
+        packages: ../../../packages
     labels:
       - "wud.watch=true"
       - "wud.trigger.include=docker.app,discord.1,slack.alerts"
@@ -518,6 +531,9 @@ services:
     build:
       context: ../../../apps/ui
       dockerfile: Dockerfile.prod
+      additional_contexts:
+        # Shared code (repo packages/). Prod Dockerfiles COPY it from this named context.
+        packages: ../../../packages
       args:
         # Origin only, see compose/.env.example. The SPA appends /api/v1.
         VITE_API_URL: ${PUBLIC_API_URL:-}

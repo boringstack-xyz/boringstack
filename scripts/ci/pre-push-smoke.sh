@@ -56,7 +56,7 @@ paths_match() {
   if [[ -z "$CHANGED_PATHS" ]]; then
     return 1
   fi
-  echo "$CHANGED_PATHS" | grep -qE "$pattern"
+  grep -qE "$pattern" <<< "$CHANGED_PATHS"
 }
 
 # ─── Decide what (if anything) needs to run ────────────────────────────────

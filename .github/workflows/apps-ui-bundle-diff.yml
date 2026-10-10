@@ -45,6 +45,7 @@ jobs:
           filters: |
             ui:
               - 'apps/ui/src/**'
+              - 'packages/**'
               - 'apps/ui/package.json'
               - 'apps/ui/bun.lock'
               - 'apps/ui/vite.config.ts'

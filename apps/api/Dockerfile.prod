@@ -1,7 +1,8 @@
-# Multi-stage build for production. Plain `docker build` works — no BuildKit
-# required. If you have BuildKit available, you can wrap the bun install
-# RUN in `--mount=type=cache,target=/root/.bun/install/cache` for faster
-# rebuilds; we keep the portable version here.
+# Multi-stage build for production. Needs BuildKit (the default since Docker
+# 23) for the `packages` named context: shared code under the repo's packages/
+# directory. Build from apps/api with:
+#   docker build --build-context packages=../../packages -f Dockerfile.prod .
+# Compose, the release workflows and the infra gate pass the same context.
 FROM oven/bun:1.4.2-alpine@sha256:d888c0ae6c86d7866ff10c5aafdd9077b36aee6455b33dd270fb93c0dd5cef6f AS builder
 
 WORKDIR /app
@@ -15,6 +16,16 @@ COPY package.json bun.lock* ./
 RUN bun install --frozen-lockfile --production
 
 COPY . .
+
+# Shared code from packages/ (BuildKit named context `packages`, see the header).
+# The app reaches it as ../../packages from /app, so it lands at /packages.
+COPY --from=packages . /packages
+# Each shared package installs its own runtime dependencies, as
+# apps/ui/docs/agents/shared-packages.md requires. Packages with none skip this.
+RUN for pkg in /packages/*/; do \
+      [ -f "$pkg/package.json" ] || continue; \
+      (cd "$pkg" && bun install --production); \
+    done
 
 # Builds the email-template JSONs into src/templates/email/dist/, then bundles
 # the API into /app/dist. Both are needed at runtime.
@@ -47,6 +58,16 @@ COPY drizzle.config.ts ./
 COPY drizzle ./drizzle
 COPY scripts/db ./scripts/db
 COPY src ./src
+
+# Shared code from packages/ (BuildKit named context `packages`, see the header).
+# The app reaches it as ../../packages from /app, so it lands at /packages.
+COPY --from=packages . /packages
+# Each shared package installs its own runtime dependencies, as
+# apps/ui/docs/agents/shared-packages.md requires. Packages with none skip this.
+RUN for pkg in /packages/*/; do \
+      [ -f "$pkg/package.json" ] || continue; \
+      (cd "$pkg" && bun install --production); \
+    done
 
 # Set after install so `bun install` above still sees devDependencies.
 ENV NODE_ENV=production

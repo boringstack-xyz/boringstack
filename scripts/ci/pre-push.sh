@@ -18,6 +18,12 @@
 
 set -euo pipefail
 
+# Git hooks run with GIT_DIR, GIT_INDEX_FILE and friends pointing at this
+# checkout. Fixture tests in the gates below create temporary repositories,
+# and inherited values would send their commits and index writes into the real
+# repo. Clear them before any step runs.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX GIT_COMMON_DIR
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ROOT="$(cd "$ROOT/.." && pwd)"
 cd "$ROOT"
@@ -49,7 +55,7 @@ app_changed() {
   if [[ -z "$CHANGED_PATHS" ]]; then
     return 0
   fi
-  if echo "$CHANGED_PATHS" | grep -qE "(^apps/${app}/|^\.github/workflows/apps-${app}-|^codecov\.yml$)"; then
+  if grep -qE "(^apps/${app}/|^\.github/workflows/apps-${app}-|^codecov\.yml$)" <<< "$CHANGED_PATHS"; then
     return 0
   fi
   return 1
@@ -65,7 +71,7 @@ infra_compose_changed() {
   if [[ -z "$CHANGED_PATHS" ]]; then
     return 0
   fi
-  if echo "$CHANGED_PATHS" | grep -qE "(^infra/compose/|^scripts/|^\.github/workflows/infra-compose-)"; then
+  if grep -qE "(^infra/compose/|^scripts/|^\.github/workflows/infra-compose-)" <<< "$CHANGED_PATHS"; then
     return 0
   fi
   return 1

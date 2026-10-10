@@ -25,6 +25,12 @@ on:
 permissions:
   contents: read
   pull-requests: read
+
+# PR runs supersede each other; main runs always finish so every merged commit is verified.
+concurrency:
+  group: agent-verification-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   verify:
     name: agent verification contract

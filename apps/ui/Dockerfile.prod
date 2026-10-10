@@ -1,6 +1,7 @@
-# Plain `docker build` works — no BuildKit syntax features required.
-# (If you're on BuildKit, you can add `# syntax=docker/dockerfile:1.7` at
-# the top + cache mounts for `bun install`; we keep the portable version.)
+# Needs BuildKit (the default since Docker 23) for the `packages` named context:
+# shared code under the repo's packages/ directory. Build from apps/ui with:
+#   docker build --build-context packages=../../packages -f Dockerfile.prod .
+# Compose, the release workflows and the infra gate pass the same context.
 
 # ---- Builder ---------------------------------------------------------------
 FROM oven/bun:1.4.2-alpine@sha256:d888c0ae6c86d7866ff10c5aafdd9077b36aee6455b33dd270fb93c0dd5cef6f AS builder
@@ -35,6 +36,16 @@ ARG VITE_VAPID_PUBLIC_KEY=""
 ENV VITE_VAPID_PUBLIC_KEY=$VITE_VAPID_PUBLIC_KEY
 
 COPY . .
+
+# Shared code from packages/ (BuildKit named context `packages`, see the header).
+# The app reaches it as ../../packages from /app, so it lands at /packages.
+COPY --from=packages . /packages
+# Each shared package installs its own runtime dependencies, as
+# apps/ui/docs/agents/shared-packages.md requires. Packages with none skip this.
+RUN for pkg in /packages/*/; do \
+      [ -f "$pkg/package.json" ] || continue; \
+      (cd "$pkg" && bun install --production); \
+    done
 RUN bun run build
 
 # ---- Runner ---------------------------------------------------------------
