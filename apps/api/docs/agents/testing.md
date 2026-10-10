@@ -23,8 +23,14 @@ to map 1:1 to a source file (catches orphan tests after refactors).
 
 ## Cleanup
 
-`cleanDatabase()` in a `beforeEach` wipes user-data tables. Add new
-tables to `TRUNCATE_TARGETS` when you create them.
+`cleanDatabase()` in a `beforeEach` wipes user-data tables. Add each new
+table to `CLEANUP_TARGETS` in `tests/helpers/db.ts`, or to `REFERENCE_TABLES`
+if it holds seed or catalog data that tests read but never write.
+`tests/clients/postgres/schema/index.test.ts` derives every table from the
+Drizzle schema and fails when one is in neither list.
+
+DB-backed tests run only when `TEST_DATABASE_URL` is set; without it they
+skip, so a green local run without it says nothing about them. CI sets it.
 
 ## Running locally
 

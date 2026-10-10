@@ -1,11 +1,13 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import { createApp } from "../../../src/config/app";
 import { env } from "../../../src/config/env";
+import { sessionService } from "../../../src/api/auth/services";
 import { AUTH_COOKIE_NAME } from "../../../src/lib/cookies";
 import { generateOpaqueToken, hashOpaqueToken } from "../../../src/lib/tokens";
 import { seedPendingUser, seedVerifiedUser } from "../../helpers/auth";
 import {
+  authSessions,
   cleanDatabase,
   db,
   emailVerificationTokens,
@@ -32,6 +34,8 @@ import {
  * the integration suite).
  */
 
+const AUTH_LOGIN_URL = "http://localhost/api/v1/auth/login";
+const AUTH_REFRESH_URL = "http://localhost/api/v1/auth/refresh";
 const EMAIL = "flow-test@example.com";
 const PASSWORD = "Hunter2Strong!";
 const uniqueEmail = (prefix: string): string =>
@@ -186,7 +190,7 @@ describe("auth flow — register → verify → login → me → logout", () => 
 
     // 2. Login attempt with valid credentials → 403 EMAIL_NOT_VERIFIED
     const blockedLogin = await app.handle(
-      new Request("http://localhost/api/v1/auth/login", {
+      new Request(AUTH_LOGIN_URL, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email: EMAIL, password: PASSWORD }),
@@ -239,7 +243,7 @@ describe("auth flow — register → verify → login → me → logout", () => 
 
     // 4. Login (separate cookie jar, fresh Set-Cookie)
     const loginRes = await app.handle(
-      new Request("http://localhost/api/v1/auth/login", {
+      new Request(AUTH_LOGIN_URL, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email: EMAIL, password: PASSWORD }),
@@ -257,7 +261,7 @@ describe("auth flow — register → verify → login → me → logout", () => 
 
     // 5. Refresh rotates the session cookie + issues a fresh auth cookie
     const refreshRes = await app.handle(
-      new Request("http://localhost/api/v1/auth/refresh", {
+      new Request(AUTH_REFRESH_URL, {
         method: "POST",
         headers: { cookie: refreshCookie },
       })
@@ -347,7 +351,7 @@ describe("auth flow — register → verify → login → me → logout", () => 
     });
 
     const loginRes = await app.handle(
-      new Request("http://localhost/api/v1/auth/login", {
+      new Request(AUTH_LOGIN_URL, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email: EMAIL, password: "wrong-password" }),
@@ -451,7 +455,7 @@ describe("auth flow — register → verify → login → me → logout", () => 
     await seedPendingUser({ email: "pending@example.com", password: PASSWORD });
 
     const res = await app.handle(
-      new Request("http://localhost/api/v1/auth/login", {
+      new Request(AUTH_LOGIN_URL, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -485,7 +489,7 @@ describe("POST /api/v1/auth/refresh — anonymous-vs-unauthorized contract", () 
 
     const app = createApp();
     const res = await app.handle(
-      new Request("http://localhost/api/v1/auth/refresh", {
+      new Request(AUTH_REFRESH_URL, {
         method: "POST",
       })
     );
@@ -515,13 +519,78 @@ describe("POST /api/v1/auth/refresh — anonymous-vs-unauthorized contract", () 
 
     const app = createApp();
     const res = await app.handle(
-      new Request("http://localhost/api/v1/auth/refresh", {
+      new Request(AUTH_REFRESH_URL, {
         method: "POST",
         headers: { cookie: "refresh_token=this-is-not-a-real-session" },
       })
     );
 
     expect(res.status).toBe(401);
+  });
+
+  test("a refresh cookie whose session was revoked is cleared, so later refreshes stop failing", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const email = "revoked-refresh@example.com";
+
+    await seedVerifiedUser({ email, password: PASSWORD });
+
+    const app = createApp();
+    const loginRes = await app.handle(
+      new Request(AUTH_LOGIN_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, password: PASSWORD }),
+      })
+    );
+    const refreshCookie = extractCookiePair(
+      loginRes.headers.getSetCookie().join("; "),
+      "refresh_token"
+    );
+
+    expect(refreshCookie).not.toBe("");
+
+    await db.delete(authSessions);
+
+    const revoked = await app.handle(
+      new Request(AUTH_REFRESH_URL, {
+        method: "POST",
+        headers: { cookie: refreshCookie },
+      })
+    );
+
+    expect(revoked.status).toBe(401);
+    expect(revoked.headers.getSetCookie().join("; ")).toMatch(
+      /refresh_token=;.*(Max-Age=0|Expires=Thu, 01 Jan 1970)/i
+    );
+  });
+
+  test("a transient refresh failure keeps the refresh cookie", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const failing = spyOn(sessionService, "refresh").mockRejectedValue(
+      new Error("database unavailable")
+    );
+
+    try {
+      const res = await createApp().handle(
+        new Request(AUTH_REFRESH_URL, {
+          method: "POST",
+          headers: { cookie: "refresh_token=keep-this-token" },
+        })
+      );
+
+      expect(res.status).toBe(500);
+      expect(res.headers.getSetCookie().join(";")).not.toMatch(
+        /refresh_token=;/
+      );
+    } finally {
+      failing.mockRestore();
+    }
   });
 });
 

@@ -1,7 +1,7 @@
 import { describe, expect, spyOn, test } from "bun:test";
 
 import { logger } from "../../src/config/logger";
-import { errorHandler } from "../../src/middleware/error-handler";
+import { errorHandler, stackFor } from "../../src/middleware/error-handler";
 import { ApiError, ApiErrors } from "../../src/lib/errors";
 
 interface ISet {
@@ -327,4 +327,46 @@ describe("errorHandler", () => {
       warnSpy.mockRestore();
     }
   });
+
+  test("VALIDATION and PARSE never carry a stack, even in development", () => {
+    const warnSpy = spyOn(logger, "warn");
+    const leakedSecret = "SUPER_SECRET_PASSWORD_VALUE";
+
+    try {
+      const set: ISet = {};
+
+      errorHandler({
+        code: "VALIDATION",
+        error: new Error(`Received: { "password": "${leakedSecret}" }`),
+        set,
+      });
+
+      const [, payload] = warnSpy.mock.calls[0] ?? [];
+
+      expect(hasStack(payload)).toBe(false);
+      expect(stackFor("VALIDATION", new Error("x"), true)).toBeUndefined();
+      expect(stackFor("PARSE", new Error("x"), true)).toBeUndefined();
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  test("other errors keep their stack in development and drop it elsewhere", () => {
+    const boom = new Error("boom");
+
+    expect(stackFor("INTERNAL_SERVER_ERROR", boom, true)).toBe(boom.stack);
+    expect(stackFor("INTERNAL_SERVER_ERROR", boom, false)).toBeUndefined();
+    expect(
+      stackFor("INTERNAL_SERVER_ERROR", "not an error", true)
+    ).toBeUndefined();
+  });
 });
+
+function hasStack(payload: unknown): boolean {
+  return (
+    payload !== null &&
+    typeof payload === "object" &&
+    "stack" in payload &&
+    payload.stack !== undefined
+  );
+}

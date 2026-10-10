@@ -12,7 +12,7 @@ import {
   REFRESH_COOKIE_CONFIG,
   REFRESH_COOKIE_NAME,
 } from "../../lib/cookies";
-import { ApiErrors, createSuccessResponse } from "../../lib/errors";
+import { ApiError, ApiErrors, createSuccessResponse } from "../../lib/errors";
 import {
   buildJWTPayload,
   createJWTConfig,
@@ -417,13 +417,26 @@ const sessionAndOAuthRoutes = new Elysia()
         return createSuccessResponse({ user: null });
       }
 
-      const result = await sessionService.refresh(refreshValue);
+      /*
+       * A refresh cookie whose session is gone (revoked, replayed, or its
+       * user deleted) is removed here. Otherwise the browser keeps sending
+       * it and every later refresh fails the same way.
+       */
+      const auth = cookie[AUTH_COOKIE_NAME];
+      const result = await sessionService
+        .refresh(refreshValue)
+        .catch((error: unknown) => {
+          if (error instanceof ApiError && error.statusCode === 401) {
+            refresh?.remove();
+            auth?.remove();
+          }
+
+          throw error;
+        });
       const accountId = await resolveActiveAccountId(result.user.id);
       const token = await jwt.sign(
         await buildJWTPayload(result.user.id, result.user.email, accountId)
       );
-
-      const auth = cookie[AUTH_COOKIE_NAME];
 
       auth?.set({ value: token, ...AUTH_COOKIE_CONFIG });
       refresh?.set({ value: result.token, ...REFRESH_COOKIE_CONFIG });

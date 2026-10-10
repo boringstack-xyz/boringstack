@@ -1,4 +1,11 @@
-import type { INotificationEventDefinition } from "../../../lib/notifications";
+/*
+ * The event files import the helper and the type from their own modules, not
+ * the `lib/notifications` barrel: that barrel reaches `config/setup`, which
+ * registers these very events, so importing it here is a cycle that leaves
+ * `defineNotificationEvent` in its temporal dead zone whenever a test loads
+ * the barrel first.
+ */
+import type { INotificationEventDefinition } from "../../../lib/notifications/notifications.types";
 
 import { accountInvitationAcceptedEvent } from "./account-invitation-accepted.event";
 import { accountOwnershipTransferredEvent } from "./account-ownership-transferred.event";

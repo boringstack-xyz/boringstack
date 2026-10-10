@@ -1,6 +1,6 @@
 import { t } from "elysia";
 
-import { defineNotificationEvent } from "../../../lib/notifications";
+import { defineNotificationEvent } from "../../../lib/notifications/events/define-event";
 
 /**
  * Notification event: a user has just verified their email (or completed
