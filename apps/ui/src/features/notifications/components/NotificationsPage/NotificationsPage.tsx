@@ -3,6 +3,7 @@ import type { FC } from "react";
 import { useTranslation } from "react-i18next";
 
 import { AppPage } from "@/components/core/AppPage";
+import { QueryErrorState } from "@/components/core/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -24,7 +25,10 @@ const NotificationsPage: FC = () => {
     onArchive,
     onMarkAllRead,
     isMarkingAllRead,
-    isEmpty
+    isEmpty,
+    isError,
+    isRetrying,
+    onRetry
   } = useNotificationsPage();
 
   const currentTabValue = status ?? "all";
@@ -54,6 +58,15 @@ const NotificationsPage: FC = () => {
         <p className='text-muted-foreground p-6 text-sm'>
           {t("notifications.loading")}
         </p>
+      ) : null}
+
+      {isError ? (
+        <QueryErrorState
+          message={t("notifications.loadError")}
+          retryLabel={t("common.retry")}
+          onRetry={onRetry}
+          isRetrying={isRetrying}
+        />
       ) : null}
 
       {isEmpty ? (

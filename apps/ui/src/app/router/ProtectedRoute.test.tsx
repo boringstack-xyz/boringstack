@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { peekReturnTo } from "@/lib/auth/return-to";
 import type * as session from "@/lib/session";
 
 import { ProtectedRoute } from "./ProtectedRoute";
@@ -110,5 +111,14 @@ describe("ProtectedRoute", () => {
     expect(screen.getByRole("alert")).toBeInTheDocument();
     expect(screen.queryByTestId("login")).toBeNull();
     expect(screen.queryByTestId("protected-content")).toBeNull();
+  });
+
+  it("remembers the attempted path so login can send the visitor back to it", () => {
+    sessionStorage.clear();
+    meMock.mockReturnValue(baseMe({ data: null }));
+    renderWithRoutes(["/dashboard?tab=team#members"]);
+
+    expect(peekReturnTo()).toBe("/dashboard?tab=team#members");
+    sessionStorage.clear();
   });
 });

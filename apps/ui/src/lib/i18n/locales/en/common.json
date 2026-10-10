@@ -7,7 +7,8 @@
   },
   "common": {
     "loading": "Loading…",
-    "close": "Close"
+    "close": "Close",
+    "retry": "Try again"
   },
   "offline": {
     "title": "Can't reach the server",
@@ -221,6 +222,18 @@
     "badges": {
       "default": "Default",
       "current": "Current"
+    },
+    "checkout": {
+      "pending": "Confirming your payment…",
+      "confirmed": "Your plan is updated.",
+      "timeout": "Confirmation is taking longer than expected. Your payment is safe; check again in a moment.",
+      "retry": "Check again",
+      "cancelled": "Checkout was cancelled. Your plan has not changed."
+    },
+    "interval": {
+      "label": "Billing interval",
+      "monthly": "Monthly",
+      "yearly": "Yearly"
     }
   },
   "theme": {
@@ -459,7 +472,8 @@
         "errorInvalid": "This invitation link is no longer valid. Ask the inviter for a fresh one.",
         "errorGeneric": "Couldn't accept the invitation. Try again, or ask the inviter for a fresh link.",
         "backToLogin": "Back to login"
-      }
+      },
+      "loadError": "Couldn't load invitations. Try again."
     },
     "ownershipTransfer": {
       "pageTitle": "Accept ownership transfer",
@@ -500,7 +514,8 @@
     "boundary": {
       "title": "Something went wrong",
       "body": "Please reload the page. If the issue keeps happening, contact support.",
-      "retry": "Reload"
+      "retry": "Reload",
+      "home": "Go to home"
     },
     "route": {
       "generic": "This page hit a snag",

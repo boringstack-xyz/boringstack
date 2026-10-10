@@ -45,17 +45,29 @@ beforeEach(() => {
 });
 
 describe("useMe", () => {
-  it("propagates 401 as an ApiError (consumer distinguishes auth failure from anonymous)", async () => {
+  it("resolves to null when /me is still 401 after the refresh middleware gave up (logged out, not an error)", async () => {
     apiMock.GET.mockRejectedValueOnce(
       new ApiError(401, { message: "Unauthorized" })
     );
     const { result } = renderHook(() => useMe(), { wrapper: wrapper() });
 
     await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+    expect(result.current.data).toBeNull();
+    expect(result.current.error).toBeNull();
+  });
+
+  it("propagates a non-auth failure as an error so the offline fallback can show", async () => {
+    apiMock.GET.mockRejectedValueOnce(
+      new ApiError(503, { message: "Service unavailable" })
+    );
+    const { result } = renderHook(() => useMe(), { wrapper: wrapper() });
+
+    await waitFor(() => {
       expect(result.current.isError).toBe(true);
     });
-    expect(result.current.error).toBeInstanceOf(ApiError);
-    expect((result.current.error as ApiError).isUnauthorized).toBe(true);
+    expect((result.current.error as ApiError).status).toBe(503);
   });
 
   it("returns the full session payload when the API responds 200 with the authenticated shape", async () => {

@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ErrorBoundaryProvider } from "./ErrorBoundaryProvider";
@@ -35,7 +35,10 @@ describe("ErrorBoundaryProvider", () => {
     );
 
     expect(screen.queryByText("safe content")).not.toBeInTheDocument();
-    expect(screen.getByRole("button")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reload" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Go to home" })
+    ).toBeInTheDocument();
     expect(Sentry.captureException).toHaveBeenCalledOnce();
     expect(Sentry.captureException).toHaveBeenCalledWith(
       expect.any(Error),
@@ -43,5 +46,34 @@ describe("ErrorBoundaryProvider", () => {
     );
 
     consoleSpy.mockRestore();
+  });
+
+  it("navigates to the home page from the fallback", () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(vi.fn());
+    const assign = vi.fn();
+    const original = window.location;
+
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { assign }
+    });
+
+    try {
+      render(
+        <ErrorBoundaryProvider>
+          <Boom />
+        </ErrorBoundaryProvider>
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: "Go to home" }));
+
+      expect(assign).toHaveBeenCalledWith("/");
+    } finally {
+      Object.defineProperty(window, "location", {
+        configurable: true,
+        value: original
+      });
+      consoleSpy.mockRestore();
+    }
   });
 });

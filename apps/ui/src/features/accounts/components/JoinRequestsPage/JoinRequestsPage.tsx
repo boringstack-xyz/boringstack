@@ -3,6 +3,7 @@ import type { FC } from "react";
 import { useTranslation } from "react-i18next";
 
 import { AppPage } from "@/components/core/AppPage";
+import { QueryErrorState } from "@/components/core/QueryErrorState";
 import { Button } from "@/components/ui/button";
 
 import { useJoinRequestsPage } from "./JoinRequestsPage.hooks";
@@ -10,8 +11,16 @@ import { formatRequestedAt, makeIdHandler } from "./JoinRequestsPage.utils";
 
 const JoinRequestsPage: FC = () => {
   const { t } = useTranslation();
-  const { isLoading, isError, requests, onApprove, onDeny, pendingActionId } =
-    useJoinRequestsPage();
+  const {
+    isLoading,
+    isError,
+    requests,
+    onApprove,
+    onDeny,
+    pendingActionId,
+    isRetrying,
+    onRetry
+  } = useJoinRequestsPage();
 
   const approveHandler = makeIdHandler(onApprove);
   const denyHandler = makeIdHandler(onDeny);
@@ -73,9 +82,12 @@ const JoinRequestsPage: FC = () => {
         ) : null}
 
         {isError ? (
-          <p role='alert' className='text-destructive text-sm'>
-            {t("accounts.joinRequests.error")}
-          </p>
+          <QueryErrorState
+            message={t("accounts.joinRequests.error")}
+            retryLabel={t("common.retry")}
+            onRetry={onRetry}
+            isRetrying={isRetrying}
+          />
         ) : null}
 
         {!isLoading && !isError && renderRows.length === 0 ? (

@@ -1,17 +1,15 @@
 import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 
-import { apiClient } from "@/lib/api/client";
-
+import { fetchCurrentMe } from "./fetchMe";
 import { SESSION_QUERY_KEYS } from "./session.constants";
 import type { IMe } from "./session.types";
-import { isAuthenticatedMe } from "./session.utils";
 
 /*
  * Query contract:
  *
  *   - data: IMe      → authenticated session
- *   - data: null     → server returned 200 + { user: null } (anonymous probe)
- *   - error: ApiError(401|403) → forced logout (cookie present but invalid)
+ *   - data: null     → logged out: 200 + { user: null }, or a 401 that the
+ *                      refresh middleware could not recover (see fetchMe)
  *   - error: other   → real failure (network, 5xx, parse). ProtectedRoute
  *                      renders the offline fallback with a retry CTA.
  *
@@ -26,11 +24,7 @@ import { isAuthenticatedMe } from "./session.utils";
 export function useMe(): UseQueryResult<IMe | null> {
   return useQuery<IMe | null>({
     queryKey: SESSION_QUERY_KEYS.me,
-    queryFn: async () => {
-      const { data } = await apiClient.GET("/api/v1/users/me");
-
-      return isAuthenticatedMe(data) ? data : null;
-    },
+    queryFn: fetchCurrentMe,
     staleTime: 60_000,
     retry: false
   });

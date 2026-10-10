@@ -14,6 +14,7 @@ import {
   useAppPageHeader
 } from "@/components/core/AppPage";
 
+import { BILLING_QUERY_KEYS } from "../../Billing.constants";
 import BillingPage from "./BillingPage";
 
 vi.mock("react-i18next", async () => {
@@ -106,5 +107,88 @@ describe("BillingPage", () => {
       })
     ).toBeInTheDocument();
     expect(screen.getByText("billing.disabled")).toBeInTheDocument();
+  });
+
+  describe("interval choice", () => {
+    const FREE = {
+      id: 1,
+      name: "Free",
+      isDefault: true,
+      purchasableIntervals: ["month"] as const
+    };
+
+    function renderWithPlans(plans: readonly unknown[]) {
+      const client = new QueryClient({
+        defaultOptions: { queries: { retry: false, staleTime: Infinity } }
+      });
+
+      client.setQueryData(SESSION_QUERY_KEYS.me, me);
+      client.setQueryData(CAPABILITIES_QUERY_KEY, {
+        features: {
+          billing: { enabled: true },
+          notifications: { sse: false, webPush: false }
+        }
+      });
+      client.setQueryData(BILLING_QUERY_KEYS.plans, plans);
+      client.setQueryData(BILLING_QUERY_KEYS.subscription, {
+        planId: 1,
+        planName: "Free",
+        isDefault: true,
+        status: "free",
+        hasStripeSubscription: false
+      });
+
+      return render(
+        <QueryClientProvider client={client}>
+          <HelmetProvider>
+            <AppPageHeaderProvider>
+              <MemoryRouter>
+                <BillingPage />
+              </MemoryRouter>
+            </AppPageHeaderProvider>
+          </HelmetProvider>
+        </QueryClientProvider>
+      );
+    }
+
+    it("hides the interval choice when the plans offer one interval each", () => {
+      renderWithPlans([
+        FREE,
+        {
+          id: 2,
+          name: "Pro",
+          isDefault: false,
+          purchasableIntervals: ["month"]
+        }
+      ]);
+
+      expect(
+        screen.queryByRole("group", { name: "billing.interval.label" })
+      ).toBeNull();
+    });
+
+    it("shows Monthly and Yearly when a plan offers both intervals", () => {
+      renderWithPlans([
+        FREE,
+        {
+          id: 2,
+          name: "Pro",
+          isDefault: false,
+          purchasableIntervals: ["month", "year"]
+        }
+      ]);
+
+      const group = screen.getByRole("group", {
+        name: "billing.interval.label"
+      });
+
+      expect(group).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "billing.interval.monthly" })
+      ).toHaveAttribute("aria-pressed", "true");
+      expect(
+        screen.getByRole("button", { name: "billing.interval.yearly" })
+      ).toHaveAttribute("aria-pressed", "false");
+    });
   });
 });

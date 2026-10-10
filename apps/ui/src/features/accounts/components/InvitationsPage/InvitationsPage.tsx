@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { ROLE } from "@/lib/acl/acl.types";
 
 import { AppPage } from "@/components/core/AppPage";
+import { QueryErrorState } from "@/components/core/QueryErrorState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +28,10 @@ const InvitationsPage: FC<IInvitationsPageProps> = () => {
     onResend,
     onRevoke,
     isResending,
-    isRevoking
+    isRevoking,
+    isError,
+    isRetrying,
+    onRetry
   } = useInvitationsPage();
 
   const resendHandler = makeIdHandler(onResend);
@@ -219,11 +223,21 @@ const InvitationsPage: FC<IInvitationsPageProps> = () => {
             {t("accounts.invitations.tableHeading")}
           </h2>
         </header>
-        {invitations.length === 0 ? (
+        {isError ? (
+          <QueryErrorState
+            message={t("accounts.invitations.loadError")}
+            retryLabel={t("common.retry")}
+            onRetry={onRetry}
+            isRetrying={isRetrying}
+            className='px-0'
+          />
+        ) : null}
+        {!isError && invitations.length === 0 ? (
           <p className='text-muted-foreground text-sm'>
             {t("accounts.invitations.empty")}
           </p>
-        ) : (
+        ) : null}
+        {!isError && invitations.length > 0 ? (
           <div className='-mx-6 overflow-x-auto'>
             <table className='w-full text-left'>
               <thead className='text-muted-foreground border-border border-b text-xs font-medium tracking-[0.18em] uppercase'>
@@ -245,7 +259,7 @@ const InvitationsPage: FC<IInvitationsPageProps> = () => {
               <tbody>{renderedRows}</tbody>
             </table>
           </div>
-        )}
+        ) : null}
       </article>
     </AppPage>
   );

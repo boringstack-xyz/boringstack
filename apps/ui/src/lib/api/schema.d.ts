@@ -489,23 +489,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/billing/plans": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List available plans */
-        get: operations["getApiV1BillingPlans"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/billing/subscription": {
         parameters: {
             query?: never;
@@ -551,6 +534,23 @@ export interface paths {
         put?: never;
         /** Create Stripe Customer Portal session */
         post: operations["postApiV1BillingStripePortal-session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List available plans (public) */
+        get: operations["getApiV1BillingPlans"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2695,39 +2695,6 @@ export interface operations {
             };
         };
     };
-    getApiV1BillingPlans: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id: number;
-                        name: string;
-                        isDefault: boolean;
-                    }[];
-                    "multipart/form-data": {
-                        id: number;
-                        name: string;
-                        isDefault: boolean;
-                    }[];
-                    "text/plain": {
-                        id: number;
-                        name: string;
-                        isDefault: boolean;
-                    }[];
-                };
-            };
-        };
-    };
     getApiV1BillingSubscription: {
         parameters: {
             query?: never;
@@ -2778,6 +2745,7 @@ export interface operations {
             content: {
                 "application/json": {
                     planId: number;
+                    interval?: "month" | "year";
                     /** Format: uri */
                     successUrl: string;
                     /** Format: uri */
@@ -2785,6 +2753,7 @@ export interface operations {
                 };
                 "multipart/form-data": {
                     planId: number;
+                    interval?: "month" | "year";
                     /** Format: uri */
                     successUrl: string;
                     /** Format: uri */
@@ -2792,6 +2761,7 @@ export interface operations {
                 };
                 "text/plain": {
                     planId: number;
+                    interval?: "month" | "year";
                     /** Format: uri */
                     successUrl: string;
                     /** Format: uri */
@@ -2856,6 +2826,42 @@ export interface operations {
                     "text/plain": {
                         url: string;
                     };
+                };
+            };
+        };
+    };
+    getApiV1BillingPlans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        id: number;
+                        name: string;
+                        isDefault: boolean;
+                        purchasableIntervals: ("month" | "year")[];
+                    }[];
+                    "multipart/form-data": {
+                        id: number;
+                        name: string;
+                        isDefault: boolean;
+                        purchasableIntervals: ("month" | "year")[];
+                    }[];
+                    "text/plain": {
+                        id: number;
+                        name: string;
+                        isDefault: boolean;
+                        purchasableIntervals: ("month" | "year")[];
+                    }[];
                 };
             };
         };

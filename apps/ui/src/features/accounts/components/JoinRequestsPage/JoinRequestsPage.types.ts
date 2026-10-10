@@ -7,4 +7,6 @@ export interface IJoinRequestsPageView {
   onApprove: (requestId: string) => void;
   onDeny: (requestId: string) => void;
   pendingActionId: string | null;
+  isRetrying: boolean;
+  onRetry: () => void;
 }

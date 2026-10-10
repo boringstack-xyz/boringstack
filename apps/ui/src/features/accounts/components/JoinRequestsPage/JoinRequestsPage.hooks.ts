@@ -59,6 +59,10 @@ export function useJoinRequestsPage(): IJoinRequestsPageView {
     requests: list.data ?? [],
     onApprove,
     onDeny,
-    pendingActionId
+    pendingActionId,
+    isRetrying: list.isFetching && !list.isPending,
+    onRetry: (): void => {
+      void list.refetch();
+    }
   };
 }

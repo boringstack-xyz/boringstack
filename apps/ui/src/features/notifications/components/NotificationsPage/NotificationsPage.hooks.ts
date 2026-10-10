@@ -53,6 +53,11 @@ export function useNotificationsPage(): INotificationsPageView {
     onArchive: archive.mutate,
     onMarkAllRead,
     isMarkingAllRead: markAllRead.isPending,
-    isEmpty: !list.isPending && items.length === 0
+    isEmpty: !list.isPending && !list.isError && items.length === 0,
+    isError: list.isError,
+    isRetrying: list.isFetching && !list.isPending,
+    onRetry: (): void => {
+      void list.refetch();
+    }
   };
 }

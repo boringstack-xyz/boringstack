@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useBillingPage, useBillingPlanRow } from "./BillingPage.hooks";
 import type {
   IBillingPageProps,
+  IBillingPageView,
   IBillingPlanRowProps
 } from "./BillingPage.types";
 
@@ -88,6 +89,32 @@ const BillingPlanRow: FC<IBillingPlanRowProps> = ({ plan, view }) => {
 
 BillingPlanRow.displayName = "BillingPlanRow";
 
+const BillingIntervalChoice: FC<{
+  readonly label: string;
+  readonly options: IBillingPageView["intervalOptions"];
+}> = ({ label, options }) => {
+  const renderedOptions = options.map((option) => (
+    <Button
+      key={option.value}
+      type='button'
+      size='sm'
+      variant={option.isSelected ? "default" : "outline"}
+      aria-pressed={option.isSelected}
+      onClick={option.onSelect}
+    >
+      {option.label}
+    </Button>
+  ));
+
+  return (
+    <div role='group' aria-label={label} className='flex flex-wrap gap-2'>
+      {renderedOptions}
+    </div>
+  );
+};
+
+BillingIntervalChoice.displayName = "BillingIntervalChoice";
+
 const BillingPage: FC<IBillingPageProps> = () => {
   const view = useBillingPage();
 
@@ -101,6 +128,27 @@ const BillingPage: FC<IBillingPageProps> = () => {
       title={view.pageTitle}
       subtitle={view.pageSubtitle}
     >
+      {view.checkoutMessage !== null ? (
+        <div
+          role={view.checkoutOutcome === "timed_out" ? "alert" : "status"}
+          aria-live='polite'
+          className='border-border bg-panel mb-6 flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between'
+        >
+          <p className='text-foreground text-sm'>{view.checkoutMessage}</p>
+          {view.checkoutOutcome === "timed_out" ? (
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              className='w-fit'
+              onClick={view.onRetryConfirmation}
+            >
+              {view.checkoutRetryLabel}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+
       {view.state === "disabled" ? (
         <p className='text-muted-foreground text-sm'>{view.disabledMessage}</p>
       ) : null}
@@ -146,6 +194,12 @@ const BillingPage: FC<IBillingPageProps> = () => {
             <h2 className='text-foreground text-lg font-semibold tracking-tight'>
               {view.plansHeading}
             </h2>
+            {view.showIntervalChoice ? (
+              <BillingIntervalChoice
+                label={view.intervalGroupLabel}
+                options={view.intervalOptions}
+              />
+            ) : null}
             {renderedPlans}
           </section>
         </div>

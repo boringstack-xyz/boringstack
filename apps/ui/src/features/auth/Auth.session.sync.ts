@@ -1,7 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 
-import { apiClient } from "@/lib/api/client";
-import { type IMe, SESSION_QUERY_KEYS, isAuthenticatedMe } from "@/lib/session";
+import { type IMe, SESSION_QUERY_KEYS, fetchCurrentMe } from "@/lib/session";
 
 /**
  * After any flow that establishes a fresh session (login, MFA verify,
@@ -42,11 +41,7 @@ export async function syncMeAfterSessionEstablished(
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const me = await qc.query<IMe | null>({
       queryKey: SESSION_QUERY_KEYS.me,
-      queryFn: async (): Promise<IMe | null> => {
-        const { data } = await apiClient.GET("/api/v1/users/me");
-
-        return isAuthenticatedMe(data) ? data : null;
-      },
+      queryFn: fetchCurrentMe,
       /*
        * staleTime: 0 forces each iteration to actually hit the API.
        * After the loop exits, `useMe`'s own `staleTime: 60_000`

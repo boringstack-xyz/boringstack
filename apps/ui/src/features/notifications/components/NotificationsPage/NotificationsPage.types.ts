@@ -17,4 +17,7 @@ export interface INotificationsPageView {
   readonly onMarkAllRead: () => void;
   readonly isMarkingAllRead: boolean;
   readonly isEmpty: boolean;
+  readonly isError: boolean;
+  readonly isRetrying: boolean;
+  readonly onRetry: () => void;
 }
