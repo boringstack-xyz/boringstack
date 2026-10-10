@@ -125,3 +125,32 @@ correction or a documented scope decision.
 | 99 | A release was blocked by an e2e asserting heading copy. | Open: needs a product fixture before any lint or guide change. |
 | 100 | Found in this review: in Compose production the API enables TLS for Postgres, but the Compose Postgres has no TLS, and postgres-js refuses a server that declines TLS. Migrations now share the runtime policy, so they fail the same way. | Open: reproduce with the `prod` profile, then either give Compose Postgres TLS or make the policy explicit per target. |
 | 101 | The product built a business-metrics Grafana dashboard (sign-ups, billing, plans) from CNPG custom queries. | Implemented: aggregate queries over the template's auth, audit and billing tables, a CNPG PodMonitor and a dashboard ConfigMap. Migration 0002 grants `pg_monitor` only the counted columns; `infra/k3s/tests/business-metrics.test.ts` checks every column against the drizzle snapshot and the grants. MRR is not derived because plans carry no price. |
+
+## Report 3: template code Tinkercaster had to change, 2026-09-12 to 2026-10-09
+
+Source: a diff of every template-origin file in Tinkercaster against the
+template commit it was created from (`cdacac0`, Tinkercaster `64eb7ee3`),
+read with the commit that changed it. Product features and branding are
+excluded. Each entry was checked against current template `main` before
+it was fixed; Report 2 items are not repeated.
+
+| Report | Observation | Status / evidence |
+| ------ | ----------- | ----------------- |
+| 102 | Paid plans granted nothing: plans were seeded without `plan_features`, so a Pro subscriber resolved Free entitlements. | Implemented: one typed plan catalog in `apps/api/src/api/billing/billing.plans.ts` seeds plans and features; Pro must give every feature key a value (type check plus `billing.plans.test.ts`). |
+| 103 | An account could buy a second subscription; two clicks made two checkout sessions. | Implemented: checkout locks the account row, returns 409 for a live Stripe-backed subscription found locally or in Stripe, and reuses an open session for the same plan and price. `billing.service.test.ts`. |
+| 104 | `checkout.session.completed` activated the plan before a delayed payment cleared. | Implemented: `active` only for `paid` / `no_payment_required`, otherwise `incomplete`; `checkout.session.async_payment_succeeded` / `_failed` settle it. |
+| 105 | Checkout accepted the default (Free) plan; plans had one price; the plan list needed a session, so a public pricing page could not read it. | Implemented: Free is rejected before Stripe; optional `STRIPE_PRICE_ID_PRO_YEARLY` with a checkout `interval`; `GET /billing/plans` is public and answers with billing off. |
+| 106 | Reloading after the 15-minute access cookie expired logged the user out: `/users/me` answered `{ user: null }` and the UI only refreshes on 401. | Implemented: `/me` returns 401 when a refresh cookie is present; the UI refreshes and retries, and an unrecoverable 401 resolves to logged out (`fetchMe.ts`). |
+| 107 | A revoked refresh cookie stayed in the browser and failed every refresh. | Implemented: `/auth/refresh` clears both cookies on 401. |
+| 108 | The UI's silent-refresh retry re-read a consumed request body, so the first write after token expiry failed. | Implemented: the body is captured before dispatch and replayed (`openapi.test.ts`). |
+| 109 | After Stripe checkout the billing page showed Free until a refetch. | Implemented: `?checkout=success` polls the subscription, then refreshes the session; a timeout offers a retry. |
+| 110 | Email verification ran its single-use token twice under StrictMode and then showed "invalid link". | Implemented: the in-flight request is shared per token. |
+| 111 | nginx answered `/.well-known/*` and missing `.json/.txt/.xml` with the SPA HTML and 200. | Implemented: those paths return 404. |
+| 112 | Dev logs of validation errors carried the request body through the stack trace. | Implemented: no stack for VALIDATION / PARSE errors. |
+| 113 | Notification events imported the `lib/notifications` barrel, a cycle that can fail at module load. | Implemented: direct imports plus a guard test. |
+| 114 | New tables had to be added to the test cleanup list by hand, twice in the product. | Implemented: a test derives every table from the schema and fails when one is neither cleaned nor allowlisted. |
+| 115 | Every pull request check failed in the product's private repository: `dorny/paths-filter` needs `pull-requests: read` there, and the template is public, so it never showed. | Implemented: permission added to all 14 workflows and enforced by the lint-meta rule `github-actions-paths-filter-permissions`. |
+| 116 | `pre-push.sh` used `echo \| grep -q` under `pipefail`; with many changed paths the pipeline exits 141 and the app gate is skipped silently. Hooks also leaked `GIT_DIR` into tests that create repositories. | Implemented: here-strings everywhere and the git variables are unset. `tools/agent/pre-push-shell.test.ts`. |
+| 117 | Code in `packages/*` could not reach the images or the dev containers. | Implemented: a BuildKit `packages` build context and read-only dev mounts; `packages/README.md` keeps the directory present. |
+| 118 | CI ran the API suite twice, and the UI lacked small conveniences the product added (retry on list errors, a home action on the error page, opt-in devtools, return-to after login, jsdom stubs). | Implemented: one coverage run; the UI items as listed. |
+| 119 | The product made pre-push fast by default, skipped main runs for trees a merged PR verified, and removed the per-app release workflows. | Not adopted: the first two weaken gates by policy, and Compose still publishes through the per-app workflows. |

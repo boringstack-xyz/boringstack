@@ -7,6 +7,22 @@ A log of substantial changes to the docs, templates, and tooling. For per-commit
 
 ## 2026-10
 
+### Template fixes from the first product's code
+
+A diff of every template file the first product changed found bugs it had to fix.
+
+- **Billing.** Pro grants its features from one typed plan catalog. Checkout refuses a second
+  subscription and reuses an open session. A delayed payment no longer activates a plan. The
+  plan list is public, and an optional yearly price is supported. See [Billing](/api/billing/).
+- **Sessions.** Reloading after the access cookie expires refreshes the session instead of
+  logging out. A revoked refresh cookie is cleared, and the first write after a refresh keeps
+  its request body.
+- **CI in private repositories.** Every workflow that uses `dorny/paths-filter` grants
+  `pull-requests: read`, enforced by lint-meta. Without it, every pull request check fails in a
+  private repository.
+- **Shared packages in images.** `packages/*` reaches the API and UI images through a BuildKit
+  build context and the dev containers through a read-only mount.
+
 ### Domain split is the default
 
 - **Split layout on Compose and OpenTofu.** The public site is on the apex (`https://<domain>`)
