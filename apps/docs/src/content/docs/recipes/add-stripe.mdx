@@ -28,7 +28,8 @@ BILLING_ENABLED=true
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...      # from step 2 below
 STRIPE_PRICE_ID_FREE=price_...
-STRIPE_PRICE_ID_PRO=price_...
+STRIPE_PRICE_ID_PRO=price_...       # monthly
+STRIPE_PRICE_ID_PRO_YEARLY=price_... # optional
 ```
 
 The env validator refuses to boot the API in prod if `BILLING_ENABLED=true` but any Stripe key is missing.
@@ -85,22 +86,21 @@ const manageSubscription = () =>
 
 ## 5. Configure your plans
 
-In `src/api/acl/`, declare your plans. Example:
+Plans and their entitlements live in `apps/api/src/api/billing/billing.plans.ts`.
+Pro has to give every key in `FEATURES` (`apps/api/src/lib/acl/acl.constants.ts`)
+a value, and Free carries none, so it falls back to each feature's default:
 
 ```ts
-export const PLAN_CONFIG = {
-  free: {
-    stripePrice: env.STRIPE_PRICE_ID_FREE,
-    features: ["basic-reporting", "one-team"],
-  },
-  pro: {
-    stripePrice: env.STRIPE_PRICE_ID_PRO,
-    features: ["advanced-reporting", "unlimited-teams", "sso"],
-  },
-};
+const PRO_FEATURES = {
+  can_export: { bool: true },
+  can_invite_team: { bool: true },
+  max_seats: { number: PRO_SEAT_LIMIT },
+} satisfies PlanFeatureValues;
 ```
 
-The ACL resolver checks this config and gates features based on the user's subscription.
+Adding a feature key fails the type check and `billing.plans.test.ts` until Pro
+has a value for it. The rows are rewritten from this catalog on every plan
+read; per-account exceptions go in `account_feature_overrides`.
 
 ## Verify
 

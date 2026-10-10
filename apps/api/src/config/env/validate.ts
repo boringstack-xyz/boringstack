@@ -272,6 +272,7 @@ const readBilling = (source: EnvSource) => ({
   STRIPE_WEBHOOK_SECRET: source.STRIPE_WEBHOOK_SECRET ?? "",
   STRIPE_PRICE_ID_FREE: source.STRIPE_PRICE_ID_FREE ?? "",
   STRIPE_PRICE_ID_PRO: source.STRIPE_PRICE_ID_PRO ?? "",
+  STRIPE_PRICE_ID_PRO_YEARLY: source.STRIPE_PRICE_ID_PRO_YEARLY ?? "",
 });
 
 const readBackground = (source: EnvSource) => ({
@@ -619,6 +620,20 @@ const checkBilling = (env: Env): string[] => {
 
   if (env.STRIPE_PRICE_ID_PRO === "") {
     errors.push("STRIPE_PRICE_ID_PRO required when BILLING_ENABLED=true");
+  }
+
+  /*
+   * The webhook maps a subscription's price back to a plan. A yearly price
+   * equal to the monthly one would make that mapping ambiguous about the
+   * interval, so refuse it at boot rather than at the first renewal.
+   */
+  if (
+    env.STRIPE_PRICE_ID_PRO_YEARLY !== "" &&
+    env.STRIPE_PRICE_ID_PRO_YEARLY === env.STRIPE_PRICE_ID_PRO
+  ) {
+    errors.push(
+      "STRIPE_PRICE_ID_PRO_YEARLY must differ from STRIPE_PRICE_ID_PRO"
+    );
   }
 
   /*

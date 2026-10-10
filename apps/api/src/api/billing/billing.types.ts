@@ -1,7 +1,13 @@
+import type { BILLING_INTERVALS } from "./billing.constants";
+
+export type BillingInterval = (typeof BILLING_INTERVALS)[number];
+
 export interface IPlanSummary {
   id: number;
   name: string;
   isDefault: boolean;
+  /** Intervals a checkout can be started for right now (billing on, price set). */
+  purchasableIntervals: BillingInterval[];
 }
 
 export type AccountPlanStatus =

@@ -83,6 +83,7 @@ process.env.STRIPE_SECRET_KEY = ["sk", "test", "fake", "for", "tests"].join(
 process.env.STRIPE_WEBHOOK_SECRET = ["whsec", "fake", "for", "tests"].join("_");
 process.env.STRIPE_PRICE_ID_FREE = "price_test_free";
 process.env.STRIPE_PRICE_ID_PRO = "price_test_pro";
+process.env.STRIPE_PRICE_ID_PRO_YEARLY = "price_test_pro_yearly";
 
 /*
  * Email webhook secrets. The Resend signing secret is a constant whsec

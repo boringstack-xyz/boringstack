@@ -13,7 +13,8 @@ import {
   SubscriptionResponse,
   WebhookResponse,
 } from "./billing.schemas";
-import { getBillingService } from "./billing.service";
+import { DEFAULT_BILLING_INTERVAL } from "./billing.constants";
+import { getBillingService, listBillingPlans } from "./billing.service";
 import { grantTestTeamPlan } from "./test-plan";
 import { env } from "../../config/env";
 import { now } from "../../lib/time/now";
@@ -69,14 +70,6 @@ const billingRoutes = new Elysia()
           },
         }
       )
-      .get("/plans", async () => getBillingService().listPlans(), {
-        response: PlanListResponse,
-        detail: {
-          tags: ["Billing"],
-          summary: "List available plans",
-          security: [{ cookieAuth: [] }],
-        },
-      })
       .get(
         "/subscription",
         async ({ accountId, user }) => {
@@ -119,7 +112,8 @@ const billingRoutes = new Elysia()
             billingAccountId,
             user.id,
             body.successUrl,
-            body.cancelUrl
+            body.cancelUrl,
+            body.interval ?? DEFAULT_BILLING_INTERVAL
           );
         },
         {
@@ -156,6 +150,25 @@ const billingRoutes = new Elysia()
           },
         }
       )
+  )
+  .use(
+    /*
+     * Public, outside requireAuth: the pricing page reads this. It never
+     * touches Stripe and works when BILLING_ENABLED=false (every
+     * purchasableIntervals is then empty). The other routes in this file keep
+     * returning 404 while billing is disabled, via getBillingService().
+     */
+    new Elysia()
+      .onError(({ code, error, set }) =>
+        errorHandler({ code: String(code), error, set })
+      )
+      .get("/plans", async () => listBillingPlans(), {
+        response: PlanListResponse,
+        detail: {
+          tags: ["Billing"],
+          summary: "List available plans (public)",
+        },
+      })
   )
   .use(
     new Elysia()

@@ -37,8 +37,10 @@ export const plans = billing.table(
 );
 
 /*
- * Plan ↔ feature mapping. Per-deployment overridable: seeds at boot
- * via `ensureConfiguredPlans` and operators can hand-edit rows.
+ * Plan ↔ feature mapping. The built-in plans' rows are written from the
+ * catalog in `api/billing/billing.plans.ts` on every plan read, so a hand
+ * edit to Free or Pro is reverted; per-account exceptions belong in
+ * `account_feature_overrides`.
  * `featureKey` is validated in code against the `FEATURES` catalog;
  * `value` is jsonb shaped as `{ bool: boolean }` for boolean features
  * and `{ number: number }` for limits.
