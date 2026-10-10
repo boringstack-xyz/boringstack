@@ -98,6 +98,12 @@ gitleaks detect \
   || fail "gitleaks found leaked secrets. Inspect the output above and fix or add a narrow allowlist entry to .gitleaks.toml."
 ok "gitleaks clean"
 
+# The fast pre-push stops here: a leaked secret must never reach the remote,
+# while semgrep and osv-scanner run in the security-sast/deps workflows.
+if [[ "${1:-}" == "--secrets-only" ]]; then
+  exit 0
+fi
+
 # ─── 2. semgrep ────────────────────────────────────────────────────────────
 # Matches the two security-sast workflows: apps-api-security-sast.yml +
 # apps-ui-security-sast.yml. Configs are kept in lockstep with those
