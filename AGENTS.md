@@ -35,6 +35,14 @@ bun run rename:project  # one-shot rebrand after Use this template (boringstack 
 ./scripts/audit-repo-settings.sh # diff GitHub repo settings vs .github/desired-repo-settings.json
 ```
 
+## Pre-push
+
+The root `pre-push` hook is fast by default: the secret scan, each changed
+app's `bun run check`, the UI tests for changed files, shared packages and the
+static Compose checks. Full suites, builds, budgets, semgrep, osv-scanner and
+the smoke/Playwright runs are the pull request's required checks.
+`FULL_PREPUSH=1 git push` runs the whole gate locally.
+
 ## Structured verification
 
 Start account-owned feature work with `bun run agent:inspect -- account-resource --json`.

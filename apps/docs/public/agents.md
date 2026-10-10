@@ -150,7 +150,8 @@ Turning the optional overlays off is the right move on a small machine:
 
 **`bun run check` is the oracle.** If anything here disagrees with what `check` says, the
 lint config wins, so flag the drift rather than working around it. Run it before every commit;
-CI runs the same gates and a pre-push hook mirrors them.
+CI runs the same gates. The pre-push hook runs the fast ones (secret scan, each changed
+app's `check`, tests for changed UI files); `FULL_PREPUSH=1 git push` runs all of them.
 
 | Rule                                              | What it means                                                                                                                                                           |
 | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

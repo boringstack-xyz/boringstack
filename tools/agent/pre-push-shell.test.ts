@@ -71,3 +71,27 @@ test("the root pre-push hook clears inherited git environment before any gate ru
   expect(unsetIndex).toBeGreaterThan(-1);
   expect(unsetIndex).toBeLessThan(firstGateIndex);
 });
+
+test("the root pre-push hook is fast by default and FULL_PREPUSH=1 reaches the full gate", () => {
+  const script = readFileSync(join(ROOT, "scripts/ci/pre-push.sh"), "utf8");
+  const fastGuard = script.indexOf(
+    'if [[ "${FULL_PREPUSH:-0}" != "1" ]]; then'
+  );
+  const secretsOnly = script.indexOf('pre-push-security.sh" --secrets-only');
+  const fastExit = script.indexOf("  exit 0\nfi", fastGuard);
+  const fullSecurity = script.indexOf(
+    'bash "$ROOT/scripts/ci/pre-push-security.sh"\n'
+  );
+  const security = readFileSync(
+    join(ROOT, "scripts/ci/pre-push-security.sh"),
+    "utf8"
+  );
+
+  expect(fastGuard).toBeGreaterThan(-1);
+  expect(secretsOnly).toBeGreaterThan(fastGuard);
+  expect(fastExit).toBeGreaterThan(secretsOnly);
+  expect(fullSecurity).toBeGreaterThan(fastExit);
+  expect(security.indexOf('"--secrets-only"')).toBeGreaterThan(
+    security.indexOf("gitleaks clean")
+  );
+});

@@ -7,6 +7,13 @@ A log of substantial changes to the docs, templates, and tooling. For per-commit
 
 ## 2026-10
 
+### Fast pre-push by default
+
+- The root `pre-push` hook runs the secret scan, each changed app's `bun run check`, the UI
+  tests for changed files, shared packages and the static Compose checks. Full suites, builds,
+  budgets and scanners are the pull request's required checks. `FULL_PREPUSH=1 git push` runs
+  the whole gate locally.
+
 ### Template fixes from the first product's code
 
 A diff of every template file the first product changed found bugs it had to fix.

@@ -14,6 +14,8 @@
 #   - The workflow file under .github/workflows/apps-<app>-*.yml.
 #   - The root codecov.yml (affects upload behaviour for every app).
 #
+# Fast by default (see "Fast by default" below); `FULL_PREPUSH=1 git push`
+# runs every gate as CI does.
 # Bypass: `git push --no-verify` (use sparingly, breaks the build).
 
 set -euo pipefail
@@ -110,6 +112,57 @@ if [[ -z "$CHANGED_PATHS" ]]; then
 else
   c_blue "  Changed files vs ${UPSTREAM}:"
   echo "$CHANGED_PATHS" | sed 's/^/    /'
+fi
+
+# ─── Fast by default ─────────────────────────────────────────────────────
+# A push runs what fails fastest and most often: the secret scan, each
+# changed app's own `check` (lint, lint:meta, format, typecheck, knip, as the
+# app defines it), the UI tests touching what this push adds, shared packages
+# and the static Compose gate. Full test suites, builds, bundle budgets,
+# semgrep, osv-scanner and the smoke/Playwright run stay in the pull
+# request's required checks, which block the merge, so they are not paid
+# twice per push. The first product built on the template paid them on every
+# push and ended up skipping the hook instead.
+# FULL_PREPUSH=1 git push runs the whole local gate below.
+if [[ "${FULL_PREPUSH:-0}" != "1" ]]; then
+  bash "$ROOT/scripts/ci/pre-push-security.sh" --secrets-only
+
+  for app_path in "$ROOT"/apps/*/; do
+    [[ -f "$app_path/package.json" ]] || continue
+    app="$(basename "$app_path")"
+    app_changed "$app" || continue
+    if ! grep -q '"check":' "$app_path/package.json"; then
+      warn "${app}: no check script, left to CI"
+      continue
+    fi
+    step "${app}: fast checks (bun run check)"
+    ( cd "apps/${app}" && bun run check )
+    ok "${app} fast checks passed"
+  done
+
+  if app_changed ui || grep -q '^packages/' <<< "$CHANGED_PATHS"; then
+    step "ui: tests for the files this push changes"
+    # Only what this push adds: since the branch's last push, or main for a
+    # new branch.
+    since="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || echo "$UPSTREAM")"
+    ( cd apps/ui && bunx vitest run --changed "$since" --passWithNoTests )
+    ok "ui tests for changed files passed"
+  fi
+
+  if [[ -z "$CHANGED_PATHS" ]] || grep -q '^packages/' <<< "$CHANGED_PATHS"; then
+    step "Running shared packages validate"
+    bash -c 'source "$1/scripts/stack-lib.sh" && validate_packages' _ "$ROOT"
+    ok "shared packages validate passed"
+  fi
+
+  if infra_compose_changed; then
+    step "Running infra/compose pre-push gate (compose config + shellcheck + yamllint)"
+    bash "$ROOT/infra/compose/scripts/pre-push.sh"
+    ok "infra/compose gate passed"
+  fi
+
+  ok "Fast pre-push finished. Full suites run in the PR checks; FULL_PREPUSH=1 runs them here."
+  exit 0
 fi
 
 # Security scanners run first: gitleaks, semgrep, osv-scanner all

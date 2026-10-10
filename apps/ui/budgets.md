@@ -1,7 +1,7 @@
 # Bundle budget reasons
 
 Limits in `.size-limit.json` do not go up silently. `bun run check:size-budget`
-(part of `bun run validate`, CI and pre-push) fails when a limit is raised, or a
+(part of `bun run validate`, CI and the full pre-push gate) fails when a limit is raised, or a
 new entry is added, unless this file has a reason for that entry that is new or
 changed in the same change. Compare against the base branch, so an old reason
 cannot cover a later raise.

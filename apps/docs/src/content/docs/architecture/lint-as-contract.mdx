@@ -106,7 +106,7 @@ bun run lint:fix   # autofix what can be fixed mechanically
 bun run knip       # unused files, exports, and dependencies
 ```
 
-The same merge gate runs in three places so a broken change cannot reach `main`. A husky `pre-commit` hook runs `bun run lint-staged` against the staged files, the cheap, scoped check on every commit. A husky `pre-push` hook (installed via `prepare` on `bun run install` / `bun install`; for `infra/compose` and `.github`, run `./scripts/install-hooks.sh` once) then runs the full `validate` locally before anything leaves your machine: typecheck, lint, knip, tests, build, `osv-scanner` against the lockfile, and (when workspace apps are present) an OpenAPI schema drift check across apps/api and apps/ui. CI re-runs the same gate so a `--no-verify` push is still caught.
+The same merge gate runs in three places so a broken change cannot reach `main`. A husky `pre-commit` hook runs `bun run lint-staged` against the staged files, the cheap, scoped check on every commit. A husky `pre-push` hook (installed via `prepare` on `bun run install` / `bun install`; for `infra/compose` and `.github`, run `./scripts/install-hooks.sh` once) then runs the fast gate before anything leaves your machine: the gitleaks secret scan, each changed app's `bun run check` (typecheck, lint, lint:meta, format, knip), the UI tests for the files the push changes, shared packages and the static Compose checks. Full test suites, builds, bundle budgets, semgrep, `osv-scanner` and the smoke and Playwright runs belong to the pull request's required checks, which block the merge. `FULL_PREPUSH=1 git push` runs the whole gate locally, and CI catches a `--no-verify` push either way.
 
 [Knip](https://knip.dev) sits alongside the lint plugins, surfacing unused files, unused exports, and unused dependencies. It runs as part of `validate` so dead code can't drift in unnoticed.
 
@@ -114,7 +114,7 @@ The same merge gate runs in three places so a broken change cannot reach `main`.
 
 The UI's bundle budgets (`.size-limit.json`, plus the modulepreload coverage check) run in
 `bun run validate`. The budget limits do not go up silently. `bun run check:size-budget`
-runs in `validate`, in CI and in the pre-push hook. It fails when a limit is raised or a new
+runs in `validate`, in CI and in the full pre-push gate (`FULL_PREPUSH=1`). It fails when a limit is raised or a new
 entry is added, unless `apps/ui/budgets.md` has a reason for that entry, and the reason is
 new or changed in the same change. The check compares against the base branch, so an old
 reason cannot cover a later raise.
