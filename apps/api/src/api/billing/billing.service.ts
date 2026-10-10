@@ -818,24 +818,24 @@ export class BillingService {
     }
 
     /*
-     * Matched against the catalog, not plans.stripePriceId: the row holds the
-     * monthly price only, and either Pro price must map to Pro.
+     * The catalog maps every built-in price, including the yearly one that
+     * plans.stripePriceId does not hold. Any other plan row (a tier a product
+     * added outside the catalog) still matches on its own stripePriceId.
      */
     const planName = findPlanNameByPriceId(
       buildBuiltInPlans(this.settings.priceIds),
       newPriceId
     );
 
-    if (planName === undefined) {
-      return;
-    }
-
     const [account, newPlan] = await Promise.all([
       tx.query.accounts.findFirst({
         where: eq(accounts.stripeCustomerId, customerId),
       }),
       tx.query.plans.findFirst({
-        where: eq(plans.name, planName),
+        where:
+          planName === undefined
+            ? eq(plans.stripePriceId, newPriceId)
+            : eq(plans.name, planName),
       }),
     ]);
 
