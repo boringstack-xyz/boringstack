@@ -4,7 +4,7 @@
 # Compose, the release workflows and the infra gate pass the same context.
 
 # ---- Builder ---------------------------------------------------------------
-FROM oven/bun:1.4.2-alpine@sha256:d888c0ae6c86d7866ff10c5aafdd9077b36aee6455b33dd270fb93c0dd5cef6f AS builder
+FROM oven/bun:1.4.3-alpine@sha256:629e17411f1f129dbec3af78d5af9c9f2a937435c80349437206c6b0b7422373 AS builder
 
 WORKDIR /app
 
@@ -49,7 +49,7 @@ RUN for pkg in /packages/*/; do \
 RUN bun run build
 
 # ---- Runner ---------------------------------------------------------------
-FROM nginx:1.31-alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2 AS runner
+FROM nginx:1.31-alpine@sha256:892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d AS runner
 
 # Non-root user (Kubernetes / OpenShift friendly).
 # nginx writes its pid to /run/nginx.pid by default; that path needs to be
