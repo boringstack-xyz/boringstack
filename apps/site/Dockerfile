@@ -7,7 +7,7 @@
 #     --build-arg APP_URL=https://app.example.com \
 #     --build-arg CONTACT_EMAIL=hello@example.com -t boringstack-site .
 
-FROM oven/bun:1.4.2-alpine@sha256:d888c0ae6c86d7866ff10c5aafdd9077b36aee6455b33dd270fb93c0dd5cef6f AS deps
+FROM oven/bun:1.4.3-alpine@sha256:629e17411f1f129dbec3af78d5af9c9f2a937435c80349437206c6b0b7422373 AS deps
 WORKDIR /app
 COPY package.json bun.lock bunfig.toml ./
 RUN bun install --frozen-lockfile
@@ -33,7 +33,7 @@ ENV SITE_URL=$SITE_URL \
     ANALYTICS_WEBSITE_ID=$ANALYTICS_WEBSITE_ID
 RUN bun run build && bun run render:nginx
 
-FROM nginx:1.31-alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2 AS production
+FROM nginx:1.31-alpine@sha256:892bb2152464f0c5d8972593a5f5afaf8054552580b699d95f8ff4af08c2d33d AS production
 RUN addgroup -g 1001 -S app \
  && adduser -S app -u 1001 -G app
 COPY --from=build /app/.build/nginx.conf /etc/nginx/nginx.conf
