@@ -36,12 +36,12 @@
     "check:agent-surface": "bun run scripts/check-agent-surface.mjs"
   },
   "dependencies": {
-    "@astrojs/markdown-remark": "7.3.1",
-    "@astrojs/react": "7.0.0",
+    "@astrojs/markdown-remark": "7.3.2",
+    "@astrojs/react": "7.0.1",
     "@astrojs/sitemap": "3.7.4",
-    "@astrojs/starlight": "0.42.5",
+    "@astrojs/starlight": "0.42.6",
     "@tailwindcss/vite": "4.3.3",
-    "astro": "7.3.5",
+    "astro": "7.3.8",
     "astro-mermaid": "2.1.0",
     "clsx": "2.1.1",
     "mermaid": "11.17.2",
