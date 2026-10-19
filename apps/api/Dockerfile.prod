@@ -3,7 +3,7 @@
 # directory. Build from apps/api with:
 #   docker build --build-context packages=../../packages -f Dockerfile.prod .
 # Compose, the release workflows and the infra gate pass the same context.
-FROM oven/bun:1.4.2-alpine@sha256:d888c0ae6c86d7866ff10c5aafdd9077b36aee6455b33dd270fb93c0dd5cef6f AS builder
+FROM oven/bun:1.4.3-alpine@sha256:629e17411f1f129dbec3af78d5af9c9f2a937435c80349437206c6b0b7422373 AS builder
 
 WORKDIR /app
 
@@ -35,7 +35,7 @@ RUN bun run build
 # is installed here and kept out of the lean runtime image. The Kubernetes
 # migration Job runs it. This stage must stay before `production`: a plain
 # `docker build` builds the last stage, and that must be the API.
-FROM oven/bun:1.4.2-alpine@sha256:d888c0ae6c86d7866ff10c5aafdd9077b36aee6455b33dd270fb93c0dd5cef6f AS migrations
+FROM oven/bun:1.4.3-alpine@sha256:629e17411f1f129dbec3af78d5af9c9f2a937435c80349437206c6b0b7422373 AS migrations
 
 RUN apk add --no-cache dumb-init
 
@@ -81,7 +81,7 @@ ENTRYPOINT ["dumb-init", "--"]
 CMD ["bun", "run", "db:migrate"]
 
 # Production stage
-FROM oven/bun:1.4.2-alpine@sha256:d888c0ae6c86d7866ff10c5aafdd9077b36aee6455b33dd270fb93c0dd5cef6f AS production
+FROM oven/bun:1.4.3-alpine@sha256:629e17411f1f129dbec3af78d5af9c9f2a937435c80349437206c6b0b7422373 AS production
 
 RUN apk add --no-cache dumb-init
 
