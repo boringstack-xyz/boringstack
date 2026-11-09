@@ -36,22 +36,22 @@
     "check:agent-surface": "bun run scripts/check-agent-surface.mjs"
   },
   "dependencies": {
-    "@astrojs/markdown-remark": "7.3.1",
-    "@astrojs/react": "7.0.0",
+    "@astrojs/markdown-remark": "7.3.5",
+    "@astrojs/react": "7.1.2",
     "@astrojs/sitemap": "3.7.4",
-    "@astrojs/starlight": "0.42.5",
+    "@astrojs/starlight": "0.42.8",
     "@tailwindcss/vite": "4.3.3",
-    "astro": "7.3.5",
-    "astro-mermaid": "2.1.0",
+    "astro": "7.4.4",
+    "astro-mermaid": "2.2.0",
     "clsx": "2.1.1",
     "mermaid": "11.17.2",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "reading-time": "1.5.0",
     "remark-gfm": "4.0.1",
     "sharp": "0.35.5",
     "tailwindcss": "4.3.3",
-    "ws": "8.22.0"
+    "ws": "8.22.1"
   },
   "devDependencies": {
     "@axe-core/cli": "4.13.0",
