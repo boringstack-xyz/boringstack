@@ -46,17 +46,15 @@ export const buildCors = () => {
 const buildRateLimitContext = (
   policy: string
 ): ValkeyRateLimitContext | undefined => {
-  if (!env.CACHE_ENABLED || env.CACHE_PROVIDER !== "valkey") {
-    return undefined;
-  }
-
   /*
    * The policy name becomes a key segment, so these two limiters keep
    * separate counters. On a shared key, public traffic drains the
    * credential budget and the general limiter's `onError` refunds failed
    * logins.
    */
-  return new ValkeyRateLimitContext(undefined, policy);
+  return env.CACHE_ENABLED && env.CACHE_PROVIDER === "valkey"
+    ? new ValkeyRateLimitContext(undefined, policy)
+    : undefined;
 };
 
 /**

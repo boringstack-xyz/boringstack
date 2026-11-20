@@ -14,3 +14,4 @@ Budgets are reviewed per feature. A raise states what grew and why the growth
 is acceptable, and the line is kept as the record of that decision.
 
 - `Initial route (cold start: index + react + router + i18n + query)`: 255 to 265 kB for the October dependency batch; @sentry/react 11 adds about 5 kB and React 19.3, React Router, TanStack Query and zod minors about 3.5 kB together, measured at 263.5 kB.
+- `Initial route (cold start: index + react + router + i18n + query)`: 265 to 270 kB for the November dependency batch; the index chunk grows about 3.2 kB and i18next 26.7 about 2.2 kB, React Router shrinks 0.6 kB, measured at 268.9 kB against 264.1 kB on main.

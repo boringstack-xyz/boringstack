@@ -6,45 +6,8 @@
 # can be removed).
 
 [[IgnoredVulns]]
-id = "GHSA-952p-6rrq-rcjv"
-ignoreUntil = "2026-11-18T00:00:00Z"
-reason = """
-micromatch ReDoS. Pulled in via vite/jest tooling. Requires
-attacker-controlled glob patterns reaching micromatch; our UI never
-exposes glob handling to user input. Awaiting upstream patch in the
-transitive tree.
-"""
-
-[[IgnoredVulns]]
-id = "GHSA-vfj7-8cjw-p6xm"
-ignoreUntil = "2026-11-18T00:00:00Z"
-reason = """
-braces 3.0.3 (no fixed release yet). Reached only through micromatch 4.0.5 in
-build and lint tooling (vite, eslint plugins, fast-glob). Never in the shipped
-bundle and never reached by user input. Remove once braces is patched.
-"""
-
-[[IgnoredVulns]]
-id = "GHSA-48c2-rrv3-qjmp"
-ignoreUntil = "2026-11-18T00:00:00Z"
-reason = """
-yaml prototype-pollution. Used only at build time via configuration
-loaders (vite plugins). Production bundle ships no yaml parser to the
-client. Awaiting upstream patch.
-"""
-
-[[IgnoredVulns]]
-id = "GHSA-w5hq-g745-h8pq"
-ignoreUntil = "2026-11-22T00:00:00Z"
-reason = """
-uuid@8.3.2 pulled in transitively via @lhci/cli (Lighthouse CI). The
-vulnerable code path is never reached from shipped UI code; @lhci/cli
-is build/CI-only tooling. Re-evaluate when @lhci/cli bumps uuid.
-"""
-
-[[IgnoredVulns]]
 id = "GHSA-28wg-ghj8-5hjv"
-ignoreUntil = "2026-11-13T00:00:00Z"
+ignoreUntil = "2027-01-15T00:00:00Z"
 reason = """
 nanoid@5.1.5 exact-pinned by estimo@3.0.5, which reaches us only through
 @size-limit/time. Bun does not support scoped overrides, and a flat nanoid
@@ -55,7 +18,7 @@ the UI bundle. Re-evaluate when estimo advances its nanoid pin.
 
 [[IgnoredVulns]]
 id = "GHSA-2v37-7h3g-55p8"
-ignoreUntil = "2026-11-13T00:00:00Z"
+ignoreUntil = "2027-01-15T00:00:00Z"
 reason = """
 Same estimo@3.0.5 -> nanoid@5.1.5 pin as GHSA-28wg-ghj8-5hjv. The postcss-side
 3.x copy is patched via the 3.3.18 resolution; only the CI-only size-limit
@@ -64,7 +27,7 @@ timing path remains. Re-evaluate when estimo advances its nanoid pin.
 
 [[IgnoredVulns]]
 id = "GHSA-jmr9-qjv8-65gv"
-ignoreUntil = "2026-11-13T00:00:00Z"
+ignoreUntil = "2027-01-15T00:00:00Z"
 reason = """
 extract-zip@2.0.1 has no patched release published. Pulled in transitively via
 @puppeteer/browsers under estimo/find-chrome-bin, i.e. the size-limit and
@@ -75,7 +38,7 @@ user-supplied input. Re-evaluate when extract-zip ships a fix.
 
 [[IgnoredVulns]]
 id = "GHSA-7pqw-9j4j-h8q3"
-ignoreUntil = "2026-12-09T00:00:00Z"
+ignoreUntil = "2027-01-15T00:00:00Z"
 reason = """
 extract-zip arbitrary file write via symlink archive entries, affecting
 <=2.0.1 with no patched release published — the same unfixable dependency as
@@ -88,7 +51,7 @@ extract-zip ships a fix.
 
 [[IgnoredVulns]]
 id = "GHSA-xwg4-73v4-xw9w"
-ignoreUntil = "2026-11-13T00:00:00Z"
+ignoreUntil = "2027-01-15T00:00:00Z"
 reason = """
 Same estimo@3.0.5 -> nanoid@5.1.5 exact pin as GHSA-28wg-ghj8-5hjv and
 GHSA-2v37-7h3g-55p8; this advisory covers the 4.0.0-5.1.11 integer-overflow
@@ -96,4 +59,18 @@ range that the same pinned copy falls into. Reaches us only through
 @size-limit/time, i.e. CI/dev timing tooling, and no nanoid 5.x copy ships in
 the UI bundle. A flat override cannot fix it — postcss needs the CJS 3.x line.
 Re-evaluate when estimo advances its nanoid pin.
+"""
+
+[[IgnoredVulns]]
+id = "GHSA-mrhx-c7xc-m3w5"
+ignoreUntil = "2027-01-15T00:00:00Z"
+reason = """
+zod 3.25.76 memory exhaustion on oversized constrained collections. The fix
+exists only on the 4.x line (4.6.6); there is no patched 3.x release. This copy
+comes from chromium-bidi 8.0.0 under the puppeteer that size-limit and
+Lighthouse CI drive, where it parses protocol messages from the local headless
+Chrome. Build/CI-only and never in the bundle; the UI's own zod is 4.6.7. A
+flat override is not possible because apps/api must stay on 3.x for
+@elysiajs/swagger and the override-parity rule mirrors pins across apps.
+Remove when the puppeteer chain moves to a zod 4 based chromium-bidi.
 """

@@ -75,7 +75,7 @@ jobs:
 
       - name: Upload osv SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@7c1e4cf0b20d7c1872b26569c00ba908797a59bf # v4
+        uses: github/codeql-action/upload-sarif@0911ee96d2d6c8def97122c36c5cadd93829a4b4 # v4
         with:
           sarif_file: osv-results.sarif
           category: osv-scanner-api
@@ -93,7 +93,7 @@ jobs:
         if: steps.filter.outputs.code == 'true'
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: 1.4.2
+          bun-version: 1.4.4
 
       - name: bun audit
         if: steps.filter.outputs.code == 'true'
