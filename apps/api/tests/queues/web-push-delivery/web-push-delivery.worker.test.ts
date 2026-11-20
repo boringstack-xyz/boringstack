@@ -20,7 +20,7 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import webPush from "web-push";
+import * as webPush from "web-push";
 
 import { deliverToSubscriptions } from "../../../src/queues/web-push-delivery/web-push-delivery.worker";
 import {

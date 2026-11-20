@@ -1,6 +1,6 @@
 import { Worker, type Job, type WorkerOptions } from "bullmq";
 import { eq } from "drizzle-orm";
-import webPush, { WebPushError } from "web-push";
+import * as webPush from "web-push";
 import { db } from "../../clients/postgres";
 import {
   notificationDelivery,
@@ -232,7 +232,10 @@ const deliverToSubscription = async (
 
     return { succeeded: true, pruned: false };
   } catch (error: unknown) {
-    if (error instanceof WebPushError && isExpiredStatus(error.statusCode)) {
+    if (
+      error instanceof webPush.WebPushError &&
+      isExpiredStatus(error.statusCode)
+    ) {
       logger.info("Pruned expired Web Push subscription", {
         event: "notifications.web_push.subscription_expired",
         subscriptionId: subscription.id,
@@ -246,7 +249,8 @@ const deliverToSubscription = async (
     logger.warn("Web Push delivery to subscription failed", {
       event: "notifications.web_push.delivery_failed",
       subscriptionId: subscription.id,
-      statusCode: error instanceof WebPushError ? error.statusCode : undefined,
+      statusCode:
+        error instanceof webPush.WebPushError ? error.statusCode : undefined,
       error: getErrorMessage(error),
     });
 

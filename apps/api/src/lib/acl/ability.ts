@@ -65,10 +65,6 @@ export function buildAbility(
   return build();
 }
 
-const describeSubject = (resource: AppSubject): string => {
-  return typeof resource === "string" ? resource : resource.__caslSubjectType__;
-};
-
 export function requireAbility(
   ability: AppAbility,
   action: Action,
@@ -76,7 +72,7 @@ export function requireAbility(
 ): void {
   if (ability.cannot(action, resource)) {
     throw ApiErrors.forbidden(
-      `Forbidden: action="${action}" subject="${describeSubject(resource)}"`
+      `Forbidden: action="${action}" subject="${ability.detectSubjectType(resource)}"`
     );
   }
 }

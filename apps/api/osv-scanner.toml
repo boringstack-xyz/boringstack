@@ -6,31 +6,14 @@
 # removed). bun.lock is canonical.
 
 [[IgnoredVulns]]
-id = "GHSA-67mh-4wv8-2f99"
-ignoreUntil = "2026-11-18T00:00:00Z"
+id = "GHSA-mrhx-c7xc-m3w5"
+ignoreUntil = "2027-01-15T00:00:00Z"
 reason = """
-esbuild dev-server-only RCE. Production builds (Dockerfile.prod) do not run
-the esbuild dev server; the bundled artifact has no exposed surface. Only
-exploitable against `bun run dev` / `vite` locally. Awaiting upstream patch
-in our transitive tree (pulled in via vite + tsx).
+zod 3.25.76 memory exhaustion on oversized constrained collections. The fix
+exists only on the 4.x line (4.6.6); there is no patched 3.x release. This copy
+comes from @scalar/types under @elysiajs/swagger 1.3.1 (its latest release),
+and forcing zod 4 onto it breaks the plugin (`z.function().returns` is gone).
+It parses the app's own static Swagger UI configuration, never request input,
+and Swagger is mounted in development only. The app's own zod is 4.6.7.
+Remove when @elysiajs/swagger moves to a zod 4 based @scalar/types.
 """
-
-[[IgnoredVulns]]
-id = "GHSA-952p-6rrq-rcjv"
-ignoreUntil = "2026-11-18T00:00:00Z"
-reason = """
-micromatch ReDoS. Requires attacker-controlled glob patterns reaching
-micromatch; our usage is internal build-time tooling (vite, tsconfig
-resolution). No path from user input to micromatch in api source. Awaiting
-upstream patch via vite/jest transitive deps.
-"""
-
-[[IgnoredVulns]]
-id = "GHSA-vfj7-8cjw-p6xm"
-ignoreUntil = "2026-11-18T00:00:00Z"
-reason = """
-braces 3.0.3 (no fixed release yet). Reached only through micromatch 4.0.5 in
-the @boring-stack-pkg ESLint plugins: lint-time tooling, never in the
-production image or reached by request input. Remove once braces is patched.
-"""
-
