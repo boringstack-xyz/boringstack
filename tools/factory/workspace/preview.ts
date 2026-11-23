@@ -25,7 +25,7 @@ export const previewCommand: IFactoryCommand = {
       slot: claim.slot,
       issue: claim.issue,
       workspace: runtime.workspace,
-      uiUrl: directUrlOf(claim.slot),
+      url: directUrlOf(claim.slot),
       proxyUrl: previewUrlOf(claim.slot),
       updatedAt: nowIso(),
     });
@@ -38,7 +38,7 @@ export const previewCommand: IFactoryCommand = {
     return Promise.resolve(
       ok(lines.join("\n"), {
         slot: claim.slot,
-        uiUrl: directUrlOf(claim.slot),
+        url: directUrlOf(claim.slot),
         proxyUrl: previewUrlOf(claim.slot),
         reloaded,
       })
