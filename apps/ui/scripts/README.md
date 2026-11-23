@@ -24,6 +24,7 @@ When you add a `package.json` script that runs a file under `scripts/`, update t
 | `bun run lint:meta:verify`         | `lint-meta/cli.ts --verify`                    |
 | `bun run generate:lint-meta-docs`  | `lint-meta/generate-rules-md.ts`               |
 | `bun run test:ci`                  | `quality/run-tests-clean.ts`                   |
+| `bun run test:affected`            | `quality/run-tests-clean.ts`                   |
 | `bun run size:check:modulepreload` | `quality/check-modulepreload-size-coverage.ts` |
 | `bun run check:size-budget`        | `quality/check-size-budget-raises.ts`          |
 | `bun run generate:api`             | `codegen/generate-api.ts`                      |

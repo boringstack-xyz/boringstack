@@ -80,6 +80,12 @@
         "invocation": "tsx scripts/quality/run-tests-clean.ts run --coverage"
       },
       {
+        "command": "test:affected",
+        "script": "quality/run-tests-clean.ts",
+        "description": "Runs vitest and fails when the suite prints warning noise to stdout/stderr.",
+        "invocation": "tsx scripts/quality/run-tests-clean.ts run"
+      },
+      {
         "command": "new:component",
         "script": "codegen/new-component.ts",
         "description": "Scaffold a new component folder with the 8-file anatomy.",

@@ -1,5 +1,5 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
@@ -47,6 +47,12 @@ export default defineConfig({
       }
     },
     restoreMocks: true,
-    clearMocks: true
+    clearMocks: true,
+    /*
+     * PRs run only the tests a change can reach (`--changed`). A change to
+     * any of these reaches everything, so it runs the whole suite. The
+     * lockfile is the one vitest does not watch by default.
+     */
+    forceRerunTriggers: [...configDefaults.forceRerunTriggers, "**/bun.lock"]
   }
 });
