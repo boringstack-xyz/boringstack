@@ -1,4 +1,3 @@
-import sgMail from "@sendgrid/mail";
 import { env } from "../../../config/env";
 import { logger } from "../../../config/logger";
 import { ApiErrors, getErrorMessage } from "../../errors";
@@ -18,13 +17,17 @@ import {
   isProviderSuppressionError,
   mirrorProviderSuppression,
 } from "./suppression.helpers";
+import { createSendGridClient } from "./sendgrid.client";
 import type { ISendGridMailClient } from "./sendgrid.types";
 
 export class SendGridEmailService implements IEmailService {
   public readonly providerName = "sendgrid" as const;
   private readonly client: ISendGridMailClient;
 
-  constructor(apiKey: string, client: ISendGridMailClient = sgMail) {
+  constructor(
+    apiKey: string,
+    client: ISendGridMailClient = createSendGridClient()
+  ) {
     this.client = client;
     this.client.setApiKey(apiKey);
   }
