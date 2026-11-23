@@ -18,6 +18,7 @@ export interface IAccountMaintenanceSweepResult {
   cleanedPendingUsers: number;
   cleanedInvitations: number;
   sweptRobotUsers: number;
+  prunedProductEvents: number;
 }
 
 export interface IAccountMaintenanceSetupResult {

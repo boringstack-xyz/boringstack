@@ -152,6 +152,7 @@ export const LOG_EVENTS = [
   "oauth_callback_failed",
   "oauth_state_valkey_error",
   "process_warning",
+  "product_events.pruned",
   "queue_fallback_inline",
   "queues_initialized",
   "queues.account_maintenance.initialized",
