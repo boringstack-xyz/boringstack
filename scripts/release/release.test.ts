@@ -38,6 +38,18 @@ describe("coordinated release", () => {
       "api.yml",
     ]);
   });
+  test("merge gate waits for the pull_request workflows a PR triggers, never itself", () => {
+    const workflows = [
+      { path: ".github/workflows/merge-gate.yml", on: { pull_request: { branches: ["main"] } } },
+      { path: "api.yml", on: { pull_request: { branches: ["main"], paths: ["apps/api/**"] } } },
+      { path: "ui.yml", on: { pull_request: { branches: ["main"], paths: ["apps/ui/**"] } } },
+      { path: "secrets.yml", on: { pull_request: { branches: ["main"] } } },
+      { path: "push-only.yml", on: { push: { branches: ["main"] } } },
+    ];
+    expect(
+      expectedWorkflows(workflows, ["apps/api/a.ts"], "pull_request"),
+    ).toEqual(["api.yml", "secrets.yml"]);
+  });
   test("honours branch and ignore filters as GitHub does", () => {
     const workflows = [
       { path: "tags.yml", on: { push: { tags: ["v*"] } } },

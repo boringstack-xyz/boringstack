@@ -1,0 +1,51 @@
+name: Merge gate
+
+# The single required check for merges into main. Every PR into main runs it,
+# with no path filter, so it always reports. It waits for every workflow whose
+# path filters match the PR's diff, the same set the release gate waits for on
+# main. See scripts/release/release.mjs.
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: merge-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+jobs:
+  merge-gate:
+    name: merge-gate
+    # Fork PRs stay on GitHub-hosted runners (see AGENTS.md).
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 160
+    steps:
+      # The gate code comes from the base branch, so a PR cannot edit the
+      # guard that judges it. Only the PR's workflow files are read from head.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          sparse-checkout: scripts/release
+          persist-credentials: false
+      # GitHub picks which workflows run from the PR merged into the current
+      # base, not from the PR head. A branch cut before a trigger changed on
+      # main otherwise expects a workflow that never starts and waits out the
+      # deadline.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: pr-head
+          sparse-checkout: .github/workflows
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+      - name: Wait for PR checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_WORKFLOWS_DIR: pr-head/.github/workflows
+        run: bun scripts/release/release.mjs pr-gate

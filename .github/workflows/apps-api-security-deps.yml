@@ -43,6 +43,7 @@ jobs:
         # (every later step gates on this filter's output).
         if: hashFiles('apps/api/bun.lock') != ''
         with:
+          token: ""
           filters: |
             code:
               - 'apps/api/**'
