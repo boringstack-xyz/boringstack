@@ -153,6 +153,7 @@ describe("hostile input", () => {
     expect(denied(`git${options} push --force`)).toBe(true);
     expect(denied(`git${options} status`)).toBe(false);
     expect(denied(`${"A=b ".repeat(5_000)}bash -c 'ls'`)).toBe(false);
+    expect(denied(`git${' "" -C'.repeat(5_000)} x`)).toBe(false);
     expect(performance.now() - started).toBeLessThan(1_000);
   });
 

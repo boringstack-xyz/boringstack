@@ -184,7 +184,7 @@ const switchesBranch = (text: string): boolean =>
 /** `git push` as the subcommand (not a `--grep push` or a message). */
 /* Unambiguous on purpose: each option parses one way, so no input backtracks. */
 const PUSH =
-  /\bgit\b(?:\s+(?:-[Cc]\s+(?:"[^"]*"|'[^']*'|\S+)|--?(?![Cc](?:\s|$))[\w-]+(?:=\S+)?))*\s+push\b(.*)$/u;
+  /\bgit\b(?:\s+(?:-[Cc]\s+(?:"[^"]*"|'[^']*'|[^\s"']\S*)|--?(?![Cc](?:\s|$))[\w-]+(?:=\S+)?))*\s+push\b(.*)$/u;
 
 /** Refspec names that mean "the branch checked out here". */
 const SAME_BRANCH_REFS: ReadonlySet<string> = new Set(["HEAD", "@"]);
