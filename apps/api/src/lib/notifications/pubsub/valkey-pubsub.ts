@@ -2,6 +2,7 @@ import { Redis } from "ioredis";
 import {
   getValkeyAppClientOptions,
   getValkeyConnectionOptions,
+  watchValkeyConnection,
 } from "../../../clients/valkey";
 import { logger } from "../../../config/logger";
 import { getErrorMessage } from "../../errors";
@@ -27,7 +28,17 @@ export class ValkeyPubSub {
      * Publisher is a one-shot command: failing fast keeps a slow
      * Valkey from stalling the request that is publishing.
      */
-    this.publisher ??= new Redis(getValkeyAppClientOptions());
+    if (this.publisher === null) {
+      const publisher = new Redis(getValkeyAppClientOptions());
+
+      watchValkeyConnection(publisher, "pubsub publisher", (err: Error) => {
+        logger.error("Valkey publisher error", {
+          event: "notifications.pubsub.publish_failed",
+          error: err.message,
+        });
+      });
+      this.publisher = publisher;
+    }
 
     try {
       await this.publisher.publish(channel, message);
@@ -71,7 +82,7 @@ export class ValkeyPubSub {
       }
     });
 
-    client.on("error", (err: Error) => {
+    watchValkeyConnection(client, "pubsub", (err: Error) => {
       logger.error("Valkey subscriber error", {
         event: "notifications.pubsub.subscribe_error",
         channel,

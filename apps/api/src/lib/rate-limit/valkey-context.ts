@@ -4,7 +4,11 @@ import type {
   Options as RateLimitOptions,
 } from "elysia-rate-limit";
 
-import { getValkeyAppClientOptions } from "../../clients/valkey";
+import {
+  getValkeyAppClientOptions,
+  isValkeyDown,
+  watchValkeyConnection,
+} from "../../clients/valkey";
 import { logger } from "../../config/logger";
 import { getErrorMessage } from "../errors";
 import { nowMs } from "../time/now";
@@ -88,7 +92,7 @@ export class ValkeyRateLimitContext implements RateLimitContext {
     this.client = client;
     this.policy = policy;
 
-    this.client.on("error", (err: Error) => {
+    watchValkeyConnection(this.client, "rate-limit", (err: Error) => {
       logger.warn("Rate-limit Valkey client error", {
         event: "cache_valkey_error",
         error: err.message,
@@ -187,10 +191,14 @@ export class ValkeyRateLimitContext implements RateLimitContext {
         start: nextResetMs - durationMs,
       };
     } catch (error: unknown) {
-      logger.warn("Rate-limit Valkey increment failed; allowing request", {
-        event: "cache_valkey_error",
-        error: getErrorMessage(error),
-      });
+      // The outage itself is logged once by watchValkeyConnection.
+      logger[isValkeyDown() ? "debug" : "warn"](
+        "Rate-limit Valkey increment failed; allowing request",
+        {
+          event: "cache_valkey_error",
+          error: getErrorMessage(error),
+        }
+      );
 
       return this.permissiveFallback(now, durationMs);
     }
@@ -200,10 +208,14 @@ export class ValkeyRateLimitContext implements RateLimitContext {
     try {
       await this.client.decr(buildKey(this.namespace, key));
     } catch (error: unknown) {
-      logger.warn("Rate-limit Valkey decrement failed", {
-        event: "cache_valkey_error",
-        error: getErrorMessage(error),
-      });
+      // The outage itself is logged once by watchValkeyConnection.
+      logger[isValkeyDown() ? "debug" : "warn"](
+        "Rate-limit Valkey decrement failed",
+        {
+          event: "cache_valkey_error",
+          error: getErrorMessage(error),
+        }
+      );
     }
   }
 

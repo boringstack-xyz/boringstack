@@ -1,5 +1,9 @@
 import { Worker, type Job, type WorkerOptions } from "bullmq";
-import { BULL_PREFIX, getValkeyConnectionOptions } from "../../clients/valkey";
+import {
+  BULL_PREFIX,
+  getValkeyConnectionOptions,
+  watchValkeyConnection,
+} from "../../clients/valkey";
 import { logger } from "../../config/logger";
 import { runNotificationDispatch } from "../../lib/notifications";
 import { withQueueSpan } from "../../lib/tracing";
@@ -55,12 +59,16 @@ export class NotificationDispatchWorker {
       }
     );
 
-    this.worker.on("error", (err: Error) => {
-      logger.error("Notification dispatch worker error", {
-        event: "notification_dispatch_worker_error",
-        error: err.message,
-      });
-    });
+    watchValkeyConnection(
+      this.worker,
+      "notification-dispatch worker",
+      (err: Error) => {
+        logger.error("Notification dispatch worker error", {
+          event: "notification_dispatch_worker_error",
+          error: err.message,
+        });
+      }
+    );
   }
 
   private async processJob(

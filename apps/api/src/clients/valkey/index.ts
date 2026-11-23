@@ -3,3 +3,8 @@ export {
   getValkeyConnectionOptions,
   getValkeyAppClientOptions,
 } from "./valkey.utils";
+export {
+  isValkeyDown,
+  watchValkeyConnection,
+  watchValkeyQueue,
+} from "./valkey.connection-watch";

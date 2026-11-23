@@ -153,6 +153,7 @@ export const LOG_EVENTS = [
   "queue_fallback_inline",
   "queues_initialized",
   "queues.account_maintenance.initialized",
+  "queues.error",
   "queues.email_delivery.initialized",
   "queues.init_failed",
   "queues.notification_dispatch.initialized",
@@ -170,4 +171,8 @@ export const LOG_EVENTS = [
   "server.swagger_available",
   "uncaught_exception",
   "unhandled_rejection",
+  "valkey.connection.down",
+  "valkey.connection.lost",
+  "valkey.connection.restored",
+  "valkey.connection.retry",
 ] as const;

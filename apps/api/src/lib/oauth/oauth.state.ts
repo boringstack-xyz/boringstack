@@ -1,5 +1,8 @@
 import { Redis } from "ioredis";
-import { getValkeyAppClientOptions } from "../../clients/valkey";
+import {
+  getValkeyAppClientOptions,
+  watchValkeyConnection,
+} from "../../clients/valkey";
 import { logger } from "../../config/logger";
 import { OAUTH_STATE_PREFIX, OAUTH_STATE_TTL_SECONDS } from "./oauth.constants";
 import type { IStoredState } from "./oauth.types";
@@ -24,7 +27,7 @@ class OAuthStateStore {
       getValkeyAppClientOptions({ connectTimeout: 500 })
     );
 
-    redisClient.on("error", (err: Error) => {
+    watchValkeyConnection(redisClient, "oauth-state", (err: Error) => {
       logger.warn("OAuth state Valkey error", {
         event: "oauth_state_valkey_error",
         error: err.message,

@@ -54,3 +54,14 @@ The `cache-keys` plugin requires:
 provider is process-local — use Valkey for production deployments with
 
 > 1 replica.
+
+## Connection errors
+
+A new ioredis client or BullMQ worker attaches its `error` handler through
+`watchValkeyConnection(client, "<source>", onOtherError)` from
+`src/clients/valkey`, never `client.on("error", …)` directly. Connection
+failures from every client feed one shared outage log (one WARN when lost,
+one INFO when back, one ERROR if it stays down for two minutes), so a
+Valkey restart doesn't flood the log. `onOtherError` gets everything else.
+BullMQ queues use `watchQueueConnection` from `src/queues/queue-watch.ts`,
+which wraps `watchValkeyQueue`.
