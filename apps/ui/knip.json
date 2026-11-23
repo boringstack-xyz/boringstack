@@ -20,6 +20,7 @@
     "tests/**/*.ts",
     "!tests/lint-meta/fixtures/**"
   ],
+  "ignoreDependencies": ["shadcn"],
   "ignoreExportsUsedInFile": true,
   "include": ["files", "dependencies", "unlisted", "exports", "types"]
 }
