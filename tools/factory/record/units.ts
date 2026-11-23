@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -126,15 +127,35 @@ const pathspec = (unit: IUnit): string[] => {
   ];
 };
 
-/** Changes whenever the unit's committed code or its working tree changes. */
+/**
+ * The unit's content: every tracked or new (not ignored) file and what it
+ * holds now. Staging and committing do not change it; editing, adding or
+ * deleting a file does. So a pass recorded before a commit still holds after.
+ */
 export const fingerprintUnit = (root: string, unit: IUnit): string => {
-  const spec = pathspec(unit);
-  const head = git(root, ["ls-files", "-s", ...spec]) ?? "";
-  const status = git(root, ["status", "--porcelain", ...spec]) ?? "";
-  const diff = git(root, ["diff", "HEAD", ...spec]) ?? "";
+  const files = (
+    git(root, [
+      "ls-files",
+      "--cached",
+      "--others",
+      "--exclude-standard",
+      ...pathspec(unit),
+    ]) ?? ""
+  )
+    .split("\n")
+    .filter((file) => file !== "" && existsSync(join(root, file)))
+    .sort();
+  const run = spawnSync("git", ["-C", root, "hash-object", "--stdin-paths"], {
+    input: files.join("\n"),
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  const hashes = run.status === 0 ? run.stdout.trim().split("\n") : [];
 
   return createHash("sha256")
-    .update(`${head}\n${status}\n${diff}`)
+    .update(
+      files.map((file, index) => `${file} ${hashes[index] ?? "?"}`).join("\n")
+    )
     .digest("hex");
 };
 
