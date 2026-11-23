@@ -52,7 +52,7 @@ Predicates each return `string[]` and fan into one aggregated check, so every pr
 - **Email**: Production requires the matching email-provider credentials.
 - **URLs**: FRONTEND_URL, PUBLIC_API_URL, and notification settings URLs must be valid http(s) URLs.
 - **OAuth**: Google, GitHub, and LinkedIn credentials must be supplied as client-id/client-secret pairs.
-- **AI**: AI_ENABLED=true requires the matching OpenAI or Anthropic key.
+- **AI**: AI_ENABLED=true requires the matching OpenAI, Anthropic or OpenRouter key.
 - **Stripe**: BILLING_ENABLED=true requires Stripe secret, webhook secret, and price IDs.
 - **Valkey**: Queues, cache, notification SSE, or OAuth require VALKEY_PASSWORD in production.
 

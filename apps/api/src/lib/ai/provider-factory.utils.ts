@@ -23,6 +23,18 @@ const buildOpenAI = (): IAIProvider | null => {
   return new OpenAIProvider(options);
 };
 
+const buildOpenRouter = (): IAIProvider | null => {
+  if (env.OPENROUTER_API_KEY === "") {
+    return null;
+  }
+
+  return new OpenAIProvider({
+    apiKey: env.OPENROUTER_API_KEY,
+    baseURL: env.OPENROUTER_BASE_URL,
+    providerName: "openrouter",
+  });
+};
+
 const buildAnthropic = (): IAIProvider | null => {
   return env.ANTHROPIC_API_KEY === ""
     ? null
@@ -37,6 +49,8 @@ const buildAnthropic = (): IAIProvider | null => {
  *                                works for OpenAI, OpenRouter, Ollama,
  *                                vLLM, LM Studio, Together, Groq, etc.)
  *   AI_PROVIDER=anthropic      → AnthropicProvider (native API)
+ *   AI_PROVIDER=openrouter     → OpenAIProvider pointed at OPENROUTER_BASE_URL
+ *                                (chat only; streaming is in stream-provider.ts)
  *
  * If the chosen provider's API key is missing, falls back to noop so call
  * sites stay unconditional during local dev / boot.
@@ -51,6 +65,8 @@ export const buildAIProvider = (): IAIProvider => {
       return buildOpenAI() ?? new NoopAIProvider();
     case "anthropic":
       return buildAnthropic() ?? new NoopAIProvider();
+    case "openrouter":
+      return buildOpenRouter() ?? new NoopAIProvider();
     case "noop":
       return new NoopAIProvider();
   }

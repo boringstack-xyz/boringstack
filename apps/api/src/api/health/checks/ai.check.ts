@@ -11,6 +11,7 @@ import { nowMs } from "../../../lib/time/now";
  *   AI_ENABLED=false                            → "ok"   (feature off)
  *   AI_PROVIDER=openai,    no OPENAI_API_KEY    → "down"
  *   AI_PROVIDER=anthropic, no ANTHROPIC_API_KEY → "down"
+ *   AI_PROVIDER=openrouter, no OPENROUTER_API_KEY → "down"
  *   otherwise                                   → "ok"
  */
 const runAICheck = (): Promise<IReadinessResult> => {
@@ -36,6 +37,15 @@ const runAICheck = (): Promise<IReadinessResult> => {
       status: "down",
       latencyMs: latency(),
       message: "AI_PROVIDER=anthropic but ANTHROPIC_API_KEY is missing",
+    });
+  }
+
+  if (env.AI_PROVIDER === "openrouter" && env.OPENROUTER_API_KEY === "") {
+    return Promise.resolve({
+      name: "ai",
+      status: "down",
+      latencyMs: latency(),
+      message: "AI_PROVIDER=openrouter but OPENROUTER_API_KEY is missing",
     });
   }
 

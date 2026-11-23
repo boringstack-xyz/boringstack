@@ -172,7 +172,12 @@ export const envSchema = t.Object({
 
   AI_ENABLED: t.Boolean({ default: false }),
   AI_PROVIDER: t.Union(
-    [t.Literal("openai"), t.Literal("anthropic"), t.Literal("noop")],
+    [
+      t.Literal("openai"),
+      t.Literal("anthropic"),
+      t.Literal("openrouter"),
+      t.Literal("noop"),
+    ],
     { default: "openai" }
   ),
   OPENAI_API_KEY: t.String({ default: "" }),
@@ -181,6 +186,14 @@ export const envSchema = t.Object({
   /** JSON object of extra headers, e.g. for OpenRouter ranking. */
   OPENAI_DEFAULT_HEADERS: t.String({ default: "" }),
   ANTHROPIC_API_KEY: t.String({ default: "" }),
+
+  /** AI_PROVIDER=openrouter: chat through OpenRouter, and streaming with a per-turn budget. */
+  OPENROUTER_API_KEY: t.String({ default: "" }),
+  OPENROUTER_BASE_URL: t.String({ default: "https://openrouter.ai/api/v1" }),
+  /** Whether OpenRouter may route prompts to providers that train on them. Fails closed to "deny". */
+  OPENROUTER_DATA_COLLECTION: t.Union([t.Literal("allow"), t.Literal("deny")], {
+    default: "deny",
+  }),
 
   /*
    * Domain claiming for B2B mode. When true, the first verified signup

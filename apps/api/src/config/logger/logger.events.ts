@@ -17,6 +17,7 @@ export const LOG_EVENTS = [
   "ai_default_headers_invalid",
   "ai_noop",
   "audit.recorded",
+  "ai_stream_failed",
   "audit_log_write_failed",
   "auth.login.email_not_verified",
   "auth.login.invalid_password",

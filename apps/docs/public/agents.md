@@ -139,7 +139,7 @@ The toggles you are most likely to be asked for, all in `infra/compose/compose/.
 | `BILLING_ENABLED`            | Stripe checkout + webhooks                         |
 | `EMAIL_PROVIDER`             | `resend` \| `sendgrid` \| `smtp`                   |
 | `OAUTH_PROVIDERS`            | e.g. `google,github`                               |
-| `AI_ENABLED` / `AI_PROVIDER` | `openai` \| `anthropic`                            |
+| `AI_ENABLED` / `AI_PROVIDER` | `openai` \| `anthropic` \| `openrouter`            |
 
 Turning the optional overlays off is the right move on a small machine:
 `WITH_OBSERVABILITY=0 WITH_GLITCHTIP=0`.
