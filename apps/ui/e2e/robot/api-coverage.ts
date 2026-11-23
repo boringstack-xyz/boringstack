@@ -35,6 +35,8 @@ const DELETE = "deletes its workspace from the danger zone";
 const RESET = "asks for a password reset and is told to check email";
 const REMOVED = "is removed, with everything it made";
 const UNKNOWN = "log in refuses an unknown account with a message";
+const PRODUCT_EVENTS =
+  "answers the one-question prompt and sends a product event";
 
 const PROBE =
   "Infrastructure probe at the API root, outside the app's /api path: the uptime check and the cluster read it, not a person.";
@@ -102,6 +104,11 @@ export const ROBOT_API_COVERAGE: Readonly<Record<string, IRobotCoverage>> = {
   },
   "GET /api/v1/dashboard/summary": { journeys: [FIRST_LOGIN] },
   "GET /api/v1/dashboard/activity": { journeys: [FIRST_LOGIN] },
+  "POST /api/v1/feedback/{moment}/show": {
+    journeys: [FIRST_LOGIN, PRODUCT_EVENTS]
+  },
+  "PUT /api/v1/feedback/{moment}": { journeys: [PRODUCT_EVENTS] },
+  "POST /api/v1/product-events/": { journeys: [PRODUCT_EVENTS] },
   "POST /api/v1/notifications/push/subscribe": { notChecked: PUSH },
   "DELETE /api/v1/notifications/push/subscribe": { notChecked: PUSH },
   "GET /api/v1/notifications/push/subscriptions": { notChecked: PUSH },

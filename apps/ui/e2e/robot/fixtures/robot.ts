@@ -120,6 +120,13 @@ export async function dismissInterruptions(page: Page): Promise<void> {
         .click();
     }
   );
+  /* The one-question feedback card never blocks a journey: it is closed like a person would. */
+  await page.addLocatorHandler(
+    page.getByRole("region", { name: /quick question/iu }),
+    async (card) => {
+      await card.getByRole("button", { name: /not now/iu }).click();
+    }
+  );
 }
 
 /**
