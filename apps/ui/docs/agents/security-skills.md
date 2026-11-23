@@ -37,7 +37,7 @@ content-type validation on user upload flows):
 /security-review
 ```
 
-That skill is project-owned at `.claude/skills/security-review.md`
+That skill is project-owned at `.claude/skills/security-review/SKILL.md`
 and orchestrates the agent skills above plus stack-specific
 invariants.
 

@@ -36,8 +36,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-      start_interval: 2s
-      start_period: 15s
+      # Probe every second while starting, so dependants start as soon as
+      # it is ready instead of up to one 5s interval later.
+      start_period: 30s
+      start_interval: 1s
     deploy:
       resources:
         limits:
@@ -347,8 +349,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
-      start_interval: 2s
       start_period: 15s
+      start_interval: 1s
     networks:
       - backend
       - frontend

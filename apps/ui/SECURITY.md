@@ -50,7 +50,7 @@ copy-pasteable fix commands — no auto-apply.
 
 `.claude/settings.json` declares the Trail of Bits and Ghost Security
 plugin marketplaces. The `/security-review` skill at
-`.claude/skills/security-review.md` orchestrates them and adds
+`.claude/skills/security-review/SKILL.md` orchestrates them and adds
 apps/ui invariants:
 
 - No raw `fetch` outside `@/lib/api/client.ts`

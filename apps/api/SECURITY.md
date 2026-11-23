@@ -81,7 +81,7 @@ copy-pasteable fix commands — no auto-apply.
 
 `.claude/settings.json` declares the Trail of Bits and Ghost Security
 plugin marketplaces. The `/security-review` skill at
-`.claude/skills/security-review.md` orchestrates those generic skills and
+`.claude/skills/security-review/SKILL.md` orchestrates those generic skills and
 adds BoringStack invariants:
 
 - ACL coverage on every account-scoped table
