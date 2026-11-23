@@ -5,6 +5,10 @@
   "a11y": {
     "skipToContent": "Zum Hauptinhalt springen"
   },
+  "support": {
+    "ask": "Hilfe",
+    "askLabel": "Hilfe vom Team erhalten"
+  },
   "common": {
     "loading": "Wird geladen…",
     "close": "Schließen",

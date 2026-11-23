@@ -18,19 +18,43 @@ if (typeof globalThis.ResizeObserver === "undefined") {
 /*
  * jsdom has neither IntersectionObserver nor element scrolling. Components
  * that lazy-load on visibility or scroll a row into view would throw on mount.
- * The stubs never fire callbacks: tests that need visibility must drive it.
+ * The stub records every instance so a test can push a sentinel "into view"
+ * with `trigger(true)`; without a trigger it never fires on its own.
  */
-if (typeof globalThis.IntersectionObserver === "undefined") {
-  class IntersectionObserverStub {
-    public readonly root = null;
-    public readonly rootMargin = "";
-    public readonly thresholds: readonly number[] = [];
-    public observe = vi.fn();
-    public unobserve = vi.fn();
-    public disconnect = vi.fn();
-    public takeRecords = vi.fn((): IntersectionObserverEntry[] => []);
+export const intersectionObservers: IntersectionObserverStub[] = [];
+
+export class IntersectionObserverStub {
+  public readonly root = null;
+  public readonly rootMargin = "";
+  public readonly thresholds: readonly number[] = [];
+  public readonly targets = new Set<Element>();
+  public takeRecords = vi.fn((): IntersectionObserverEntry[] => []);
+  public observe = vi.fn((target: Element) => {
+    this.targets.add(target);
+  });
+  public unobserve = vi.fn((target: Element) => {
+    this.targets.delete(target);
+  });
+  public disconnect = vi.fn(() => {
+    this.targets.clear();
+  });
+
+  public constructor(
+    private readonly callback: (
+      entries: { isIntersecting: boolean; target: Element }[]
+    ) => void = () => undefined
+  ) {
+    intersectionObservers.push(this);
   }
 
+  public trigger(isIntersecting: boolean): void {
+    this.callback(
+      [...this.targets].map((target) => ({ isIntersecting, target }))
+    );
+  }
+}
+
+if (typeof globalThis.IntersectionObserver === "undefined") {
   vi.stubGlobal("IntersectionObserver", IntersectionObserverStub);
 }
 
