@@ -506,9 +506,10 @@ export default tseslint.config(
              * `pg_advisory_xact_lock` has no query-builder equivalent, and
              * the seat cap needs it: counting members and inserting one
              * without the lock is a check-then-act that concurrent
-             * acceptances walk straight through.
+             * acceptances walk straight through. The helper is the only
+             * place that issues it.
              */
-            "**/src/lib/acl/enforce-entitlement.ts",
+            "**/src/clients/postgres/advisory-lock.ts",
           ],
         },
       ],
