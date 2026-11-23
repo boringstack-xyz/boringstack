@@ -144,3 +144,20 @@ describe("dev containers", () => {
     );
   });
 });
+
+describe("hostile input", () => {
+  test("is decided quickly, however many options precede push", () => {
+    const options = " -C -C".repeat(5_000);
+    const started = performance.now();
+
+    expect(denied(`git${options} push --force`)).toBe(true);
+    expect(denied(`git${options} status`)).toBe(false);
+    expect(denied(`${"A=b ".repeat(5_000)}bash -c 'ls'`)).toBe(false);
+    expect(performance.now() - started).toBeLessThan(1_000);
+  });
+
+  test("still reads -C and -c options before push", () => {
+    expect(denied("git -C /w -c user.name=x push --force")).toBe(true);
+    expect(denied("git -Cfoo push origin main")).toBe(true);
+  });
+});

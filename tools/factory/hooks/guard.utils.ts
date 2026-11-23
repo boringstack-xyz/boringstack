@@ -182,8 +182,9 @@ const switchesBranch = (text: string): boolean =>
   (/\bgit\b.*\bcheckout\b/u.test(text) && !/\s--(\s|$)/u.test(text));
 
 /** `git push` as the subcommand (not a `--grep push` or a message). */
+/* Unambiguous on purpose: each option parses one way, so no input backtracks. */
 const PUSH =
-  /\bgit\b(?:\s+(?:-[Cc]\s+(?:"[^"]*"|'[^']*'|\S+)|--?[\w-]+(?:=\S+)?))*\s+push\b(.*)$/u;
+  /\bgit\b(?:\s+(?:-[Cc]\s+(?:"[^"]*"|'[^']*'|\S+)|--?(?![Cc](?:\s|$))[\w-]+(?:=\S+)?))*\s+push\b(.*)$/u;
 
 /** Refspec names that mean "the branch checked out here". */
 const SAME_BRANCH_REFS: ReadonlySet<string> = new Set(["HEAD", "@"]);
@@ -318,7 +319,9 @@ const invokes = (
 ): boolean =>
   command.split(/[;&|\n`]+|\$\(|\(/u).some((piece) => {
     const inner =
-      /^\s*(?:\S+=\S*\s+)*(\S+)\s+-c\s+(["'])([\s\S]*)\2?\s*$/u.exec(piece);
+      /^\s*(?:[A-Za-z_]\w*=\S*\s+)*(\S+)\s+-c\s+(["'])([\s\S]*)\2?\s*$/u.exec(
+        piece
+      );
 
     if (inner?.[1] !== undefined && SHELLS.has(inner[1])) {
       return invokes(inner[3] ?? "", program, subcommands);
