@@ -1,0 +1,139 @@
+name: Agent review
+
+# The independent reviewer of an agent PR (agent/<lane>/<slug>). It has not seen
+# the author's reasoning: it reads the diff and the issue text, runs the lane's
+# scope check, and writes a verdict into the Review section of the PR's
+# verification record (the PR body). Approval is the job passing; a rejection is
+# the job failing, which agent-revise.yml acts on. The reviewer's helpers come
+# from the base branch, so a PR cannot change the code that judges it.
+# Triggered by a PR opened or updated by a person or the agent, or by the
+# triage workflow, which opens PRs with GITHUB_TOKEN (that does not trigger
+# pull_request, so it dispatches this workflow with the PR number).
+# Kill switch: repository variable AGENTS_ENABLED must be 1.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Number of an open agent PR to review.
+        required: true
+        type: string
+
+# One PR, one run at a time: a revision waits for the review that rejected it,
+# and the review of a revision waits for the revision. Queued runs are not
+# cancelled, because a cancelled revision would leave a half-pushed branch.
+concurrency:
+  group: agent-pr-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  review:
+    name: agent-review
+    if: >-
+      vars.AGENTS_ENABLED == '1' &&
+      (github.event_name == 'workflow_dispatch' ||
+        (startsWith(github.head_ref, 'agent/') &&
+         !github.event.pull_request.draft &&
+         github.event.pull_request.head.repo.full_name == github.repository))
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout the trusted base (reviewer helpers)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: trusted
+          sparse-checkout: |
+            .github/actions/agent-setup
+            tools/factory
+          persist-credentials: false
+
+      - name: Checkout the PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Check out the PR head
+        run: gh pr checkout "$PR_NUMBER"
+
+      - name: Agent setup (kill switch, bun, git identity)
+        uses: ./trusted/.github/actions/agent-setup
+        with:
+          agents_enabled: ${{ vars.AGENTS_ENABLED }}
+
+      - name: Lane and scope
+        id: lane
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/review"
+          mkdir -p "$work"
+          echo "WORK=$work" >> "$GITHUB_ENV"
+          lane="$(cut -d/ -f2 <<<"$(gh pr view "$PR_NUMBER" --json headRefName --jq .headRefName)")"
+          echo "lane=$lane" >> "$GITHUB_OUTPUT"
+          gh pr diff "$PR_NUMBER" --name-only | bun trusted/tools/factory/cli.ts lanes scope "$lane" \
+            || echo "scope=refused" >> "$GITHUB_OUTPUT"
+          echo "The change is checked against the $lane lane."
+
+      - name: Independent review
+        id: review
+        uses: anthropics/claude-code-action@db77d4d3c98f3f6380e7cd45ffba2342a3dbde3c # v1.0.254
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            You are the independent reviewer of pull request #${{ env.PR_NUMBER }} in this
+            repository. You did not write it and you have not seen the author's reasoning.
+            Read the diff (gh pr diff ${{ env.PR_NUMBER }}) and the issue it addresses (the
+            Issue line of the PR body, gh issue view). Do not take the PR body's claims on
+            trust: check them against the code.
+
+            Check: the diff fixes the cause named in the issue and nothing else; no error is
+            swallowed, hidden or downgraded; the regression test exercises the failing path
+            and would fail on the code before the fix; no workflow, infrastructure, release
+            or factory file changed; nothing secret or personal is logged or committed.
+
+            Write ${{ runner.temp }}/review/review.md. Its first line is exactly
+            "Verdict: approve" or "Verdict: reject". After it, list each finding with the
+            file and line, and what would fix it. Write nothing else there.
+          claude_args: >-
+            --max-turns 30
+            --allowedTools "Read,Grep,Glob,Write,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(git log:*),Bash(git show:*),Bash(git diff:*)"
+
+      - name: Record the verdict in the PR's record
+        if: steps.review.outcome == 'success'
+        run: |
+          set -euo pipefail
+          gh pr view "$PR_NUMBER" --json body --jq .body > "$WORK/body.md"
+          bun trusted/tools/factory/cli.ts lanes review-body "$WORK/body.md" "$WORK/review.md" "$WORK/new-body.md"
+          gh pr edit "$PR_NUMBER" --body-file "$WORK/new-body.md"
+
+      - name: Verdict
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.lane.outputs.scope }}" = "refused" ]; then
+            echo "::error::The change is outside its lane. See the lane check above."
+            exit 1
+          fi
+          if [ "${{ steps.review.outcome }}" != "success" ]; then
+            echo "::error::The reviewer did not finish. The PR is not approved."
+            exit 1
+          fi
+          verdict="$(head -n 1 "$WORK/review.md")"
+          if [ "$verdict" != "Verdict: approve" ]; then
+            echo "::error::Rejected: $verdict"
+            exit 1
+          fi
+          echo "Approved by the independent review."
