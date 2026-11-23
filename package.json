@@ -4,6 +4,8 @@
   "description": "BoringStack monorepo \u2014 api, ui, docs, and infra templates",
   "scripts": {
     "regen": "bash scripts/stack-regen.sh",
+    "skills:sync": "bun scripts/sync-agent-skills.ts",
+    "skills:check": "bun scripts/sync-agent-skills.ts --check",
     "check": "bash scripts/stack-check.sh",
     "check:full": "bash scripts/stack-check.sh --full",
     "rename:project": "bash scripts/rename-project.sh",

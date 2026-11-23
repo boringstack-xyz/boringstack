@@ -109,7 +109,7 @@ Install once. After that, humans and agents can both invoke `/sharp-edges src/au
 
 ## Layer 3: project-owned review skill
 
-`.claude/skills/security-review.md` in each template orchestrates Layer 2 and adds checks the generic tools can't make. For apps/api:
+`.claude/skills/security-review/SKILL.md` in each template orchestrates Layer 2 and adds checks the generic tools can't make. For apps/api:
 
 - ACL coverage on every account-scoped table
 - Stripe webhook idempotency (`stripe_event_id` dedup)

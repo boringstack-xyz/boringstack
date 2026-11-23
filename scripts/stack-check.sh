@@ -33,6 +33,7 @@ if [[ -d "$BORINGSTACK_DOCS_DIR" ]]; then
 fi
 
 run_check "tooling quality" bun run agent:quality
+run_check "agent skills mirror" bun scripts/sync-agent-skills.ts --check
 
 run_check "ACL drift" bash -c "cd \"$BORINGSTACK_API_DIR\" && bun run generate:acl-types:check"
 run_check "api lint-meta docs" bash -c "cd \"$BORINGSTACK_API_DIR\" && bun run check:lint-meta-docs"
