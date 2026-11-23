@@ -26,6 +26,7 @@ export function loadEnv(): IEnv {
     VITE_SENTRY_DSN: raw.VITE_SENTRY_DSN,
     VITE_AUTH_NAMESPACE: emptyToUndefined(raw.VITE_AUTH_NAMESPACE),
     VITE_VAPID_PUBLIC_KEY: raw.VITE_VAPID_PUBLIC_KEY,
+    VITE_GA_MEASUREMENT_ID: emptyToUndefined(raw.VITE_GA_MEASUREMENT_ID),
     VITE_LOCALES: emptyToUndefined(raw.VITE_LOCALES),
     MODE: raw.MODE,
     DEV: raw.DEV,

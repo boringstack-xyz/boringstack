@@ -109,6 +109,7 @@ jobs:
             VITE_PUBLIC_URL=${{ vars.VITE_PUBLIC_URL }}
             VITE_SENTRY_DSN=${{ vars.VITE_SENTRY_DSN }}
             VITE_VAPID_PUBLIC_KEY=${{ vars.VITE_VAPID_PUBLIC_KEY }}
+            VITE_GA_MEASUREMENT_ID=${{ vars.VITE_GA_MEASUREMENT_ID }}
           labels: org.opencontainers.image.revision=${{ github.sha }}
           cache-from: type=gha,scope=release-ui
           cache-to: type=gha,scope=release-ui,mode=max

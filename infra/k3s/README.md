@@ -65,7 +65,8 @@ The target cluster must provide these (all common, operator-installable):
 5. Repo URL. Set `source.repoURL` in `argocd/boringstack-prod.yaml` to your fork,
    and add it to ArgoCD as a repo credential.
 6. Public UI settings. `VITE_PUBLIC_URL`, `VITE_SENTRY_DSN` and
-   `VITE_VAPID_PUBLIC_KEY` are GitHub repository variables read by
+   `VITE_VAPID_PUBLIC_KEY` and `VITE_GA_MEASUREMENT_ID` (optional, empty turns
+   analytics off) are GitHub repository variables read by
    `.github/workflows/production-release.yml`. No domain is hard-coded there.
 
 ### ClusterIssuer pitfall
