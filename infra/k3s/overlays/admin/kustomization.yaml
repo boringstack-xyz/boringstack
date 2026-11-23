@@ -1,0 +1,21 @@
+# Operator dashboard for the prod namespace. Applied by an operator, not synced
+# by the coordinated release: the release pins the four public images only.
+#
+#   kubectl apply -k infra/k3s/overlays/admin
+#
+# Before the first apply, pin the two images to a digest from the admin image
+# build (see the images block below). `latest` is a placeholder and must not
+# reach the cluster.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: boringstack-prod
+
+resources:
+  - ../../base/admin
+
+images:
+  - name: ghcr.io/boringstack-xyz/boringstack-admin-api
+    newTag: latest # replace with a sha-<digest> pin
+  - name: ghcr.io/boringstack-xyz/boringstack-admin
+    newTag: latest # replace with a sha-<digest> pin

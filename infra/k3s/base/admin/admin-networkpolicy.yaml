@@ -1,0 +1,45 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: admin-network-policy
+  namespace: boringstack
+spec:
+  podSelector:
+    matchLabels:
+      app: admin
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Private-address ranges only, as defence in depth: this pod is never
+    # behind Traefik. Narrow these to your LAN CIDR in the overlay if you
+    # publish the Service on purpose.
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+        - ipBlock:
+            cidr: 172.16.0.0/12
+        - ipBlock:
+            cidr: 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # Reaches the admin API only, through nginx's /api proxy, plus DNS.
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - podSelector:
+            matchLabels:
+              app: admin-api
+      ports:
+        - protocol: TCP
+          port: 7340

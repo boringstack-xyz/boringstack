@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-api
+  namespace: boringstack
+spec:
+  # One replica on purpose: the operator is resolved at boot and the admin API
+  # is an internal tool, not a scaled service.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: admin-api
+  template:
+    metadata:
+      labels:
+        app: admin-api
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      # The admin API never calls the Kubernetes API.
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: runtime-tmp
+          emptyDir:
+            sizeLimit: 256Mi
+      containers:
+        - name: admin-api
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          image: ghcr.io/boringstack-xyz/boringstack-admin-api:latest
+          imagePullPolicy: Always
+          # Runs dist/admin.js, the bundle built alongside the public API.
+          command: ["bun", "--no-install", "run", "dist/admin.js"]
+          volumeMounts:
+            - name: runtime-tmp
+              mountPath: /tmp
+          ports:
+            - name: http
+              containerPort: 7340
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: boringstack-secrets
+          env:
+            - name: TMPDIR
+              value: /tmp
+            - name: BUN_RUNTIME_TRANSPILER_CACHE_PATH
+              value: /tmp/bun-transpiler
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: boringstack-db-app
+                  key: uri
+            - name: DATABASE_SSL_CA
+              valueFrom:
+                secretKeyRef:
+                  name: boringstack-db-ca
+                  key: ca.crt
+            - name: VALKEY_HOST
+              value: valkey
+            - name: VALKEY_PORT
+              value: "6379"
+            - name: ADMIN_PORT
+              value: "7340"
+            - name: NODE_ENV
+              value: production
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 7340
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 7340
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 7340
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "512Mi"
+              cpu: "250m"
