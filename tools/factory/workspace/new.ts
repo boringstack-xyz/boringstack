@@ -14,20 +14,34 @@ import { isSafeIssueId, branchFor, slotPorts } from "./paths.utils";
 import { addWorktree, baseExists, fetchBase } from "./worktree";
 import { directUrlOf } from "./preview.utils";
 import { prepareCheckout } from "./prepare";
+import { parseArgs, isParseError } from "./args.utils";
 
 const BASE = "origin/main";
 
 export const newWorkspace: IFactoryCommand = {
   name: "workspace new",
   summary: "Claim a free slot and create a worktree for an issue",
-  usage: "<issue-id>",
+  usage: "<issue-id> [--base <ref>]",
   run: (args, context) => {
-    const issue = args[0] ?? "";
+    const parsed = parseArgs(args, ["--base"], []);
 
-    if (!isSafeIssueId(issue) || args.length !== 1) {
+    if (isParseError(parsed) || parsed.rest.length !== 1) {
       return Promise.resolve(
         failed(
-          "give one issue id: letters, digits, dots, dashes or underscores (for example demo-1)"
+          isParseError(parsed)
+            ? parsed.error
+            : "give one issue id: letters, digits, dots, dashes or underscores (for example demo-1)"
+        )
+      );
+    }
+
+    const issue = parsed.rest[0] ?? "";
+    const base = parsed.values["--base"] ?? BASE;
+
+    if (!isSafeIssueId(issue)) {
+      return Promise.resolve(
+        failed(
+          "the issue id may use letters, digits, dots, dashes and underscores only"
         )
       );
     }
@@ -54,12 +68,16 @@ export const newWorkspace: IFactoryCommand = {
     }
 
     mkdirSync(workspacesDirOf(runtime.main), { recursive: true });
-    const fetched = fetchBase(runtime.main);
+    /*
+     * Only the default base is refreshed from the remote; --base names a ref
+     * as it is (a branch under test, for example).
+     */
+    const fetched = base === BASE ? fetchBase(runtime.main) : false;
 
-    if (!baseExists(runtime.main, BASE)) {
+    if (!baseExists(runtime.main, base)) {
       return Promise.resolve(
         blocked(
-          `there is no ${BASE} to start from; fetch it (git fetch origin main) and run again`
+          `there is no ${base} to start from; fetch it (git fetch origin main) and run again`
         )
       );
     }
@@ -79,7 +97,7 @@ export const newWorkspace: IFactoryCommand = {
       );
     }
 
-    const added = addWorktree(runtime.main, path, branch, BASE);
+    const added = addWorktree(runtime.main, path, branch, base);
 
     if (!added.ok) {
       releaseClaim(runtime.shared, claim.slot);
@@ -96,7 +114,7 @@ export const newWorkspace: IFactoryCommand = {
     const ports = slotPorts(claim.slot);
     const lines = [
       `workspace ${issue} is slot ${String(claim.slot)} at ${path}`,
-      `branch ${branch}, started from ${BASE}${fetched ? "" : " (not refreshed: offline)"}`,
+      `branch ${branch}, started from ${base}${base === BASE && !fetched ? " (not refreshed: offline)" : ""}`,
       `UI ${directUrlOf(claim.slot)}  API http://127.0.0.1:${String(ports.api)}`,
       "next: bun run factory up",
     ];
