@@ -38,8 +38,8 @@ to other scoped audits.
 
 ## Scope (read only these)
 
-- `.github/workflows/**` (all 24: per-app ci/validate/release, `*-security-deps`,
-  `*-security-sast`, `*-security-secrets`, drift checks, bundle-diff, linkcheck, compose
+- `.github/workflows/**` (per-app ci/validate/release, `*-security-deps`,
+  `*-security-sast`, `security-secrets`, drift checks, bundle-diff, linkcheck, compose
   smoke + playwright e2e)
 - `scripts/ci/**`, `scripts/stack-*.sh`, `scripts/ci/pre-push*.{sh,json}` (local gate)
 - `infra/**` (compose files, bootstrap/OpenTofu) — pipeline/security aspects only

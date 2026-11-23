@@ -4,7 +4,8 @@ import { basename } from "node:path";
 import type { IMetaRule, IViolation } from "../../types";
 
 const TOP_LEVEL_KEY_REGEX = /^\S/u;
-const SECURITY_WORKFLOW_REGEX = /-security-(?:sast|secrets|deps)\.ya?ml$/u;
+const SECURITY_WORKFLOW_REGEX =
+  /(?:^|-)security-(?:sast|secrets|deps)\.ya?ml$/u;
 
 /*
  * Security scans (SAST, secret, dependency) must run to completion for every

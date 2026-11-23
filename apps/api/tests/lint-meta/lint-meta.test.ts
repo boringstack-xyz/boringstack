@@ -954,6 +954,24 @@ describe("checkWorkflowSecurityNoCancel", () => {
     }
   });
 
+  test("flags the consolidated security-secrets workflow when it cancels in progress", () => {
+    const root = mkdtempSync(join(tmpdir(), "lint-meta-secnocancel-"));
+
+    try {
+      const file = writeNamedWorkflow(
+        root,
+        "security-secrets.yml",
+        "concurrency:\n  group: x-${{ github.ref }}\n  cancel-in-progress: true\n\njobs: {}\n"
+      );
+
+      expect(
+        checkWorkflowSecurityNoCancel(file).map((row) => row.rule)
+      ).toEqual(["github-actions-security-no-cancel"]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   test("ignores non-security workflows that cancel in progress", () => {
     const root = mkdtempSync(join(tmpdir(), "lint-meta-secnocancel-"));
 
