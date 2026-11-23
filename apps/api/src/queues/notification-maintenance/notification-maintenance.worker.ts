@@ -1,9 +1,11 @@
 import { Worker, type Job, type WorkerOptions } from "bullmq";
 import { BULL_PREFIX, getValkeyConnectionOptions } from "../../clients/valkey";
+import { lifecycleService } from "../../api/lifecycle";
 import { logger } from "../../config/logger";
 import { dedupService } from "../../lib/notifications";
 import { withQueueSpan } from "../../lib/tracing";
 import {
+  LIFECYCLE_NUDGES_JOB_NAME,
   NOTIFICATION_DEDUP_CLEANUP_JOB_NAME,
   NOTIFICATION_MAINTENANCE_DEFAULTS,
   NOTIFICATION_MAINTENANCE_QUEUE_NAME,
@@ -73,6 +75,12 @@ export class NotificationMaintenanceWorker {
         event: "notifications.dedup.cleanup.completed",
         deletedRows: deleted,
       });
+
+      return;
+    }
+
+    if (job.name === LIFECYCLE_NUDGES_JOB_NAME) {
+      await lifecycleService.sweep();
 
       return;
     }
