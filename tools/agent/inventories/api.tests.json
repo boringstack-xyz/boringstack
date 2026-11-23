@@ -554,6 +554,7 @@
     "[\"tests/config/env/validate.test.ts\",\"rejects the apps/api/.env.example JWT placeholder\"]",
     "[\"tests/config/env/validate.test.ts\",\"rejects the compose api-migrate-dev JWT placeholder leaking into prod\"]",
     "[\"tests/config/env/validate.test.ts\",\"rejects the compose api-migrate-prod JWT placeholder leaking into prod\"]",
+    "[\"tests/config/env/validate.test.ts\",\"rejects the dev stack&apos;s robot secret in production, and accepts none\"]",
     "[\"tests/config/env/validate.test.ts\",\"rejects the well-known test JWT secret in prod\"]",
     "[\"tests/config/env/validate.test.ts\",\"rejects the well-known test MFA encryption key in prod\"]",
     "[\"tests/config/env/validate.test.ts\",\"rejects uppercased exact-match placeholders (case-insensitive)\"]",

@@ -566,6 +566,16 @@ describe("validateEnv", () => {
       expect(() => validateEnv(env)).toThrow(/JWT_SECRET.*placeholder/);
     });
 
+    it("rejects the dev stack's robot secret in production, and accepts none", () => {
+      const env = seedProd();
+
+      expect(() => validateEnv(env)).not.toThrow();
+      env.SYNTHETIC_CHECK_SECRET = "dev-stack-only-verification-robot-0000";
+      expect(() => validateEnv(env)).toThrow(
+        /SYNTHETIC_CHECK_SECRET.*placeholder/
+      );
+    });
+
     it("rejects the compose api-migrate-prod JWT placeholder leaking into prod", () => {
       const env = seedProd();
 

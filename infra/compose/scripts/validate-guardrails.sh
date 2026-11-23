@@ -138,6 +138,9 @@ ALLOWED = {
     # reads api.prod.env instead.
     ("API_DEV_JWT_SECRET", "docker-compose-api-dev-jwt-secret-keys"),
     ("API_DEV_MFA_ENCRYPTION_KEY", "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="),
+    # Opens the verification robot routes on the dev stack only; the API
+    # rejects this exact value in production (validate.ts placeholder list).
+    ("API_DEV_SYNTHETIC_CHECK_SECRET", "dev-stack-only-verification-robot-0000"),
 }
 bad: list[str] = []
 

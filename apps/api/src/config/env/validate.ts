@@ -523,6 +523,8 @@ const PLACEHOLDER_SECRET_EXACT_MATCHES = [
   "api-migrate-placeholder-secret-padded-to-thirty-two",
   "docker-compose-api-dev-jwt-secret-keys",
   "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+  /* The dev stack's verification robot secret (infra/compose/compose/docker-compose.yml). */
+  "dev-stack-only-verification-robot-0000",
 ] as const;
 
 /*
@@ -559,6 +561,8 @@ const PLACEHOLDER_SECRET_FIELDS: readonly {
 }[] = [
   { name: "JWT_SECRET", generator: "openssl rand -base64 48" },
   { name: "MFA_ENCRYPTION_KEY", generator: "openssl rand -base64 32" },
+  /* Empty is allowed (the robot routes stay shut); a known value is not. */
+  { name: "SYNTHETIC_CHECK_SECRET", generator: "openssl rand -hex 32" },
 ];
 
 const checkPlaceholderSecrets = (env: Env): string[] => {
