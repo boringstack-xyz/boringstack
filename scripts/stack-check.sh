@@ -76,6 +76,21 @@ if ((${#FAILED[@]} > 0)); then
   exit 1
 fi
 
+# A caller that verified a skipped check another way (factory verify runs
+# agent:verify, whose sandbox checks OpenAPI drift against this checkout's own
+# API) names it in STACK_CHECK_COVERED; only those skips stop counting.
+if [[ -n "${STACK_CHECK_COVERED:-}" ]]; then
+  REMAINING=()
+  for skipped in "${SKIPPED[@]}"; do
+    if [[ ",${STACK_CHECK_COVERED}," == *",${skipped},"* ]]; then
+      c_yellow "  ${skipped}: skipped here, covered by the caller's own run"
+    else
+      REMAINING+=("$skipped")
+    fi
+  done
+  SKIPPED=("${REMAINING[@]}")
+fi
+
 if ((${#SKIPPED[@]} > 0)); then
   c_yellow "check incomplete: ${#SKIPPED[@]} check(s) skipped (${SKIPPED[*]})"
   c_yellow "Start the API or set OPENAPI_URL, then rerun check."

@@ -54,4 +54,12 @@ export default [
       "prettier/prettier": ["error", formatting],
     },
   },
+  {
+    // The factory's clock is the one place it reads the time.
+    files: ["factory/clock.ts"],
+    rules: {
+      "code-flow/no-bare-date-now": "off",
+      "no-restricted-syntax": "off",
+    },
+  },
 ];

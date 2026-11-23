@@ -31,13 +31,26 @@ require_dir() {
 probe_tcp() { nc -z "$1" "$2" 2>/dev/null; }
 
 require_api_swagger() {
-  export OPENAPI_URL="${OPENAPI_URL:-http://localhost:7330/swagger/json}"
-  if curl --fail --silent --output /dev/null --connect-timeout 2 --max-time 5 "$OPENAPI_URL"; then
-    return 0
+  # 127.0.0.1, not localhost: on a machine running several projects'
+  # containers, localhost can resolve to ::1 and reach another project's API.
+  export OPENAPI_URL="${OPENAPI_URL:-http://127.0.0.1:7330/swagger/json}"
+  local document expected served
+  if ! document="$(curl --fail --silent --connect-timeout 2 --max-time 5 "$OPENAPI_URL")"; then
+    c_yellow "  API schema unavailable — OpenAPI regen/check skipped"
+    c_yellow "  start the API or set OPENAPI_URL; strict evidence: bun run agent:verify -- --json"
+    return 1
   fi
-  c_yellow "  API schema unavailable — OpenAPI regen/check skipped"
-  c_yellow "  start the API or set OPENAPI_URL; strict evidence: bun run agent:verify -- --json"
-  return 1
+  # The API on that port must be this checkout's: compare the document's title
+  # with the one apps/api declares, so another project's API never passes for
+  # (or overwrites) this one's schema.
+  expected="$(sed -n 's/^[[:space:]]*title: "\(.*\)",$/\1/p' "$BORINGSTACK_API_DIR/src/config/swagger/swagger.ts" | head -n 1)"
+  served="$(printf '%s' "$document" | bun -e 'const d = JSON.parse(await Bun.stdin.text()); console.log(d?.info?.title ?? "")' 2>/dev/null || true)"
+  if [[ -n "$expected" && "$served" != "$expected" ]]; then
+    c_yellow "  $OPENAPI_URL serves \"${served:-unknown}\", not this checkout's \"$expected\" — OpenAPI regen/check skipped"
+    c_yellow "  set OPENAPI_URL to this checkout's API; strict evidence: bun run agent:verify -- --json"
+    return 1
+  fi
+  return 0
 }
 
 # Workspace packages are every packages/<name>/ that has a package.json. A

@@ -36,7 +36,8 @@ const run = async (): Promise<ICommandOutcome> => {
 
 const outcome = await run();
 
-if (outcome.summary !== "help") {
+/* Hooks speak their own protocol on stdout and answer with an empty summary. */
+if (outcome.summary !== "help" && outcome.summary !== "") {
   console.log(json ? JSON.stringify(outcome) : outcome.summary);
 }
 

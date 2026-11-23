@@ -1,0 +1,167 @@
+import { createHash } from "node:crypto";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+
+import { git } from "../git";
+
+/*
+ * The monorepo's units of verification: each changed unit needs a passing
+ * check at its current state before a session may finish. A unit with no
+ * recipe cannot be verified, which fails rather than passes.
+ */
+export interface IRecipe {
+  /** Shared runs: units with the same recipe id are verified by one run. */
+  readonly id: string;
+  readonly summary: string;
+  readonly kind: "agent-verify" | "command";
+  /** For kind=command: argv run from `cwd` (repo-relative). */
+  readonly argv?: readonly string[];
+  readonly cwd?: string;
+  /**
+   * Checks this recipe skips that another recipe of the same run proves:
+   * passed to the command as STACK_CHECK_COVERED when that recipe passed.
+   */
+  readonly coveredBy?: {
+    readonly recipe: string;
+    readonly checks: readonly string[];
+  };
+}
+
+export interface IUnit {
+  /** Repo-relative path; "." is the repository's own files (scripts, workflows). */
+  readonly path: string;
+  readonly recipe: IRecipe;
+}
+
+const AGENT_VERIFY: IRecipe = {
+  id: "agent-verify",
+  summary: "agent:verify --profile=feature in an owned sandbox",
+  kind: "agent-verify",
+};
+
+export const UNITS: readonly IUnit[] = [
+  { path: "apps/api", recipe: AGENT_VERIFY },
+  { path: "apps/ui", recipe: AGENT_VERIFY },
+  { path: "tools", recipe: AGENT_VERIFY },
+  { path: "packages", recipe: AGENT_VERIFY },
+  {
+    path: "apps/docs",
+    recipe: {
+      id: "docs",
+      summary: "apps/docs build:ci",
+      kind: "command",
+      argv: ["bun", "run", "build:ci"],
+      cwd: "apps/docs",
+    },
+  },
+  {
+    path: "apps/site",
+    recipe: {
+      id: "site",
+      summary: "apps/site validate",
+      kind: "command",
+      argv: ["bun", "run", "validate"],
+      cwd: "apps/site",
+    },
+  },
+  {
+    path: "infra/compose",
+    recipe: {
+      id: "compose",
+      summary: "infra/compose pre-push gate",
+      kind: "command",
+      argv: ["bash", "infra/compose/scripts/pre-push.sh"],
+      cwd: ".",
+    },
+  },
+  {
+    path: "infra/k3s",
+    recipe: {
+      id: "k3s",
+      summary: "infra/k3s tests",
+      kind: "command",
+      argv: ["bun", "test", "infra/k3s/tests"],
+      cwd: ".",
+    },
+  },
+  {
+    path: "infra/bootstrap",
+    recipe: {
+      id: "bootstrap",
+      summary: "OpenTofu fmt and validate",
+      kind: "command",
+      argv: [
+        "sh",
+        "-c",
+        "tofu fmt -check -recursive && tofu init -backend=false -input=false >/dev/null && tofu validate",
+      ],
+      cwd: "infra/bootstrap",
+    },
+  },
+  {
+    path: ".",
+    recipe: {
+      id: "repo",
+      summary: "root bun run check",
+      kind: "command",
+      coveredBy: { recipe: "agent-verify", checks: ["OpenAPI drift"] },
+      argv: ["bun", "run", "check"],
+      cwd: ".",
+    },
+  },
+];
+
+/** Documentation is not code: Markdown and docs/ never ask for a check run. */
+const pathspec = (unit: IUnit): string[] => {
+  const others = UNITS.filter(
+    (other) => other.path !== "." && other.path !== unit.path
+  ).map((other) => `:(exclude)${other.path}`);
+
+  return [
+    "--",
+    unit.path,
+    ":(exclude)*.md",
+    ":(exclude)docs/",
+    ...(unit.path === "." ? others : []),
+  ];
+};
+
+/** Changes whenever the unit's committed code or its working tree changes. */
+export const fingerprintUnit = (root: string, unit: IUnit): string => {
+  const spec = pathspec(unit);
+  const head = git(root, ["ls-files", "-s", ...spec]) ?? "";
+  const status = git(root, ["status", "--porcelain", ...spec]) ?? "";
+  const diff = git(root, ["diff", "HEAD", ...spec]) ?? "";
+
+  return createHash("sha256")
+    .update(`${head}\n${status}\n${diff}`)
+    .digest("hex");
+};
+
+/** unit path → fingerprint, for every unit present in this checkout. */
+export type UnitStates = Readonly<Record<string, string>>;
+
+export const presentUnits = (root: string): IUnit[] =>
+  UNITS.filter((unit) => existsSync(join(root, unit.path)));
+
+export const fingerprintAll = (root: string): UnitStates =>
+  Object.fromEntries(
+    presentUnits(root).map((unit) => [unit.path, fingerprintUnit(root, unit)])
+  );
+
+/** Units whose files differ between `base` and the working tree. */
+export const changedSince = (root: string, base: string): IUnit[] =>
+  presentUnits(root).filter((unit) => {
+    const committed = git(root, [
+      "diff",
+      "--name-only",
+      base,
+      ...pathspec(unit),
+    ]);
+    const dirty = git(root, ["status", "--porcelain", ...pathspec(unit)]);
+
+    return (committed ?? "x") !== "" || (dirty ?? "") !== "";
+  });
+
+export const unitByPath = (path: string): IUnit | undefined =>
+  UNITS.find((unit) => unit.path === path);

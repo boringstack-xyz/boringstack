@@ -17,16 +17,27 @@ export const FACTORY_CONFIG = {
   },
   /** Branches agents never push to. */
   protectedBranches: ["main", "master"],
-  /** Files agents never read or print (globs, repo-relative). */
-  secretPaths: [
-    "**/.env",
-    "**/.env.*",
-    "**/*.pem",
-    "**/secrets/plain/**",
-    ".agent-state/sandboxes/**",
-  ],
-  /** Files that look like secrets but are templates. */
-  secretPathExceptions: ["**/.env.example", "**/*.env.example"],
+  /**
+   * Files agents never read or print: env files (but not `*.example`),
+   * private keys, the plain k3s secrets and the sandbox descriptors that hold
+   * database passwords. Matched against words of a command or a path.
+   */
+  secretFilePattern:
+    /(^|[\s/'"=])([\w.-]*\.env(?:\.(?!example(?![\w-]))[\w-]+)*|[\w.-]+\.pem|\.agent-state\/sandboxes\/[^\s'"]*)(?![\w.-])/u,
+  /** Programs that reach real infrastructure; agents never run them. */
+  forbiddenPrograms: ["kubectl", "helm", "argocd", "vault"],
+  /** Subcommands of these programs that change real infrastructure. */
+  forbiddenSubcommands: {
+    tofu: ["apply", "destroy", "import"],
+    terraform: ["apply", "destroy", "import"],
+  },
+  /**
+   * Dev containers (`compose exec <name>`) where checks must not run: they
+   * change what the running dev server serves and can OOM it. `factory
+   * verify` runs checks in an owned sandbox instead.
+   */
+  serviceContainerPattern:
+    /(^|[-_])(api-dev|ui-dev|site-dev|api|ui)([-_]\d+)?$/u,
   /** Self-refreshing fleet page. */
   fleetPort: 8500,
   /** Preview proxy: `<slot>.preview.localhost` by default. */
