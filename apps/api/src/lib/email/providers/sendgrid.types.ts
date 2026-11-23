@@ -4,6 +4,8 @@ export interface ISendGridMessage {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
+  headers?: Record<string, string>;
 }
 
 export interface ISendGridResponse {

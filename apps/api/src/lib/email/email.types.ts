@@ -11,7 +11,18 @@ import type { EmailSuppressionReason } from "./suppression.constants";
 export type EmailProviderName =
   "resend" | "sendgrid" | "cloudflare" | "smtp" | "noop";
 
-export interface IEmailMessage {
+/**
+ * Optional per-message sender details. Transactional mail leaves this out
+ * and goes from `EMAIL_FROM`; lifecycle mail sets a sender name, a reply-to
+ * inbox and the List-Unsubscribe headers.
+ */
+export interface IEmailEnvelope {
+  fromName?: string;
+  replyTo?: string;
+  headers?: Record<string, string>;
+}
+
+export interface IEmailMessage extends IEmailEnvelope {
   to: string;
   subject: string;
   html: string;
@@ -40,6 +51,7 @@ export interface ISendTemplateInput {
   subject: string;
   templatePath: string;
   variables?: Record<string, unknown>;
+  envelope?: IEmailEnvelope;
 }
 
 /**

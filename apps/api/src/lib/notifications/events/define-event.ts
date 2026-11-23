@@ -1,5 +1,6 @@
 import type { Static, TSchema } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
+import type { IEmailEnvelope } from "../../email/email.types";
 import type {
   INotificationEvent,
   INotificationEventDefinition,
@@ -80,6 +81,13 @@ export const defineNotificationEvent = <TSchemaShape extends TSchema>(
                     payload: Value.Cast(schema, ctx.payload),
                   });
                 }
+              : undefined,
+            envelope: userRenderEmail.envelope
+              ? (ctx: IEventRenderContext<unknown>): IEmailEnvelope =>
+                  userRenderEmail.envelope?.({
+                    recipientUserId: ctx.recipientUserId,
+                    payload: Value.Cast(schema, ctx.payload),
+                  }) ?? {}
               : undefined,
           }
         : undefined,

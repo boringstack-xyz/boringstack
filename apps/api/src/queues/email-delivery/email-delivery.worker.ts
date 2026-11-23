@@ -72,8 +72,14 @@ export class EmailDeliveryWorker {
   }
 
   private async processJob(job: Job<IEmailDeliveryJobData>): Promise<void> {
-    const { to, subject, templatePath, variables, notificationDeliveryId } =
-      job.data;
+    const {
+      to,
+      subject,
+      templatePath,
+      variables,
+      envelope,
+      notificationDeliveryId,
+    } = job.data;
 
     logger.info("Processing email delivery job", {
       event: "email_delivery_processing",
@@ -88,6 +94,7 @@ export class EmailDeliveryWorker {
       subject,
       templatePath,
       variables,
+      envelope,
     });
 
     if (notificationDeliveryId === undefined) {

@@ -67,6 +67,17 @@ export const maskEmailForLogging = (email: string): string => {
 };
 
 /**
+ * RFC 5322 display-name sender, e.g. `"Alex from Acme" <noreply@…>`. Quotes
+ * and backslashes in the name are dropped rather than escaped: names come
+ * from our own constants, never from users.
+ */
+export const formatSender = (address: string, name?: string): string => {
+  return name === undefined || name.trim() === ""
+    ? address
+    : `"${name.replace(/["\\]/g, "")}" <${address}>`;
+};
+
+/**
  * Boundary validator for outbound email payloads. Throws an `ApiError`
  * with a helpful field name so the error handler maps cleanly to a 400.
  */

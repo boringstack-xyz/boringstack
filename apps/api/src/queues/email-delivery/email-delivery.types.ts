@@ -1,4 +1,5 @@
 import type { Queue } from "bullmq";
+import type { IEmailEnvelope } from "../../lib/email/email.types";
 import type { EmailDeliveryWorker } from "./email-delivery.worker";
 
 export interface IEmailDeliveryJobData {
@@ -6,6 +7,7 @@ export interface IEmailDeliveryJobData {
   subject: string;
   templatePath: string;
   variables?: Record<string, unknown>;
+  envelope?: IEmailEnvelope;
   /**
    * Optional reference to a `notification_delivery` row. When set, the
    * worker settles the row to `sent` / `failed` after the email send
