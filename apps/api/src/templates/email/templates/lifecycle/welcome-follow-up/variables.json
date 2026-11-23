@@ -1,0 +1,10 @@
+{
+    "subject": "Thanks for signing up",
+    "preHeader": "A quick note, and a place to start.",
+    "appName": "{{appName}}",
+    "firstName": "there",
+    "ctaText": "Open the dashboard",
+    "ctaUrl": "https://example.com/dashboard",
+    "unsubscribeUrl": "https://example.com/unsubscribe",
+    "canReply": true
+}
