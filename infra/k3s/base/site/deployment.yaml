@@ -19,6 +19,9 @@ spec:
         app: site
     spec:
       serviceAccountName: site
+      # Kubernetes would inject <SERVICE>_PORT=tcp://ip:port env vars for every
+      # Service in the namespace; this pod never reads service-link env.
+      enableServiceLinks: false
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 30
       securityContext:

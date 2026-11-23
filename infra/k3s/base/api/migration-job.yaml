@@ -24,6 +24,9 @@ spec:
         kubernetes.io/arch: amd64
       restartPolicy: OnFailure
       serviceAccountName: api
+      # Same reason as the API Deployment: the migrations image reads env, and
+      # a Service name must never become configuration.
+      enableServiceLinks: false
       imagePullSecrets:
         - name: ghcr-registry-secret
       securityContext:
