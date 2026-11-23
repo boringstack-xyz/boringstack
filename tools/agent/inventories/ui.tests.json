@@ -22,6 +22,7 @@
     "[\"src/app/router/RouteErrorBoundary.test.tsx\",\"RouteErrorBoundary &gt; shows the unauthorized headline when an ApiError 401 reaches the boundary\"]",
     "[\"src/app/router/routes.test.tsx\",\"app routes &gt; has a production robot journey, or a written reason, for every API operation\"]",
     "[\"src/app/router/routes.test.tsx\",\"app routes &gt; has a production robot journey, or a written reason, for every route\"]",
+    "[\"src/app/router/routes.test.tsx\",\"app routes &gt; routes nothing under /admin\"]",
     "[\"src/components/core/AppPage/AppPage.hooks.test.ts\",\"useAppPage &gt; builds the document title and registers the shell header\"]",
     "[\"src/components/core/AppPage/AppPage.test.tsx\",\"AppPage &gt; registers the page header in AppShell context instead of rendering it in the body\"]",
     "[\"src/components/core/AppPage/AppPageHeader.hooks.test.ts\",\"useAppPageHeader &gt; returns null before a page registers a header\"]",

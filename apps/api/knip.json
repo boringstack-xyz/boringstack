@@ -3,6 +3,7 @@
   "entry": [
     "scripts/**/*.ts",
     "src/**/index.ts",
+    "src/admin.ts",
     "tests/**/*.test.ts",
     "src/lib/ai/providers/**/index.ts",
     "security-spec/**/*.test.ts"

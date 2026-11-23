@@ -231,6 +231,19 @@ if [[ "${WITH_MAILPIT:-0}" == "1" && "$STACK" == "dev" && -f "$ROOT/docker-compo
   export API_DEV_SMTP_PORT="${API_DEV_SMTP_PORT:-1025}"
 fi
 
+# LAN-only operator dashboard (apps/admin) and its admin API. Opt-in: off by
+# default in every stack. Dev binds to 127.0.0.1; prod binds to ADMIN_LAN_BIND
+# (default 127.0.0.1). Smoke has no admin profile.
+WITH_ADMIN="${WITH_ADMIN:-0}"
+if [[ "$WITH_ADMIN" == "1" && -f "$ROOT/docker-compose.admin.yml" ]]; then
+  case "$STACK" in
+    dev)  PROFILE_ARGS+=(--profile admin-dev) ;;
+    prod) PROFILE_ARGS+=(--profile admin-prod) ;;
+    *)    echo "[ERROR] WITH_ADMIN=1 is not available for STACK=${STACK}" >&2; exit 1 ;;
+  esac
+  COMPOSE_ARGS+=(-f "$ROOT/docker-compose.admin.yml")
+fi
+
 if [[ $# -eq 0 ]]; then
   set -- up -d
 fi

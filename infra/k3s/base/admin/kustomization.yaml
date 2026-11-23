@@ -1,0 +1,13 @@
+# LAN-only operator dashboard and its admin API. Deliberately NOT listed in
+# base/kustomization.yaml: the public release never ships it. Apply it through
+# overlays/admin (see infra/k3s/README.md, "Operator dashboard").
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - admin-api-deployment.yaml
+  - admin-api-service.yaml
+  - admin-api-networkpolicy.yaml
+  - admin-deployment.yaml
+  - admin-service.yaml
+  - admin-networkpolicy.yaml

@@ -65,7 +65,7 @@ const QUEUE_COUNT_STATES = [
   "paused",
 ] as const;
 
-const fetchQueueCounts = async (
+export const fetchQueueCounts = async (
   queue: IManagedQueue
 ): Promise<IQueueCounts> => {
   const counts = await queue.getJobCounts(...QUEUE_COUNT_STATES);

@@ -1,0 +1,40 @@
+# Production build of the operator dashboard: a static SPA behind nginx. The
+# same-origin /api proxy to the admin API lives in nginx.conf. Build from
+# apps/admin with: docker build -f Dockerfile.prod .
+
+# ---- Builder ---------------------------------------------------------------
+FROM oven/bun:1.4.4-alpine@sha256:4cf82f5686b196504fe119db3fcd9185b191f82ece82c40680e597228ec6070a AS builder
+
+WORKDIR /app
+
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+
+COPY . .
+RUN bun run build
+
+# ---- Runner ---------------------------------------------------------------
+FROM nginx:1.31-alpine@sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2 AS runner
+
+# Non-root user, same shape as apps/ui. nginx needs its pid, cache and log
+# paths writable by that user.
+RUN addgroup -g 1001 -S app \
+ && adduser -S app -u 1001 -G app \
+ && mkdir -p /var/cache/nginx /var/log/nginx /var/run /run /tmp/nginx \
+ && chown -R app:app /var/cache/nginx /var/log/nginx /var/run /run /tmp/nginx /usr/share/nginx/html
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+COPY --from=builder --chown=app:app /app/dist /usr/share/nginx/html
+
+# Writes the resolver include nginx.conf reads, before nginx starts.
+COPY --chmod=0755 docker-entrypoint.d/10-admin-resolver.sh /docker-entrypoint.d/10-admin-resolver.sh
+
+USER app
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD wget --quiet --spider http://127.0.0.1:8080/healthz || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

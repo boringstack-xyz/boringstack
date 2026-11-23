@@ -11,6 +11,16 @@ export const envSchema = t.Object({
     { default: "development" }
   ),
   PORT: t.Integer({ minimum: 1, maximum: 65535, default: 7330 }),
+  /*
+   * LAN-only operator admin API (src/admin.ts). A separate process on its
+   * own port that is never mounted in the public API.
+   */
+  ADMIN_PORT: t.Integer({ minimum: 1, maximum: 65535, default: 7340 }),
+  /*
+   * Pins the operator when more than one user has is_platform_admin. Empty
+   * means "the only platform admin"; boot refuses when that is ambiguous.
+   */
+  ADMIN_OPERATOR_USER_ID: t.String({ default: "" }),
   LOG_LEVEL: t.Union(
     [
       t.Literal("debug"),

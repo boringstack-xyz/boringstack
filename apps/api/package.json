@@ -26,7 +26,7 @@
     "build:templates": "bun run src/templates/email/build.ts",
     "build:templates:watch": "bun run src/templates/email/build.ts --watch",
     "preview:templates": "bun run src/templates/email/preview.ts",
-    "build": "bun run build:templates && bun build src/index.ts --outdir dist --target bun",
+    "build": "bun run build:templates && bun build src/index.ts src/admin.ts --outdir dist --target bun",
     "start": "bun run dist/index.js",
     "lint": "eslint --cache \"src/**/*.ts\" \"tests/**/*.ts\" \"security-spec/**/*.ts\" \"scripts/**/*.ts\"",
     "lint:fix": "eslint --cache \"src/**/*.ts\" \"tests/**/*.ts\" \"security-spec/**/*.ts\" \"scripts/**/*.ts\" --fix",

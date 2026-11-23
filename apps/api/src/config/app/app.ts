@@ -62,7 +62,6 @@ export const createApp = () => {
       .group("/api/v1/auth", (group) => group.use(routes.auth))
       .group("/api/v1/users", (group) => group.use(routes.users))
       .group("/api/v1/billing", (group) => group.use(routes.billing))
-      .group("/api/v1/admin", (group) => group.use(routes.admin))
       .group("/api/v1/dashboard", (group) => group.use(routes.dashboard))
       .group("/api/v1/product-events", (group) =>
         group.use(routes.productEvents)

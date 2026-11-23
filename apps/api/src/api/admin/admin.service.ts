@@ -1,23 +1,21 @@
-import { getQueueManager } from "../../config/setup";
 import { ApiErrors } from "../../lib/errors";
+import { getQueueStatsReadOnly } from "../../queues/queue-stats.readonly";
 import type { IQueueStats } from "../../queues";
 
+import type { QueueStatsReader } from "./admin.types";
+
 export class AdminService {
+  constructor(
+    private readonly readQueueStats: QueueStatsReader = getQueueStatsReadOnly
+  ) {}
+
   /**
-   * Snapshot of every BullMQ queue's job counts. Returns an empty array
-   * when queues are disabled: admins still get a 200 with `queues: []`
-   * rather than a confusing 503, so dashboards don't have to special-case
-   * the off state.
+   * Snapshot of every BullMQ queue's job counts, read through plain Queue
+   * handles so the admin process never runs a worker or a scheduler.
    */
   async getQueueStats(): Promise<IQueueStats[]> {
-    const manager = getQueueManager();
-
-    if (manager === null) {
-      return [];
-    }
-
     try {
-      return await manager.getStats();
+      return await this.readQueueStats();
     } catch {
       throw ApiErrors.externalService("Failed to fetch queue statistics");
     }

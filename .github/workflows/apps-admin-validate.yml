@@ -1,0 +1,82 @@
+name: validate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - "apps/admin/**"
+      - ".github/workflows/apps-admin-validate.yml"
+
+concurrency:
+  group: apps-admin-validate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate:
+    defaults:
+      run:
+        working-directory: apps/admin
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Detect relevant changes
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'apps/admin/**'
+              - '.github/workflows/apps-admin-validate.yml'
+
+      - name: Set up Bun
+        if: steps.filter.outputs.code == 'true'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+
+      - name: Cache bun install
+        if: steps.filter.outputs.code == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('apps/admin/bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+
+      - name: Install
+        if: steps.filter.outputs.code == 'true'
+        run: bun install --frozen-lockfile
+
+      # Lint, format, types, tests and the production build of the SPA.
+      - name: Validate
+        if: steps.filter.outputs.code == 'true'
+        run: bun run validate
+
+      - name: Set up Docker Buildx
+        if: steps.filter.outputs.code == 'true'
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # The serving image starts without the admin API: the resolver script and
+      # the variable upstream must let nginx come up on its own.
+      - name: Build serving image and smoke-test it
+        if: steps.filter.outputs.code == 'true'
+        run: |
+          set -euo pipefail
+          docker build -f Dockerfile.prod -t boringstack-admin:ci .
+          docker run -d --name admin-smoke -p 8080:8080 boringstack-admin:ci
+          for _attempt in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:8080/healthz > /dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8080/ > /dev/null
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/does-not-exist)" = "200"
+          docker rm -f admin-smoke > /dev/null

@@ -625,23 +625,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/queues": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Per-queue job counts (admin only) */
-        get: operations["getApiV1AdminQueues"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/dashboard/summary": {
         parameters: {
             query?: never;
@@ -3202,66 +3185,6 @@ export interface operations {
                             received: boolean;
                             type: string;
                         };
-                        timestamp: string;
-                    };
-                };
-            };
-        };
-    };
-    getApiV1AdminQueues: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        queues: {
-                            name: string;
-                            counts: {
-                                waiting: number;
-                                active: number;
-                                completed: number;
-                                failed: number;
-                                delayed: number;
-                                paused: number;
-                            };
-                        }[];
-                        timestamp: string;
-                    };
-                    "multipart/form-data": {
-                        queues: {
-                            name: string;
-                            counts: {
-                                waiting: number;
-                                active: number;
-                                completed: number;
-                                failed: number;
-                                delayed: number;
-                                paused: number;
-                            };
-                        }[];
-                        timestamp: string;
-                    };
-                    "text/plain": {
-                        queues: {
-                            name: string;
-                            counts: {
-                                waiting: number;
-                                active: number;
-                                completed: number;
-                                failed: number;
-                                delayed: number;
-                                paused: number;
-                            };
-                        }[];
                         timestamp: string;
                     };
                 };

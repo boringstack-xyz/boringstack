@@ -1,6 +1,6 @@
 # BoringStack monorepo
 
-Single repository: `apps/api`, `apps/ui`, `apps/docs`, `apps/site`, `infra/compose`, `infra/bootstrap`.
+Single repository: `apps/api`, `apps/ui`, `apps/docs`, `apps/site`, `apps/admin` (opt-in, `WITH_ADMIN`), `infra/compose`, `infra/bootstrap`.
 
 <!-- template-onboarding:start -->
 ## Starting a new project from this template
@@ -82,6 +82,7 @@ one or a written reason.
 | `apps/ui`         | Vite + React UI        |
 | `apps/docs`       | Astro docs site        |
 | `apps/site`       | Astro public marketing site (static, nginx) |
+| `apps/admin`      | Vite + React operator dashboard, LAN-only, no login (`WITH_ADMIN=1`) |
 | `infra/compose`   | Docker Compose runtime |
 | `infra/bootstrap` | OpenTofu bootstrap     |
 | `packages/*`      | Shared code used by more than one app ([guide](apps/ui/docs/agents/shared-packages.md)) |

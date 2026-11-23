@@ -90,6 +90,17 @@
       "addsServices": { "1": ["wud"] }
     },
     {
+      "key": "WITH_ADMIN",
+      "kind": "toggle",
+      "group": "infra",
+      "label": "LAN-only operator dashboard (apps/admin) and its admin API. Off by default. Dev binds 127.0.0.1; prod binds ADMIN_LAN_BIND (default 127.0.0.1). Never routed by Traefik.",
+      "devDefault": "0",
+      "prodDefault": "0",
+      "addsServices": {
+        "1": ["admin-api-dev", "admin-dev", "admin-api", "admin"]
+      }
+    },
+    {
       "key": "BILLING_ENABLED",
       "kind": "toggle",
       "group": "features",
@@ -280,6 +291,7 @@
       "gates": [
         { "cwd": "apps/api", "command": "bun run validate" },
         { "cwd": "apps/ui", "command": "bun run validate" },
+        { "cwd": "apps/admin", "command": "bun run validate" },
         { "cwd": ".", "command": "bun run check" }
       ],
       "boot": "bash setup.sh --up",
