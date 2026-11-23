@@ -35,6 +35,9 @@ interface IQueueStub<TData> {
   readonly name: string;
   add: (jobName: string, data: TData, opts?: JobsOptions) => Promise<unknown>;
   getJobCounts: (...states: JobType[]) => Promise<Record<string, number>>;
+  getJobs: (
+    types: JobType[]
+  ) => Promise<{ data: TData; finishedOn?: number }[]>;
   close: () => Promise<void>;
 }
 
@@ -58,6 +61,7 @@ const makeQueueStub = <TData>(
         return Promise.resolve(undefined);
       },
       getJobCounts: () => Promise.resolve(counts),
+      getJobs: () => Promise.resolve([]),
       close: () => {
         closed = true;
 
@@ -248,6 +252,40 @@ describe("QueueManager.getStats", () => {
 
     expect(stats.map((row) => row.name)).toContain("web-push-delivery");
     expect(stats).toHaveLength(5);
+  });
+});
+
+describe("QueueManager email look-back and delayed enqueue", () => {
+  test("passes a delay through to the job when one is given", async () => {
+    const fixture = buildFixture(false);
+    const data: IEmailDeliveryJobData = {
+      to: "a@example.com",
+      subject: "S",
+      templatePath: "auth/confirm-your-email",
+    };
+
+    await fixture.manager.enqueueEmailDelivery(data, { delayMs: 300_000 });
+
+    expect(fixture.emailDelivery.addCalls[0]?.opts?.delay).toBe(300_000);
+  });
+
+  test("handledEmailDeliveries keeps only jobs that have a finish time", async () => {
+    const fixture = buildFixture(false);
+    const finished: IEmailDeliveryJobData = {
+      to: "a@example.com",
+      subject: "S",
+      templatePath: "x",
+    };
+
+    fixture.emailDelivery.stub.getJobs = () =>
+      Promise.resolve([
+        { data: finished, finishedOn: 1_000 },
+        { data: finished, finishedOn: undefined },
+      ]);
+
+    const handled = await fixture.manager.handledEmailDeliveries();
+
+    expect(handled).toEqual([{ data: finished, finishedAtMs: 1_000 }]);
   });
 });
 

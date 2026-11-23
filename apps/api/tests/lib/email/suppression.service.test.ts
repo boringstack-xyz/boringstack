@@ -5,6 +5,7 @@ import {
   EMAIL_SUPPRESSION_REASONS,
   emailSuppressionService,
 } from "../../../src/lib/email";
+import { PROVIDER_SUPPRESSION_TTL_MS } from "../../../src/lib/email/suppression.constants";
 import {
   cleanDatabase,
   db,
@@ -181,5 +182,47 @@ describe("EmailSuppressionService", () => {
     const result = await emailSuppressionService.clear("nope@example.com");
 
     expect(result.cleared).toBe(false);
+  });
+
+  test("a mirrored provider suppression lapses after a day and is dropped", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const stale = new Date(
+      Date.now() - PROVIDER_SUPPRESSION_TTL_MS - 60_000
+    ).toISOString();
+
+    await db.insert(emailSuppression).values({
+      email: "lapsed@example.com",
+      reason: EMAIL_SUPPRESSION_REASONS.PROVIDER_SUPPRESSED,
+      provider: EMAIL_SUPPRESSION_PROVIDERS.CLOUDFLARE,
+      suppressedAt: stale,
+    });
+
+    expect(
+      await emailSuppressionService.isSuppressed("lapsed@example.com")
+    ).toBeNull();
+  });
+
+  test("a hard bounce stays suppressed however old it is", async () => {
+    if (!(await requireDb())) {
+      return;
+    }
+
+    const stale = new Date(
+      Date.now() - PROVIDER_SUPPRESSION_TTL_MS - 60_000
+    ).toISOString();
+
+    await db.insert(emailSuppression).values({
+      email: "bounced@example.com",
+      reason: EMAIL_SUPPRESSION_REASONS.HARD_BOUNCE,
+      provider: EMAIL_SUPPRESSION_PROVIDERS.RESEND,
+      suppressedAt: stale,
+    });
+
+    expect(
+      await emailSuppressionService.isSuppressed("bounced@example.com")
+    ).not.toBeNull();
   });
 });
