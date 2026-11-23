@@ -7,12 +7,10 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/classnames";
 
 import {
-  APP_PAGE_SHELL_EYEBROW_CLASS_NAME,
   APP_PAGE_SHELL_HEADER_TEST_ID,
-  APP_PAGE_SHELL_SUBTITLE_CLASS_NAME,
-  APP_PAGE_SHELL_TITLE_CLASS_NAME,
   AppPageHeaderProvider
 } from "@/components/core/AppPage";
+import { AppShellPageHeader } from "@/components/core/AppShell/AppShellPageHeader";
 import { AppSidebar } from "@/components/core/AppSidebar";
 import { ThemeToggle } from "@/components/core/ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -29,25 +27,6 @@ import { NotificationBell } from "@/features/notifications/components/Notificati
 
 import { useAppShell } from "./AppShell.hooks";
 import type { IAppShellProps } from "./AppShell.types";
-
-const AppShellPageHeader: FC<{
-  readonly className?: string;
-  readonly eyebrow?: string;
-  readonly subtitle?: string;
-  readonly title: string;
-}> = ({ className, eyebrow, subtitle, title }) => (
-  <div className={cn("min-w-0", className)}>
-    {eyebrow !== undefined ? (
-      <span className={APP_PAGE_SHELL_EYEBROW_CLASS_NAME}>{eyebrow}</span>
-    ) : null}
-    <h1 className={APP_PAGE_SHELL_TITLE_CLASS_NAME}>{title}</h1>
-    {subtitle !== undefined ? (
-      <p className={APP_PAGE_SHELL_SUBTITLE_CLASS_NAME}>{subtitle}</p>
-    ) : null}
-  </div>
-);
-
-AppShellPageHeader.displayName = "AppShellPageHeader";
 
 const AppShellFrame: FC<IAppShellProps> = (props) => {
   const { t } = useTranslation();
