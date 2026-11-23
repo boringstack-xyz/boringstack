@@ -126,6 +126,11 @@ export const envSchema = t.Object({
   ),
   EMAIL_FROM: t.String({ default: "noreply@example.com" }),
   /*
+   * Inbox that receives replies to follow-up emails. Empty keeps them
+   * noreply and drops the "just reply" line from the copy.
+   */
+  EMAIL_REPLY_TO: t.String({ default: "" }),
+  /*
    * Optional override for the precompiled templates directory. Empty
    * means "auto-resolve relative to the running module / cwd".
    */
@@ -209,6 +214,11 @@ export const envSchema = t.Object({
     default: "memory",
   }),
   NOTIFICATIONS_SSE_ENABLED: t.Boolean({ default: true }),
+  /*
+   * Follow-up emails after sign-up (the lifecycle sweep). Off until set, so
+   * a fork never emails its users before it has written its own stages.
+   */
+  LIFECYCLE_EMAILS_ENABLED: t.Boolean({ default: false }),
 
   /*
    * Web Push (VAPID). All three values come as a set: generate them once

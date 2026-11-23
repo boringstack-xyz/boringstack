@@ -175,6 +175,15 @@
       "prodDefault": "true"
     },
     {
+      "key": "LIFECYCLE_EMAILS_ENABLED",
+      "kind": "toggle",
+      "group": "features",
+      "label": "Follow-up emails after sign-up",
+      "help": "Sends the example welcome follow-up until its stage is replaced. Off by default.",
+      "devDefault": "false",
+      "prodDefault": "false"
+    },
+    {
       "key": "AI_ENABLED",
       "kind": "toggle",
       "group": "features",
