@@ -6,7 +6,8 @@ acts as the platform admin resolved at boot. Read the API guide first:
 [admin process](../api/docs/agents/admin-process.md).
 
 `bun run validate` is the gate here: lint, format, typecheck, tests and the
-production build.
+production build. Typecheck runs `tsc` (TypeScript 6) and `typecheck:native`
+(TypeScript 7, the Go compiler, about 5x faster); both must pass.
 
 Rules that keep this app safe:
 

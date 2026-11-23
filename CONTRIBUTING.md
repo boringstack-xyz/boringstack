@@ -37,7 +37,7 @@ script. Local green is CI green.
 
 `validate` chains:
 
-1. typecheck (`tsc --noEmit`)
+1. typecheck: `tsc --noEmit` (TypeScript 6), then the TypeScript 7 native check (`typecheck:native`)
 2. lint (`eslint --max-warnings 0`)
 3. unit + integration tests
 4. build
