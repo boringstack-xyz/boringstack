@@ -130,6 +130,28 @@ updates:
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: bun
+    directory: /apps/admin
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 4
+    labels: ["dependencies"]
+    commit-message:
+      prefix: "chore"
+      include: scope
+    cooldown:
+      default-days: 7
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+        patterns: ["*"]
+      development-dependencies:
+        dependency-type: "development"
+        patterns: ["*"]
+
+  - package-ecosystem: bun
     directory: /apps/site
     schedule:
       interval: weekly

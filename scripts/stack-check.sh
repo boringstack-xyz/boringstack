@@ -61,6 +61,10 @@ if [[ "$FULL" == "--full" ]]; then
   if [[ -d "$BORINGSTACK_SITE_DIR" ]]; then
     run_check "site validate" bash -c "cd \"$BORINGSTACK_SITE_DIR\" && bun run validate"
   fi
+  # The LAN-only operator dashboard is opt-in per fork (WITH_ADMIN); checked when present.
+  if [[ -d "$BORINGSTACK_ADMIN_DIR" ]]; then
+    run_check "admin validate" bash -c "cd \"$BORINGSTACK_ADMIN_DIR\" && bun run validate"
+  fi
   if [[ "$HAS_DOCS" == "1" ]]; then
     run_check "docs build:ci" bash -c "cd \"$BORINGSTACK_DOCS_DIR\" && BORINGSTACK_API_DIR=\"$BORINGSTACK_API_DIR\" BORINGSTACK_UI_DIR=\"$BORINGSTACK_UI_DIR\" bun run build:ci"
   fi
