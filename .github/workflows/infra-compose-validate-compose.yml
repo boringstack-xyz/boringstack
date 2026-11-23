@@ -241,7 +241,7 @@ jobs:
 
   shellcheck:
     name: shellcheck (scripts/)
-    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && (vars.CI_LIGHT_RUNNER || vars.CI_RUNNER) || 'ubuntu-24.04' }}
     timeout-minutes: 2
     steps:
       - name: Checkout
@@ -526,7 +526,7 @@ jobs:
 
   yamllint:
     name: yamllint (compose + workflows)
-    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && (vars.CI_LIGHT_RUNNER || vars.CI_RUNNER) || 'ubuntu-24.04' }}
     timeout-minutes: 2
     env:
       # Single source for the yamllint pin: the local pre-push gate

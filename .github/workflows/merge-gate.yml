@@ -21,7 +21,7 @@ jobs:
   merge-gate:
     name: merge-gate
     # Fork PRs stay on GitHub-hosted runners (see AGENTS.md).
-    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && (vars.CI_LIGHT_RUNNER || vars.CI_RUNNER) || 'ubuntu-24.04' }}
     timeout-minutes: 160
     steps:
       # The gate code comes from the base branch, so a PR cannot edit the
