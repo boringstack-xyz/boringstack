@@ -82,6 +82,17 @@ const expectEveryEntryProven = (
 
 describe("app routes", () => {
   /*
+   * The operator admin lives in its own LAN-only process (apps/admin). The
+   * public app must not carry any /admin screen, so nothing under that
+   * prefix may be routed here.
+   */
+  it("routes nothing under /admin", () => {
+    const paths = captured.routes.map((route) => route.path ?? "");
+
+    expect(paths.filter((path) => path.startsWith("/admin"))).toEqual([]);
+  });
+
+  /*
    * The verification robot opens every page in production
    * (docs/operations/production-verification.md). A route added without a
    * robot journey, or a list entry naming a journey the robot does not have,

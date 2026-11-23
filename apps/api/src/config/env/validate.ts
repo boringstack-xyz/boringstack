@@ -124,6 +124,8 @@ export const toCsv = (raw: string | undefined): string[] => {
 const readCore = (source: EnvSource) => ({
   NODE_ENV: source.NODE_ENV ?? "development",
   PORT: toInt(source.PORT, 7330, "PORT"),
+  ADMIN_PORT: toInt(source.ADMIN_PORT, 7340, "ADMIN_PORT"),
+  ADMIN_OPERATOR_USER_ID: source.ADMIN_OPERATOR_USER_ID ?? "",
   LOG_LEVEL: source.LOG_LEVEL ?? "info",
   APP_NAME: source.APP_NAME ?? "API Template",
 });

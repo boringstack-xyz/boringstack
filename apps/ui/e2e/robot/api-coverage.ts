@@ -96,10 +96,6 @@ export const ROBOT_API_COVERAGE: Readonly<Record<string, IRobotCoverage>> = {
   },
   "GET /api/v1/billing/plans": { journeys: [BILLING] },
   "POST /api/v1/billing/stripe/webhooks": { notChecked: PROVIDER_CALLBACK },
-  "GET /api/v1/admin/queues": {
-    notChecked:
-      "Platform-admin only; the robot never holds platform admin in production."
-  },
   "GET /api/v1/dashboard/summary": { journeys: [FIRST_LOGIN] },
   "GET /api/v1/dashboard/activity": { journeys: [FIRST_LOGIN] },
   "POST /api/v1/notifications/push/subscribe": { notChecked: PUSH },
