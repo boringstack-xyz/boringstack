@@ -1,6 +1,6 @@
 ---
 name: my-open-work
-description: A person's open work in this repository's factory, as one short risk-ordered list: what waits on them (issues in review to try, pull requests to review, questions to answer), what is stuck (blocked sessions, failing checks, conflicts), and what agents could pick up next. Use when someone asks "what's on my plate", "what needs me", "my open work", "morning triage", or runs /my-open-work. Read-only until the person picks an item.
+description: A person's open work in this repository's factory, as one short risk-ordered list of what waits on them (issues in review to try, pull requests to review, questions to answer), what is stuck (blocked sessions, failing checks, conflicts), and what agents could pick up next. Use when someone asks "what's on my plate", "what needs me", "my open work", "morning triage", or runs /my-open-work. Read-only until the person picks an item.
 ---
 
 # My open work
