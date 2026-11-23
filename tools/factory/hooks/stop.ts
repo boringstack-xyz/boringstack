@@ -1,7 +1,7 @@
 import { join } from "node:path";
 
 import type { IFactoryContext } from "../context";
-import { currentBranch, DETACHED_HEAD, upstreamOf } from "../git";
+import { currentBranch, DETACHED_HEAD, isPushed } from "../git";
 import { gateRunning, readGateResult } from "../record/gate";
 import { snapshot } from "../record/session";
 import { recordProblems } from "../record/verification";
@@ -55,7 +55,7 @@ export const stopHook = (
   const pushed =
     !protectedBranches.includes(branch) &&
     branch !== DETACHED_HEAD &&
-    upstreamOf(context.root, branch) !== undefined;
+    isPushed(context.root, branch);
   const blocked = readText(blockedFile(context));
   const confirmed =
     blocked !== undefined &&

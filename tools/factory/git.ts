@@ -47,6 +47,14 @@ export const isMainWorktree = (dir: string): boolean => {
   return gitDir !== undefined && gitDir === common;
 };
 
-/** The upstream a branch tracks, if it was pushed. */
-export const upstreamOf = (dir: string, branch: string): string | undefined =>
-  git(dir, ["rev-parse", "--abbrev-ref", `${branch}@{upstream}`]);
+/**
+ * Whether the branch was pushed: `origin` has a branch of the same name. A
+ * branch merely tracking another one (created from origin/main) was not.
+ */
+export const isPushed = (dir: string, branch: string): boolean =>
+  git(dir, [
+    "rev-parse",
+    "--verify",
+    "--quiet",
+    `refs/remotes/origin/${branch}`,
+  ]) !== undefined;

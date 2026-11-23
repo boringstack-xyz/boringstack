@@ -27,7 +27,18 @@ import type { IProcessResult } from "./process";
 const git = (cwd: string, args: string[]): string => {
   const result = spawnSync(
     "git",
-    ["-c", "user.name=test", "-c", "user.email=test@example.invalid", ...args],
+    [
+      "-c",
+      "user.name=test",
+      "-c",
+      "user.email=test@example.invalid",
+      /* A throwaway repo: never ask the developer's signing agent. */
+      "-c",
+      "commit.gpgsign=false",
+      "-c",
+      "tag.gpgsign=false",
+      ...args,
+    ],
     { cwd, encoding: "utf8" }
   );
 

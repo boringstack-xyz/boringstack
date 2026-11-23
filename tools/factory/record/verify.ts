@@ -17,6 +17,7 @@ import {
   unitByPath,
   UNITS,
 } from "./units";
+import { withVerifyLock } from "./lock";
 
 /*
  * `factory verify`: runs each changed unit's recipe once, compares a failure
@@ -439,10 +440,19 @@ export const verifyCommand = (
   context: IFactoryContext
 ): Promise<ICommandOutcome> => {
   const unitsArg = args.find((arg) => arg.startsWith("--units="))?.slice(8);
-  const result = verify(context, {
-    units: unitsArg?.split(",").filter((path) => path !== ""),
-    compareWithBase: !args.includes("--no-base"),
-  });
+  const result = withVerifyLock(context, () =>
+    verify(context, {
+      units: unitsArg?.split(",").filter((path) => path !== ""),
+      compareWithBase: !args.includes("--no-base"),
+    })
+  );
+
+  if (result === undefined) {
+    return Promise.resolve(
+      blocked("a factory verify or gate is already running in this checkout")
+    );
+  }
+
   const text =
     result.runs.length === 0
       ? "nothing changed since the base commit; nothing to verify"

@@ -1,11 +1,10 @@
-import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-import { nowIso } from "../clock";
 import type { IFactoryContext } from "../context";
 import { pendingUnits } from "../hooks/stop.utils";
 import { blocked, failed, type ICommandOutcome, ok } from "../result";
 import { isRecord, readJson, writeJson } from "../state";
+import { gateRunning, withVerifyLock } from "./lock";
 import { snapshot } from "./session";
 import { describeRun, verify } from "./verify";
 
@@ -14,27 +13,10 @@ import { describeRun, verify } from "./verify";
  * and leaves its verdict for the Stop hook. Meant to run in the background;
  * a lock file tells the hook it is still running.
  */
-export const gateLockFile = (context: IFactoryContext): string =>
-  join(context.stateDir, "gate.lock");
+export { gateLockFile, gateRunning } from "./lock";
 
 export const gateResultFile = (context: IFactoryContext): string =>
   join(context.stateDir, "gate.json");
-
-const isAlive = (pid: number): boolean => {
-  try {
-    process.kill(pid, 0);
-
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-export const gateRunning = (context: IFactoryContext): boolean => {
-  const lock = readJson(gateLockFile(context));
-
-  return isRecord(lock) && typeof lock.pid === "number" && isAlive(lock.pid);
-};
 
 export interface IGateResult {
   readonly ok: boolean;
@@ -90,12 +72,7 @@ export const gateCommand = (
     );
   }
 
-  writeJson(gateLockFile(context), {
-    pid: process.pid,
-    startedAt: nowIso(),
-  });
-
-  try {
+  const outcome = withVerifyLock(context, () => {
     const result = verify(context, { units: pending, compareWithBase: true });
     const passed = result.status === "passed" || result.status === "warn";
     const evidence = join(context.stateDir, "verify", result.runId);
@@ -109,14 +86,13 @@ export const gateCommand = (
       ),
     });
 
-    return Promise.resolve(
-      passed
-        ? ok(describeRun(result), result)
-        : failed(describeRun(result), result)
-    );
-  } finally {
-    if (existsSync(gateLockFile(context))) {
-      rmSync(gateLockFile(context));
-    }
-  }
+    return passed
+      ? ok(describeRun(result), result)
+      : failed(describeRun(result), result);
+  });
+
+  return Promise.resolve(
+    outcome ??
+      blocked("a factory verify or gate is already running in this checkout")
+  );
 };

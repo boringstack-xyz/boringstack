@@ -123,6 +123,8 @@ const pathspec = (unit: IUnit): string[] => {
     unit.path,
     ":(exclude)*.md",
     ":(exclude)docs/",
+    /* Verification records its own observations here; they are not code. */
+    ":(exclude)tools/agent/inventories/",
     ...(unit.path === "." ? others : []),
   ];
 };
