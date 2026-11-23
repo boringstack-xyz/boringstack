@@ -30,6 +30,16 @@ describe("OpenAIProvider — OpenAI-compatible endpoints", () => {
     expect(provider.providerName).toBe("openai");
   });
 
+  it("reports openrouter when built for AI_PROVIDER=openrouter", () => {
+    const provider = new OpenAIProvider({
+      apiKey: "sk-or-test",
+      baseURL: "https://openrouter.ai/api/v1",
+      providerName: "openrouter",
+    });
+
+    expect(provider.providerName).toBe("openrouter");
+  });
+
   it("accepts a local Ollama URL", () => {
     const provider = new OpenAIProvider({
       apiKey: "ollama",

@@ -258,6 +258,11 @@ const readAI = (source: EnvSource) => ({
   OPENAI_BASE_URL: source.OPENAI_BASE_URL ?? "",
   OPENAI_DEFAULT_HEADERS: source.OPENAI_DEFAULT_HEADERS ?? "",
   ANTHROPIC_API_KEY: source.ANTHROPIC_API_KEY ?? "",
+  OPENROUTER_API_KEY: source.OPENROUTER_API_KEY ?? "",
+  OPENROUTER_BASE_URL:
+    source.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1",
+  OPENROUTER_DATA_COLLECTION:
+    source.OPENROUTER_DATA_COLLECTION === "allow" ? "allow" : "deny",
 });
 
 const readMultiTenant = (source: EnvSource) => ({
@@ -598,6 +603,12 @@ const checkAIProvider = (env: Env): string[] => {
   if (env.AI_PROVIDER === "anthropic" && env.ANTHROPIC_API_KEY === "") {
     return [
       "AI_ENABLED=true with AI_PROVIDER=anthropic requires ANTHROPIC_API_KEY",
+    ];
+  }
+
+  if (env.AI_PROVIDER === "openrouter" && env.OPENROUTER_API_KEY === "") {
+    return [
+      "AI_ENABLED=true with AI_PROVIDER=openrouter requires OPENROUTER_API_KEY",
     ];
   }
 

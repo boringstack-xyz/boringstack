@@ -186,12 +186,13 @@
       "kind": "one-of",
       "group": "providers",
       "label": "AI provider",
-      "options": ["openai", "anthropic", "noop"],
+      "options": ["openai", "anthropic", "openrouter", "noop"],
       "devDefault": "openai",
       "requiresSecretsWhen": "AI_ENABLED=true",
       "requiresSecrets": {
         "openai": ["OPENAI_API_KEY"],
-        "anthropic": ["ANTHROPIC_API_KEY"]
+        "anthropic": ["ANTHROPIC_API_KEY"],
+        "openrouter": ["OPENROUTER_API_KEY"]
       }
     },
     {

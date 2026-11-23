@@ -23,4 +23,6 @@ export interface IOpenAIProviderOptions {
    * (`HTTP-Referer`, `X-Title`) or any custom-gateway auth.
    */
   defaultHeaders?: Record<string, string>;
+  /** Name reported by `providerName`; set to "openrouter" when pointed at OpenRouter. */
+  providerName?: "openai" | "openrouter";
 }
