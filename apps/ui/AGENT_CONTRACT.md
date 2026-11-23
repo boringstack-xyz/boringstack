@@ -36,7 +36,7 @@ Hard rules:
 | `bun run dev`                  | Vite dev server on :7331 (proxies `/api` and `/auth` → `VITE_API_URL`)                |
 | `bun run validate`             | Merge gate: lint + format + typecheck + vitest + build + size budget                  |
 | `bun run validate:full`        | `validate` + Playwright (needs a running stack on :7331)                              |
-| `bun run check`                | Lint + format + typecheck (no tests)                                                  |
+| `bun run check`                | Lint + format + typecheck (`tsc` and TypeScript 7 native, no tests)                   |
 | `bun run test`                 | Vitest in watch mode                                                                  |
 | `bun run test:ci`              | Vitest single run with coverage                                                       |
 | `bun run e2e`                  | Playwright (Chromium + WebKit)                                                        |

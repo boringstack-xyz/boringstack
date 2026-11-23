@@ -19,7 +19,7 @@ Read this first. Long-form patterns are in [AGENTS.md](AGENTS.md).
 |                                      |                                       |
 | ------------------------------------ | ------------------------------------- |
 | `bun run validate`                   | fast merge gate (check + tests)       |
-| `bun run check`                      | typecheck + lint + lint:meta + knip   |
+| `bun run check`                      | typecheck (TS6 + TS7 native) + lint + lint:meta + knip |
 | `bun run test`                       | default tests                                 |
 | `bun run test:coverage`              | coverage ratchet (pre-push/CI gate)   |
 | `bun run dev`                        | watch server                          |
