@@ -797,6 +797,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/lifecycle/unsubscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Show the follow-up email unsubscribe page */
+        get: operations["getApiV1LifecycleUnsubscribe"];
+        put?: never;
+        /** Unsubscribe from follow-up emails (one-click capable) */
+        post: operations["postApiV1LifecycleUnsubscribe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/webhooks/resend": {
         parameters: {
             query?: never;
@@ -3706,6 +3724,44 @@ export interface operations {
     getApiV1NotificationsStream: {
         parameters: {
             query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getApiV1LifecycleUnsubscribe: {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    postApiV1LifecycleUnsubscribe: {
+        parameters: {
+            query: {
+                token: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
