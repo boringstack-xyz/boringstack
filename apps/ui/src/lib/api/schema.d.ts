@@ -676,6 +676,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/product-events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a consented product event */
+        post: operations["postApiV1Product-events"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback/{moment}/show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim a feedback moment; true only the first time */
+        post: operations["postApiV1FeedbackByMomentShow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/feedback/{moment}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Answer or dismiss the feedback prompt */
+        put: operations["putApiV1FeedbackByMoment"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications/push/subscribe": {
         parameters: {
             query?: never;
@@ -3283,6 +3334,113 @@ export interface operations {
                         nextCursor: string | null;
                     };
                 };
+            };
+        };
+    };
+    "postApiV1Product-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @default sign_up_completed
+                     * @enum {string}
+                     */
+                    kind: "sign_up_completed" | "checkout_started" | "feedback_given";
+                    context?: string;
+                };
+                "multipart/form-data": {
+                    /**
+                     * @default sign_up_completed
+                     * @enum {string}
+                     */
+                    kind: "sign_up_completed" | "checkout_started" | "feedback_given";
+                    context?: string;
+                };
+                "text/plain": {
+                    /**
+                     * @default sign_up_completed
+                     * @enum {string}
+                     */
+                    kind: "sign_up_completed" | "checkout_started" | "feedback_given";
+                    context?: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    postApiV1FeedbackByMomentShow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                moment: "onboarded" | "upgraded";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        show: boolean;
+                    };
+                    "multipart/form-data": {
+                        show: boolean;
+                    };
+                    "text/plain": {
+                        show: boolean;
+                    };
+                };
+            };
+        };
+    };
+    putApiV1FeedbackByMoment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                moment: "onboarded" | "upgraded";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    answer: string;
+                    dismissed: boolean;
+                };
+                "multipart/form-data": {
+                    answer: string;
+                    dismissed: boolean;
+                };
+                "text/plain": {
+                    answer: string;
+                    dismissed: boolean;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

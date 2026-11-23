@@ -557,5 +557,14 @@
         "body": "Geräteübergreifende Kennungen für Werbe-/Kampagnentools. Standardmäßig aus; die meisten Forks benötigen diese Kategorie nicht."
       }
     }
+  },
+  "feedback": {
+    "prompt": {
+      "ariaLabel": "Kurze Frage",
+      "question": "Was könnten wir an einer Stelle klarer machen?",
+      "placeholder": "Optional. Ein Satz genügt.",
+      "send": "Senden",
+      "notNow": "Nicht jetzt"
+    }
   }
 }
