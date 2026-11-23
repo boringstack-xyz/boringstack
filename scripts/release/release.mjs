@@ -115,6 +115,24 @@ async function gate() {
   }
   const expected = expectedWorkflows(workflows, changed);
   console.log("Waiting for successful checks at", sha, expected);
+  try {
+    await waitForChecks(sha, expected);
+  } catch (error) {
+    // A newer push to main cancels this commit's in-flight checks, and its
+    // own release ships this commit too. That is a skip, not a failure.
+    if (await superseded(sha)) {
+      console.log(
+        `Superseded by a newer main commit; skipping (${error.message})`,
+      );
+      await markSuperseded();
+      return;
+    }
+    throw error;
+  }
+  if (await superseded(sha)) await markSuperseded();
+}
+
+async function waitForChecks(sha, expected) {
   const deadline = Date.now() + 45 * 60_000;
   while (Date.now() < deadline) {
     const pages = JSON.parse(
@@ -133,6 +151,18 @@ async function gate() {
   throw new Error(
     "CI did not complete within 45 minutes; no production images changed",
   );
+}
+
+async function superseded(sha) {
+  await command(["git", "fetch", "--quiet", "origin", "main"]);
+  return (await command(["git", "rev-parse", "origin/main"])) !== sha;
+}
+
+async function markSuperseded() {
+  if (process.env.GITHUB_OUTPUT)
+    await writeFile(process.env.GITHUB_OUTPUT, "superseded=true\n", {
+      flag: "a",
+    });
 }
 
 async function promote() {

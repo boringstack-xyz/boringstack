@@ -130,8 +130,15 @@ test("release configuration has one k8s publisher, requires activation, checks a
     await Bun.file(".github/workflows/production-release.yml").text(),
   ) as {
     jobs: {
+      checks: {
+        "runs-on": string;
+        if?: string;
+        outputs: Record<string, string>;
+        steps: Array<{ run?: string; id?: string }>;
+      };
       release: {
         "runs-on": string;
+        needs: string;
         if?: string;
         steps: Array<{
           run?: string;
@@ -142,19 +149,21 @@ test("release configuration has one k8s publisher, requires activation, checks a
       };
     };
   };
-  const release = workflow.jobs.release;
-  expect(release["runs-on"]).toBe("ubuntu-24.04");
-  expect(release.if).toBe("vars.PRODUCTION_RELEASE_MODE == 'coordinated'");
-  const steps = release.steps;
-  const gate = steps.findIndex((step) =>
-    step.run?.includes("release.mjs gate"),
+  const { checks, release } = workflow.jobs;
+  expect(checks.if).toBe("vars.PRODUCTION_RELEASE_MODE == 'coordinated'");
+  expect(checks.steps.some((step) => step.run?.includes("release.mjs gate"))).toBe(
+    true,
   );
+  expect(checks.outputs.superseded).toBe("${{ steps.gate.outputs.superseded }}");
+  // An overtaken commit skips its release instead of failing it.
+  expect(release.needs).toBe("checks");
+  expect(release.if).toContain("needs.checks.outputs.superseded != 'true'");
+  expect(release["runs-on"]).toBe("ubuntu-24.04");
+  const steps = release.steps;
   const builds = steps.filter((step) =>
     step.uses?.startsWith("docker/build-push-action"),
   );
   expect(builds).toHaveLength(imageNames.length);
-  expect(gate).toBeGreaterThan(-1);
-  expect(gate).toBeLessThan(steps.indexOf(builds[0]));
   expect(builds.every((step) => step.with?.tags?.includes(":candidate-"))).toBe(
     true,
   );
@@ -169,7 +178,7 @@ test("release configuration has one k8s publisher, requires activation, checks a
     "UI_DIGEST",
   ]);
   expect(promotion?.run).toContain(
-    'test "$(git rev-parse origin/main)" = "$GITHUB_SHA"',
+    'if [ "$(git rev-parse origin/main)" != "$GITHUB_SHA" ]; then',
   );
   expect(promotion?.run).not.toContain("--force");
   // Only the release workflow may write the production image pins.
