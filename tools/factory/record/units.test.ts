@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { fingerprintUnit, unitByPath } from "./units";
+import { fingerprintUnit, stillGreenRecipes, UNITS, unitByPath } from "./units";
 
 const sh = (cwd: string, ...argv: string[]): void => {
   const [program = "", ...rest] = argv;
@@ -54,5 +54,31 @@ describe("unit fingerprints", () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
+  });
+});
+
+describe("stillGreenRecipes", () => {
+  const verifyUnits = UNITS.filter((unit) => unit.recipe.id === "agent-verify");
+  const states = Object.fromEntries(
+    verifyUnits.map((unit) => [unit.path, `now-${unit.path}`])
+  );
+
+  test("counts a recipe whose every unit passed at its current content", () => {
+    expect(
+      stillGreenRecipes(verifyUnits, states, states).has("agent-verify")
+    ).toBe(true);
+  });
+
+  test("not when one unit changed since it passed", () => {
+    const [first] = verifyUnits;
+    const green = { ...states, [first?.path ?? ""]: "older" };
+
+    expect(
+      stillGreenRecipes(verifyUnits, green, states).has("agent-verify")
+    ).toBe(false);
+  });
+
+  test("not when a unit never passed", () => {
+    expect(stillGreenRecipes(verifyUnits, {}, states).size).toBe(0);
   });
 });

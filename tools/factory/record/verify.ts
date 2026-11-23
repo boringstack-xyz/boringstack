@@ -13,6 +13,8 @@ import {
   fingerprintAll,
   type IRecipe,
   type IUnit,
+  presentUnits,
+  stillGreenRecipes,
   type UnitStates,
   unitByPath,
   UNITS,
@@ -324,6 +326,11 @@ export const verify = (
           return unit === undefined ? [] : [unit];
         });
   const before = fingerprintAll(context.root);
+  const stillGreen = stillGreenRecipes(
+    presentUnits(context.root),
+    readGreen(context),
+    before
+  );
   const runs: IRecipeRun[] = [];
 
   mkdirSync(dir, { recursive: true });
@@ -341,9 +348,12 @@ export const verify = (
       `factory verify: ${recipe.summary} (${group.map((unit) => unit.path).join(", ")})`
     );
 
-    const passedRecipes = new Set(
-      runs.filter((item) => item.status === "passed").map((item) => item.recipe)
-    );
+    const passedRecipes = new Set([
+      ...stillGreen,
+      ...runs
+        .filter((item) => item.status === "passed")
+        .map((item) => item.recipe),
+    ]);
     const current = runRecipe(
       context,
       recipe,

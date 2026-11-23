@@ -188,3 +188,35 @@ export const changedSince = (root: string, base: string): IUnit[] =>
 
 export const unitByPath = (path: string): IUnit | undefined =>
   UNITS.find((unit) => unit.path === path);
+
+/**
+ * Recipes whose every present unit last passed at the content it has now
+ * (green.json). Such a recipe covers another's skipped checks (coveredBy)
+ * without running again in the same verify.
+ */
+export const stillGreenRecipes = (
+  present: readonly IUnit[],
+  green: UnitStates,
+  states: UnitStates
+): Set<string> => {
+  const byRecipe = new Map<string, IUnit[]>();
+
+  for (const unit of present) {
+    byRecipe.set(unit.recipe.id, [
+      ...(byRecipe.get(unit.recipe.id) ?? []),
+      unit,
+    ]);
+  }
+
+  return new Set(
+    [...byRecipe]
+      .filter(([, units]) =>
+        units.every(
+          (unit) =>
+            states[unit.path] !== undefined &&
+            green[unit.path] === states[unit.path]
+        )
+      )
+      .map(([recipe]) => recipe)
+  );
+};
