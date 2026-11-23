@@ -122,22 +122,33 @@ export const UNITS: readonly IUnit[] = [
   },
 ];
 
-/** Documentation is not code: Markdown and docs/ never ask for a check run. */
-const pathspec = (unit: IUnit): string[] => {
-  const others = UNITS.filter(
-    (other) => other.path !== "." && other.path !== unit.path
-  ).map((other) => `:(exclude)${other.path}`);
+/*
+ * Which unit a path belongs to is decided here, not with git's exclude
+ * pathspecs: git 2.54 and 2.55 return nothing for `apps/ui ':(exclude)*.md'`,
+ * which made every nested unit look empty and therefore always verified.
+ */
+const NOT_CODE = (file: string): boolean =>
+  file.endsWith(".md") ||
+  file.startsWith("docs/") ||
+  /* Verification records its own observations here; they are not code. */
+  file.startsWith("tools/agent/inventories/");
 
-  return [
-    "--",
-    unit.path,
-    ":(exclude)*.md",
-    ":(exclude)docs/",
-    /* Verification records its own observations here; they are not code. */
-    ":(exclude)tools/agent/inventories/",
-    ...(unit.path === "." ? others : []),
-  ];
+const isUnder = (file: string, path: string): boolean =>
+  file === path || file.startsWith(`${path}/`);
+
+/** Documentation is not code: Markdown and docs/ never ask for a check run. */
+export const belongsTo = (unit: IUnit, file: string): boolean => {
+  if (file === "" || NOT_CODE(file)) {
+    return false;
+  }
+
+  return unit.path === "."
+    ? !UNITS.some((other) => other.path !== "." && isUnder(file, other.path))
+    : isUnder(file, unit.path);
 };
+
+const pathspec = (unit: IUnit): string[] =>
+  unit.path === "." ? ["--", "."] : ["--", unit.path];
 
 /**
  * The unit's content: every tracked or new (not ignored) file and what it
@@ -155,7 +166,7 @@ export const fingerprintUnit = (root: string, unit: IUnit): string => {
     ]) ?? ""
   )
     .split("\n")
-    .filter((file) => file !== "" && existsSync(join(root, file)))
+    .filter((file) => belongsTo(unit, file) && existsSync(join(root, file)))
     .sort();
   const run = spawnSync("git", ["-C", root, "hash-object", "--stdin-paths"], {
     input: files.join("\n"),
@@ -183,18 +194,20 @@ export const fingerprintAll = (root: string): UnitStates =>
   );
 
 /** Units whose files differ between `base` and the working tree. */
-export const changedSince = (root: string, base: string): IUnit[] =>
-  presentUnits(root).filter((unit) => {
-    const committed = git(root, [
-      "diff",
-      "--name-only",
-      base,
-      ...pathspec(unit),
-    ]);
-    const dirty = git(root, ["status", "--porcelain", ...pathspec(unit)]);
+export const changedSince = (root: string, base: string): IUnit[] => {
+  /* Against the working tree: committed, staged and unstaged edits alike. */
+  const tracked = git(root, ["diff", "--name-only", base]);
+  const untracked = git(root, ["ls-files", "--others", "--exclude-standard"]);
+  const paths = [
+    ...(tracked ?? "").split("\n"),
+    ...(untracked ?? "").split("\n"),
+  ];
 
-    return (committed ?? "x") !== "" || (dirty ?? "") !== "";
-  });
+  return presentUnits(root).filter(
+    (unit) =>
+      tracked === undefined || paths.some((path) => belongsTo(unit, path))
+  );
+};
 
 export const unitByPath = (path: string): IUnit | undefined =>
   UNITS.find((unit) => unit.path === path);
