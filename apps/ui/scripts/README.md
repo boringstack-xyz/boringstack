@@ -31,6 +31,7 @@ When you add a `package.json` script that runs a file under `scripts/`, update t
 | `bun run generate:api:check`       | `codegen/generate-api.ts --check`              |
 | `bun run new:component`            | `codegen/new-component.ts`                     |
 | `bun run new:feature`              | `codegen/new-feature.ts`                       |
+| `bun run ui:add`                   | `codegen/ui-add.ts` (wraps `shadcn add`)       |
 
 ## Maintainer
 
