@@ -4,9 +4,11 @@ import { db } from "../../clients/postgres";
 import { emailSuppression } from "../../clients/postgres/schema";
 import { logger } from "../../config/logger";
 import { getErrorMessage } from "../errors";
+import { nowMs } from "../time/now";
 import {
   EMAIL_SUPPRESSION_PROVIDERS,
   EMAIL_SUPPRESSION_REASONS,
+  PROVIDER_SUPPRESSION_TTL_MS,
   type EmailSuppressionProvider,
   type EmailSuppressionReason,
 } from "./suppression.constants";
@@ -123,6 +125,15 @@ export class EmailSuppressionService {
         .limit(1);
 
       if (row === undefined) {
+        return null;
+      }
+
+      if (
+        row.reason === EMAIL_SUPPRESSION_REASONS.PROVIDER_SUPPRESSED &&
+        nowMs() - Date.parse(row.suppressedAt) >= PROVIDER_SUPPRESSION_TTL_MS
+      ) {
+        await this.clear(normalized);
+
         return null;
       }
 

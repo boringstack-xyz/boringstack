@@ -1,12 +1,18 @@
 import { Worker, type Job, type WorkerOptions } from "bullmq";
-import { BULL_PREFIX, getValkeyConnectionOptions } from "../../clients/valkey";
+import {
+  BULL_PREFIX,
+  getValkeyConnectionOptions,
+  watchValkeyConnection,
+} from "../../clients/valkey";
 import { logger } from "../../config/logger";
+import { auditLogService } from "../../lib/audit-log";
 import { dedupService } from "../../lib/notifications";
 import { withQueueSpan } from "../../lib/tracing";
 import {
   NOTIFICATION_DEDUP_CLEANUP_JOB_NAME,
   NOTIFICATION_MAINTENANCE_DEFAULTS,
   NOTIFICATION_MAINTENANCE_QUEUE_NAME,
+  SOFT_BOUNCE_RECOVERY_JOB_NAME,
 } from "./notification-maintenance.constants";
 import type { INotificationMaintenanceJobData } from "./notification-maintenance.types";
 
@@ -55,12 +61,16 @@ export class NotificationMaintenanceWorker {
       }
     );
 
-    this.worker.on("error", (err: Error) => {
-      logger.error("Notification maintenance worker error", {
-        event: "notification_maintenance_worker_error",
-        error: err.message,
-      });
-    });
+    watchValkeyConnection(
+      this.worker,
+      "notification-maintenance worker",
+      (err: Error) => {
+        logger.error("Notification maintenance worker error", {
+          event: "notification_maintenance_worker_error",
+          error: err.message,
+        });
+      }
+    );
   }
 
   private async processJob(
@@ -73,6 +83,31 @@ export class NotificationMaintenanceWorker {
         event: "notifications.dedup.cleanup.completed",
         deletedRows: deleted,
       });
+
+      return;
+    }
+
+    if (job.name === SOFT_BOUNCE_RECOVERY_JOB_NAME) {
+      /* Loaded here: the recovery reaches back into the queues to send again. */
+      const { runSoftBounceRecovery } =
+        await import("../../lib/email/soft-bounce-recovery.setup");
+      const { softBounceAuditEvents } =
+        await import("../../lib/email/soft-bounce-recovery.utils");
+      const result = await runSoftBounceRecovery();
+
+      /* A tick with nothing blocked says nothing: this runs every 5 minutes. */
+      if (result !== null && result.found > 0) {
+        logger.info("Soft-bounce recovery ran", {
+          event: "email_soft_bounce.sweep_completed",
+          ...result,
+        });
+      }
+
+      for (const event of result === null
+        ? []
+        : softBounceAuditEvents(result)) {
+        void auditLogService.record(event);
+      }
 
       return;
     }

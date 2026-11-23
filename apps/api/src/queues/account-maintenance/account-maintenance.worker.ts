@@ -1,5 +1,9 @@
 import { Worker, type Job, type WorkerOptions } from "bullmq";
-import { BULL_PREFIX, getValkeyConnectionOptions } from "../../clients/valkey";
+import {
+  BULL_PREFIX,
+  getValkeyConnectionOptions,
+  watchValkeyConnection,
+} from "../../clients/valkey";
 import { syntheticService } from "../../api/auth/services";
 import { logger } from "../../config/logger";
 import { withQueueSpan } from "../../lib/tracing";
@@ -83,12 +87,16 @@ export class AccountMaintenanceWorker {
       }
     );
 
-    this.worker.on("error", (err: Error) => {
-      logger.error("Account maintenance worker error", {
-        event: "account_maintenance_worker_error",
-        error: err.message,
-      });
-    });
+    watchValkeyConnection(
+      this.worker,
+      "account-maintenance worker",
+      (err: Error) => {
+        logger.error("Account maintenance worker error", {
+          event: "account_maintenance_worker_error",
+          error: err.message,
+        });
+      }
+    );
   }
 
   private async processJob(

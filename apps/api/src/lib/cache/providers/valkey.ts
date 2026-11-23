@@ -1,5 +1,8 @@
 import { Redis } from "ioredis";
-import { getValkeyAppClientOptions } from "../../../clients/valkey";
+import {
+  getValkeyAppClientOptions,
+  watchValkeyConnection,
+} from "../../../clients/valkey";
 import { logger } from "../../../config/logger";
 import { getErrorMessage } from "../../errors";
 import type {
@@ -30,7 +33,7 @@ export class ValkeyCacheService implements ICacheService {
 
     const redisClient = new Redis(getValkeyAppClientOptions());
 
-    redisClient.on("error", (err: Error) => {
+    watchValkeyConnection(redisClient, "cache", (err: Error) => {
       logger.error("Valkey cache client error", {
         event: "cache_valkey_error",
         error: err.message,

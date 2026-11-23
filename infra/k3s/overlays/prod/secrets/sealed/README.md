@@ -7,7 +7,7 @@ decrypts committed `SealedSecret` manifests into real `Secret`s in-cluster.
 ## Use it
 
 1. Install the controller on the cluster and the `kubeseal` CLI locally.
-2. Author the two Secrets this stack needs, then seal them:
+2. Author the three Secrets this stack needs, then seal them:
 
    ```bash
    # App env -> boringstack-secrets (one key per env var)
@@ -21,6 +21,13 @@ decrypts committed `SealedSecret` manifests into real `Secret`s in-cluster.
      --dry-run=client -o yaml \
      | kubeseal --format yaml > boringstack-secrets.sealedsecret.yaml
 
+   # Valkey reads its password from its own Secret; use the same value.
+   kubectl create secret generic boringstack-valkey \
+     --namespace boringstack-prod \
+     --from-literal=VALKEY_PASSWORD="<same as above>" \
+     --dry-run=client -o yaml \
+     | kubeseal --format yaml > boringstack-valkey.sealedsecret.yaml
+
    # GHCR pull creds -> ghcr-registry-secret
    kubectl create secret docker-registry ghcr-registry-secret \
      --namespace boringstack-prod \
@@ -31,7 +38,7 @@ decrypts committed `SealedSecret` manifests into real `Secret`s in-cluster.
      | kubeseal --format yaml > ghcr-registry-secret.sealedsecret.yaml
    ```
 
-3. Commit both `*.sealedsecret.yaml` files here, list them in
+3. Commit the `*.sealedsecret.yaml` files here, list them in
    `kustomization.yaml`, and point the overlay at `secrets/sealed` instead of
    `secrets/vault`.
 

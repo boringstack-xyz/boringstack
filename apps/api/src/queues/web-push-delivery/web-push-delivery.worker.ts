@@ -6,7 +6,11 @@ import {
   notificationDelivery,
   pushSubscription,
 } from "../../clients/postgres/schema";
-import { BULL_PREFIX, getValkeyConnectionOptions } from "../../clients/valkey";
+import {
+  BULL_PREFIX,
+  getValkeyConnectionOptions,
+  watchValkeyConnection,
+} from "../../clients/valkey";
 import { env } from "../../config/env";
 import { logger } from "../../config/logger";
 import { assertAllowedPushEndpoint } from "../../api/notifications/notifications.push.destination";
@@ -331,12 +335,16 @@ export class WebPushDeliveryWorker {
       }
     );
 
-    this.worker.on("error", (err: Error) => {
-      logger.error("Web Push delivery worker error", {
-        event: "notifications.web_push.worker_error",
-        error: err.message,
-      });
-    });
+    watchValkeyConnection(
+      this.worker,
+      "web-push-delivery worker",
+      (err: Error) => {
+        logger.error("Web Push delivery worker error", {
+          event: "notifications.web_push.worker_error",
+          error: err.message,
+        });
+      }
+    );
   }
 
   private async processJob(job: Job<IWebPushDeliveryJobData>): Promise<void> {
