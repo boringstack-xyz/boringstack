@@ -2,6 +2,7 @@ export {
   LIFECYCLE_DEDUP_WINDOW_SECONDS,
   LIFECYCLE_STAGES,
 } from "./lifecycle.constants";
+export { lifecycleService } from "./lifecycle.service";
 export type { LifecycleStage } from "./lifecycle.types";
 export {
   lifecycleEmailEnvelope,
