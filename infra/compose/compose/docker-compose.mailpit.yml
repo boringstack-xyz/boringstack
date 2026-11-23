@@ -9,6 +9,12 @@
 #
 # https://mailpit.axllent.org
 
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   # Route the dev API's mail to the catcher whenever this overlay is merged,
   # so `docker compose -f ... -f docker-compose.mailpit.yml` behaves the same
@@ -21,6 +27,7 @@ services:
       SMTP_PORT: ${API_DEV_SMTP_PORT:-1025}
 
   mailpit:
+    logging: *default-logging
     image: axllent/mailpit:v1.21@sha256:81370195cd4a0eab9604d17c2617a7525b0486f9365555253b6c5376c6350f1a
     profiles: [mailpit]
     restart: unless-stopped
@@ -48,6 +55,7 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+      start_interval: 2s
       start_period: 10s
     deploy:
       resources:

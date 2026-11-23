@@ -1,0 +1,106 @@
+import { existsSync, mkdirSync } from "node:fs";
+
+import type { IFactoryCommand } from "../command.types";
+import { blocked, failed, ok } from "../result";
+import { runtimeOf, writeSlotOfCheckout } from "./runtime";
+import {
+  claimFirstFreeSlot,
+  heldSlots,
+  readClaim,
+  releaseClaim,
+} from "./claims";
+import { workspacePathOf, workspacesDirOf } from "./paths";
+import { isSafeIssueId, branchFor, slotPorts } from "./paths.utils";
+import { addWorktree, baseExists, fetchBase } from "./worktree";
+import { directUrlOf } from "./preview.utils";
+import { prepareCheckout } from "./prepare";
+
+const BASE = "origin/main";
+
+export const newWorkspace: IFactoryCommand = {
+  name: "workspace new",
+  summary: "Claim a free slot and create a worktree for an issue",
+  usage: "<issue-id>",
+  run: (args, context) => {
+    const issue = args[0] ?? "";
+
+    if (!isSafeIssueId(issue) || args.length !== 1) {
+      return Promise.resolve(
+        failed(
+          "give one issue id: letters, digits, dots, dashes or underscores (for example demo-1)"
+        )
+      );
+    }
+
+    const runtime = runtimeOf(context);
+    const path = workspacePathOf(runtime.main, issue);
+
+    if (existsSync(path)) {
+      return Promise.resolve(
+        blocked(`a workspace for ${issue} already exists at ${path}`)
+      );
+    }
+
+    const sameIssue = heldSlots(runtime.shared)
+      .map((slot) => readClaim(runtime.shared, slot))
+      .find((claim) => claim?.issue === issue);
+
+    if (sameIssue !== undefined) {
+      return Promise.resolve(
+        blocked(
+          `issue ${issue} already holds slot ${String(sameIssue.slot)} at ${sameIssue.workspace}`
+        )
+      );
+    }
+
+    mkdirSync(workspacesDirOf(runtime.main), { recursive: true });
+    const fetched = fetchBase(runtime.main);
+
+    if (!baseExists(runtime.main, BASE)) {
+      return Promise.resolve(
+        blocked(
+          `there is no ${BASE} to start from; fetch it (git fetch origin main) and run again`
+        )
+      );
+    }
+
+    const branch = branchFor(issue);
+    const claim = claimFirstFreeSlot(runtime.shared, {
+      workspace: path,
+      issue,
+      branch,
+    });
+
+    if (claim === undefined) {
+      return Promise.resolve(
+        blocked(
+          "every slot is in use; remove a workspace you no longer need (workspace list)"
+        )
+      );
+    }
+
+    const added = addWorktree(runtime.main, path, branch, BASE);
+
+    if (!added.ok) {
+      releaseClaim(runtime.shared, claim.slot);
+
+      return Promise.resolve(
+        failed(
+          `could not create the workspace: ${added.err === "" ? "git refused" : added.err}`
+        )
+      );
+    }
+
+    writeSlotOfCheckout(path, claim);
+    prepareCheckout(path);
+    const ports = slotPorts(claim.slot);
+    const lines = [
+      `workspace ${issue} is slot ${String(claim.slot)} at ${path}`,
+      `branch ${branch}, started from ${BASE}${fetched ? "" : " (not refreshed: offline)"}`,
+      `UI ${directUrlOf(claim.slot)}  API http://127.0.0.1:${String(ports.api)}`,
+      "next: bun run factory up",
+    ];
+
+    return Promise.resolve(ok(lines.join("\n"), { ...claim, ports }));
+  },
+};

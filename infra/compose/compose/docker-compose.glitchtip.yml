@@ -30,6 +30,12 @@ x-glitchtip-env: &glitchtip-env
   GLITCHTIP_DEFAULT_ORG_NAME: ${GLITCHTIP_DEFAULT_ORG_NAME:-Local}
   GLITCHTIP_DEFAULT_PROJECTS: ${GLITCHTIP_DEFAULT_PROJECTS:-API,Frontend}
 
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   postgres:
     # Drop the init-db SQL in so the `glitchtip` database exists when
@@ -39,6 +45,7 @@ services:
       - ./glitchtip/init-db.sql:/docker-entrypoint-initdb.d/10-glitchtip-init-db.sql:ro
 
   glitchtip-web:
+    logging: *default-logging
     image: glitchtip/glitchtip:6.1.6@sha256:f45485d296697531464b4484ee9bb40a51a774df820f74128a2b2ae0c5a0b00f
     profiles: [glitchtip-dev, glitchtip-prod]
     restart: unless-stopped
@@ -62,6 +69,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 6
+      start_interval: 2s
       start_period: 30s
     deploy:
       resources:
@@ -83,6 +91,7 @@ services:
       - "traefik.http.services.glitchtip-web.loadbalancer.server.port=8000"
 
   glitchtip-worker:
+    logging: *default-logging
     image: glitchtip/glitchtip:6.1.6@sha256:f45485d296697531464b4484ee9bb40a51a774df820f74128a2b2ae0c5a0b00f
     profiles: [glitchtip-dev, glitchtip-prod]
     restart: unless-stopped
@@ -122,6 +131,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 5
+      start_interval: 2s
       start_period: 30s
     deploy:
       resources:

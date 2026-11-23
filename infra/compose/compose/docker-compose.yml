@@ -36,6 +36,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+      start_interval: 2s
     deploy:
       resources:
         limits:
@@ -77,6 +78,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+      start_interval: 2s
     deploy:
       resources:
         limits:
@@ -129,6 +131,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+      start_interval: 2s
       start_period: 5s
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -342,6 +345,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+      start_interval: 2s
       start_period: 15s
     networks:
       - backend
@@ -430,6 +434,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+      start_interval: 2s
       start_period: 5s
     networks:
       - frontend
@@ -488,6 +493,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+      start_interval: 2s
       start_period: 15s
     env_file:
       - path: ./api.prod.env
@@ -572,6 +578,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+      start_interval: 2s
       start_period: 5s
     security_opt:
       - no-new-privileges:true

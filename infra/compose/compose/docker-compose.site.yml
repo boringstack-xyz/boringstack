@@ -96,6 +96,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+      start_interval: 2s
       start_period: 5s
     security_opt:
       - no-new-privileges:true
