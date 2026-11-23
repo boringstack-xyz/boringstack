@@ -112,16 +112,19 @@ export const decideStop = (input: {
     };
   }
 
+  /* A run in progress decides, not the verdict of the one before it. */
+  if (input.pending.length > 0 && input.gateRunning) {
+    return {
+      stop: true,
+      note: "factory gate is running; its result arrives when it ends",
+    };
+  }
+
   if (input.pending.length > 0 && input.gate === undefined) {
-    return input.gateRunning
-      ? {
-          stop: true,
-          note: "factory gate is running; its result arrives when it ends",
-        }
-      : {
-          stop: false,
-          reason: `Before finishing, start \`bun run factory gate${input.sessionId === undefined ? "" : ` --session ${input.sessionId}`}\` in the background (never in the foreground: the person cannot talk to you while it runs). It verifies what you changed (${input.pending.join(", ")}) and records the pass. Tell the person the checks are running, then keep answering; you are told when it ends.`,
-        };
+    return {
+      stop: false,
+      reason: `Before finishing, start \`bun run factory gate${input.sessionId === undefined ? "" : ` --session ${input.sessionId}`}\` in the background (never in the foreground: the person cannot talk to you while it runs). It verifies what you changed (${input.pending.join(", ")}) and records the pass. Tell the person the checks are running, then keep answering; you are told when it ends.`,
+    };
   }
 
   if (input.pending.length > 0 && input.gate !== undefined && !input.gate.ok) {

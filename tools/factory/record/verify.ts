@@ -161,6 +161,15 @@ const agentFailures = (
   };
 };
 
+/**
+ * A checkout lock outlives a verification that was killed (a closed
+ * session, a reboot). Say how to clear it, rather than only "blocked".
+ */
+const withRecoveryHint = (failure: string): string =>
+  failure.includes("checkout_locked")
+    ? `${failure}; if no verification is running in this checkout, a killed one left the lock: bun run agent:recover -- checkout --acknowledge-partial-writes`
+    : failure;
+
 /** Runs one recipe in `root`; failures are what a base comparison matches on. */
 const runRecipe = (
   context: IFactoryContext,
@@ -202,7 +211,7 @@ const runRecipe = (
           : parsed.status === "failed"
             ? "failed"
             : "blocked",
-      failures: parsed.failures,
+      failures: parsed.failures.map(withRecoveryHint),
     };
   }
 

@@ -77,6 +77,17 @@ describe("the stop decision", () => {
     );
   });
 
+  test("a running gate decides, not the red run before it", () => {
+    expect(
+      decideStop({
+        ...base,
+        pending: ["tools"],
+        gateRunning: true,
+        gate: { ok: false, summary: "blocked", evidence: "/x" },
+      }).stop
+    ).toBe(true);
+  });
+
   test("a running gate lets the session pause", () => {
     expect(
       decideStop({ ...base, pending: ["apps/api"], gateRunning: true }).stop
