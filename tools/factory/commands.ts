@@ -2,6 +2,7 @@ import { browseCommands } from "./browse";
 import type { IFactoryCommand } from "./command.types";
 import { fleetCommands } from "./fleet";
 import { hookCommands } from "./hooks";
+import { lanesCommands } from "./lanes";
 import { recordCommands } from "./record";
 import { trackerCommands } from "./tracker";
 import { workspaceCommands } from "./workspace";
@@ -14,6 +15,7 @@ export const COMMANDS: readonly IFactoryCommand[] = [
   ...trackerCommands,
   ...fleetCommands,
   ...browseCommands,
+  ...lanesCommands,
 ];
 
 /** The command whose name is the longest prefix of argv, and the rest of argv. */
