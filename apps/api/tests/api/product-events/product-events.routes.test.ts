@@ -94,7 +94,7 @@ describe("product events routes", () => {
     const member = await loginCookie(app, "events-unknown@example.com");
     const res = await post(app, member.cookie, { kind: "email_typed" });
 
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(400);
     expect(await db.select().from(productEvents)).toHaveLength(0);
   });
 

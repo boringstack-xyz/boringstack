@@ -4,10 +4,12 @@ import { requireAuth } from "../auth/auth.plugin";
 import { FEEDBACK_RATE_LIMIT } from "./feedback.constants";
 import {
   FeedbackAnswerBodySchema,
-  FeedbackMomentParams,
+  feedbackMomentParams,
   FeedbackShowResponse,
 } from "./feedback.schemas";
 import { feedbackService } from "./feedback.service";
+import { isFeedbackMoment } from "./feedback.utils";
+import { ApiErrors } from "../../lib/errors";
 
 const TAG = "Feedback";
 
@@ -22,14 +24,20 @@ const feedbackRoutes = requireAuth()
   .use(buildScopedRateLimit("feedback", FEEDBACK_RATE_LIMIT))
   .post(
     "/:moment/show",
-    async ({ user, accountId, params }) => ({
-      show: await feedbackService.claim(
-        { accountId, userId: user.id, email: user.email },
-        params.moment
-      ),
-    }),
+    async ({ user, accountId, params }) => {
+      if (!isFeedbackMoment(params.moment)) {
+        throw ApiErrors.notFound("Feedback moment");
+      }
+
+      return {
+        show: await feedbackService.claim(
+          { accountId, userId: user.id, email: user.email },
+          params.moment
+        ),
+      };
+    },
     {
-      params: FeedbackMomentParams,
+      params: feedbackMomentParams(),
       response: FeedbackShowResponse,
       detail: {
         tags: [TAG],
@@ -41,6 +49,10 @@ const feedbackRoutes = requireAuth()
   .put(
     "/:moment",
     async ({ user, accountId, params, body, set }) => {
+      if (!isFeedbackMoment(params.moment)) {
+        throw ApiErrors.notFound("Feedback moment");
+      }
+
       await feedbackService.answer(
         { accountId, userId: user.id, email: user.email },
         params.moment,
@@ -52,7 +64,7 @@ const feedbackRoutes = requireAuth()
       return null;
     },
     {
-      params: FeedbackMomentParams,
+      params: feedbackMomentParams(),
       body: FeedbackAnswerBodySchema,
       detail: {
         tags: [TAG],

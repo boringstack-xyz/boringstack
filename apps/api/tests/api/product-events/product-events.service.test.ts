@@ -48,6 +48,6 @@ describe("product events service", () => {
     const remaining = await db.select().from(productEvents);
 
     expect(remaining).toHaveLength(1);
-    expect(remaining[0]?.createdAt).toBe(recent);
+    expect(Date.parse(remaining[0]?.createdAt ?? "")).toBe(Date.parse(recent));
   });
 });

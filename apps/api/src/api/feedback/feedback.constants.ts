@@ -4,6 +4,8 @@
  */
 export const FEEDBACK_MOMENTS = ["onboarded", "upgraded"] as const;
 
+export const FEEDBACK_MOMENT_PATTERN = "^(onboarded|upgraded)$";
+
 export const FEEDBACK_STATES = ["shown", "answered", "dismissed"] as const;
 
 export const FEEDBACK_ANSWER_MAX_LENGTH = 1000;

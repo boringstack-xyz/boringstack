@@ -2,12 +2,18 @@ import { t } from "elysia";
 
 import {
   FEEDBACK_ANSWER_MAX_LENGTH,
-  FEEDBACK_MOMENTS,
+  FEEDBACK_MOMENT_PATTERN,
 } from "./feedback.constants";
 
-export const FeedbackMomentParams = t.Object({
-  moment: t.UnionEnum([...FEEDBACK_MOMENTS]),
-});
+/*
+ * A string checked by pattern, not `t.UnionEnum`: Elysia writes defaults into
+ * path params, and an enum default cannot be written onto them (500 on every
+ * call). `isFeedbackMoment` narrows the value in the handler.
+ */
+export const feedbackMomentParams = () =>
+  t.Object({
+    moment: t.String({ pattern: FEEDBACK_MOMENT_PATTERN, maxLength: 32 }),
+  });
 
 export const FeedbackShowResponse = t.Object({
   /* True only for the call that claimed the moment: show the prompt now. */
