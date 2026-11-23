@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { type IFactoryEnvironment, readEnvironment } from "./environment";
+import { mainCheckoutOf } from "./git";
 import { FACTORY_CONFIG } from "./factory.config";
 
 /** What every command receives: where it runs and what it may touch. */
@@ -31,7 +32,10 @@ export const createContext = (
   return {
     root,
     stateDir,
-    sharedDir: env.sharedDir ?? join(stateDir, "shared"),
+    /* The main checkout's, so every workspace on the machine shares it. */
+    sharedDir:
+      env.sharedDir ??
+      join(mainCheckoutOf(root), ".agent-state", "factory", "shared"),
     config: FACTORY_CONFIG,
     env,
     json,

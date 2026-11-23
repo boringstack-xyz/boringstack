@@ -23,7 +23,7 @@ export const FACTORY_CONFIG = {
    * database passwords. Matched against words of a command or a path.
    */
   secretFilePattern:
-    /(^|[\s/'"=])([\w.-]*\.env(?:\.(?!example(?![\w-]))[\w-]+)*|[\w.-]+\.pem|\.agent-state\/sandboxes\/[^\s'"]*)(?![\w.-])/u,
+    /(^|[\s/'"=])((?!(?:process|import\.meta)\.env\b)[\w.-]*\.env(?:\.(?!example(?![\w-]))[\w-]+)*|[\w.-]+\.pem|\.agent-state\/sandboxes\/[^\s'"]*)(?![\w.-])/u,
   /** Programs that reach real infrastructure; agents never run them. */
   forbiddenPrograms: ["kubectl", "helm", "argocd", "vault"],
   /** Subcommands of these programs that change real infrastructure. */

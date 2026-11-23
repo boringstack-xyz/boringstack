@@ -77,7 +77,7 @@ export const parseClaim = (slot: number, body: unknown): ISlotClaim | null => {
         workspace,
         issue: textOf(body, "issue"),
         branch: textOf(body, "branch"),
-        claimedAt: textOf(body, "claimedAt"),
+        claimedAt: textOf(body, "createdAt"),
       };
 };
 
@@ -86,9 +86,10 @@ export const parseStatusLine = (body: unknown): IStatusLine | null => {
     return null;
   }
 
-  const text = textOf(body, "text");
+  /* Written by `factory status` (workspace/status.ts): the line and when. */
+  const text = textOf(body, "status");
 
-  return text === null ? null : { text, at: textOf(body, "at") };
+  return text === null ? null : { text, at: textOf(body, "updatedAt") };
 };
 
 /** The address a slot's preview is published at, when preview is on. */
@@ -97,14 +98,17 @@ export const parsePreviewUrl = (body: unknown): string | null =>
 
 /** A stack's `verify/latest.json`, read down to what the fleet shows. */
 export const parseVerify = (body: unknown): IVerifyResult | null => {
-  if (!isRecord(body) || typeof body.ok !== "boolean") {
+  /* Written by `factory verify` (record/verify.ts): passed and warn are green. */
+  const status = isRecord(body) ? textOf(body, "status") : null;
+
+  if (!isRecord(body) || status === null) {
     return null;
   }
 
   return {
-    ok: body.ok,
-    level: textOf(body, "level"),
+    ok: status === "passed" || status === "warn",
+    level: status,
     runId: textOf(body, "runId"),
-    at: textOf(body, "at"),
+    at: textOf(body, "finishedAt"),
   };
 };

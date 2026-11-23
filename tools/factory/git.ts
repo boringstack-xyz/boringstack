@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { dirname } from "node:path";
 
 /** What `rev-parse --abbrev-ref HEAD` prints for a detached checkout. */
 export const DETACHED_HEAD = "HEAD";
@@ -14,6 +15,20 @@ export const git = (
   });
 
   return run.status === 0 ? run.stdout.trim() : undefined;
+};
+
+/**
+ * The main checkout, from any worktree of the repo. Its parent holds the
+ * workspaces folder; its `.agent-state` holds the machine-wide shared state.
+ */
+export const mainCheckoutOf = (root: string): string => {
+  const common = git(root, [
+    "rev-parse",
+    "--path-format=absolute",
+    "--git-common-dir",
+  ]);
+
+  return common === undefined ? root : dirname(common);
 };
 
 /** The checkout's current branch ("HEAD" when detached). */

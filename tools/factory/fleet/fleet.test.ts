@@ -109,14 +109,14 @@ describe("factory fleet", () => {
     );
     writeFileSync(
       join(shared, "status", "s1.json"),
-      JSON.stringify({ text: "Fixing the login", at: "t" })
+      JSON.stringify({ status: "Fixing the login", updatedAt: "t" })
     );
     mkdirSync(join(root, ".agent-state", "factory", "verify"), {
       recursive: true,
     });
     writeFileSync(
       join(root, ".agent-state", "factory", "verify", "latest.json"),
-      JSON.stringify({ ok: true, level: "full", runId: "20261123-100000" })
+      JSON.stringify({ status: "passed", runId: "20261123-100000" })
     );
 
     const outcome = fleetStatus(context, stackRunner().run);

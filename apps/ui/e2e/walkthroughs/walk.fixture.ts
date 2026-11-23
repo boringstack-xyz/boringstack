@@ -14,6 +14,8 @@ import { test as base, expect } from "@playwright/test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { walkConfig } from "./walk.config";
+
 export interface IWalkStepRecord {
   readonly index: number;
   readonly title: string;
@@ -36,8 +38,7 @@ export const slugOf = (title: string): string =>
 
 export const test = base.extend<{ walk: IWalk }>({
   walk: async ({ page }, use, testInfo) => {
-    const folder =
-      process.env.FACTORY_WALK_DIR ?? join(testInfo.outputDir, "walk");
+    const folder = walkConfig.outputDir ?? join(testInfo.outputDir, "walk");
     const steps: IWalkStepRecord[] = [];
 
     mkdirSync(folder, { recursive: true });

@@ -2,10 +2,11 @@ import { randomUUID } from "node:crypto";
 
 import { DashboardPage } from "../pages/DashboardPage";
 import { SignUpPage } from "../pages/SignUpPage";
+import { walkConfig } from "./walk.config";
 import { expect, test } from "./walk.fixture";
 
 /* `factory walk` sets FACTORY_BASE_URL to the stack being walked. */
-test.use({ baseURL: process.env.FACTORY_BASE_URL });
+test.use({ baseURL: walkConfig.baseURL });
 
 test("a new person signs up and reaches the dashboard", async ({
   page,

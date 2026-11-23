@@ -1,22 +1,9 @@
 import { spawnSync } from "node:child_process";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 
 import { FACTORY_CONFIG } from "../factory.config";
-import { git } from "../git";
 
-/**
- * The main checkout, from any worktree of the repo. Its parent holds the
- * workspaces folder; its `.agent-state` holds the machine-wide shared state.
- */
-export const mainCheckoutOf = (root: string): string => {
-  const common = git(root, [
-    "rev-parse",
-    "--path-format=absolute",
-    "--git-common-dir",
-  ]);
-
-  return common === undefined ? root : dirname(common);
-};
+export { mainCheckoutOf } from "../git";
 
 /** `../<project>-workspaces` next to the main checkout. */
 export const workspacesDirOf = (main: string): string =>

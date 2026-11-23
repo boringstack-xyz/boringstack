@@ -107,6 +107,8 @@ describe("secrets", () => {
     expect(denied("env FOO=1 bun run test")).toBe(false);
     expect(denied("grep -r environment apps")).toBe(false);
     expect(denied("grep '.*error' log.txt")).toBe(false);
+    expect(denied("grep -rn process.env apps/api/src")).toBe(false);
+    expect(denied("grep -rn 'import.meta.env' apps/ui/src")).toBe(false);
   });
 
   test("a heredoc or message that names a secret file reads nothing", () => {

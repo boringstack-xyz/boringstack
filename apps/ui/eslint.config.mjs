@@ -922,18 +922,6 @@ export default tseslint.config(
   },
 
   // ---------------------------------------------------------------------------
-  // Walkthroughs: `factory walk` hands them its run folder and stack address
-  // as FACTORY_WALK_DIR and FACTORY_BASE_URL. They are not app configuration,
-  // so the validated env singleton does not carry them.
-  // ---------------------------------------------------------------------------
-  {
-    files: ["e2e/walkthroughs/**/*.ts"],
-    rules: {
-      "env-access/no-direct-process-env": "off"
-    }
-  },
-
-  // ---------------------------------------------------------------------------
   // Scripts & config files: relaxed (node-side tools)
   // ---------------------------------------------------------------------------
   {

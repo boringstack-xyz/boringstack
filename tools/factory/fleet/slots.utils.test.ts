@@ -38,19 +38,17 @@ describe("slot files", () => {
   });
 
   test("status, preview and verify read tolerantly", () => {
-    expect(parseStatusLine({ text: " Testing ", at: "t" })).toEqual({
+    expect(parseStatusLine({ status: " Testing ", updatedAt: "t" })).toEqual({
       text: "Testing",
       at: "t",
     });
-    expect(parseStatusLine({ text: "" })).toBeNull();
+    expect(parseStatusLine({ status: "" })).toBeNull();
     expect(parsePreviewUrl({ url: "https://p" })).toBe("https://p");
     expect(parsePreviewUrl(null)).toBeNull();
-    expect(parseVerify({ ok: false, level: "full", runId: "r1" })).toEqual({
-      ok: false,
-      level: "full",
-      runId: "r1",
-      at: null,
-    });
-    expect(parseVerify({ level: "full" })).toBeNull();
+    expect(
+      parseVerify({ status: "failed", runId: "r1", finishedAt: "t" })
+    ).toEqual({ ok: false, level: "failed", runId: "r1", at: "t" });
+    expect(parseVerify({ status: "warn", runId: "r2" })?.ok).toBe(true);
+    expect(parseVerify({ runId: "r3" })).toBeNull();
   });
 });

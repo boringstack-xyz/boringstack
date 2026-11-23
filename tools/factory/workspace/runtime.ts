@@ -1,4 +1,4 @@
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 
 import type { IFactoryContext } from "../context";
 import { readJson, writeJson } from "../state";
@@ -25,8 +25,7 @@ export const runtimeOf = (context: IFactoryContext): IRuntime => {
 
   return {
     main,
-    shared:
-      context.env.sharedDir ?? join(main, ".agent-state", "factory", "shared"),
+    shared: context.sharedDir,
     // Normalized the way the claim stores it, so records compare as strings.
     workspace: resolve(context.root),
     stateDir: context.stateDir,
