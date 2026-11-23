@@ -55,7 +55,9 @@ spec:
             - name: VALKEY_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: boringstack-secrets
+                  # Own Secret holding only this key, so editing any other
+                  # app secret does not restart Valkey.
+                  name: boringstack-valkey
                   key: VALKEY_PASSWORD
           ports:
             - name: redis

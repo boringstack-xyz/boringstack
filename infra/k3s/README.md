@@ -109,7 +109,8 @@ points:
   either. The API and the migration Job verify the database certificate against
   it. Leave `DATABASE_SSL_REJECT_UNAUTHORIZED` at its default (`true`).
 - `VALKEY_PASSWORD` is shared: the api, GlitchTip, and the Valkey StatefulSet's
-  `--requirepass` all read it.
+  `--requirepass` all read it. Valkey reads it from its own `boringstack-valkey`
+  Secret, so editing other app keys does not restart Valkey.
 - The GlitchTip overlay needs `GLITCHTIP_SECRET_KEY` plus `GLITCHTIP_SUPERUSER_EMAIL`
   / `GLITCHTIP_SUPERUSER_PASSWORD` (and optional `GLITCHTIP_EMAIL_URL`).
 - Enough to boot: `JWT_SECRET`, `MFA_ENCRYPTION_KEY`, `VALKEY_PASSWORD`,

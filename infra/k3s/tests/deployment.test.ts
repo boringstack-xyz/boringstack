@@ -216,6 +216,31 @@ describe("production release contracts", () => {
     ).toBe(true);
   });
 
+  test("editing an app secret does not restart Valkey; a new Valkey password does", () => {
+    const appTargets = resource("VaultStaticSecret", "boringstack-secrets")
+      .spec.rolloutRestartTargets;
+    expect(appTargets).not.toContainEqual({
+      kind: "StatefulSet",
+      name: "valkey",
+    });
+    const valkeySecret = resource("VaultStaticSecret", "boringstack-valkey");
+    expect(valkeySecret.spec.destination.transformation.includes).toEqual([
+      "^VALKEY_PASSWORD$",
+    ]);
+    expect(valkeySecret.spec.rolloutRestartTargets).toContainEqual({
+      kind: "StatefulSet",
+      name: "valkey",
+    });
+    expect(wave(valkeySecret)).toBeLessThan(
+      wave(resource("StatefulSet", "valkey")),
+    );
+    const env = JSON.stringify(
+      container(resource("StatefulSet", "valkey"), "valkey").env,
+    );
+    expect(env).toContain('"name":"boringstack-valkey"');
+    expect(env).not.toContain("boringstack-secrets");
+  });
+
   test("the database and cache resist pruning and use canonical quantities", () => {
     for (const [kind, name] of [
       ["Cluster", "boringstack-db"],
