@@ -1,7 +1,9 @@
 import type { BrowserContext, Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { Secret, TOTP } from "otpauth";
+import { z } from "zod";
 
+import { parseBody } from "../fixtures/parse";
 import { paceContext, requestsMade, takeTurn } from "./fixtures/pace";
 import {
   type IPageHealth,
@@ -157,6 +159,17 @@ test.describe("Member", () => {
     await expect(page.getByText(/workspace renamed/iu)).toBeVisible();
   });
 
+  test("stays signed in when its short-lived sign-in runs out", async () => {
+    /* What an expired access token looks like: only the refresh cookie is left. */
+    await context.clearCookies({ name: "auth_token" });
+    await visit(page, "/dashboard");
+    await expect(page).toHaveURL(/\/dashboard/u);
+    expect(
+      (await context.cookies()).some((cookie) => cookie.name === "auth_token"),
+      "the app signed in again with the refresh cookie"
+    ).toBe(true);
+  });
+
   test("opens notifications and their preferences", async () => {
     await visit(page, "/notifications");
     await expect(
@@ -183,6 +196,16 @@ test.describe("Member", () => {
   });
 
   test("opens billing on the free plan", async () => {
+    const capabilities = await parseBody(
+      await page.request.get("/api/v1/capabilities/"),
+      z.object({
+        features: z.object({ billing: z.object({ enabled: z.boolean() }) })
+      })
+    );
+    const billingOn = capabilities.features.billing.enabled;
+
+    /* TODO(@boringstack/maintainers): not debt, a setting: a product may run without billing (BILLING_ENABLED off, as on the PR stack). */
+    test.skip(!billingOn, "billing is off on this stack");
     await visit(page, "/account/billing");
     await expect(
       page.getByRole("heading", { level: 1, name: /billing/iu })

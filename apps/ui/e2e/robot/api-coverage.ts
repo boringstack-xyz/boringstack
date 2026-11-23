@@ -19,6 +19,7 @@ const UNVERIFIED = "cannot log in before the email is verified";
 const FIRST_LOGIN = "logs in after verifying and lands on the dashboard";
 const PROFILE = "renames itself on the profile page and the name sticks";
 const RENAME = "renames the workspace in settings";
+const EXPIRED = "stays signed in when its short-lived sign-in runs out";
 const NOTIFICATIONS = "opens notifications and their preferences";
 const OWNER_PAGES = "opens the audit log and the join requests as the owner";
 const BILLING = "opens billing on the free plan";
@@ -74,7 +75,7 @@ export const ROBOT_API_COVERAGE: Readonly<Record<string, IRobotCoverage>> = {
   "POST /api/v1/auth/forgot-password": { journeys: [RESET] },
   "POST /api/v1/auth/reset-password": { notChecked: EMAILED_TOKEN },
   "POST /api/v1/auth/logout": { journeys: [SIGN_OUT, MFA] },
-  "POST /api/v1/auth/refresh": { journeys: [SIGN_OUT, MFA] },
+  "POST /api/v1/auth/refresh": { journeys: [EXPIRED, SIGN_OUT, MFA] },
   "GET /api/v1/auth/oauth/{provider}": { notChecked: OAUTH },
   "DELETE /api/v1/auth/oauth/{provider}": { notChecked: OAUTH },
   "GET /api/v1/auth/oauth/{provider}/callback": { notChecked: OAUTH },
