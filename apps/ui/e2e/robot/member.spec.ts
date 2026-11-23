@@ -292,7 +292,14 @@ test.describe("Member", () => {
       .first()
       .click();
     await logIn();
-    await page.getByTestId("mfa-login-code").fill(totpCode(secret));
+    /*
+     * The sign-in request waits its turn at the API (./fixtures/pace), which can
+     * outlast the current 30-second step. The next step's code stays valid across
+     * the server's tolerance window, so it still lands.
+     */
+    await page
+      .getByTestId("mfa-login-code")
+      .fill(totpCode(secret, TOTP_STEP_MS));
     await page.getByTestId("mfa-login-submit").click();
     await expect(page).toHaveURL(/\/dashboard/u);
 
