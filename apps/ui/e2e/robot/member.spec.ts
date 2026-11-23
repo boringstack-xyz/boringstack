@@ -2,7 +2,7 @@ import type { BrowserContext, Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { Secret, TOTP } from "otpauth";
 
-import { paceContext, requestsMade } from "./fixtures/pace";
+import { paceContext, requestsMade, takeTurn } from "./fixtures/pace";
 import {
   type IPageHealth,
   type IRobotUser,
@@ -115,6 +115,27 @@ test.describe("Member", () => {
     await logIn();
     await expect(page).toHaveURL(/\/dashboard/u);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  });
+
+  /*
+   * The app sends these only with analytics consent, and the robot declines
+   * cookies, so the calls are made through the signed-in session directly.
+   * The consent gate itself is covered by the UI unit tests.
+   */
+  test("answers the one-question prompt and sends a product event", async () => {
+    await visit(page, "/dashboard");
+
+    await takeTurn("POST", "/api/v1/product-events/");
+    const event = await page.request.post("/api/v1/product-events/", {
+      data: { kind: "feedback_given", context: "" }
+    });
+
+    await takeTurn("PUT", "/api/v1/feedback/onboarded");
+    const answer = await page.request.put("/api/v1/feedback/onboarded", {
+      data: { answer: "", dismissed: true }
+    });
+
+    expect([event.status(), answer.status()]).toEqual([204, 204]);
   });
 
   test("renames itself on the profile page and the name sticks", async () => {
@@ -271,7 +292,14 @@ test.describe("Member", () => {
       .first()
       .click();
     await logIn();
-    await page.getByTestId("mfa-login-code").fill(totpCode(secret));
+    /*
+     * The sign-in request waits its turn at the API (./fixtures/pace), which can
+     * outlast the current 30-second step. The next step's code stays valid across
+     * the server's tolerance window, so it still lands.
+     */
+    await page
+      .getByTestId("mfa-login-code")
+      .fill(totpCode(secret, TOTP_STEP_MS));
     await page.getByTestId("mfa-login-submit").click();
     await expect(page).toHaveURL(/\/dashboard/u);
 

@@ -18,7 +18,9 @@ import {
   users,
 } from "./auth.schema";
 import { accountPlans, planFeatures, plans } from "./billing.schema";
+import { feedbackAnswers } from "./feedback.schema";
 import { accountMemberships } from "./memberships.schema";
+import { productEvents } from "./product-events.schema";
 import {
   notification,
   notificationDelivery,
@@ -108,6 +110,31 @@ export const accountFeatureOverridesRelations = relations(
     account: one(accounts, {
       fields: [accountFeatureOverrides.accountId],
       references: [accounts.id],
+    }),
+  })
+);
+
+export const productEventsRelations = relations(productEvents, ({ one }) => ({
+  account: one(accounts, {
+    fields: [productEvents.accountId],
+    references: [accounts.id],
+  }),
+  user: one(users, {
+    fields: [productEvents.userId],
+    references: [users.id],
+  }),
+}));
+
+export const feedbackAnswersRelations = relations(
+  feedbackAnswers,
+  ({ one }) => ({
+    account: one(accounts, {
+      fields: [feedbackAnswers.accountId],
+      references: [accounts.id],
+    }),
+    user: one(users, {
+      fields: [feedbackAnswers.userId],
+      references: [users.id],
     }),
   })
 );

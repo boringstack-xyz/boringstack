@@ -89,4 +89,5 @@ export const AUDIT_ACTIONS = {
   LIFECYCLE_UNSUBSCRIBED: "notification.lifecycle_unsubscribed",
   NOTIFICATION_PUSH_SUBSCRIBED: "notification.push_subscribed",
   NOTIFICATION_PUSH_UNSUBSCRIBED: "notification.push_unsubscribed",
+  FEEDBACK_ANSWERED: "feedback.answered",
 } as const;

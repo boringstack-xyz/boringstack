@@ -1,1 +1,6 @@
-export { buildCors, buildRateLimit, buildAuthRateLimit } from "./security";
+export {
+  buildCors,
+  buildRateLimit,
+  buildAuthRateLimit,
+  buildScopedRateLimit,
+} from "./security";

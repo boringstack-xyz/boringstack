@@ -22,7 +22,8 @@
       "dist/assets/classnames-*.js",
       "dist/assets/index.esm-*.js",
       "dist/assets/createLucideIcon-*.js",
-      "dist/assets/dist-*.js"
+      "dist/assets/dist-*.js",
+      "dist/assets/now-*.js"
     ],
     "limit": "165 KB",
     "gzip": true,

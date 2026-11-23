@@ -5,6 +5,7 @@ import {
   watchValkeyConnection,
 } from "../../clients/valkey";
 import { syntheticService } from "../../api/auth/services";
+import { productEventsService } from "../../api/product-events";
 import { logger } from "../../config/logger";
 import { withQueueSpan } from "../../lib/tracing";
 import {
@@ -35,8 +36,10 @@ const runAccountMaintenanceSweep =
     const cleanedPendingUsers = await cleanStalePendingUsersJob();
     const cleanedInvitations = await cleanExpiredInvitationsJob();
     const sweptRobotUsers = await syntheticService.sweepLeftovers();
+    const prunedProductEvents = await productEventsService.pruneExpired();
 
     return {
+      prunedProductEvents,
       expiredFeatureOverrides: expiredFeatureOverrides.swept,
       expiredAdminPlans: expiredAdminPlans.swept,
       downgradedCanceledStripePlans: downgradedCanceledStripePlans.swept,

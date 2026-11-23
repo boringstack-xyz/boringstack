@@ -123,6 +123,27 @@ export const buildRateLimit = () => {
   });
 };
 
+/**
+ * Fixed-window limit for one named route group, counted per client. Used by
+ * the first-party event and feedback routes so a misbehaving client cannot
+ * flood their tables; the policy name keeps its counter apart from the others.
+ */
+export const buildScopedRateLimit = (
+  policy: string,
+  window: { readonly max: number; readonly durationMs: number }
+) => {
+  const context = buildRateLimitContext(policy);
+  const generator = buildKeyGenerator();
+
+  return rateLimit({
+    max: window.max,
+    duration: window.durationMs,
+    scoping: "scoped",
+    ...(context !== undefined && { context }),
+    ...(generator !== undefined && { generator }),
+  });
+};
+
 export const buildAuthRateLimit = () => {
   const context = buildRateLimitContext("credential");
   const generator = buildKeyGenerator();

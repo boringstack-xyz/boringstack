@@ -561,5 +561,14 @@
         "body": "Cross-site identifiers used by ad / campaign tooling. Off by default; most forks won't need this category."
       }
     }
+  },
+  "feedback": {
+    "prompt": {
+      "ariaLabel": "Quick question",
+      "question": "What is one thing we could make clearer?",
+      "placeholder": "Optional. A sentence is plenty.",
+      "send": "Send",
+      "notNow": "Not now"
+    }
   }
 }

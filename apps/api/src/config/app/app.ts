@@ -64,6 +64,10 @@ export const createApp = () => {
       .group("/api/v1/billing", (group) => group.use(routes.billing))
       .group("/api/v1/admin", (group) => group.use(routes.admin))
       .group("/api/v1/dashboard", (group) => group.use(routes.dashboard))
+      .group("/api/v1/product-events", (group) =>
+        group.use(routes.productEvents)
+      )
+      .group("/api/v1/feedback", (group) => group.use(routes.feedback))
       .group("/api/v1/notifications", (group) =>
         group.use(routes.notifications)
       )

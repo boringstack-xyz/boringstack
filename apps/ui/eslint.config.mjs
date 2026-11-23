@@ -960,5 +960,15 @@ export default tseslint.config(
         { dictionary: `src/lib/i18n/locales/en/${namespace}.json` }
       ]
     }
-  }))
+  })),
+  {
+    /*
+     * gtag.js only accepts the `arguments` object of each call on the data
+     * layer, not an array, so this one file must read `arguments`.
+     */
+    files: ["src/lib/privacy/analytics.service.ts"],
+    rules: {
+      "prefer-rest-params": "off"
+    }
+  }
 );

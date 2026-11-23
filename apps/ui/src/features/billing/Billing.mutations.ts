@@ -2,6 +2,7 @@ import { type UseMutationResult, useMutation } from "@tanstack/react-query";
 
 import { ApiError } from "@/lib/api/ApiError";
 import { apiClient } from "@/lib/api/client";
+import { recordProductEvent } from "@/lib/privacy/product-events.service";
 
 import type {
   IBillingCheckoutInput,
@@ -23,6 +24,8 @@ export function useBillingCheckout(): UseMutationResult<
       if (data?.url === undefined || data.url === "") {
         throw new ApiError(0, { message: "Empty checkout URL" });
       }
+
+      recordProductEvent("checkout_started");
 
       return data.url;
     }
