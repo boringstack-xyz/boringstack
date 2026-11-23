@@ -6,7 +6,7 @@
  * working tree always ends as it started. An unproven fix is a result, not an
  * error: the command exits 0 and says proven: false in its report.
  *
- * Ported from the Dreamdata and Tinkercaster proof (prove-fix.mjs). The test
+ * Adapted from an earlier agent proof script. The test
  * commands are the ones this repository uses; apps whose tests need Postgres
  * or Valkey cannot be proven on a runner without them, and their skipped tests
  * never count as passing (see skippedIn).

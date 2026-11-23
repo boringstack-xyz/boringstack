@@ -2,8 +2,8 @@
  * The weekly agent digest, as Markdown for the repository owner: agent PRs
  * merged, closed without merging and still open this week, and agent workflow
  * runs that failed (a later success clears a failure). Read from GitHub with
- * gh, so it runs in CI with the workflow token. Ported from the Tinkercaster
- * digest without the search-console and site parts.
+ * gh, so it runs in CI with the workflow token. Adapted from an earlier weekly
+ * digest, without the search-console and site parts.
  */
 import { isRecord } from "../state";
 

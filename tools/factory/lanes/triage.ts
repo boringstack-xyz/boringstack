@@ -3,8 +3,8 @@
  * (tools/factory/fleet, `bun run factory findings`): unfiled, unmuted error
  * groups, a few per run. The output is a plan written by the agent, which
  * says for each finding whether it is a code fix (a PR), an operations cause
- * (a person), noise or unknown. Ported from the Dreamdata/Tinkercaster triage
- * plan, keyed by finding id instead of issue number.
+ * (a person), noise or unknown. Adapted from an earlier agent triage plan,
+ * keyed by finding id instead of issue number.
  */
 import { type ILedger, unfiledFindings } from "../fleet/findings.utils";
 import { isRecord } from "../state";

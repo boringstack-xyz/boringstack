@@ -2,7 +2,7 @@
  * The agent lanes. Every agent PR comes from a branch agent/<lane>/<slug>, and
  * the lane decides which paths that PR may change, whether its fix must come
  * with a regression test, and how many agent PRs may be open or merged at
- * once. Ported from the Dreamdata and Tinkercaster factories, where the lanes
+ * once. Adapted from earlier agent factories, where the lanes
  * are wider (articles, diagrams, catalogues). Only the generic triage lane is
  * here. Agents never merge: a person decides on every agent PR.
  */
