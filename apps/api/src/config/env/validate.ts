@@ -229,6 +229,7 @@ const readOpenTelemetry = (source: EnvSource) => ({
 const readEmail = (source: EnvSource) => ({
   EMAIL_PROVIDER: source.EMAIL_PROVIDER ?? "cloudflare",
   EMAIL_FROM: source.EMAIL_FROM ?? "noreply@example.com",
+  EMAIL_REPLY_TO: source.EMAIL_REPLY_TO ?? "",
   EMAIL_TEMPLATES_DIR: source.EMAIL_TEMPLATES_DIR ?? "",
   CLOUDFLARE_ACCOUNT_ID: source.CLOUDFLARE_ACCOUNT_ID ?? "",
   CLOUDFLARE_EMAIL_API_TOKEN: source.CLOUDFLARE_EMAIL_API_TOKEN ?? "",
@@ -301,6 +302,11 @@ const readBackground = (source: EnvSource) => ({
     source.NOTIFICATIONS_SSE_ENABLED,
     true,
     "NOTIFICATIONS_SSE_ENABLED"
+  ),
+  LIFECYCLE_EMAILS_ENABLED: toBoolWithDefault(
+    source.LIFECYCLE_EMAILS_ENABLED,
+    false,
+    "LIFECYCLE_EMAILS_ENABLED"
   ),
 });
 

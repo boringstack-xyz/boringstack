@@ -10,6 +10,7 @@ import capabilitiesRoutes from "../../api/capabilities/capabilities.routes";
 import dashboardRoutes from "../../api/dashboard/dashboard.routes";
 import healthRoutes from "../../api/health/health.routes";
 import metricsRoutes from "../../api/health/metrics.routes";
+import lifecycleRoutes from "../../api/lifecycle/lifecycle.routes";
 import notificationsRoutes from "../../api/notifications/notifications.routes";
 import usersRoutes from "../../api/users/users.routes";
 import webhookRoutes from "../../api/webhooks/webhooks.routes";
@@ -25,6 +26,7 @@ export const routes = {
   invitations: invitationAcceptRoutes,
   dashboard: dashboardRoutes,
   notifications: notificationsRoutes,
+  lifecycle: lifecycleRoutes,
   webhooks: webhookRoutes,
   health: healthRoutes,
   metrics: metricsRoutes,

@@ -59,6 +59,7 @@ export const sendTemplateNow = async (
   });
 
   await emailService.send({
+    ...input.envelope,
     to: input.to,
     subject: input.subject,
     html,

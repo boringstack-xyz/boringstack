@@ -1,4 +1,5 @@
 import type { TSchema } from "@sinclair/typebox";
+import type { IEmailEnvelope } from "../email/email.types";
 import type { NOTIFICATION_CHANNELS } from "./notifications.constants";
 
 /**
@@ -35,6 +36,8 @@ export interface IEmailRender<TPayload> {
   subject: (ctx: IEventRenderContext<TPayload>) => string;
   templatePath: string;
   variables?: (ctx: IEventRenderContext<TPayload>) => Record<string, unknown>;
+  /** Sender name, reply-to and headers. Omit for plain transactional mail. */
+  envelope?: (ctx: IEventRenderContext<TPayload>) => IEmailEnvelope;
 }
 
 export interface IDedupStrategy<TPayload> {
@@ -94,6 +97,7 @@ export interface IRegisteredEvent {
       readonly variables?: (
         ctx: IEventRenderContext<unknown>
       ) => Record<string, unknown>;
+      readonly envelope?: (ctx: IEventRenderContext<unknown>) => IEmailEnvelope;
     };
   };
 }

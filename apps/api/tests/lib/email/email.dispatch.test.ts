@@ -1,15 +1,19 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import {
   sendTemplate,
   sendTemplateNow,
 } from "../../../src/lib/email/email.dispatch";
+import { emailService } from "../../../src/lib/email/email.service";
 import {
   EMAIL_SUPPRESSION_PROVIDERS,
   EMAIL_SUPPRESSION_REASONS,
   emailSuppressionService,
 } from "../../../src/lib/email";
 import { cleanDatabase, requireDb } from "../../helpers/db";
+
+const CONFIRM_TEMPLATE = "auth/confirm-your-email";
+const CONFIRM_URL = "https://example.com/verify-email?token=x";
 
 describe("sendTemplate (test process → inline via noop)", () => {
   test("returns void and does not throw on a real precompiled template", async () => {
@@ -25,10 +29,10 @@ describe("sendTemplate (test process → inline via noop)", () => {
       await sendTemplate({
         to: "user@example.com",
         subject: "Welcome",
-        templatePath: "auth/confirm-your-email",
+        templatePath: CONFIRM_TEMPLATE,
         variables: {
           appName: "Test App",
-          confirmationUrl: "https://example.com/verify-email?token=x",
+          confirmationUrl: CONFIRM_URL,
           token: "x",
         },
       });
@@ -63,10 +67,10 @@ describe("sendTemplate (test process → inline via noop)", () => {
       await sendTemplateNow({
         to: "user@example.com",
         subject: "Welcome",
-        templatePath: "auth/confirm-your-email",
+        templatePath: CONFIRM_TEMPLATE,
         variables: {
           appName: "Test App",
-          confirmationUrl: "https://example.com/verify-email?token=x",
+          confirmationUrl: CONFIRM_URL,
           token: "x",
         },
       });
@@ -126,10 +130,10 @@ describe("sendTemplateNow suppression short-circuit", () => {
     const outcome = await sendTemplateNow({
       to: "blocked@example.com",
       subject: "Welcome",
-      templatePath: "auth/confirm-your-email",
+      templatePath: CONFIRM_TEMPLATE,
       variables: {
         appName: "Test App",
-        confirmationUrl: "https://example.com/verify-email?token=x",
+        confirmationUrl: CONFIRM_URL,
         token: "x",
       },
     });
@@ -149,14 +153,84 @@ describe("sendTemplateNow suppression short-circuit", () => {
     const outcome = await sendTemplateNow({
       to: "clean@example.com",
       subject: "Welcome",
-      templatePath: "auth/confirm-your-email",
+      templatePath: CONFIRM_TEMPLATE,
       variables: {
         appName: "Test App",
-        confirmationUrl: "https://example.com/verify-email?token=x",
+        confirmationUrl: CONFIRM_URL,
         token: "x",
       },
     });
 
     expect(outcome.status).toBe("sent");
+  });
+});
+
+describe("email dispatch to the verification robot", () => {
+  test("sendTemplateNow and sendTemplate never reach the provider for a robot address", async () => {
+    const send = spyOn(emailService, "send");
+    const variables = {
+      appName: "Test App",
+      confirmationUrl: CONFIRM_URL,
+      token: "x",
+    };
+
+    try {
+      const direct = await sendTemplateNow({
+        to: "robot-1@robot.boringstack.invalid",
+        subject: "Welcome",
+        templatePath: CONFIRM_TEMPLATE,
+        variables,
+      });
+      const queued = await sendTemplate({
+        to: "robot-2@robot.boringstack.invalid",
+        subject: "Welcome",
+        templatePath: CONFIRM_TEMPLATE,
+        variables,
+      });
+
+      expect(direct.status).toBe("suppressed");
+      expect(queued.status).toBe("suppressed");
+      expect(send).not.toHaveBeenCalled();
+    } finally {
+      send.mockRestore();
+    }
+  });
+});
+
+describe("sendTemplateNow envelope", () => {
+  test("hands the sender name, reply-to and headers to the provider", async () => {
+    const send = spyOn(emailService, "send").mockResolvedValue({
+      id: "test-id",
+      provider: "noop",
+    });
+
+    try {
+      await sendTemplateNow({
+        to: "clean@example.com",
+        subject: "Hello",
+        templatePath: CONFIRM_TEMPLATE,
+        variables: {
+          appName: "Test App",
+          confirmationUrl: CONFIRM_URL,
+          token: "x",
+        },
+        envelope: {
+          fromName: "Alex from Test App",
+          replyTo: "hello@example.com",
+          headers: { "List-Unsubscribe": "<https://example.com/u>" },
+        },
+      });
+
+      expect(send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: "clean@example.com",
+          fromName: "Alex from Test App",
+          replyTo: "hello@example.com",
+          headers: { "List-Unsubscribe": "<https://example.com/u>" },
+        })
+      );
+    } finally {
+      send.mockRestore();
+    }
   });
 });

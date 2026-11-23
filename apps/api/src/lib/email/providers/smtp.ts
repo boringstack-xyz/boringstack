@@ -10,6 +10,7 @@ import type {
   IEmailService,
 } from "../email.types";
 import {
+  formatSender,
   maskEmailForLogging,
   retryWithBackoff,
   validateEmailMessage,
@@ -61,11 +62,13 @@ export class SmtpEmailService implements IEmailService {
     try {
       return await retryWithBackoff(async () => {
         const result = await this.transporter.sendMail({
-          from: env.EMAIL_FROM,
+          from: formatSender(env.EMAIL_FROM, message.fromName),
           to: message.to,
           subject: message.subject,
           html: message.html,
           ...(message.text !== undefined && { text: message.text }),
+          ...(message.replyTo !== undefined && { replyTo: message.replyTo }),
+          ...(message.headers !== undefined && { headers: message.headers }),
         });
 
         logger.info("Email sent via SMTP", {

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   baseTemplateVariables,
+  formatSender,
   normalizeEmail,
   validateEmailMessage,
   withEmailTimeout,
@@ -10,6 +11,20 @@ import { ApiError } from "../../../src/lib/errors";
 import { env } from "../../../src/config/env";
 
 const EXPECTED_API_ERROR = "expected ApiError";
+const SENDER_ADDRESS = "noreply@example.com";
+
+describe("formatSender", () => {
+  test("returns the bare address when there is no name", () => {
+    expect(formatSender(SENDER_ADDRESS)).toBe(SENDER_ADDRESS);
+    expect(formatSender(SENDER_ADDRESS, "  ")).toBe(SENDER_ADDRESS);
+  });
+
+  test("formats an RFC 5322 display name and drops quotes and backslashes", () => {
+    expect(formatSender(SENDER_ADDRESS, 'Alex "A" \\ Team')).toBe(
+      `"Alex A  Team" <${SENDER_ADDRESS}>`
+    );
+  });
+});
 
 describe("withEmailTimeout", () => {
   test("resolves when the operation finishes within the budget", async () => {

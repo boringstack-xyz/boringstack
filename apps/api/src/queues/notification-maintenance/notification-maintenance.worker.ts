@@ -4,11 +4,13 @@ import {
   getValkeyConnectionOptions,
   watchValkeyConnection,
 } from "../../clients/valkey";
+import { lifecycleService } from "../../api/lifecycle";
 import { logger } from "../../config/logger";
 import { auditLogService } from "../../lib/audit-log";
 import { dedupService } from "../../lib/notifications";
 import { withQueueSpan } from "../../lib/tracing";
 import {
+  LIFECYCLE_NUDGES_JOB_NAME,
   NOTIFICATION_DEDUP_CLEANUP_JOB_NAME,
   NOTIFICATION_MAINTENANCE_DEFAULTS,
   NOTIFICATION_MAINTENANCE_QUEUE_NAME,
@@ -108,6 +110,12 @@ export class NotificationMaintenanceWorker {
         : softBounceAuditEvents(result)) {
         void auditLogService.record(event);
       }
+
+      return;
+    }
+
+    if (job.name === LIFECYCLE_NUDGES_JOB_NAME) {
+      await lifecycleService.sweep();
 
       return;
     }

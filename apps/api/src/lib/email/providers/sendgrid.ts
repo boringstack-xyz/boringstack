@@ -7,6 +7,7 @@ import type {
   IEmailService,
 } from "../email.types";
 import {
+  formatSender,
   maskEmailForLogging,
   retryWithBackoff,
   validateEmailMessage,
@@ -49,11 +50,13 @@ export class SendGridEmailService implements IEmailService {
       return await retryWithBackoff(async () => {
         const [response] = await withEmailTimeout(() =>
           this.client.send({
-            from: env.EMAIL_FROM,
+            from: formatSender(env.EMAIL_FROM, message.fromName),
             to: message.to,
             subject: message.subject,
             html: message.html,
             ...(message.text !== undefined && { text: message.text }),
+            ...(message.replyTo !== undefined && { replyTo: message.replyTo }),
+            ...(message.headers !== undefined && { headers: message.headers }),
           })
         );
 

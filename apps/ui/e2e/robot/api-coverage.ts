@@ -51,6 +51,9 @@ const SECOND_MEMBER =
 const PUSH =
   "Web Push needs a browser permission grant and a push service; the robot's headless browser has neither.";
 
+const FOLLOW_UP_TOKEN =
+  "Needs the signed token from a follow-up email; robot addresses receive no mail. Covered by lifecycle.utils and lifecycle.routes tests.";
+
 export const ROBOT_API_COVERAGE: Readonly<Record<string, IRobotCoverage>> = {
   "GET /": { notChecked: PROBE },
   "GET /health": { notChecked: PROBE },
@@ -159,5 +162,7 @@ export const ROBOT_API_COVERAGE: Readonly<Record<string, IRobotCoverage>> = {
   },
   "POST /api/v1/invitations/ownership-transfer/decline": {
     notChecked: SECOND_MEMBER
-  }
+  },
+  "GET /api/v1/lifecycle/unsubscribe": { notChecked: FOLLOW_UP_TOKEN },
+  "POST /api/v1/lifecycle/unsubscribe": { notChecked: FOLLOW_UP_TOKEN }
 };

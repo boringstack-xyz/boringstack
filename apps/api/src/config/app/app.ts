@@ -67,6 +67,7 @@ export const createApp = () => {
       .group("/api/v1/notifications", (group) =>
         group.use(routes.notifications)
       )
+      .group("/api/v1/lifecycle", (group) => group.use(routes.lifecycle))
       .group("/api/v1/webhooks", (group) => group.use(routes.webhooks))
       .group("/api/v1/accounts", (group) =>
         group.use(routes.accountSession).use(routes.accounts)
