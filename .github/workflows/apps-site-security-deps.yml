@@ -26,7 +26,7 @@ jobs:
     defaults:
       run:
         working-directory: apps/site
-    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && (vars.CI_LIGHT_RUNNER || vars.CI_RUNNER) || 'ubuntu-24.04' }}
     timeout-minutes: 10
 
     env:
@@ -40,6 +40,7 @@ jobs:
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
+          token: ""
           filters: |
             code:
               - 'apps/site/**'

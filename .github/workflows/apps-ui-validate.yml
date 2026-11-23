@@ -36,6 +36,7 @@ jobs:
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
+          token: ""
           filters: |
             code:
               - 'apps/ui/**'
@@ -72,12 +73,23 @@ jobs:
         if: steps.filter.outputs.code == 'true'
         run: bash -c 'source ../../scripts/stack-lib.sh && validate_packages'
 
+      # A PR runs the tests its change can reach through imports; a change to
+      # config, setup, package.json or the lockfile reaches all of them
+      # (forceRerunTriggers). main runs the whole suite with coverage after
+      # every merge.
       - name: Unit + integration tests
         if: steps.filter.outputs.code == 'true'
-        run: bun run test:ci
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            bun run test:affected --changed=HEAD^1 --passWithNoTests
+          else
+            bun run test:ci
+          fi
 
       - name: Upload coverage to Codecov
-        if: steps.filter.outputs.code == 'true'
+        if: steps.filter.outputs.code == 'true' && github.event_name == 'push'
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           files: apps/ui/coverage/lcov.info

@@ -89,7 +89,10 @@ one or a written reason.
 | `tools/agent`     | Structured verification and sandboxes |
 | `tools/factory`   | The software factory CLI and hooks ([contract](tools/factory/README.md)) |
 
-CI: `.github/workflows/` at repo root with path filters.
+CI: `.github/workflows/` at repo root with path filters. The only required
+check for merging into `main` is `merge-gate` (`.github/workflows/merge-gate.yml`).
+It runs on every PR and waits for each workflow the PR's diff triggers, so add a
+new required workflow by path filter, not by editing branch protection.
 
 Self-hosted runners: set the repository variable `CI_RUNNER` to a runner label
 and every job moves off GitHub-hosted minutes. Pull requests from forks always
