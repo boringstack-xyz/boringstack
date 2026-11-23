@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "description": "Error messages the stack logs on purpose. Each rule mutes the matching findings from `bun run factory findings`, so they are never filed as issues. Fields: service (a name, * matches any run of characters), match (a case-insensitive regular expression tested against the whole message), reason (required: why the stack logs it on purpose).",
+  "rules": []
+}

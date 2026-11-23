@@ -24,8 +24,15 @@
 # socket mount below. Keeping write access opt-in limits the blast radius of a
 # compromised watched image or GHCR credential to read-only socket access.
 
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   whatsupdocker:
+    logging: *default-logging
     image: getwud/wud:8.2.2@sha256:2df7cafa0fc84cdd66ad976163abc5390fa5995e0b5788a90e6a5303706bc21a
     profiles: [wud]
     restart: unless-stopped
@@ -60,6 +67,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 5
+      start_interval: 2s
       start_period: 20s
     deploy:
       resources:

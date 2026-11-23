@@ -26,6 +26,10 @@ import {
   DEFAULT_OAUTH_SCOPES,
   isValidOAuthProvider,
 } from "../../lib/oauth";
+import {
+  matchesSyntheticSecret,
+  SYNTHETIC_SECRET_HEADER,
+} from "../../lib/synthetic";
 import { now } from "../../lib/time/now";
 import { errorHandler } from "../../middleware/error-handler";
 import { requireAuth } from "./auth.plugin";
@@ -39,6 +43,9 @@ import {
   RegisterSchema,
   ResendVerificationSchema,
   ResetPasswordSchema,
+  SyntheticAccountSchema,
+  SyntheticCleanupResponse,
+  SyntheticUpgradeResponse,
   VerifyEmailSchema,
 } from "./auth.schemas";
 import { resolveActiveAccountId } from "./auth.utils";
@@ -52,7 +59,18 @@ import {
   passwordChangeService,
   passwordResetService,
   sessionService,
+  syntheticService,
 } from "./services";
+
+/*
+ * Gate for the verification robot's routes. A missing, wrong or unset secret
+ * answers exactly like an unknown path, so the routes cannot be probed for.
+ */
+const requireSyntheticSecret = (presented: string | undefined): void => {
+  if (!matchesSyntheticSecret(presented, env.SYNTHETIC_CHECK_SECRET)) {
+    throw ApiErrors.notFound("Resource");
+  }
+};
 
 /**
  * Hands the browser its half of the OAuth binding.
@@ -196,6 +214,73 @@ const credentialingRoutes = new Elysia()
       detail: {
         tags: ["Authentication"],
         summary: "Resend verification email",
+      },
+    }
+  )
+  .post(
+    "/synthetic/verify",
+    async ({ body, headers, jwt, cookie }) => {
+      requireSyntheticSecret(headers[SYNTHETIC_SECRET_HEADER]);
+
+      const result = await syntheticService.verify(body.email);
+      const session = await sessionService.create(result.user.id);
+      const token = await jwt.sign(
+        await buildJWTPayload(
+          result.user.id,
+          result.user.email,
+          result.accountId
+        )
+      );
+
+      cookie[AUTH_COOKIE_NAME]?.set({ value: token, ...AUTH_COOKIE_CONFIG });
+      cookie[REFRESH_COOKIE_NAME]?.set({
+        value: session.token,
+        ...REFRESH_COOKIE_CONFIG,
+      });
+
+      return createSuccessResponse({ user: result.user });
+    },
+    {
+      body: SyntheticAccountSchema,
+      response: AuthResponse,
+      detail: {
+        tags: ["Authentication"],
+        summary:
+          "Verification robot only: verify a robot sign-up without the emailed link. 404 without SYNTHETIC_CHECK_SECRET in the x-synthetic-secret header, and for any address outside the robot domain.",
+      },
+    }
+  )
+  .post(
+    "/synthetic/upgrade",
+    async ({ body, headers }) => {
+      requireSyntheticSecret(headers[SYNTHETIC_SECRET_HEADER]);
+
+      return createSuccessResponse(await syntheticService.upgrade(body.email));
+    },
+    {
+      body: SyntheticAccountSchema,
+      response: SyntheticUpgradeResponse,
+      detail: {
+        tags: ["Authentication"],
+        summary:
+          "Verification robot only: put a robot's own account on Pro, without payment. 404 without SYNTHETIC_CHECK_SECRET in the x-synthetic-secret header, and for any address outside the robot domain.",
+      },
+    }
+  )
+  .post(
+    "/synthetic/cleanup",
+    async ({ body, headers }) => {
+      requireSyntheticSecret(headers[SYNTHETIC_SECRET_HEADER]);
+
+      return createSuccessResponse(await syntheticService.remove(body.email));
+    },
+    {
+      body: SyntheticAccountSchema,
+      response: SyntheticCleanupResponse,
+      detail: {
+        tags: ["Authentication"],
+        summary:
+          "Verification robot only: remove a robot user and the accounts it owns. 404 without SYNTHETIC_CHECK_SECRET in the x-synthetic-secret header, and for any address outside the robot domain.",
       },
     }
   )

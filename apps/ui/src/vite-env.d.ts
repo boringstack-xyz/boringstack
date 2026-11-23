@@ -9,6 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_SENTRY_DSN: string;
   readonly VITE_AUTH_NAMESPACE: string;
   readonly VITE_VAPID_PUBLIC_KEY: string;
+  readonly VITE_GA_MEASUREMENT_ID: string;
   readonly VITE_LOCALES: string;
 }
 

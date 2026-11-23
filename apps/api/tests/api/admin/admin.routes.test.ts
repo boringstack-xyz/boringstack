@@ -1,57 +1,14 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
+import { setResolvedOperator } from "../../../src/boot/operator";
+import { createAdminApp } from "../../../src/config/app/admin-app";
+import { ADMIN_REQUEST_HEADER } from "../../../src/middleware/admin-request-guard";
 import { seedVerifiedUser } from "../../helpers/auth";
-import { createApp } from "../../../src/config/app";
-import { cleanDatabase, db, eq, requireDb, users } from "../../helpers/db";
+import { cleanDatabase, requireDb } from "../../helpers/db";
 
-const PASSWORD = "Hunter2Strong!";
+const ADMIN_HEADERS = { [ADMIN_REQUEST_HEADER]: "1" };
 
-const extractCookiePair = (setCookie: string | null, name: string): string => {
-  if (setCookie === null) {
-    return "";
-  }
-
-  const match = new RegExp(`${name}=[^;,\\s]+`).exec(setCookie);
-
-  return match?.[0] ?? "";
-};
-
-async function registerAndLogin(
-  email: string,
-  role: "platform_admin" | "user" = "user"
-): Promise<{ authCookie: string }> {
-  const { user } = await seedVerifiedUser({
-    email,
-    password: PASSWORD,
-    firstName: "Admin",
-    lastName: "Test",
-  });
-
-  if (role === "platform_admin") {
-    await db
-      .update(users)
-      .set({ isPlatformAdmin: true })
-      .where(eq(users.id, user.id));
-  }
-
-  const app = createApp();
-  const loginRes = await app.handle(
-    new Request("http://localhost/api/v1/auth/login", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, password: PASSWORD }),
-    })
-  );
-
-  const authCookie = extractCookiePair(
-    loginRes.headers.get("set-cookie"),
-    "auth_token"
-  );
-
-  return { authCookie };
-}
-
-describe("GET /api/v1/admin/queues — requirePlatformAdmin()", () => {
+describe("admin routes: operator", () => {
   beforeEach(async () => {
     if (!(await requireDb())) {
       return;
@@ -60,53 +17,52 @@ describe("GET /api/v1/admin/queues — requirePlatformAdmin()", () => {
     await cleanDatabase();
   });
 
-  test("returns 200 for a platform-admin user", async () => {
-    if (!(await requireDb())) {
-      return;
-    }
-
-    const { authCookie } = await registerAndLogin(
-      "admin@example.com",
-      "platform_admin"
-    );
-
-    const app = createApp();
-    const res = await app.handle(
-      new Request("http://localhost/api/v1/admin/queues", {
-        headers: { cookie: authCookie },
-      })
-    );
-
-    expect(res.status).toBe(200);
+  afterEach(() => {
+    setResolvedOperator(null);
   });
 
-  test("returns 403 for a regular user without platform-admin", async () => {
-    if (!(await requireDb())) {
-      return;
-    }
+  test("refuses every admin route when no operator is resolved", async () => {
+    setResolvedOperator(null);
 
-    const { authCookie } = await registerAndLogin("user@example.com", "user");
-
-    const app = createApp();
+    const app = createAdminApp();
     const res = await app.handle(
-      new Request("http://localhost/api/v1/admin/queues", {
-        headers: { cookie: authCookie },
+      new Request("http://127.0.0.1/api/v1/admin/audit", {
+        headers: ADMIN_HEADERS,
       })
     );
 
     expect(res.status).toBe(403);
   });
 
-  test("returns 401 when no auth cookie is presented", async () => {
+  test("serves the audit feed to the resolved operator, without emails", async () => {
     if (!(await requireDb())) {
       return;
     }
 
-    const app = createApp();
+    const { user } = await seedVerifiedUser({
+      email: "operator@example.com",
+      password: "Hunter2Strong!",
+      firstName: "Op",
+      lastName: "Test",
+      isPlatformAdmin: true,
+    });
+
+    setResolvedOperator({ id: user.id });
+
+    const app = createAdminApp();
     const res = await app.handle(
-      new Request("http://localhost/api/v1/admin/queues")
+      new Request("http://127.0.0.1/api/v1/admin/audit?limit=5", {
+        headers: ADMIN_HEADERS,
+      })
     );
 
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(200);
+
+    const body: unknown = await res.json();
+
+    expect(typeof body === "object" && body !== null && "entries" in body).toBe(
+      true
+    );
+    expect(JSON.stringify(body)).not.toContain("operator@example.com");
   });
 });

@@ -3,7 +3,11 @@ import { Worker, type Job, type WorkerOptions } from "bullmq";
 import { eq } from "drizzle-orm";
 import { db } from "../../clients/postgres";
 import { notificationDelivery } from "../../clients/postgres/schema";
-import { BULL_PREFIX, getValkeyConnectionOptions } from "../../clients/valkey";
+import {
+  BULL_PREFIX,
+  getValkeyConnectionOptions,
+  watchValkeyConnection,
+} from "../../clients/valkey";
 import { logger } from "../../config/logger";
 import { getErrorMessage } from "../../lib/errors";
 import { withQueueSpan } from "../../lib/tracing";
@@ -63,17 +67,27 @@ export class EmailDeliveryWorker {
       }
     );
 
-    this.worker.on("error", (err: Error) => {
-      logger.error("Email delivery worker error", {
-        event: "email_delivery_worker_error",
-        error: err.message,
-      });
-    });
+    watchValkeyConnection(
+      this.worker,
+      "email-delivery worker",
+      (err: Error) => {
+        logger.error("Email delivery worker error", {
+          event: "email_delivery_worker_error",
+          error: err.message,
+        });
+      }
+    );
   }
 
   private async processJob(job: Job<IEmailDeliveryJobData>): Promise<void> {
-    const { to, subject, templatePath, variables, notificationDeliveryId } =
-      job.data;
+    const {
+      to,
+      subject,
+      templatePath,
+      variables,
+      envelope,
+      notificationDeliveryId,
+    } = job.data;
 
     logger.info("Processing email delivery job", {
       event: "email_delivery_processing",
@@ -88,6 +102,7 @@ export class EmailDeliveryWorker {
       subject,
       templatePath,
       variables,
+      envelope,
     });
 
     if (notificationDeliveryId === undefined) {

@@ -1,5 +1,6 @@
 import { Queue, type QueueOptions } from "bullmq";
 import { BULL_PREFIX, getValkeyConnectionOptions } from "../../clients/valkey";
+import { watchQueueConnection } from "../queue-watch";
 import { NOTIFICATION_DISPATCH_QUEUE_NAME } from "./notification-dispatch.constants";
 import type { INotificationDispatchJobData } from "./notification-dispatch.types";
 
@@ -10,8 +11,11 @@ export const createNotificationDispatchQueue =
       prefix: BULL_PREFIX,
     };
 
-    return new Queue<INotificationDispatchJobData>(
-      NOTIFICATION_DISPATCH_QUEUE_NAME,
-      config
+    return watchQueueConnection(
+      new Queue<INotificationDispatchJobData>(
+        NOTIFICATION_DISPATCH_QUEUE_NAME,
+        config
+      ),
+      NOTIFICATION_DISPATCH_QUEUE_NAME
     );
   };

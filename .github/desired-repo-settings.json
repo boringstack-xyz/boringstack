@@ -14,18 +14,7 @@
   },
   "branch_protection_main": {
     "required_status_check_contexts": [
-      "dep vuln scan (osv + audit)",
-      "docker compose config (all overlay combinations)",
-      "gitleaks secret scan",
-      "security spec (review findings)",
-      "semgrep SAST",
-      "shellcheck (scripts/)",
-      "tofu fmt + validate",
-      "typecheck + lint + test",
-      "validate",
-      "yamllint (compose + workflows)",
-      "agent verification contract",
-      "pull request title (conventional commit)"
+      "merge-gate"
     ],
     "required_approving_review_count": 0,
     "dismiss_stale_reviews": true,

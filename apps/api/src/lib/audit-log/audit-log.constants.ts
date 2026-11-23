@@ -77,9 +77,17 @@ export const AUDIT_ACTIONS = {
   BILLING_CHECKOUT_SESSION_CREATED: "billing.checkout_session_created",
   BILLING_PORTAL_SESSION_CREATED: "billing.portal_session_created",
 
+  /*
+   * System events, no actor. Counts only, never an address.
+   */
+  EMAIL_SOFT_BOUNCE_RECOVERED: "email.soft_bounce_recovered",
+  EMAIL_SOFT_BOUNCE_RECOVERY_FAILED: "email.soft_bounce_recovery_failed",
+
   NOTIFICATION_STATUS_UPDATED: "notification.status_updated",
   NOTIFICATION_MARK_ALL_READ: "notification.mark_all_read",
   NOTIFICATION_PREFERENCES_UPDATED: "notification.preferences_updated",
+  LIFECYCLE_UNSUBSCRIBED: "notification.lifecycle_unsubscribed",
   NOTIFICATION_PUSH_SUBSCRIBED: "notification.push_subscribed",
   NOTIFICATION_PUSH_UNSUBSCRIBED: "notification.push_unsubscribed",
+  FEEDBACK_ANSWERED: "feedback.answered",
 } as const;

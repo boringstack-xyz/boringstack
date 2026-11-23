@@ -26,7 +26,7 @@ jobs:
     defaults:
       run:
         working-directory: apps/docs
-    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && (vars.CI_LIGHT_RUNNER || vars.CI_RUNNER) || 'ubuntu-24.04' }}
     timeout-minutes: 10
 
     env:
@@ -43,6 +43,7 @@ jobs:
         # (every later step gates on this filter's output).
         if: hashFiles('apps/docs/bun.lock') != ''
         with:
+          token: ""
           filters: |
             code:
               - 'apps/docs/**'

@@ -1,0 +1,4 @@
+# osv-scanner accepted-risk allowlist for the operator dashboard.
+#
+# Empty: no accepted risks. Add an [[IgnoredVulns]] entry only with a reason
+# and an ignoreUntil re-evaluation date (see apps/ui/osv-scanner.toml).

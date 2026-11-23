@@ -1,0 +1,51 @@
+# Optional preview proxy for factory workspaces. One proxy per machine, its
+# own compose project (boringstack-preview, never swept as a slot). It serves
+# http://s<N>.preview.localhost:<PREVIEW_PORT> and forwards each request to the
+# UI of slot N on the host. `bun run factory preview` writes the routes into
+# <shared>/preview/nginx/ and reloads the proxy when it is running; nothing
+# starts it automatically:
+#
+#   docker compose -p boringstack-preview -f compose/preview-proxy.yml \
+#     --env-file <shared>/preview/proxy.vars up -d --wait
+#
+# Bound to 127.0.0.1 only. Routes for slots that no longer exist are removed
+# by `bun run factory sweep`.
+
+name: boringstack-preview
+
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  preview-proxy:
+    image: nginx:1.29-alpine@sha256:5616878291a2eed594aee8db4dade5878cf7edcb475e59193904b198d9b830de
+    restart: unless-stopped
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      # The folder, not the file: each `preview` rewrites routes.conf.
+      - ${FACTORY_PREVIEW_DIR:?}/nginx:/etc/nginx/conf.d:ro
+    extra_hosts:
+      # Slot UIs are published on the host's 127.0.0.1.
+      - host.docker.internal:host-gateway
+    ports:
+      - "127.0.0.1:${PREVIEW_PORT:?}:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 2s
+      retries: 2
+      start_period: 5s
+      start_interval: 2s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "64M"
+        reservations:
+          cpus: "0.05"
+          memory: "16M"

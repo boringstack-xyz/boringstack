@@ -36,6 +36,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+      # Probe every second while starting, so dependants start as soon as
+      # it is ready instead of up to one 5s interval later.
+      start_period: 30s
+      start_interval: 1s
     deploy:
       resources:
         limits:
@@ -77,6 +81,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+      start_interval: 2s
+      start_period: 15s
     deploy:
       resources:
         limits:
@@ -129,6 +135,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+      start_interval: 2s
       start_period: 5s
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -309,6 +316,10 @@ services:
       # production keeps the strict default.
       RATE_LIMIT_MAX: ${API_DEV_RATE_LIMIT_MAX:-10000}
       AUTH_RATE_LIMIT_MAX: ${API_DEV_AUTH_RATE_LIMIT_MAX:-10000}
+      # Opens the verification robot's routes on the dev stack, so CI walks
+      # the production robot's journeys against every PR. Dev stack only:
+      # production reads its own secret (docs/operations/production-verification.md).
+      SYNTHETIC_CHECK_SECRET: ${API_DEV_SYNTHETIC_CHECK_SECRET:-dev-stack-only-verification-robot-0000}
       # Tempo trace export: empty when WITH_OBSERVABILITY=0 (the OTel
       # SDK then no-ops). Resolves to the observability overlay's
       # `tempo` service over the shared `backend` network.
@@ -339,6 +350,7 @@ services:
       timeout: 3s
       retries: 12
       start_period: 15s
+      start_interval: 1s
     networks:
       - backend
       - frontend
@@ -426,6 +438,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+      start_interval: 2s
       start_period: 5s
     networks:
       - frontend
@@ -484,6 +497,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+      start_interval: 2s
       start_period: 15s
     env_file:
       - path: ./api.prod.env
@@ -543,6 +557,7 @@ services:
         VITE_APP_NAME: ${VITE_APP_NAME:-BoringStack}
         VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
         VITE_VAPID_PUBLIC_KEY: ${VITE_VAPID_PUBLIC_KEY:-}
+        VITE_GA_MEASUREMENT_ID: ${VITE_GA_MEASUREMENT_ID:-}
     labels:
       - "wud.watch=true"
       - "wud.trigger.include=docker.app,discord.1,slack.alerts"
@@ -568,6 +583,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
+      start_interval: 2s
       start_period: 5s
     security_opt:
       - no-new-privileges:true

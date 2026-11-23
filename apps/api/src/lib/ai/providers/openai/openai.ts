@@ -19,10 +19,11 @@ import { toOpenAIMessages } from "./openai.utils";
 const AI_REQUEST_TIMEOUT_MS = 60_000;
 
 export class OpenAIProvider implements IAIProvider {
-  public readonly providerName: AIProviderName = "openai";
+  public readonly providerName: AIProviderName;
   private readonly client: OpenAI;
 
   constructor(options: IOpenAIProviderOptions) {
+    this.providerName = options.providerName ?? "openai";
     this.client = new OpenAI({
       apiKey: options.apiKey,
       // The SDK default is 600s, far past any request budget.

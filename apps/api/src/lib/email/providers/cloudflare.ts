@@ -90,11 +90,20 @@ export class CloudflareEmailService implements IEmailService {
             authorization: `Bearer ${this.apiToken}`,
           },
           body: JSON.stringify({
-            from: env.EMAIL_FROM,
+            from:
+              message.fromName !== undefined
+                ? { address: env.EMAIL_FROM, name: message.fromName }
+                : env.EMAIL_FROM,
             to: message.to,
             subject: message.subject,
             html: message.html,
             ...(message.text !== undefined ? { text: message.text } : {}),
+            ...(message.replyTo !== undefined
+              ? { reply_to: message.replyTo }
+              : {}),
+            ...(message.headers !== undefined
+              ? { headers: message.headers }
+              : {}),
           }),
         });
 

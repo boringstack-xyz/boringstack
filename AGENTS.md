@@ -1,6 +1,6 @@
 # BoringStack monorepo
 
-Single repository: `apps/api`, `apps/ui`, `apps/docs`, `apps/site`, `infra/compose`, `infra/bootstrap`.
+Single repository: `apps/api`, `apps/ui`, `apps/docs`, `apps/site`, `apps/admin` (opt-in, `WITH_ADMIN`), `infra/compose`, `infra/bootstrap`.
 
 <!-- template-onboarding:start -->
 ## Starting a new project from this template
@@ -54,6 +54,26 @@ Run `agent:check` and the deterministic `agent:eval --deterministic` for tooling
 Tooling and templates obey the same strict script policy as the API; `agent:quality`
 checks types, lint and formatting and is also included in root `check`.
 
+## The software factory
+
+Building an issue end to end follows `tools/factory/README.md` (skill:
+`build-issue`): `bun run factory workspace new <issue>` gives you your own
+worktree and stack, `factory verify` proves what you changed, `factory
+verification new|check` writes the record, `factory handover` and `factory pr`
+hand it to a person. Agents never merge.
+
+Hooks in `.claude/settings.json` (Codex: `.codex/hooks.json`) enforce it: the
+guard refuses force pushes, pushes to `main`, printing secret files and
+commands that reach real infrastructure; the Stop gate keeps a session working
+until everything it changed has passed `factory verify` and a pushed branch
+has a complete record. Start `bun run factory gate` in the background when it
+asks. Only a person can unblock? Write the reason to
+`.agent-state/factory/BLOCKED`.
+
+Every new route and API operation also needs a production robot journey
+(`docs/operations/production-verification.md`); `validate` fails until it has
+one or a written reason.
+
 ## Layout
 
 | Path              | Role                   |
@@ -62,12 +82,18 @@ checks types, lint and formatting and is also included in root `check`.
 | `apps/ui`         | Vite + React UI        |
 | `apps/docs`       | Astro docs site        |
 | `apps/site`       | Astro public marketing site (static, nginx) |
+| `apps/admin`      | Vite + React operator dashboard, LAN-only, no login (`WITH_ADMIN=1`) |
 | `infra/compose`   | Docker Compose runtime |
 | `infra/bootstrap` | OpenTofu bootstrap     |
 | `packages/*`      | Shared code used by more than one app ([guide](apps/ui/docs/agents/shared-packages.md)) |
 | `.tsforge`        | tsforge scaffold manifest (see below) |
+| `tools/agent`     | Structured verification and sandboxes |
+| `tools/factory`   | The software factory CLI and hooks ([contract](tools/factory/README.md)) |
 
-CI: `.github/workflows/` at repo root with path filters.
+CI: `.github/workflows/` at repo root with path filters. The only required
+check for merging into `main` is `merge-gate` (`.github/workflows/merge-gate.yml`).
+It runs on every PR and waits for each workflow the PR's diff triggers, so add a
+new required workflow by path filter, not by editing branch protection.
 
 Self-hosted runners: set the repository variable `CI_RUNNER` to a runner label
 and every job moves off GitHub-hosted minutes. Pull requests from forks always

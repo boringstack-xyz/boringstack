@@ -29,6 +29,7 @@ import type {
   IRegisterInput,
 } from "../auth.types";
 import { toPublicUser } from "../auth.utils";
+import { isSyntheticEmail } from "../../../lib/synthetic";
 import { nowMs } from "../../../lib/time/now";
 
 /**
@@ -145,8 +146,11 @@ export class AuthService {
       });
     }
 
+    /* A robot sign-up logs under its own event, so sign-up alerts count people only. */
     logger.info("User registered", {
-      event: "auth.register.success",
+      event: isSyntheticEmail(created.email)
+        ? "auth.register.synthetic"
+        : "auth.register.success",
       userId: created.id,
       email: maskEmailForLogging(created.email),
     });

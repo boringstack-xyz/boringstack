@@ -124,6 +124,8 @@ export const toCsv = (raw: string | undefined): string[] => {
 const readCore = (source: EnvSource) => ({
   NODE_ENV: source.NODE_ENV ?? "development",
   PORT: toInt(source.PORT, 7330, "PORT"),
+  ADMIN_PORT: toInt(source.ADMIN_PORT, 7340, "ADMIN_PORT"),
+  ADMIN_OPERATOR_USER_ID: source.ADMIN_OPERATOR_USER_ID ?? "",
   LOG_LEVEL: source.LOG_LEVEL ?? "info",
   APP_NAME: source.APP_NAME ?? "API Template",
 });
@@ -177,6 +179,7 @@ const readAuth = (source: EnvSource) => ({
     source.E2E_TEST_ENDPOINTS_ENABLED,
     "E2E_TEST_ENDPOINTS_ENABLED"
   ),
+  SYNTHETIC_CHECK_SECRET: source.SYNTHETIC_CHECK_SECRET ?? "",
 });
 
 const readUrls = (source: EnvSource) => ({
@@ -228,6 +231,7 @@ const readOpenTelemetry = (source: EnvSource) => ({
 const readEmail = (source: EnvSource) => ({
   EMAIL_PROVIDER: source.EMAIL_PROVIDER ?? "cloudflare",
   EMAIL_FROM: source.EMAIL_FROM ?? "noreply@example.com",
+  EMAIL_REPLY_TO: source.EMAIL_REPLY_TO ?? "",
   EMAIL_TEMPLATES_DIR: source.EMAIL_TEMPLATES_DIR ?? "",
   CLOUDFLARE_ACCOUNT_ID: source.CLOUDFLARE_ACCOUNT_ID ?? "",
   CLOUDFLARE_EMAIL_API_TOKEN: source.CLOUDFLARE_EMAIL_API_TOKEN ?? "",
@@ -257,6 +261,11 @@ const readAI = (source: EnvSource) => ({
   OPENAI_BASE_URL: source.OPENAI_BASE_URL ?? "",
   OPENAI_DEFAULT_HEADERS: source.OPENAI_DEFAULT_HEADERS ?? "",
   ANTHROPIC_API_KEY: source.ANTHROPIC_API_KEY ?? "",
+  OPENROUTER_API_KEY: source.OPENROUTER_API_KEY ?? "",
+  OPENROUTER_BASE_URL:
+    source.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1",
+  OPENROUTER_DATA_COLLECTION:
+    source.OPENROUTER_DATA_COLLECTION === "allow" ? "allow" : "deny",
 });
 
 const readMultiTenant = (source: EnvSource) => ({
@@ -295,6 +304,11 @@ const readBackground = (source: EnvSource) => ({
     source.NOTIFICATIONS_SSE_ENABLED,
     true,
     "NOTIFICATIONS_SSE_ENABLED"
+  ),
+  LIFECYCLE_EMAILS_ENABLED: toBoolWithDefault(
+    source.LIFECYCLE_EMAILS_ENABLED,
+    false,
+    "LIFECYCLE_EMAILS_ENABLED"
   ),
 });
 
@@ -522,6 +536,8 @@ const PLACEHOLDER_SECRET_EXACT_MATCHES = [
   "api-migrate-placeholder-secret-padded-to-thirty-two",
   "docker-compose-api-dev-jwt-secret-keys",
   "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+  /* The dev stack's verification robot secret (infra/compose/compose/docker-compose.yml). */
+  "dev-stack-only-verification-robot-0000",
 ] as const;
 
 /*
@@ -558,6 +574,8 @@ const PLACEHOLDER_SECRET_FIELDS: readonly {
 }[] = [
   { name: "JWT_SECRET", generator: "openssl rand -base64 48" },
   { name: "MFA_ENCRYPTION_KEY", generator: "openssl rand -base64 32" },
+  /* Empty is allowed (the robot routes stay shut); a known value is not. */
+  { name: "SYNTHETIC_CHECK_SECRET", generator: "openssl rand -hex 32" },
 ];
 
 const checkPlaceholderSecrets = (env: Env): string[] => {
@@ -593,6 +611,12 @@ const checkAIProvider = (env: Env): string[] => {
   if (env.AI_PROVIDER === "anthropic" && env.ANTHROPIC_API_KEY === "") {
     return [
       "AI_ENABLED=true with AI_PROVIDER=anthropic requires ANTHROPIC_API_KEY",
+    ];
+  }
+
+  if (env.AI_PROVIDER === "openrouter" && env.OPENROUTER_API_KEY === "") {
+    return [
+      "AI_ENABLED=true with AI_PROVIDER=openrouter requires OPENROUTER_API_KEY",
     ];
   }
 

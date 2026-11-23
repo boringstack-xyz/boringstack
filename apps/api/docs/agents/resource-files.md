@@ -18,3 +18,9 @@ The `module-boundaries` plugin enforces one semantic concern per file
 Scaffolder: `bun run new:resource -- Posts` writes the full set,
 appends the Drizzle table to `src/clients/postgres/schema/app.schema.ts`,
 adds the relation, and inserts the `AUDIT_ACTIONS.POSTS_CREATED` key.
+
+Every route is also walked in production by the verification robot. After
+`bun run generate:api` in `apps/ui`, the UI's `routes.test.tsx` fails until
+each new operation has an entry in `apps/ui/e2e/robot/api-coverage.ts`: the
+robot journeys that call it, or a `notChecked` reason. See
+[production verification](../../../../docs/operations/production-verification.md).

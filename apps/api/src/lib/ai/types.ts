@@ -1,4 +1,4 @@
-export type AIProviderName = "openai" | "anthropic" | "noop";
+export type AIProviderName = "openai" | "anthropic" | "openrouter" | "noop";
 
 export interface IChatMessage {
   role: "user" | "assistant" | "system";

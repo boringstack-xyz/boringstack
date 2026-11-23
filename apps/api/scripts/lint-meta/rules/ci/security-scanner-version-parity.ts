@@ -7,7 +7,7 @@ import type { IMetaRule, IViolation } from "../../types";
  * Secret/SAST scanners encode their ruleset in their version: two workflows
  * running different gitleaks or semgrep versions scan with different rules,
  * so one can pass code the other would flag. The pinned version is duplicated
- * across every `*-security-secrets`/`-sast` workflow with nothing forcing the
+ * across every security-secrets or `*-security-sast` workflow with nothing forcing the
  * copies to agree: a bump to one drifts silently from the rest. This rule
  * requires a single gitleaks version and a single semgrep image pin across
  * all workflows, AND that scripts/ci/pre-push-security.sh carries a runtime

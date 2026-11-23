@@ -329,6 +329,28 @@ describe("validateEnv", () => {
     expect(() => validateEnv(testEnv)).toThrow(/ANTHROPIC_API_KEY/);
   });
 
+  it("requires OPENROUTER_API_KEY when AI_PROVIDER=openrouter", () => {
+    testEnv.AI_ENABLED = "true";
+    testEnv.AI_PROVIDER = "openrouter";
+    testEnv.OPENROUTER_API_KEY = "";
+    expect(() => validateEnv(testEnv)).toThrow(/OPENROUTER_API_KEY/);
+  });
+
+  it("defaults OpenRouter data collection to deny and fails closed on junk", () => {
+    expect(validateEnv(testEnv).OPENROUTER_DATA_COLLECTION).toBe("deny");
+    testEnv.OPENROUTER_DATA_COLLECTION = "yes-please";
+    expect(validateEnv(testEnv).OPENROUTER_DATA_COLLECTION).toBe("deny");
+    testEnv.OPENROUTER_DATA_COLLECTION = "allow";
+    expect(validateEnv(testEnv).OPENROUTER_DATA_COLLECTION).toBe("allow");
+  });
+
+  it("accepts AI_PROVIDER=openrouter with an OpenRouter key", () => {
+    testEnv.AI_ENABLED = "true";
+    testEnv.AI_PROVIDER = "openrouter";
+    testEnv.OPENROUTER_API_KEY = "sk-or-test";
+    expect(() => validateEnv(testEnv)).not.toThrow();
+  });
+
   it("accepts AI_PROVIDER=openai with OpenAI key", () => {
     testEnv.AI_ENABLED = "true";
     testEnv.AI_PROVIDER = "openai";
@@ -564,6 +586,16 @@ describe("validateEnv", () => {
 
       env.JWT_SECRET = "change-me-to-a-long-random-secret-at-least-32-chars";
       expect(() => validateEnv(env)).toThrow(/JWT_SECRET.*placeholder/);
+    });
+
+    it("rejects the dev stack's robot secret in production, and accepts none", () => {
+      const env = seedProd();
+
+      expect(() => validateEnv(env)).not.toThrow();
+      env.SYNTHETIC_CHECK_SECRET = "dev-stack-only-verification-robot-0000";
+      expect(() => validateEnv(env)).toThrow(
+        /SYNTHETIC_CHECK_SECRET.*placeholder/
+      );
     });
 
     it("rejects the compose api-migrate-prod JWT placeholder leaking into prod", () => {

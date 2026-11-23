@@ -6,6 +6,7 @@
     "src/components/ui/**/*.tsx",
     "scripts/**/*.ts",
     "e2e/**/*.spec.ts",
+    "e2e/walkthroughs/**/*.walk.ts",
     "tests/**/*.test.ts",
     "src/**/*.test.ts",
     "src/**/*.test.tsx",
@@ -19,6 +20,7 @@
     "tests/**/*.ts",
     "!tests/lint-meta/fixtures/**"
   ],
+  "ignoreDependencies": ["shadcn"],
   "ignoreExportsUsedInFile": true,
   "include": ["files", "dependencies", "unlisted", "exports", "types"]
 }

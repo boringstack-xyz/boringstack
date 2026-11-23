@@ -5,6 +5,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { CookieConsentBanner } from "@/features/consent";
 
 import { AbilityProvider } from "./providers/AbilityProvider";
+import { AnalyticsProvider } from "./providers/AnalyticsProvider";
 import { ErrorBoundaryProvider } from "./providers/ErrorBoundaryProvider";
 import { I18nProvider } from "./providers/I18nProvider";
 import { QueryProvider } from "./providers/QueryProvider";
@@ -21,6 +22,7 @@ export const App: FC = () => {
             <AbilityProvider>
               <ToastProvider>
                 <SentryUserSync />
+                <AnalyticsProvider />
                 <AppRoutes />
                 <CookieConsentBanner />
               </ToastProvider>

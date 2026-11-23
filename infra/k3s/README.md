@@ -65,7 +65,8 @@ The target cluster must provide these (all common, operator-installable):
 5. Repo URL. Set `source.repoURL` in `argocd/boringstack-prod.yaml` to your fork,
    and add it to ArgoCD as a repo credential.
 6. Public UI settings. `VITE_PUBLIC_URL`, `VITE_SENTRY_DSN` and
-   `VITE_VAPID_PUBLIC_KEY` are GitHub repository variables read by
+   `VITE_VAPID_PUBLIC_KEY` and `VITE_GA_MEASUREMENT_ID` (optional, empty turns
+   analytics off) are GitHub repository variables read by
    `.github/workflows/production-release.yml`. No domain is hard-coded there.
 
 ### ClusterIssuer pitfall
@@ -109,7 +110,8 @@ points:
   either. The API and the migration Job verify the database certificate against
   it. Leave `DATABASE_SSL_REJECT_UNAUTHORIZED` at its default (`true`).
 - `VALKEY_PASSWORD` is shared: the api, GlitchTip, and the Valkey StatefulSet's
-  `--requirepass` all read it.
+  `--requirepass` all read it. Valkey reads it from its own `boringstack-valkey`
+  Secret, so editing other app keys does not restart Valkey.
 - The GlitchTip overlay needs `GLITCHTIP_SECRET_KEY` plus `GLITCHTIP_SUPERUSER_EMAIL`
   / `GLITCHTIP_SUPERUSER_PASSWORD` (and optional `GLITCHTIP_EMAIL_URL`).
 - Enough to boot: `JWT_SECRET`, `MFA_ENCRYPTION_KEY`, `VALKEY_PASSWORD`,
@@ -226,6 +228,40 @@ curl -sI https://app.<domain>/health    # 200 from the api
 curl -sI https://app.<domain>/          # 200 from the ui (SPA)
 curl -sI https://<domain>/              # 200 from the public site
 ```
+
+## Operator dashboard (LAN-only, opt-in)
+
+`apps/admin` is a read-only operator dashboard (queue counts and the audit
+feed) with no login. It talks to `admin-api`, a separate process running
+`dist/admin.js` with the same image build as the public API. It is not part of
+the coordinated release and not in `overlays/prod`. Apply it on purpose:
+
+```bash
+# 1. Pin both admin images to a sha-<digest> in overlays/admin/kustomization.yaml.
+# 2. Apply the overlay to the prod namespace.
+kubectl apply -k infra/k3s/overlays/admin
+```
+
+- **No public route.** There is no Ingress, IngressRoute or LoadBalancer for
+  `admin` or `admin-api`. Both Services are `ClusterIP`. `admin-api` accepts
+  connections only from the `admin` pod, and `admin` accepts only private
+  address ranges (see `base/admin/admin-api-networkpolicy.yaml` and
+  `base/admin/admin-networkpolicy.yaml`).
+- **How to reach it.** From a machine that can reach the cluster API (on the
+  LAN or a VPN):
+
+  ```bash
+  kubectl -n boringstack-prod port-forward svc/admin 8080:8080
+  # then open http://127.0.0.1:8080
+  ```
+
+- **Who the operator is.** `admin-api` resolves one platform admin at boot
+  (`users.is_platform_admin = true`). Set `ADMIN_OPERATOR_USER_ID` in
+  `boringstack-secrets` when more than one exists. It aborts when the choice is
+  ambiguous. Restart `admin-api` after you change platform admins.
+- **Trust assumption.** Anyone who can reach the dashboard acts as the operator.
+  The protection is network reach plus the request guard (`x-boringstack-admin`,
+  same-origin only). Do not publish the Service.
 
 ## Runtime notes
 

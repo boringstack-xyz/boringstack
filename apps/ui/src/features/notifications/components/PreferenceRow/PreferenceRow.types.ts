@@ -13,6 +13,8 @@ export interface IPreferenceRowCellDescriptor {
 
 export interface IPreferenceRowView {
   readonly eventType: string;
+  /** A readable name, or the event code when the UI has none. */
+  readonly label: string;
   readonly cells: readonly IPreferenceRowCellDescriptor[];
   readonly onToggle: IPreferenceRowProps["onToggle"];
 }

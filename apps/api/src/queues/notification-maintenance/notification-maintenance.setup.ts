@@ -1,8 +1,12 @@
 import { logger } from "../../config/logger";
 import {
+  LIFECYCLE_NUDGES_JOB_NAME,
+  LIFECYCLE_NUDGES_SCHEDULER_ID,
   NOTIFICATION_DEDUP_CLEANUP_JOB_NAME,
   NOTIFICATION_DEDUP_CLEANUP_SCHEDULER_ID,
   NOTIFICATION_MAINTENANCE_DEFAULTS,
+  SOFT_BOUNCE_RECOVERY_JOB_NAME,
+  SOFT_BOUNCE_RECOVERY_SCHEDULER_ID,
 } from "./notification-maintenance.constants";
 import { createNotificationMaintenanceQueue } from "./notification-maintenance.queue";
 import type { INotificationMaintenanceSetupResult } from "./notification-maintenance.types";
@@ -24,6 +28,48 @@ export const setupNotificationMaintenanceQueue =
       { every: NOTIFICATION_MAINTENANCE_DEFAULTS.cleanupEveryMs },
       {
         name: NOTIFICATION_DEDUP_CLEANUP_JOB_NAME,
+        data: {},
+        opts: {
+          attempts: NOTIFICATION_MAINTENANCE_DEFAULTS.attempts,
+          backoff: {
+            type: "exponential",
+            delay: NOTIFICATION_MAINTENANCE_DEFAULTS.backoffDelayMs,
+          },
+          removeOnComplete: {
+            age: NOTIFICATION_MAINTENANCE_DEFAULTS.removeOnCompleteAge,
+            count: NOTIFICATION_MAINTENANCE_DEFAULTS.removeOnCompleteCount,
+          },
+          removeOnFail: false,
+        },
+      }
+    );
+
+    await queue.upsertJobScheduler(
+      SOFT_BOUNCE_RECOVERY_SCHEDULER_ID,
+      { every: NOTIFICATION_MAINTENANCE_DEFAULTS.softBounceRecoveryEveryMs },
+      {
+        name: SOFT_BOUNCE_RECOVERY_JOB_NAME,
+        data: {},
+        opts: {
+          attempts: NOTIFICATION_MAINTENANCE_DEFAULTS.attempts,
+          backoff: {
+            type: "exponential",
+            delay: NOTIFICATION_MAINTENANCE_DEFAULTS.backoffDelayMs,
+          },
+          removeOnComplete: {
+            age: NOTIFICATION_MAINTENANCE_DEFAULTS.removeOnCompleteAge,
+            count: NOTIFICATION_MAINTENANCE_DEFAULTS.removeOnCompleteCount,
+          },
+          removeOnFail: false,
+        },
+      }
+    );
+
+    await queue.upsertJobScheduler(
+      LIFECYCLE_NUDGES_SCHEDULER_ID,
+      { every: NOTIFICATION_MAINTENANCE_DEFAULTS.lifecycleEveryMs },
+      {
+        name: LIFECYCLE_NUDGES_JOB_NAME,
         data: {},
         opts: {
           attempts: NOTIFICATION_MAINTENANCE_DEFAULTS.attempts,

@@ -1,0 +1,47 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: admin-api-network-policy
+  namespace: boringstack
+spec:
+  podSelector:
+    matchLabels:
+      app: admin-api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Only the admin dashboard pod may reach the admin API. Traefik and the
+    # public api have no path to it.
+    - from:
+        - podSelector:
+            matchLabels:
+              app: admin
+      ports:
+        - protocol: TCP
+          port: 7340
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: boringstack-db
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: valkey
+      ports:
+        - protocol: TCP
+          port: 6379

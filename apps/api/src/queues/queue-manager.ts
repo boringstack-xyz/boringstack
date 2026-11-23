@@ -36,10 +36,17 @@ export interface IEnqueueableQueue<TData> extends IManagedQueue {
   add: (name: string, data: TData, opts?: JobsOptions) => Promise<unknown>;
 }
 
+/** The email queue also lets the manager look back at what it handled. */
+export interface IEmailDeliveryQueue extends IEnqueueableQueue<IEmailDeliveryJobData> {
+  getJobs: (
+    types: JobType[]
+  ) => Promise<{ data: IEmailDeliveryJobData; finishedOn?: number }[]>;
+}
+
 interface IQueueManagerInput {
   accountMaintenanceQueue: IManagedQueue;
   accountMaintenanceWorker: IManagedWorker;
-  emailDeliveryQueue: IEnqueueableQueue<IEmailDeliveryJobData>;
+  emailDeliveryQueue: IEmailDeliveryQueue;
   emailDeliveryWorker: IManagedWorker;
   notificationDispatchQueue: IEnqueueableQueue<INotificationDispatchJobData>;
   notificationDispatchWorker: IManagedWorker;
@@ -58,7 +65,7 @@ const QUEUE_COUNT_STATES = [
   "paused",
 ] as const;
 
-const fetchQueueCounts = async (
+export const fetchQueueCounts = async (
   queue: IManagedQueue
 ): Promise<IQueueCounts> => {
   const counts = await queue.getJobCounts(...QUEUE_COUNT_STATES);
@@ -85,7 +92,7 @@ const fetchQueueCounts = async (
 export class QueueManager {
   private readonly accountMaintenanceQueue: IManagedQueue;
   private readonly accountMaintenanceWorker: IManagedWorker;
-  private readonly emailDeliveryQueue: IEnqueueableQueue<IEmailDeliveryJobData>;
+  private readonly emailDeliveryQueue: IEmailDeliveryQueue;
   private readonly emailDeliveryWorker: IManagedWorker;
   private readonly notificationDispatchQueue: IEnqueueableQueue<INotificationDispatchJobData>;
   private readonly notificationDispatchWorker: IManagedWorker;
@@ -107,8 +114,12 @@ export class QueueManager {
     this.webPushDeliveryWorker = input.webPushDeliveryWorker;
   }
 
-  async enqueueEmailDelivery(data: IEmailDeliveryJobData): Promise<void> {
+  async enqueueEmailDelivery(
+    data: IEmailDeliveryJobData,
+    options: { delayMs?: number } = {}
+  ): Promise<void> {
     await this.emailDeliveryQueue.add(EMAIL_DELIVERY_JOB_NAME, data, {
+      ...(options.delayMs === undefined ? {} : { delay: options.delayMs }),
       attempts: EMAIL_DELIVERY_DEFAULTS.attempts,
       backoff: {
         type: "exponential",
@@ -120,6 +131,22 @@ export class QueueManager {
       },
       removeOnFail: false,
     });
+  }
+
+  /**
+   * The emails the queue has finished with and still remembers (an hour of
+   * completed jobs, and every failed one), with when each finished.
+   */
+  async handledEmailDeliveries(): Promise<
+    { data: IEmailDeliveryJobData; finishedAtMs: number }[]
+  > {
+    const jobs = await this.emailDeliveryQueue.getJobs(["completed", "failed"]);
+
+    return jobs.flatMap((job) =>
+      job.finishedOn === undefined
+        ? []
+        : [{ data: job.data, finishedAtMs: job.finishedOn }]
+    );
   }
 
   async enqueueWebPushDelivery(data: IWebPushDeliveryJobData): Promise<void> {

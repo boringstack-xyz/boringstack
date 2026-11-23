@@ -11,6 +11,10 @@ if [[ -d "$BORINGSTACK_DOCS_DIR" ]]; then
   HAS_DOCS=1
 fi
 
+step "agent skills mirror (.claude → .agents)"
+bun scripts/sync-agent-skills.ts
+ok "agent skills mirror regenerated"
+
 step "ACL types (api → ui)"
 (
   cd "$BORINGSTACK_API_DIR"

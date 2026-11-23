@@ -62,11 +62,15 @@ export const createApp = () => {
       .group("/api/v1/auth", (group) => group.use(routes.auth))
       .group("/api/v1/users", (group) => group.use(routes.users))
       .group("/api/v1/billing", (group) => group.use(routes.billing))
-      .group("/api/v1/admin", (group) => group.use(routes.admin))
       .group("/api/v1/dashboard", (group) => group.use(routes.dashboard))
+      .group("/api/v1/product-events", (group) =>
+        group.use(routes.productEvents)
+      )
+      .group("/api/v1/feedback", (group) => group.use(routes.feedback))
       .group("/api/v1/notifications", (group) =>
         group.use(routes.notifications)
       )
+      .group("/api/v1/lifecycle", (group) => group.use(routes.lifecycle))
       .group("/api/v1/webhooks", (group) => group.use(routes.webhooks))
       .group("/api/v1/accounts", (group) =>
         group.use(routes.accountSession).use(routes.accounts)

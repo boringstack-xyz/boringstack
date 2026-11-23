@@ -1,6 +1,6 @@
-# Repo-wide gitleaks configuration. Every per-package security-secrets
-# workflow points here, so a single source of truth covers api, ui,
-# docs, and infra scans.
+# Repo-wide gitleaks configuration. The security-secrets workflow scans the
+# whole repository against this file, so one source of truth covers api, ui,
+# docs, site and infra.
 #
 # Extends the default rule set with a narrow allowlist for known false
 # positives in tests and lint-meta source:

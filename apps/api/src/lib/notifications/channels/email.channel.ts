@@ -69,11 +69,18 @@ class EmailChannel implements INotificationChannel {
           payload: ctx.payload,
         })
       : {};
+    const envelope = emailRender.envelope
+      ? emailRender.envelope({
+          recipientUserId: ctx.recipientUserId,
+          payload: ctx.payload,
+        })
+      : undefined;
     const input = {
       to: recipient.email,
       subject,
       templatePath: emailRender.templatePath,
       variables,
+      envelope,
       notificationDeliveryId: deliveryId,
     };
 

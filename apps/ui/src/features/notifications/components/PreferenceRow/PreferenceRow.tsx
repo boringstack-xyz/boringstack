@@ -5,7 +5,7 @@ import { usePreferenceRow } from "./PreferenceRow.hooks";
 import type { IPreferenceRowProps } from "./PreferenceRow.types";
 
 const PreferenceRow: FC<IPreferenceRowProps> = (props) => {
-  const { eventType, cells, onToggle } = usePreferenceRow(props);
+  const { eventType, label, cells, onToggle } = usePreferenceRow(props);
 
   const renderedCells = cells.map((cell) => (
     <PreferenceCell
@@ -19,9 +19,7 @@ const PreferenceRow: FC<IPreferenceRowProps> = (props) => {
 
   return (
     <tr className='border-border-strong/30 hover:bg-primary-low/20 border-b transition-colors last:border-b-0'>
-      <td className='text-foreground px-4 py-3 font-mono text-xs'>
-        {eventType}
-      </td>
+      <td className='text-foreground px-4 py-3 text-sm'>{label}</td>
       {renderedCells}
     </tr>
   );

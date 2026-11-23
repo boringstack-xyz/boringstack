@@ -8,6 +8,8 @@ const BASE_URL = e2eConfig.baseURL;
 
 export default defineConfig({
   testDir: "./e2e",
+  // The production robot has its own config: playwright.robot.config.ts.
+  testIgnore: "**/robot/**",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

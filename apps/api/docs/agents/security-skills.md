@@ -36,7 +36,7 @@ audit-log on mutations, idempotent BullMQ jobs):
 /security-review
 ```
 
-That skill is project-owned at `.claude/skills/security-review.md` and
+That skill is project-owned at `.claude/skills/security-review/SKILL.md` and
 orchestrates the agent skills above plus stack-specific invariants.
 
 Marketplaces are an external dependency. To opt out, delete the

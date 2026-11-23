@@ -26,7 +26,7 @@ export default [
         [`${apiRoot}node_modules/eslint-import-resolver-node/index.js`]: {},
       },
     },
-    files: ["agent/**/*.ts", "agent-evals/**/*.ts"],
+    files: ["agent/**/*.ts", "agent-evals/**/*.ts", "factory/**/*.ts"],
     languageOptions: {
       ...scriptConfig.languageOptions,
       parserOptions: {
@@ -44,9 +44,22 @@ export default [
       "lines-between-class-members": ["error", "always"],
       "env-access/no-direct-process-env": [
         "error",
-        { allowedFiles: ["**/agent/environment.ts"] },
+        {
+          allowedFiles: [
+            "**/agent/environment.ts",
+            "**/factory/environment.ts",
+          ],
+        },
       ],
       "prettier/prettier": ["error", formatting],
+    },
+  },
+  {
+    // The factory's clock is the one place it reads the time.
+    files: ["factory/clock.ts"],
+    rules: {
+      "code-flow/no-bare-date-now": "off",
+      "no-restricted-syntax": "off",
     },
   },
 ];

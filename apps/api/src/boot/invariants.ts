@@ -16,6 +16,7 @@
  */
 import type { Env } from "../config/env/schema";
 import { AES_256_KEY_BYTES } from "../lib/crypto/crypto.constants";
+import { SYNTHETIC_SECRET_MIN_LENGTH } from "../lib/synthetic";
 
 export class BootInvariantError extends Error {
   public readonly violations: readonly string[];
@@ -83,13 +84,33 @@ function checkProdSafeFlags(env: Env): string[] {
 }
 
 /**
+ * A robot secret that is set must be long enough to resist guessing: the
+ * routes it opens sign a caller in. Empty is fine (routes stay shut).
+ */
+function checkSyntheticSecret(env: Env): string[] {
+  const { length } = env.SYNTHETIC_CHECK_SECRET;
+
+  if (length === 0 || length >= SYNTHETIC_SECRET_MIN_LENGTH) {
+    return [];
+  }
+
+  return [
+    `SYNTHETIC_CHECK_SECRET is ${String(length)} characters; it needs at least ${String(SYNTHETIC_SECRET_MIN_LENGTH)}. Regenerate with \`openssl rand -hex 32\`, or unset it.`,
+  ];
+}
+
+/**
  * Aggregate every boot invariant. Returns the list of violations
  * instead of throwing so callers can decide how to log/abort (the
  * primary caller is `assertBootInvariants` below, but tests prefer
  * to inspect the list).
  */
 export function collectBootInvariantViolations(env: Env): string[] {
-  return [...checkMfaKeyDecodable(env), ...checkProdSafeFlags(env)];
+  return [
+    ...checkMfaKeyDecodable(env),
+    ...checkProdSafeFlags(env),
+    ...checkSyntheticSecret(env),
+  ];
 }
 
 /**

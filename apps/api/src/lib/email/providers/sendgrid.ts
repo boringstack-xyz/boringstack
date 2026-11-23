@@ -1,4 +1,3 @@
-import sgMail from "@sendgrid/mail";
 import { env } from "../../../config/env";
 import { logger } from "../../../config/logger";
 import { ApiErrors, getErrorMessage } from "../../errors";
@@ -8,6 +7,7 @@ import type {
   IEmailService,
 } from "../email.types";
 import {
+  formatSender,
   maskEmailForLogging,
   retryWithBackoff,
   validateEmailMessage,
@@ -18,13 +18,17 @@ import {
   isProviderSuppressionError,
   mirrorProviderSuppression,
 } from "./suppression.helpers";
+import { createSendGridClient } from "./sendgrid.client";
 import type { ISendGridMailClient } from "./sendgrid.types";
 
 export class SendGridEmailService implements IEmailService {
   public readonly providerName = "sendgrid" as const;
   private readonly client: ISendGridMailClient;
 
-  constructor(apiKey: string, client: ISendGridMailClient = sgMail) {
+  constructor(
+    apiKey: string,
+    client: ISendGridMailClient = createSendGridClient()
+  ) {
     this.client = client;
     this.client.setApiKey(apiKey);
   }
@@ -46,11 +50,13 @@ export class SendGridEmailService implements IEmailService {
       return await retryWithBackoff(async () => {
         const [response] = await withEmailTimeout(() =>
           this.client.send({
-            from: env.EMAIL_FROM,
+            from: formatSender(env.EMAIL_FROM, message.fromName),
             to: message.to,
             subject: message.subject,
             html: message.html,
             ...(message.text !== undefined && { text: message.text }),
+            ...(message.replyTo !== undefined && { replyTo: message.replyTo }),
+            ...(message.headers !== undefined && { headers: message.headers }),
           })
         );
 

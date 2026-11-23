@@ -1,0 +1,4 @@
+{
+  "_comment": "Advisories with no fixed version that a person has judged not to reach production. deps-autofix lists them on the tracking issue as accepted instead of as needing a person. An entry only applies while no fix is published: once one is, the advisory is fixed like any other. After `until` it needs a person again. Each entry needs an app, package name, GHSA id, reason, until date (YYYY-MM-DD) and the tracking issue number.",
+  "advisories": []
+}

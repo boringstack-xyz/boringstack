@@ -1,0 +1,143 @@
+name: deps-autofix
+
+# Applies the minimal fixed version of every npm advisory that osv-scanner
+# reports on an app lockfile (apps/api, apps/ui, apps/docs, apps/site), in one
+# PR on deps/autofix with auto-merge (squash). It runs daily, on demand, and when
+# a security-deps workflow fails on main. The job is scripts/deps/autofix.mjs:
+# only package.json and bun.lock may change, each app's fast checks and an
+# osv rescan must pass before the app is kept, and advisories with no fix go on
+# the deps-advisory tracking issue. It never edits an osv-scanner.toml ignore
+# list.
+#
+# Off until an operator opts in: set the repository variable DEPS_AUTOFIX_ENABLED
+# to "true" and the secret DEPS_AUTOFIX_TOKEN to a token that may push branches,
+# open pull requests and comment on issues. A pull request opened with the
+# default GITHUB_TOKEN does not start its checks, so merge-gate would never
+# report and auto-merge would wait forever; that is why this job needs its own
+# token. GitHub cron is UTC.
+on:
+  schedule:
+    - cron: "43 4 * * *"
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["security-deps"]
+    types: [completed]
+
+concurrency:
+  group: deps-autofix
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  autofix:
+    name: autofix
+    # A failed security-deps run on another branch must not start a fix on main.
+    if: >-
+      vars.DEPS_AUTOFIX_ENABLED == 'true' &&
+      (github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.head_branch == 'main'))
+    # Fork PRs never reach this job; the guard keeps the lint-meta rule satisfied.
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && (vars.CI_LIGHT_RUNNER || vars.CI_RUNNER) || 'ubuntu-24.04' }}
+    timeout-minutes: 90
+    env:
+      # The same osv-scanner pin as the security-deps workflows.
+      OSV_SCANNER_VERSION: "2.3.8"
+      OSV_SCANNER_SHA256: "bc98e15319ed0d515e3f9235287ba53cdc5535d576d24fd573978ecfe9ab92dc"
+    steps:
+      - name: Require the autofix token
+        env:
+          AUTOFIX_TOKEN: ${{ secrets.DEPS_AUTOFIX_TOKEN }}
+        run: |
+          if [ -z "$AUTOFIX_TOKEN" ]; then
+            echo "::error::Set the DEPS_AUTOFIX_TOKEN secret (see the header of .github/workflows/deps-autofix.yml)."
+            exit 1
+          fi
+
+      # Full history: the UI check runs `vitest --changed origin/main`.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+
+      - name: Install osv-scanner CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/bin"
+          curl -sSL -o "$HOME/bin/osv-scanner" \
+            "https://github.com/google/osv-scanner/releases/download/v${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
+          echo "${OSV_SCANNER_SHA256}  $HOME/bin/osv-scanner" | sha256sum -c -
+          chmod +x "$HOME/bin/osv-scanner"
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+          "$HOME/bin/osv-scanner" --version
+
+      - name: Scan, bump and check each app
+        id: fix
+        run: |
+          set -euo pipefail
+          bun scripts/deps/autofix.mjs --summary "$RUNNER_TEMP/deps-autofix/summary.json"
+          if git diff --quiet -- apps; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit only package.json and bun.lock
+        if: steps.fix.outputs.changed == 'true'
+        id: commit
+        env:
+          GH_TOKEN: ${{ secrets.DEPS_AUTOFIX_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -B deps/autofix
+          git add -u -- apps
+          bad="$(git diff --cached --name-only | grep -vE '^apps/(api|ui|docs|site)/(package\.json|bun\.lock)$' || true)"
+          if [ -n "$bad" ]; then
+            echo "::error::Refusing to commit paths outside package.json and bun.lock: $bad"
+            exit 1
+          fi
+          git diff --cached --quiet && { echo "nothing staged"; exit 0; }
+          git commit -q -m "fix(deps): apply advisory fixes (deps-autofix)" -m "Bumped by deps-autofix from the osv-scanner run; see the PR body."
+          # Same tree as the open branch: nothing new to push, the PR already has it.
+          git fetch -q origin deps/autofix 2>/dev/null || true
+          remote_sha="$(git rev-parse --verify -q origin/deps/autofix || true)"
+          if [ -n "$remote_sha" ] && [ "$(git rev-parse "$remote_sha^{tree}")" = "$(git rev-parse 'HEAD^{tree}')" ]; then
+            echo "Branch already holds this tree; no push."
+          elif [ -n "$remote_sha" ]; then
+            git push -q --force-with-lease="deps/autofix:$remote_sha" \
+              "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/deps/autofix"
+          else
+            git push -q "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/deps/autofix"
+          fi
+
+      - name: Open or update the PR and enable auto-merge
+        if: steps.fix.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.DEPS_AUTOFIX_TOKEN }}
+        run: |
+          set -euo pipefail
+          body="$RUNNER_TEMP/deps-autofix/pr-body.md"
+          title="fix(deps): apply advisory fixes"
+          number="$(gh pr list --repo "$GITHUB_REPOSITORY" --head deps/autofix --state open --json number --jq '.[0].number // empty')"
+          if [ -z "$number" ]; then
+            url="$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head deps/autofix --title "$title" --body-file "$body")"
+            number="${url##*/}"
+          else
+            gh pr edit "$number" --repo "$GITHUB_REPOSITORY" --title "$title" --body-file "$body"
+          fi
+          gh pr merge "$number" --repo "$GITHUB_REPOSITORY" --auto --squash
+          echo "PR #$number has auto-merge on."
+
+      - name: Record advisories without a fix on the tracking issue
+        if: always() && steps.fix.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.DEPS_AUTOFIX_TOKEN }}
+        run: bun scripts/deps/autofix.mjs --report-issue "$RUNNER_TEMP/deps-autofix/summary.json"

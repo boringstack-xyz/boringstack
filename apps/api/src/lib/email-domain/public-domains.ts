@@ -1,3 +1,5 @@
+import { SYNTHETIC_EMAIL_DOMAIN } from "../synthetic/synthetic.constants";
+
 /**
  * Hand-curated allowlist of public / consumer email domains. When
  * `ACCOUNT_DOMAIN_CLAIMING=true`, signups from these domains never
@@ -65,4 +67,6 @@ export const PUBLIC_EMAIL_DOMAINS: ReadonlySet<string> = new Set([
   "dispostable.com",
   "10minutemail.com",
   "trashmail.com",
+  /* The verification robot: each run gets its own account, never a shared one. */
+  SYNTHETIC_EMAIL_DOMAIN,
 ]);

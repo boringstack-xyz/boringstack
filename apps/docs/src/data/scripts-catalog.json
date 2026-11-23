@@ -80,6 +80,18 @@
         "invocation": "tsx scripts/quality/run-tests-clean.ts run --coverage"
       },
       {
+        "command": "test:affected",
+        "script": "quality/run-tests-clean.ts",
+        "description": "Runs vitest and fails when the suite prints warning noise to stdout/stderr.",
+        "invocation": "tsx scripts/quality/run-tests-clean.ts run"
+      },
+      {
+        "command": "ui:add",
+        "script": "codegen/ui-add.ts",
+        "description": "`bun run ui:add <component>`: runs `shadcn add`, then rewrites what it wrote to this template's rules (see ui-add.utils.ts) and formats it.",
+        "invocation": "tsx scripts/codegen/ui-add.ts"
+      },
+      {
         "command": "new:component",
         "script": "codegen/new-component.ts",
         "description": "Scaffold a new component folder with the 8-file anatomy.",

@@ -8,9 +8,12 @@ import authRoutes from "../../api/auth/auth.routes";
 import billingRoutes from "../../api/billing/billing.routes";
 import capabilitiesRoutes from "../../api/capabilities/capabilities.routes";
 import dashboardRoutes from "../../api/dashboard/dashboard.routes";
+import feedbackRoutes from "../../api/feedback/feedback.routes";
 import healthRoutes from "../../api/health/health.routes";
 import metricsRoutes from "../../api/health/metrics.routes";
+import lifecycleRoutes from "../../api/lifecycle/lifecycle.routes";
 import notificationsRoutes from "../../api/notifications/notifications.routes";
+import productEventsRoutes from "../../api/product-events/product-events.routes";
 import usersRoutes from "../../api/users/users.routes";
 import webhookRoutes from "../../api/webhooks/webhooks.routes";
 
@@ -24,7 +27,10 @@ export const routes = {
   accountSession: accountSessionRoutes,
   invitations: invitationAcceptRoutes,
   dashboard: dashboardRoutes,
+  feedback: feedbackRoutes,
+  productEvents: productEventsRoutes,
   notifications: notificationsRoutes,
+  lifecycle: lifecycleRoutes,
   webhooks: webhookRoutes,
   health: healthRoutes,
   metrics: metricsRoutes,

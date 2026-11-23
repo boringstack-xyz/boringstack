@@ -4,6 +4,7 @@ import { db } from "../../clients/postgres";
 import { auditLog, users } from "../../clients/postgres/schema";
 import { logger } from "../../config/logger";
 import { getErrorMessage } from "../errors";
+import { isSyntheticEmail } from "../synthetic";
 import type {
   IAuditEventInput,
   IAuditWriteResult,
@@ -24,6 +25,15 @@ import type {
 export class AuditLogService {
   async record(event: IAuditEventInput): Promise<IAuditWriteResult> {
     try {
+      /*
+       * The verification robot signs up and logs in on every release and
+       * every few hours. Its events are left out of the table, so the
+       * sign-up counts and alerts built on them stay people.
+       */
+      if (await this.isRobot(event.userId)) {
+        return { success: true };
+      }
+
       await db.insert(auditLog).values({
         userId: event.userId,
         action: event.action,
@@ -32,6 +42,18 @@ export class AuditLogService {
         metadata: event.metadata ?? {},
         ip: event.ip ?? null,
         userAgent: event.userAgent ?? null,
+      });
+
+      /*
+       * One line per event so the log pipeline (Loki/Grafana) sees every
+       * action, not only the ones someone thought to log. Action and ids
+       * only: metadata, IP and user agent stay in the table.
+       */
+      logger.info(event.action, {
+        event: "audit.recorded",
+        action: event.action,
+        userId: event.userId,
+        accountId: event.targetAccountId ?? undefined,
       });
 
       return { success: true };
@@ -45,6 +67,20 @@ export class AuditLogService {
 
       return { success: false };
     }
+  }
+
+  private async isRobot(userId: string | null | undefined): Promise<boolean> {
+    if (userId === null || userId === undefined) {
+      return false;
+    }
+
+    const [row] = await db
+      .select({ email: users.email })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    return row !== undefined && isSyntheticEmail(row.email);
   }
 
   /**

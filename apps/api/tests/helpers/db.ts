@@ -119,6 +119,8 @@ export const CLEANUP_TARGETS = [
   "notifications.notification_dedup",
   "notifications.push_subscription",
   "notifications.email_suppression",
+  "app.feedback_answers",
+  "app.product_events",
   "app.accounts",
   "auth.users",
 ] as const;
@@ -215,7 +217,9 @@ export {
   authSessions,
   emailSuppression,
   emailVerificationTokens,
+  feedbackAnswers,
   mfaRecoveryCodes,
+  productEvents,
   notification,
   notificationDedup,
   notificationDelivery,

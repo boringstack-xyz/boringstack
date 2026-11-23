@@ -6,6 +6,18 @@ import type { ISendOutcome, ISendTemplateInput } from "./email.types";
 import { baseTemplateVariables, maskEmailForLogging } from "./email.utils";
 import { emailSuppressionService } from "./suppression.service";
 import { emailTemplateService } from "./template.service";
+import { EMAIL_SUPPRESSION_REASONS } from "./suppression.constants";
+import { isSyntheticEmail } from "../synthetic";
+
+/*
+ * The verification robot's addresses can never receive mail. Dropping the
+ * send here keeps every template (verification, welcome, notifications) away
+ * from the provider, where each one would bounce and count against us.
+ */
+const SYNTHETIC_OUTCOME: ISendOutcome = {
+  status: "suppressed",
+  reason: EMAIL_SUPPRESSION_REASONS.MANUAL,
+};
 
 /**
  * Render and dispatch an email immediately on the calling thread.
@@ -22,6 +34,10 @@ import { emailTemplateService } from "./template.service";
 export const sendTemplateNow = async (
   input: ISendTemplateInput
 ): Promise<ISendOutcome> => {
+  if (isSyntheticEmail(input.to)) {
+    return SYNTHETIC_OUTCOME;
+  }
+
   const suppression = await emailSuppressionService.isSuppressed(input.to);
 
   if (suppression !== null) {
@@ -43,6 +59,7 @@ export const sendTemplateNow = async (
   });
 
   await emailService.send({
+    ...input.envelope,
     to: input.to,
     subject: input.subject,
     html,
@@ -63,6 +80,10 @@ export const sendTemplateNow = async (
 export const sendTemplate = async (
   input: ISendTemplateInput
 ): Promise<ISendOutcome> => {
+  if (isSyntheticEmail(input.to)) {
+    return SYNTHETIC_OUTCOME;
+  }
+
   if (env.QUEUES_ENABLED) {
     const manager = getQueueManager();
 

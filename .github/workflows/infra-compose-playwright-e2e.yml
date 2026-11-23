@@ -124,6 +124,20 @@ jobs:
           bun run e2e:install:chromium
           bun run e2e:ci:chromium
 
+      # The journeys the robot walks in production, here against this PR's
+      # stack: a change that would break a real user fails before it ships,
+      # and so does a route or API operation the robot's coverage lists claim
+      # but no journey calls. The dev stack's limits are loose, so no pacing.
+      - name: Run the production robot's journeys
+        working-directory: apps/ui
+        timeout-minutes: 8
+        env:
+          SYNTHETIC_CHECK_SECRET: dev-stack-only-verification-robot-0000
+          ROBOT_APP_URL: http://localhost:7331
+          ROBOT_API_PER_MINUTE: "100000"
+          ROBOT_SIGN_IN_PER_MINUTE: "100000"
+        run: bun run robot
+
       - name: Compose ps on failure
         if: failure()
         working-directory: infra/compose/compose
@@ -146,6 +160,8 @@ jobs:
           path: |
             apps/ui/test-results
             apps/ui/playwright-report
+            apps/ui/robot-results
+            apps/ui/robot-report
           if-no-files-found: ignore
           retention-days: 7
 

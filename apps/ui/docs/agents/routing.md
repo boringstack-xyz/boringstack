@@ -50,3 +50,8 @@ JS callback.
    string ships in both locales from day one.
 5. Add an E2E spec to `e2e/` if the route is on the critical path
    (auth, billing, dashboard nav).
+6. Give the route a production robot journey in `e2e/robot/*.spec.ts` and an
+   entry in `e2e/robot/coverage.ts` (or a `notChecked` reason).
+   `src/app/router/routes.test.tsx` fails until you do. New API calls the
+   page makes need the same in `e2e/robot/api-coverage.ts`; see
+   [production verification](../../../../docs/operations/production-verification.md).

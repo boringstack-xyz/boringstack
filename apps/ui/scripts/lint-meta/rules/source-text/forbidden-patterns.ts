@@ -99,7 +99,10 @@ export function createForbiddenTextPatterns(
         /(?<![\w.])(?:setTimeout|(?:window|globalThis)\.setTimeout)\s*\(|\.waitForTimeout\s*\(/u,
       message:
         "Wall-clock sleeps flake under CI load and tax every run. Use Playwright's expect.poll/waitFor, or make the awaited state deterministic (see mfa.spec.ts's previous-step TOTP enrolment).",
-      allow: (file) => !file.startsWith(resolve(root, "e2e"))
+      /* The production robot's pacing is a wall-clock wait by design: it keeps the run under production's per-minute request limits. */
+      allow: (file) =>
+        !file.startsWith(resolve(root, "e2e")) ||
+        file === resolve(root, "e2e/robot/fixtures/pace.ts")
     },
     {
       rule: "no-hardcoded-iso-dates-in-fixtures",

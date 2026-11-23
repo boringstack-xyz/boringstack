@@ -1,5 +1,6 @@
 import { Queue, type QueueOptions } from "bullmq";
 import { BULL_PREFIX, getValkeyConnectionOptions } from "../../clients/valkey";
+import { watchQueueConnection } from "../queue-watch";
 import { NOTIFICATION_MAINTENANCE_QUEUE_NAME } from "./notification-maintenance.constants";
 import type { INotificationMaintenanceJobData } from "./notification-maintenance.types";
 
@@ -10,8 +11,11 @@ export const createNotificationMaintenanceQueue =
       prefix: BULL_PREFIX,
     };
 
-    return new Queue<INotificationMaintenanceJobData>(
-      NOTIFICATION_MAINTENANCE_QUEUE_NAME,
-      config
+    return watchQueueConnection(
+      new Queue<INotificationMaintenanceJobData>(
+        NOTIFICATION_MAINTENANCE_QUEUE_NAME,
+        config
+      ),
+      NOTIFICATION_MAINTENANCE_QUEUE_NAME
     );
   };

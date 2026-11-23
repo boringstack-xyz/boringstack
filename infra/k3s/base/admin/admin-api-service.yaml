@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-api
+  namespace: boringstack
+  labels:
+    app: admin-api
+spec:
+  # Internal only. The dashboard reaches it through the admin Service's nginx.
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 7340
+      targetPort: 7340
+      protocol: TCP
+  selector:
+    app: admin-api

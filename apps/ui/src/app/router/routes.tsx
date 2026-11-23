@@ -2,6 +2,7 @@ import { type FC, Suspense, lazy } from "react";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import { useNamespace } from "@/lib/i18n/useNamespace";
+import { trackRouteView } from "@/lib/privacy/analytics.consent";
 
 import { AppShell } from "@/components/core/AppShell";
 
@@ -29,6 +30,13 @@ const ForgotPasswordPage = lazy(() =>
 const ResetPasswordPage = lazy(() =>
   import("@/features/auth/components/ResetPasswordPage").then((m) => ({
     default: m.ResetPasswordPage
+  }))
+);
+
+/* Loaded with the dashboard it appears on, so it stays out of the entry bundle. */
+const FeedbackPrompt = lazy(() =>
+  import("@/features/feedback").then((m) => ({
+    default: m.FeedbackPrompt
   }))
 );
 
@@ -195,6 +203,9 @@ const router = createBrowserRouter([
         <AppShell>
           <Suspense fallback={<Fallback />}>
             <DashboardPage />
+          </Suspense>
+          <Suspense fallback={null}>
+            <FeedbackPrompt moment='onboarded' />
           </Suspense>
         </AppShell>
       </ProtectedRoute>
@@ -370,5 +381,10 @@ const router = createBrowserRouter([
     )
   }
 ]);
+
+/* Every navigation is a page view; trackPage sends nothing without analytics consent. */
+router.subscribe((state) => {
+  trackRouteView(state.location.pathname);
+});
 
 export const AppRoutes: FC = () => <RouterProvider router={router} />;

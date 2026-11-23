@@ -5,6 +5,10 @@
   "a11y": {
     "skipToContent": "Zum Hauptinhalt springen"
   },
+  "support": {
+    "ask": "Hilfe",
+    "askLabel": "Hilfe vom Team erhalten"
+  },
   "common": {
     "loading": "Wird geladen…",
     "close": "Schließen",
@@ -293,6 +297,13 @@
         "inApp": "In-App",
         "email": "E-Mail",
         "webPush": "Web Push"
+      },
+      "events": {
+        "authWelcome": "Willkommen",
+        "passwordResetCompleted": "Passwort geändert",
+        "invitationAccepted": "Einladung angenommen",
+        "ownershipTransferred": "Kontoinhaberschaft übertragen",
+        "welcomeFollowUp": "Tipps für den Einstieg"
       }
     }
   },
@@ -556,6 +567,15 @@
         "title": "Marketing",
         "body": "Geräteübergreifende Kennungen für Werbe-/Kampagnentools. Standardmäßig aus; die meisten Forks benötigen diese Kategorie nicht."
       }
+    }
+  },
+  "feedback": {
+    "prompt": {
+      "ariaLabel": "Kurze Frage",
+      "question": "Was könnten wir an einer Stelle klarer machen?",
+      "placeholder": "Optional. Ein Satz genügt.",
+      "send": "Senden",
+      "notNow": "Nicht jetzt"
     }
   }
 }

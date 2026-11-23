@@ -33,6 +33,7 @@ if [[ -d "$BORINGSTACK_DOCS_DIR" ]]; then
 fi
 
 run_check "tooling quality" bun run agent:quality
+run_check "agent skills mirror" bun scripts/sync-agent-skills.ts --check
 
 run_check "ACL drift" bash -c "cd \"$BORINGSTACK_API_DIR\" && bun run generate:acl-types:check"
 run_check "api lint-meta docs" bash -c "cd \"$BORINGSTACK_API_DIR\" && bun run check:lint-meta-docs"
@@ -61,6 +62,10 @@ if [[ "$FULL" == "--full" ]]; then
   if [[ -d "$BORINGSTACK_SITE_DIR" ]]; then
     run_check "site validate" bash -c "cd \"$BORINGSTACK_SITE_DIR\" && bun run validate"
   fi
+  # The LAN-only operator dashboard is opt-in per fork (WITH_ADMIN); checked when present.
+  if [[ -d "$BORINGSTACK_ADMIN_DIR" ]]; then
+    run_check "admin validate" bash -c "cd \"$BORINGSTACK_ADMIN_DIR\" && bun run validate"
+  fi
   if [[ "$HAS_DOCS" == "1" ]]; then
     run_check "docs build:ci" bash -c "cd \"$BORINGSTACK_DOCS_DIR\" && BORINGSTACK_API_DIR=\"$BORINGSTACK_API_DIR\" BORINGSTACK_UI_DIR=\"$BORINGSTACK_UI_DIR\" bun run build:ci"
   fi
@@ -74,6 +79,21 @@ if ((${#FAILED[@]} > 0)); then
   done
   c_yellow "run: bun run regen"
   exit 1
+fi
+
+# A caller that verified a skipped check another way (factory verify runs
+# agent:verify, whose sandbox checks OpenAPI drift against this checkout's own
+# API) names it in STACK_CHECK_COVERED; only those skips stop counting.
+if [[ -n "${STACK_CHECK_COVERED:-}" ]]; then
+  REMAINING=()
+  for skipped in "${SKIPPED[@]}"; do
+    if [[ ",${STACK_CHECK_COVERED}," == *",${skipped},"* ]]; then
+      c_yellow "  ${skipped}: skipped here, covered by the caller's own run"
+    else
+      REMAINING+=("$skipped")
+    fi
+  done
+  SKIPPED=("${REMAINING[@]}")
 fi
 
 if ((${#SKIPPED[@]} > 0)); then

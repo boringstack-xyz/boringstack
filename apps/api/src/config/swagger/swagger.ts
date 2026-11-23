@@ -9,6 +9,10 @@ export const swaggerConfig = swagger({
         "Bun + Elysia + Drizzle starter API. Replace this description with your project.",
     },
     tags: [
+      {
+        name: "Lifecycle",
+        description: "Follow-up email unsubscribe (public, signed link)",
+      },
       { name: "Health", description: "Liveness and readiness probes" },
       {
         name: "Authentication",

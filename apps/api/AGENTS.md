@@ -23,10 +23,12 @@ focused pattern guides under [`docs/agents/`](docs/agents/).
 | Adding a BullMQ job; touching `src/queues/`                                    | [queues](docs/agents/queues.md)                       |
 | Touching Stripe webhooks, plan IDs, `billing.service.ts`                       | [billing](docs/agents/billing.md)                     |
 | Adding a config knob (`schema.ts`, `.env.example`)                             | [environment](docs/agents/environment.md)             |
+| Streaming chat with tools; choosing `AI_PROVIDER=openrouter`                   | [ai-streaming](docs/agents/ai-streaming.md)           |
 | Writing tests, fixing failures, adding a truncate target                       | [testing](docs/agents/testing.md)                     |
 | Adding an allowlist entry; debugging a security workflow                       | [security-pipeline](docs/agents/security-pipeline.md) |
 | Starting a backend feature (`/build-feature`, `/add-audit-event`, etc.)        | [feature-skills](docs/agents/feature-skills.md)       |
 | Reviewing a diff or running instance for security                              | [security-skills](docs/agents/security-skills.md)     |
+| Adding an operator route; the LAN-only admin process (`src/admin.ts`)          | [admin-process](docs/agents/admin-process.md)         |
 
 ## Account-owned feature workflow
 

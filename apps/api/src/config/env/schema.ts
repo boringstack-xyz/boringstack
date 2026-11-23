@@ -11,6 +11,16 @@ export const envSchema = t.Object({
     { default: "development" }
   ),
   PORT: t.Integer({ minimum: 1, maximum: 65535, default: 7330 }),
+  /*
+   * LAN-only operator admin API (src/admin.ts). A separate process on its
+   * own port that is never mounted in the public API.
+   */
+  ADMIN_PORT: t.Integer({ minimum: 1, maximum: 65535, default: 7340 }),
+  /*
+   * Pins the operator when more than one user has is_platform_admin. Empty
+   * means "the only platform admin"; boot refuses when that is ambiguous.
+   */
+  ADMIN_OPERATOR_USER_ID: t.String({ default: "" }),
   LOG_LEVEL: t.Union(
     [
       t.Literal("debug"),
@@ -65,6 +75,13 @@ export const envSchema = t.Object({
   SUPERUSER_EMAIL: t.String({ default: "" }),
   SUPERUSER_PASSWORD: t.String({ default: "" }),
   E2E_TEST_ENDPOINTS_ENABLED: t.Boolean({ default: false }),
+  /*
+   * Shared secret for the verification robot's routes
+   * (/api/v1/auth/synthetic/*), which verify, upgrade and remove robot
+   * accounts only. Empty = the routes answer 404. Unlike the /__test helpers
+   * this is meant for production: see docs/operations/production-verification.md.
+   */
+  SYNTHETIC_CHECK_SECRET: t.String({ default: "" }),
 
   RATE_LIMIT_MAX: t.Integer({ minimum: 1, default: 100 }),
   RATE_LIMIT_WINDOW_MS: t.Integer({ minimum: 1000, default: 60_000 }),
@@ -119,6 +136,11 @@ export const envSchema = t.Object({
   ),
   EMAIL_FROM: t.String({ default: "noreply@example.com" }),
   /*
+   * Inbox that receives replies to follow-up emails. Empty keeps them
+   * noreply and drops the "just reply" line from the copy.
+   */
+  EMAIL_REPLY_TO: t.String({ default: "" }),
+  /*
    * Optional override for the precompiled templates directory. Empty
    * means "auto-resolve relative to the running module / cwd".
    */
@@ -165,7 +187,12 @@ export const envSchema = t.Object({
 
   AI_ENABLED: t.Boolean({ default: false }),
   AI_PROVIDER: t.Union(
-    [t.Literal("openai"), t.Literal("anthropic"), t.Literal("noop")],
+    [
+      t.Literal("openai"),
+      t.Literal("anthropic"),
+      t.Literal("openrouter"),
+      t.Literal("noop"),
+    ],
     { default: "openai" }
   ),
   OPENAI_API_KEY: t.String({ default: "" }),
@@ -174,6 +201,14 @@ export const envSchema = t.Object({
   /** JSON object of extra headers, e.g. for OpenRouter ranking. */
   OPENAI_DEFAULT_HEADERS: t.String({ default: "" }),
   ANTHROPIC_API_KEY: t.String({ default: "" }),
+
+  /** AI_PROVIDER=openrouter: chat through OpenRouter, and streaming with a per-turn budget. */
+  OPENROUTER_API_KEY: t.String({ default: "" }),
+  OPENROUTER_BASE_URL: t.String({ default: "https://openrouter.ai/api/v1" }),
+  /** Whether OpenRouter may route prompts to providers that train on them. Fails closed to "deny". */
+  OPENROUTER_DATA_COLLECTION: t.Union([t.Literal("allow"), t.Literal("deny")], {
+    default: "deny",
+  }),
 
   /*
    * Domain claiming for B2B mode. When true, the first verified signup
@@ -202,6 +237,11 @@ export const envSchema = t.Object({
     default: "memory",
   }),
   NOTIFICATIONS_SSE_ENABLED: t.Boolean({ default: true }),
+  /*
+   * Follow-up emails after sign-up (the lifecycle sweep). Off until set, so
+   * a fork never emails its users before it has written its own stages.
+   */
+  LIFECYCLE_EMAILS_ENABLED: t.Boolean({ default: false }),
 
   /*
    * Web Push (VAPID). All three values come as a set: generate them once

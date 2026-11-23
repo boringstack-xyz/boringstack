@@ -8,6 +8,7 @@ import type {
   IEmailService,
 } from "../email.types";
 import {
+  formatSender,
   maskEmailForLogging,
   retryWithBackoff,
   validateEmailMessage,
@@ -35,11 +36,13 @@ export class ResendEmailService implements IEmailService {
       return await retryWithBackoff(async () => {
         const result = await withEmailTimeout(() =>
           this.client.emails.send({
-            from: env.EMAIL_FROM,
+            from: formatSender(env.EMAIL_FROM, message.fromName),
             to: [message.to],
             subject: message.subject,
             html: message.html,
             ...(message.text !== undefined && { text: message.text }),
+            ...(message.replyTo !== undefined && { replyTo: message.replyTo }),
+            ...(message.headers !== undefined && { headers: message.headers }),
           })
         );
 

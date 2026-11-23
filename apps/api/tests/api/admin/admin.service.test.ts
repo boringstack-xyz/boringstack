@@ -1,34 +1,41 @@
 import { describe, expect, test } from "bun:test";
 
-import { adminService } from "../../../src/api/admin/admin.service";
+import { AdminService } from "../../../src/api/admin/admin.service";
+import { ApiError } from "../../../src/lib/errors";
+
+const EMPTY_COUNTS = {
+  waiting: 0,
+  active: 0,
+  completed: 0,
+  failed: 0,
+  delayed: 0,
+  paused: 0,
+};
 
 describe("AdminService.getQueueStats", () => {
-  test("returns an empty array when queues are disabled (no QueueManager initialized)", async () => {
-    const stats = await adminService.getQueueStats();
+  test("returns what the read-only reader returns", async () => {
+    const service = new AdminService(() =>
+      Promise.resolve([{ name: "email-delivery", counts: EMPTY_COUNTS }])
+    );
 
-    expect(stats).toEqual([]);
+    expect(await service.getQueueStats()).toEqual([
+      { name: "email-delivery", counts: EMPTY_COUNTS },
+    ]);
   });
 
-  test("throws an externalService ApiError when getQueueManager throws", async () => {
+  test("maps a failing reader to an external-service ApiError", async () => {
+    const service = new AdminService(() =>
+      Promise.reject(new Error("valkey unreachable"))
+    );
+
     let captured: unknown;
 
     try {
-      /*
-       * Force a path where getQueueManager returns a non-null value that
-       * then throws during getStats(). Since the test env has queues disabled,
-       * getQueueManager() returns null and the first branch is the only one
-       * we can reach. We verify the error type contract instead.
-       */
-      await adminService.getQueueStats();
-    } catch (err) {
-      captured = err;
+      await service.getQueueStats();
+    } catch (error) {
+      captured = error;
     }
 
-    /*
-     * In the disabled-queues path no error is thrown: the test above covers
-     * that. This test documents the contract: if getQueueStats DID throw, it
-     * would be an ApiError.
-     */
-    expect(captured).toBeUndefined();
+    expect(captured).toBeInstanceOf(ApiError);
   });
 });

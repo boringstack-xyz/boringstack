@@ -16,7 +16,11 @@
  */
 import { Redis } from "ioredis";
 
-import { getValkeyAppClientOptions } from "../../clients/valkey";
+import {
+  getValkeyAppClientOptions,
+  isValkeyDown,
+  watchValkeyConnection,
+} from "../../clients/valkey";
 import { env } from "../../config/env";
 import { logger } from "../../config/logger";
 import { getErrorMessage } from "../errors";
@@ -89,7 +93,7 @@ class ValkeyEmailRateLimiter {
 
     const client = new Redis(getValkeyAppClientOptions());
 
-    client.on("error", (err: Error) => {
+    watchValkeyConnection(client, "email-rate-limit", (err: Error) => {
       logger.warn("Email rate-limit Valkey client error", {
         event: "cache_valkey_error",
         error: err.message,
@@ -139,7 +143,8 @@ class ValkeyEmailRateLimiter {
         ? this.fallback.check(key)
         : count <= MAX_ATTEMPTS;
     } catch (error: unknown) {
-      logger.warn(
+      // The outage itself is logged once by watchValkeyConnection.
+      logger[isValkeyDown() ? "debug" : "warn"](
         "Email rate-limit Valkey check failed; falling back to in-memory",
         {
           event: "cache_valkey_error",

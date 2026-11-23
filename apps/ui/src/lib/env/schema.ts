@@ -11,6 +11,10 @@ const localesSchema = z
       .filter(Boolean)
   );
 
+const measurementIdSchema = z
+  .union([z.literal(""), z.string().regex(/^G-[A-Z0-9]+$/u)])
+  .default("");
+
 export const envSchema = z.object({
   VITE_APP_NAME: z.string().min(1).default("BoringStack"),
   /*
@@ -29,6 +33,11 @@ export const envSchema = z.object({
    * Empty disables the in-browser subscribe flow.
    */
   VITE_VAPID_PUBLIC_KEY: z.string().optional().default(""),
+  /*
+   * GA4 measurement id (G-XXXXXXXX). Empty turns analytics off entirely: no
+   * script is requested even when the visitor accepts analytics cookies.
+   */
+  VITE_GA_MEASUREMENT_ID: measurementIdSchema,
   VITE_LOCALES: localesSchema,
   MODE: z.enum(["development", "production", "test"]).default("development"),
   DEV: z.boolean().default(true),
