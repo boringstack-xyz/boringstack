@@ -33,8 +33,10 @@ Each entry names the journeys that open the page or call the operation, or a
 The same journeys run on every PR that touches the apps, against the PR's own
 stack (`infra-compose-playwright-e2e.yml`, step "Run the production robot's
 journeys"), with the dev stack's loose request limits and no public site.
-After a release the robot runs the code that shipped with that release, not
-whatever main holds by then.
+After a release the robot runs main's code. It never checks out the release
+run's commit, because the job holds the robot secret and a run started from
+another branch would hand it that branch's code; it only follows releases of
+main in this repository.
 
 ## What it walks
 
