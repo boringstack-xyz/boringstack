@@ -100,6 +100,37 @@ of old code never counts.
 
 These coexist with `tools/spec-loop`'s planning gate.
 
+## Agent lanes
+
+The lanes (`tools/factory/lanes/`) are the agents that work on a change after a
+person has asked for it: each one opens pull requests on its own branch,
+`agent/<lane>/<slug>`, and a person decides every one. **Agents never merge.**
+They are off until the repository variable `AGENTS_ENABLED` is `1`; every
+agent workflow checks it first.
+
+| Piece         | Where                                                           | What it does                                                                                                                                                                                                                                                                 |
+| ------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lane registry | `lanes/lanes.ts`                                                | What a lane may change (allow and deny paths), whether its fix needs a regression test, and how many PRs it may have open or merge in seven days. Only `triage` is ported.                                                                                                   |
+| Triage        | `agent-triage.yml`, `bun run factory lanes triage [--dispatch]` | Takes the next findings from the findings ledger (`factory findings`), not from n8n. A person sends them with `--dispatch`, which starts the workflow. For each finding the agent writes a plan: a code fix becomes a PR, an operations cause becomes an issue for a person. |
+| Proof         | `lanes prove`                                                   | Runs the fix's tests on HEAD with the fix set aside, then with it. Proven only when they fail on HEAD and pass with the fix, with no skipped tests. The report says `proven: true` or `false`; an unproven fix is a result, not an error.                                    |
+| Review        | `agent-review.yml`                                              | An independent reviewer reads the diff and the issue, not the author's reasoning, and writes `Verdict: approve` or `Verdict: reject` into the Review section of the PR's record. Rejection fails the job. The reviewer's helpers come from the base branch.                  |
+| Revise        | `agent-revise.yml`                                              | After a rejection: one revision on the same branch, proved again, then the review runs again. After a second rejection the PR is closed.                                                                                                                                     |
+| Digest        | `agent-digest.yml`, `lanes digest`                              | Weekly: agent PRs merged, closed and open, and failed agent runs, as an issue labelled `agent-digest`.                                                                                                                                                                       |
+| Setup         | `.github/actions/agent-setup`                                   | The kill switch, Bun 1.4.4 and the git identity. It holds no secrets.                                                                                                                                                                                                        |
+
+Exit codes follow the rest of the factory: 0 done, 1 failed, 2 blocked. The
+`lanes` commands read their input from a file or stdin and write their output to
+a file, so the workflows can call them directly with `bun tools/factory/cli.ts`.
+
+Secrets and variables: the workflows need the repository secret
+`CLAUDE_CODE_OAUTH_TOKEN`. Set `AGENTS_ENABLED` to `1` to turn the lanes on, and
+to anything else to turn them off. The triage workflow dispatches the review, so
+the workflow token needs `actions: write`, which the workflows request.
+
+Not verified here: the workflows have not run on GitHub, and the Claude action
+has not been called against a real PR. Set `AGENTS_ENABLED` to `1` on a fork or a
+test repository before relying on them.
+
 ## Principles
 
 - Done means it was seen working in the running product, not that a unit
