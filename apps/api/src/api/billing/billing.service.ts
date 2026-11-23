@@ -36,6 +36,7 @@ import type {
   ISubscriptionSummary,
 } from "./billing.types";
 import { assertAllowedBillingRedirectUrl } from "./billing.utils";
+import { type IPlanStanding, paidPlanId } from "./plan-change";
 
 const STRIPE_STATUS_MAP: Record<string, AccountPlanStatus> = {
   active: "active",
@@ -746,6 +747,15 @@ export class BillingService {
           )
         );
 
+      const nextStatus = isCompletion ? current.status : targetStatus;
+
+      this.recordPlanChange(
+        accountId,
+        current,
+        { planId: current.planId, status: nextStatus },
+        details
+      );
+
       if (!isCompletion) {
         this.recordReconciled(accountId, details, planId, targetStatus);
       }
@@ -786,7 +796,46 @@ export class BillingService {
       planId,
     });
 
+    this.recordPlanChange(
+      accountId,
+      current,
+      { planId, status: targetStatus },
+      details
+    );
+
     this.recordReconciled(accountId, details, planId, targetStatus);
+  }
+
+  /*
+   * One `plan.changed` row per real change in what an account pays for.
+   * Stripe describes a single purchase with several events (checkout
+   * completed, subscription created, subscription updated), and a renewal
+   * or a card update with more: only the event that moves the account onto
+   * or off a paid plan is a change.
+   */
+  private recordPlanChange(
+    accountId: string,
+    from: IPlanStanding | undefined,
+    to: IPlanStanding,
+    details: IStripeWebhookDetails
+  ): void {
+    if (paidPlanId(from) === paidPlanId(to)) {
+      return;
+    }
+
+    void auditLogService.record({
+      userId: null,
+      action: AUDIT_ACTIONS.PLAN_CHANGED,
+      resource: `account:${accountId}`,
+      targetAccountId: accountId,
+      metadata: {
+        eventId: details.eventId,
+        fromPlanId: from?.planId ?? null,
+        fromStatus: from?.status ?? null,
+        toPlanId: to.planId,
+        toStatus: to.status,
+      },
+    });
   }
 
   private recordReconciled(
@@ -854,6 +903,14 @@ export class BillingService {
       return;
     }
 
+    const previous = await tx.query.accountPlans.findFirst({
+      columns: { planId: true, status: true },
+      where: and(
+        eq(accountPlans.accountId, account.id),
+        isNull(accountPlans.revokedAt)
+      ),
+    });
+
     const periodEnd = subscription.items.data[0]?.current_period_end ?? null;
     const currentPeriodEnd =
       periodEnd === null ? null : new Date(periodEnd * 1000).toISOString();
@@ -868,10 +925,12 @@ export class BillingService {
         )
       );
 
+    const nextStatus = mapStripeStatus(subscription.status);
+
     await tx.insert(accountPlans).values({
       accountId: account.id,
       planId: newPlan.id,
-      status: mapStripeStatus(subscription.status),
+      status: nextStatus,
       currentPeriodEnd,
       source: "stripe",
       stripeSubscriptionId: subscription.id,
@@ -882,12 +941,14 @@ export class BillingService {
       lastStripeEventAt: stripeEventOccurredAt(details.eventCreated),
     });
 
-    this.recordReconciled(
+    this.recordPlanChange(
       account.id,
-      details,
-      newPlan.id,
-      mapStripeStatus(subscription.status)
+      previous,
+      { planId: newPlan.id, status: nextStatus },
+      details
     );
+
+    this.recordReconciled(account.id, details, newPlan.id, nextStatus);
   }
 
   private async handleSubscriptionDeleted(
@@ -912,6 +973,15 @@ export class BillingService {
       return;
     }
 
+    const ended = await tx.query.accountPlans.findFirst({
+      columns: { planId: true, status: true },
+      where: and(
+        eq(accountPlans.accountId, account.id),
+        eq(accountPlans.stripeSubscriptionId, subscription.id),
+        isNull(accountPlans.revokedAt)
+      ),
+    });
+
     /*
      * Scoped to the subscription the event names. Cancelling "whatever is
      * current" lets a late `deleted` for an OLD subscription cancel the NEW
@@ -932,6 +1002,15 @@ export class BillingService {
           isNull(accountPlans.revokedAt)
         )
       );
+
+    if (ended !== undefined) {
+      this.recordPlanChange(
+        account.id,
+        ended,
+        { planId: ended.planId, status: "canceled" },
+        details
+      );
+    }
 
     this.recordReconciled(account.id, details, undefined, "canceled");
   }

@@ -1,5 +1,6 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 
+import { acquireKeyedAdvisoryLock } from "../../clients/postgres/advisory-lock";
 import { accountMemberships } from "../../clients/postgres/schema";
 import { ApiErrors } from "../errors";
 
@@ -53,9 +54,7 @@ export const enforceSeatAvailable = async (
   tx: DbOrTx,
   accountId: string
 ): Promise<void> => {
-  await tx.execute(
-    sql`select pg_advisory_xact_lock(hashtext(${accountId}::text))`
-  );
+  await acquireKeyedAdvisoryLock(tx, accountId);
 
   const features = await resolveAccountFeatures(accountId);
   const maxSeats = features.max_seats;

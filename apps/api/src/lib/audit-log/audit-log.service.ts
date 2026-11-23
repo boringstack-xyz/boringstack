@@ -44,6 +44,18 @@ export class AuditLogService {
         userAgent: event.userAgent ?? null,
       });
 
+      /*
+       * One line per event so the log pipeline (Loki/Grafana) sees every
+       * action, not only the ones someone thought to log. Action and ids
+       * only: metadata, IP and user agent stay in the table.
+       */
+      logger.info(event.action, {
+        event: "audit.recorded",
+        action: event.action,
+        userId: event.userId,
+        accountId: event.targetAccountId ?? undefined,
+      });
+
       return { success: true };
     } catch (error: unknown) {
       logger.error("Audit log write failed", {
