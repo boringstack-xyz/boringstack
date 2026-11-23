@@ -3386,7 +3386,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                moment: "onboarded" | "upgraded";
+                moment: string;
             };
             cookie?: never;
         };
@@ -3415,7 +3415,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                moment: "onboarded" | "upgraded";
+                moment: string;
             };
             cookie?: never;
         };
