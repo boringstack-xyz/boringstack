@@ -10,7 +10,7 @@ export const composeDirOf = (workspace: string): string =>
 /** Writes the slot's env file under the workspace's state folder. */
 export const writeSlotEnv = (stateDir: string, slot: number): string => {
   mkdirSync(stateDir, { recursive: true });
-  const file = join(stateDir, "slot.env");
+  const file = join(stateDir, "slot.vars");
 
   writeFileSync(file, slotEnvFileText(slot), { mode: 0o600 });
 

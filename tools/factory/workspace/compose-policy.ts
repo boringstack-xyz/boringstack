@@ -64,7 +64,7 @@ const renderConfig = (
   envBase: string
 ): { config?: unknown; error?: string } => {
   const folder = mkdtempSync(join(tmpdir(), "factory-policy-"));
-  const envFile = join(folder, "policy.env");
+  const envFile = join(folder, "policy.vars");
   const placeholders: string[] = [];
 
   try {

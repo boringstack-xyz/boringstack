@@ -32,7 +32,7 @@ export const proxyRunning = (root: string, shared: string): boolean =>
       "-f",
       "preview-proxy.yml",
       "--env-file",
-      join(previewDirOf(shared), "proxy.env"),
+      join(previewDirOf(shared), "proxy.vars"),
       "ps",
       "--status",
       "running",
@@ -56,7 +56,7 @@ export const refreshRoutes = (root: string, shared: string): boolean => {
     `${routesConf(previewRoutes(shared))}\n`
   );
   writeFileSync(
-    join(dir, "proxy.env"),
+    join(dir, "proxy.vars"),
     `FACTORY_PREVIEW_DIR=${dir}\nPREVIEW_PORT=${String(FACTORY_CONFIG.previewPort)}\n`,
     { mode: 0o600 }
   );
@@ -74,7 +74,7 @@ export const refreshRoutes = (root: string, shared: string): boolean => {
       "-f",
       "preview-proxy.yml",
       "--env-file",
-      join(dir, "proxy.env"),
+      join(dir, "proxy.vars"),
       "exec",
       "-T",
       "preview-proxy",

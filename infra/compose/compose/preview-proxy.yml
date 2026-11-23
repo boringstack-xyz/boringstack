@@ -6,7 +6,7 @@
 # starts it automatically:
 #
 #   docker compose -p boringstack-preview -f compose/preview-proxy.yml \
-#     --env-file <shared>/preview/proxy.env up -d --wait
+#     --env-file <shared>/preview/proxy.vars up -d --wait
 #
 # Bound to 127.0.0.1 only. Routes for slots that no longer exist are removed
 # by `bun run factory sweep`.
