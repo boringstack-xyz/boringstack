@@ -10,6 +10,7 @@
   "include": [
     "agent/**/*.ts",
     "agent-evals/**/*.ts",
+    "factory/**/*.ts",
     "../apps/api/node_modules/bun-types/index.d.ts"
   ],
   "exclude": []

@@ -69,6 +69,7 @@ for (const relativePath of new Bun.Glob(
   if (
     !relativePath.startsWith("tools/agent/") &&
     !relativePath.startsWith("tools/agent-evals/") &&
+    !relativePath.startsWith("tools/factory/") &&
     relativePath !== "tools/eslint.config.mjs" &&
     relativePath !== "tools/tsconfig.json"
   ) {
