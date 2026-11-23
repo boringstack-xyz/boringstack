@@ -66,6 +66,16 @@ export const UNITS: readonly IUnit[] = [
     },
   },
   {
+    path: "apps/admin",
+    recipe: {
+      id: "admin",
+      summary: "apps/admin validate",
+      kind: "command",
+      argv: ["bun", "run", "validate"],
+      cwd: "apps/admin",
+    },
+  },
+  {
     path: "infra/compose",
     recipe: {
       id: "compose",
