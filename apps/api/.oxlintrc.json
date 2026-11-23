@@ -1,0 +1,593 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "options": {
+    "typeAware": true
+  },
+  "plugins": ["eslint", "import", "promise", "typescript", "unicorn"],
+  "categories": {
+    "correctness": "off",
+    "suspicious": "off",
+    "pedantic": "off",
+    "perf": "off",
+    "style": "off",
+    "restriction": "off",
+    "nursery": "off"
+  },
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "drizzle",
+    "*.config.js",
+    "src/templates/email/dist/**",
+    "src/templates/email/preview/**",
+    "tests/lint-meta/fixtures/**"
+  ],
+  "rules": {},
+  "overrides": [
+    {
+      "files": [
+        "src/**/*.ts",
+        "tests/**/*.ts",
+        "security-spec/**/*.ts",
+        "scripts/**/*.ts"
+      ],
+      "rules": {
+        "eslint/constructor-super": "error",
+        "eslint/for-direction": "error",
+        "eslint/getter-return": "error",
+        "eslint/no-async-promise-executor": "error",
+        "eslint/no-case-declarations": "error",
+        "eslint/no-class-assign": "error",
+        "eslint/no-compare-neg-zero": "error",
+        "eslint/no-cond-assign": "error",
+        "eslint/no-const-assign": "error",
+        "eslint/no-constant-binary-expression": "error",
+        "eslint/no-constant-condition": "error",
+        "eslint/no-control-regex": "error",
+        "eslint/no-debugger": "error",
+        "eslint/no-delete-var": "error",
+        "eslint/no-dupe-class-members": "error",
+        "eslint/no-dupe-else-if": "error",
+        "eslint/no-dupe-keys": "error",
+        "eslint/no-duplicate-case": "error",
+        "eslint/no-empty": "error",
+        "eslint/no-empty-character-class": "error",
+        "eslint/no-empty-pattern": "error",
+        "eslint/no-empty-static-block": "error",
+        "eslint/no-ex-assign": "error",
+        "eslint/no-extra-boolean-cast": "error",
+        "eslint/no-fallthrough": "error",
+        "eslint/no-func-assign": "error",
+        "eslint/no-global-assign": "error",
+        "eslint/no-import-assign": "error",
+        "eslint/no-invalid-regexp": "error",
+        "eslint/no-irregular-whitespace": "error",
+        "eslint/no-loss-of-precision": "error",
+        "eslint/no-misleading-character-class": "error",
+        "eslint/no-new-native-nonconstructor": "error",
+        "eslint/no-nonoctal-decimal-escape": "error",
+        "eslint/no-obj-calls": "error",
+        "eslint/no-prototype-builtins": "error",
+        "eslint/no-redeclare": "error",
+        "eslint/no-regex-spaces": "error",
+        "eslint/no-self-assign": "error",
+        "eslint/no-setter-return": "error",
+        "eslint/no-shadow-restricted-names": "error",
+        "eslint/no-sparse-arrays": "error",
+        "eslint/no-this-before-super": "error",
+        "eslint/no-unassigned-vars": "error",
+        "eslint/no-undef": "error",
+        "eslint/no-unexpected-multiline": "error",
+        "eslint/no-unreachable": "error",
+        "eslint/no-unsafe-finally": "error",
+        "eslint/no-unsafe-negation": "error",
+        "eslint/no-unsafe-optional-chaining": "error",
+        "eslint/no-unused-labels": "error",
+        "eslint/no-unused-private-class-members": "error",
+        "eslint/no-unused-vars": "error",
+        "eslint/no-useless-assignment": "error",
+        "eslint/no-useless-backreference": "error",
+        "eslint/no-useless-catch": "error",
+        "eslint/no-useless-escape": "error",
+        "eslint/no-with": "error",
+        "eslint/preserve-caught-error": "error",
+        "eslint/require-yield": "error",
+        "eslint/use-isnan": "error",
+        "eslint/valid-typeof": "error"
+      }
+    },
+    {
+      "files": [
+        "src/**/*.ts",
+        "tests/**/*.ts",
+        "security-spec/**/*.ts",
+        "scripts/**/*.ts"
+      ],
+      "rules": {
+        "eslint/constructor-super": "off",
+        "eslint/getter-return": "off",
+        "eslint/no-class-assign": "off",
+        "eslint/no-const-assign": "off",
+        "eslint/no-dupe-class-members": "off",
+        "eslint/no-dupe-keys": "off",
+        "eslint/no-func-assign": "off",
+        "eslint/no-import-assign": "off",
+        "eslint/no-new-native-nonconstructor": "off",
+        "eslint/no-obj-calls": "off",
+        "eslint/no-redeclare": "off",
+        "eslint/no-setter-return": "off",
+        "eslint/no-this-before-super": "off",
+        "eslint/no-undef": "off",
+        "eslint/no-unreachable": "off",
+        "eslint/no-unsafe-negation": "off",
+        "eslint/no-var": "error",
+        "eslint/no-with": "off",
+        "eslint/prefer-const": "error",
+        "eslint/prefer-rest-params": "error",
+        "eslint/prefer-spread": "error"
+      }
+    },
+    {
+      "files": [
+        "src/**/*.ts",
+        "tests/**/*.ts",
+        "security-spec/**/*.ts",
+        "scripts/**/*.ts"
+      ],
+      "rules": {
+        "typescript/await-thenable": "error",
+        "typescript/ban-ts-comment": [
+          "error",
+          {
+            "minimumDescriptionLength": 10
+          }
+        ],
+        "eslint/no-array-constructor": "off",
+        "typescript/no-array-constructor": "error",
+        "typescript/no-array-delete": "error",
+        "typescript/no-base-to-string": "error",
+        "typescript/no-confusing-void-expression": "error",
+        "typescript/no-deprecated": "error",
+        "typescript/no-duplicate-enum-values": "error",
+        "typescript/no-duplicate-type-constituents": "error",
+        "typescript/no-dynamic-delete": "error",
+        "typescript/no-empty-object-type": "error",
+        "typescript/no-explicit-any": "error",
+        "typescript/no-extra-non-null-assertion": "error",
+        "typescript/no-extraneous-class": "error",
+        "typescript/no-floating-promises": "error",
+        "typescript/no-for-in-array": "error",
+        "typescript/no-generated-empty-object-type": "error",
+        "eslint/no-implied-eval": "off",
+        "typescript/no-implied-eval": "error",
+        "typescript/no-invalid-void-type": "error",
+        "typescript/no-misused-new": "error",
+        "typescript/no-misused-promises": "error",
+        "typescript/no-misused-spread": "error",
+        "typescript/no-mixed-enums": "error",
+        "typescript/no-namespace": "error",
+        "typescript/no-non-null-asserted-nullish-coalescing": "error",
+        "typescript/no-non-null-asserted-optional-chain": "error",
+        "typescript/no-non-null-assertion": "error",
+        "typescript/no-redundant-type-constituents": "error",
+        "typescript/no-require-imports": "error",
+        "typescript/no-this-alias": "error",
+        "typescript/no-unnecessary-boolean-literal-compare": "error",
+        "typescript/no-unnecessary-condition": "error",
+        "typescript/no-unnecessary-template-expression": "error",
+        "typescript/no-unnecessary-type-arguments": "error",
+        "typescript/no-unnecessary-type-assertion": "error",
+        "typescript/no-unnecessary-type-constraint": "error",
+        "typescript/no-unnecessary-type-conversion": "error",
+        "typescript/no-unnecessary-type-parameters": "error",
+        "typescript/no-unsafe-argument": "error",
+        "typescript/no-unsafe-assignment": "error",
+        "typescript/no-unsafe-call": "error",
+        "typescript/no-unsafe-declaration-merging": "error",
+        "typescript/no-unsafe-enum-assignment": "error",
+        "typescript/no-unsafe-enum-comparison": "error",
+        "typescript/no-unsafe-function-type": "error",
+        "typescript/no-unsafe-member-access": "error",
+        "typescript/no-unsafe-return": "error",
+        "typescript/no-unsafe-unary-minus": "error",
+        "eslint/no-unused-expressions": "off",
+        "eslint/no-unused-vars": "off",
+        "typescript/no-unused-vars": "error",
+        "eslint/no-useless-constructor": "off",
+        "typescript/no-useless-constructor": "error",
+        "typescript/no-useless-default-assignment": "error",
+        "typescript/no-wrapper-object-types": "error",
+        "eslint/no-throw-literal": "off",
+        "typescript/only-throw-error": "error",
+        "typescript/prefer-as-const": "error",
+        "typescript/prefer-literal-enum-member": "error",
+        "typescript/prefer-namespace-keyword": "error",
+        "eslint/prefer-promise-reject-errors": "off",
+        "typescript/prefer-promise-reject-errors": "error",
+        "typescript/prefer-reduce-type-parameter": "error",
+        "typescript/prefer-return-this-type": "error",
+        "typescript/related-getter-setter-pairs": "error",
+        "eslint/require-await": "off",
+        "typescript/require-await": "error",
+        "typescript/restrict-plus-operands": [
+          "error",
+          {
+            "allowAny": false,
+            "allowBoolean": false,
+            "allowNullish": false,
+            "allowNumberAndString": false,
+            "allowRegExp": false
+          }
+        ],
+        "typescript/restrict-template-expressions": [
+          "error",
+          {
+            "allowAny": false,
+            "allowBoolean": false,
+            "allowNever": false,
+            "allowNullish": false,
+            "allowNumber": false,
+            "allowRegExp": false
+          }
+        ],
+        "typescript/return-await": ["error", "error-handling-correctness-only"],
+        "typescript/triple-slash-reference": "error",
+        "typescript/unbound-method": "error",
+        "typescript/unified-signatures": "error",
+        "typescript/use-unknown-in-catch-callback-variable": "error"
+      }
+    },
+    {
+      "files": [
+        "src/**/*.ts",
+        "tests/**/*.ts",
+        "security-spec/**/*.ts",
+        "scripts/**/*.ts"
+      ],
+      "rules": {
+        "eslint/constructor-super": "off",
+        "eslint/getter-return": "off",
+        "eslint/no-class-assign": "off",
+        "eslint/no-const-assign": "off",
+        "eslint/no-dupe-class-members": "off",
+        "eslint/no-dupe-keys": "off",
+        "eslint/no-func-assign": "off",
+        "eslint/no-import-assign": "off",
+        "eslint/no-new-native-nonconstructor": "off",
+        "eslint/no-obj-calls": "off",
+        "eslint/no-redeclare": "off",
+        "eslint/no-setter-return": "off",
+        "eslint/no-this-before-super": "off",
+        "eslint/no-undef": "off",
+        "eslint/no-unreachable": "off",
+        "eslint/no-unsafe-negation": "off",
+        "eslint/no-var": "error",
+        "eslint/no-with": "off",
+        "eslint/prefer-const": "error",
+        "eslint/prefer-rest-params": "error",
+        "eslint/prefer-spread": "error"
+      }
+    },
+    {
+      "files": [
+        "src/**/*.ts",
+        "tests/**/*.ts",
+        "security-spec/**/*.ts",
+        "scripts/**/*.ts"
+      ],
+      "rules": {
+        "typescript/adjacent-overload-signatures": "error",
+        "typescript/array-type": "error",
+        "typescript/ban-tslint-comment": "error",
+        "typescript/class-literal-property-style": "error",
+        "typescript/consistent-generic-constructors": "error",
+        "typescript/consistent-indexed-object-style": "error",
+        "typescript/consistent-type-definitions": "error",
+        "typescript/dot-notation": "error",
+        "typescript/no-confusing-non-null-assertion": "error",
+        "eslint/no-empty-function": "off",
+        "typescript/no-empty-function": "error",
+        "typescript/no-inferrable-types": "error",
+        "typescript/non-nullable-type-assertion-style": "error",
+        "typescript/prefer-find": "error",
+        "typescript/prefer-for-of": "error",
+        "typescript/prefer-function-type": "error",
+        "typescript/prefer-includes": "error",
+        "typescript/prefer-nullish-coalescing": "error",
+        "typescript/prefer-optional-chain": "error",
+        "typescript/prefer-regexp-exec": "error",
+        "typescript/prefer-string-starts-ends-with": "error"
+      }
+    },
+    {
+      "files": [
+        "src/**/*.ts",
+        "tests/**/*.ts",
+        "security-spec/**/*.ts",
+        "scripts/**/*.ts"
+      ],
+      "rules": {
+        "eslint/curly": 0,
+        "eslint/no-unexpected-multiline": 0,
+        "unicorn/empty-brace-spaces": "off",
+        "unicorn/no-nested-ternary": "off",
+        "unicorn/number-literal-case": "off"
+      }
+    },
+    {
+      "files": [
+        "src/**/*.ts",
+        "tests/**/*.ts",
+        "security-spec/**/*.ts",
+        "scripts/**/*.ts"
+      ],
+      "rules": {
+        "typescript/no-explicit-any": "error",
+        "typescript/no-unsafe-assignment": "error",
+        "typescript/no-unsafe-member-access": "error",
+        "typescript/no-unsafe-call": "error",
+        "typescript/no-unsafe-return": "error",
+        "typescript/no-unsafe-argument": "error",
+        "typescript/no-non-null-assertion": "error",
+        "typescript/no-unnecessary-type-assertion": "error",
+        "typescript/no-floating-promises": "error",
+        "typescript/no-misused-promises": "error",
+        "typescript/await-thenable": "error",
+        "typescript/return-await": ["error", "in-try-catch"],
+        "typescript/require-await": "error",
+        "typescript/strict-boolean-expressions": [
+          "error",
+          {
+            "allowString": false,
+            "allowNumber": false,
+            "allowNullableObject": true,
+            "allowNullableBoolean": false,
+            "allowNullableString": false,
+            "allowNullableNumber": false,
+            "allowAny": false
+          }
+        ],
+        "typescript/switch-exhaustiveness-check": [
+          "error",
+          {
+            "considerDefaultExhaustiveForUnions": true
+          }
+        ],
+        "typescript/no-redundant-type-constituents": "error",
+        "typescript/no-unnecessary-boolean-literal-compare": "error",
+        "typescript/no-unnecessary-condition": "error",
+        "typescript/restrict-plus-operands": "error",
+        "typescript/restrict-template-expressions": [
+          "error",
+          {
+            "allowNumber": true,
+            "allowBoolean": false,
+            "allowNullish": false
+          }
+        ],
+        "typescript/use-unknown-in-catch-callback-variable": "error",
+        "typescript/no-base-to-string": "error",
+        "typescript/no-confusing-void-expression": "error",
+        "typescript/no-mixed-enums": "error",
+        "typescript/no-unsafe-enum-comparison": "error",
+        "typescript/prefer-nullish-coalescing": "error",
+        "typescript/prefer-optional-chain": "error",
+        "typescript/prefer-readonly": "error",
+        "typescript/prefer-reduce-type-parameter": "error",
+        "typescript/prefer-return-this-type": "error",
+        "typescript/prefer-string-starts-ends-with": "error",
+        "typescript/require-array-sort-compare": "error",
+        "typescript/no-unused-vars": [
+          "error",
+          {
+            "argsIgnorePattern": "^_",
+            "varsIgnorePattern": "^_"
+          }
+        ],
+        "typescript/no-shadow": "error",
+        "typescript/consistent-type-imports": [
+          "error",
+          {
+            "prefer": "type-imports",
+            "fixStyle": "inline-type-imports"
+          }
+        ],
+        "typescript/array-type": [
+          "error",
+          {
+            "default": "array"
+          }
+        ],
+        "typescript/method-signature-style": ["error", "property"],
+        "eslint/eqeqeq": ["error", "always"],
+        "eslint/curly": ["error", "all"],
+        "eslint/no-console": "error",
+        "eslint/no-debugger": "error",
+        "eslint/no-throw-literal": "error",
+        "eslint/prefer-const": "error",
+        "eslint/no-var": "error",
+        "eslint/no-param-reassign": [
+          "error",
+          {
+            "props": false
+          }
+        ],
+        "eslint/no-return-assign": "error",
+        "eslint/no-implicit-coercion": "error",
+        "import/no-duplicates": "error",
+        "import/no-self-import": "error",
+        "import/first": "error",
+        "import/newline-after-import": "error",
+        "promise/no-return-wrap": "error",
+        "promise/param-names": "error",
+        "promise/no-nesting": "error",
+        "promise/no-promise-in-callback": "error",
+        "unicorn/error-message": "error",
+        "unicorn/escape-case": "error",
+        "unicorn/no-array-for-each": "off",
+        "unicorn/no-await-expression-member": "error",
+        "unicorn/no-instanceof-array": "error",
+        "unicorn/no-lonely-if": "error",
+        "unicorn/no-static-only-class": "error",
+        "unicorn/no-this-assignment": "error",
+        "unicorn/no-useless-promise-resolve-reject": "error",
+        "unicorn/no-useless-spread": "error",
+        "unicorn/prefer-array-find": "error",
+        "unicorn/prefer-array-some": "error",
+        "unicorn/prefer-includes": "error",
+        "unicorn/prefer-string-starts-ends-with": "error",
+        "unicorn/throw-new-error": "error"
+      }
+    },
+    {
+      "files": ["src/api/**/*.schemas.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "drizzle-orm",
+                "message": "*.schemas.ts is API validation only (AGENTS.md): do not import Drizzle."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["**/clients/postgres", "**/clients/postgres/**"],
+                "message": "*.schemas.ts must not import the DB client / schema (AGENTS.md). Use *.types.ts for Drizzle types."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/api/**/*.types.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "elysia",
+                "message": "*.types.ts must not import Elysia / TypeBox (AGENTS.md). Use *.schemas.ts for API shapes."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@elysiajs/*"],
+                "message": "*.types.ts must not import Elysia plugins (AGENTS.md). Use *.schemas.ts for API shapes."
+              },
+              {
+                "group": ["**/*.schemas", "**/*.schemas.ts"],
+                "message": "*.types.ts must not import *.schemas.ts (AGENTS.md)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/api/**/*.service.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "elysia",
+                "message": "*.service.ts is framework-agnostic (AGENTS.md): do not import Elysia."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@elysiajs/*"],
+                "message": "*.service.ts is framework-agnostic (AGENTS.md): do not import Elysia plugins."
+              },
+              {
+                "group": ["**/*.schemas", "**/*.schemas.ts"],
+                "message": "*.service.ts must not import *.schemas.ts — validation belongs in routes (AGENTS.md)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/api/**/*.routes.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "drizzle-orm",
+                "message": "*.routes.ts must not import Drizzle (AGENTS.md): delegate DB access to the service."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["**/clients/postgres", "**/clients/postgres/**"],
+                "message": "*.routes.ts must not import the DB client / schema (AGENTS.md): delegate to the service."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/api/**/*.constants.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "elysia",
+                "message": "*.constants.ts should hold literals only (AGENTS.md): do not import Elysia here."
+              },
+              {
+                "name": "drizzle-orm",
+                "message": "*.constants.ts should hold literals only (AGENTS.md): do not import Drizzle here."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["**/clients/postgres", "**/clients/postgres/**"],
+                "message": "*.constants.ts must not import the DB client / schema (AGENTS.md)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["tests/**/*.ts", "security-spec/**/*.ts"],
+      "rules": {
+        "eslint/no-console": "off"
+      }
+    },
+    {
+      "files": ["scripts/**/*.ts"],
+      "rules": {
+        "eslint/no-console": "off"
+      }
+    },
+    {
+      "files": [
+        "src/templates/email/build.ts",
+        "src/templates/email/preview.ts"
+      ],
+      "rules": {
+        "eslint/no-console": "off"
+      }
+    },
+    {
+      "files": ["src/lib/email/template.service.ts"],
+      "rules": {
+        "typescript/no-implied-eval": "off",
+        "typescript/no-unsafe-call": "off"
+      }
+    }
+  ]
+}
