@@ -1,5 +1,6 @@
 import {
   type APIRequestContext,
+  type Page,
   test as base,
   request
 } from "@playwright/test";
@@ -53,6 +54,27 @@ const CONSENT_DISMISSED_STATE = {
   },
   version: 0
 };
+
+/*
+ * Signs in through the API, then opens the dashboard. `page.request` shares
+ * the browser context's cookies, so each test still gets its own session.
+ * Typing into the login form before every test cost seconds each; the form
+ * itself stays covered by the auth, deep-link, MFA and OAuth specs.
+ */
+async function signIn(page: Page, user: ITestUser): Promise<void> {
+  const res = await page.request.post("/api/v1/auth/login", {
+    data: { email: user.email, password: user.password }
+  });
+
+  if (!res.ok()) {
+    throw new Error(
+      `Failed to sign in e2e user (HTTP ${String(res.status())}): ${await res.text()}`
+    );
+  }
+
+  await page.goto("/dashboard");
+  await page.waitForURL(/\/dashboard/);
+}
 
 export const test = base.extend<
   {
@@ -143,9 +165,7 @@ export const test = base.extend<
     const login = new LoginPage(page);
     const dashboard = new DashboardPage(page);
 
-    await login.goto();
-    await login.loginAs(testUser.email, testUser.password);
-    await page.waitForURL(/\/dashboard/);
+    await signIn(page, testUser);
     await use({ login, dashboard });
   }
 });
