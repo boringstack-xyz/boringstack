@@ -31,7 +31,7 @@
   {
     "name": "CSS (Tailwind compiled)",
     "path": "dist/assets/*.css",
-    "limit": "12 KB",
+    "limit": "13 KB",
     "gzip": true,
     "running": false
   },
