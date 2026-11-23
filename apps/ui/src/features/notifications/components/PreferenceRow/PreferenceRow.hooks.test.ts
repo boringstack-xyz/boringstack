@@ -48,4 +48,20 @@ describe("usePreferenceRow", () => {
 
     expect(result.current.onToggle).toBe(onToggle);
   });
+
+  it("names a known event and shows the code of an unknown one", () => {
+    const view = (eventType: string): string =>
+      renderHook(() =>
+        usePreferenceRow({
+          row: { eventType, channels: {} },
+          channels: [],
+          onToggle: vi.fn()
+        })
+      ).result.current.label;
+
+    expect(view("auth.welcome")).toBe(
+      "notifications.preferences.events.authWelcome"
+    );
+    expect(view("comment.replied")).toBe("comment.replied");
+  });
 });

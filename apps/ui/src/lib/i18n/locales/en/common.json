@@ -275,6 +275,13 @@
         "inApp": "In-app",
         "email": "Email",
         "webPush": "Web Push"
+      },
+      "events": {
+        "authWelcome": "Welcome",
+        "passwordResetCompleted": "Password changed",
+        "invitationAccepted": "Invitation accepted",
+        "ownershipTransferred": "Account ownership transferred",
+        "welcomeFollowUp": "Getting-started tips"
       }
     }
   },
