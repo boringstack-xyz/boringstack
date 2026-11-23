@@ -14,3 +14,4 @@ export {
 } from "./password-change.service";
 export { MfaService, mfaService } from "./mfa.service";
 export { SessionService, sessionService } from "./session.service";
+export { SyntheticService, syntheticService } from "./synthetic.service";

@@ -1,0 +1,88 @@
+name: Notify failures
+
+# Tells the owner when something fails that nobody is watching:
+#   - the production release and the production verification robot;
+#   - anything on main (a push) or on a schedule.
+# Pull-request runs stay quiet: the person who opened the PR sees them.
+#
+# Each failing workflow file gets one open issue labelled `ci-failure`, updated with
+# a comment on every further failure and closed by the next green run, so the
+# issue list is the current state of what is broken. When the secret
+# ALERT_WEBHOOK_URL is set, each failure is also posted there as one line
+# (the body carries both `text` and `content`, so Slack and Discord webhooks
+# both accept it).
+on:
+  workflow_run:
+    workflows:
+      - Coordinated production release
+      - Production verification
+      - agent-verification
+      - CI
+      - validate
+      - full-stack-smoke
+      - playwright-e2e
+      - security-deps
+      - security-sast
+      - security-secrets
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  report:
+    name: report
+    if: >-
+      github.event.workflow_run.name == 'Coordinated production release' ||
+      github.event.workflow_run.name == 'Production verification' ||
+      github.event.workflow_run.event == 'schedule' ||
+      (github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main')
+    permissions:
+      issues: write
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 3
+    steps:
+      - name: Open, update or close the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          NAME: ${{ github.event.workflow_run.name }}
+          WORKFLOW_FILE: ${{ github.event.workflow_run.path }}
+          EVENT: ${{ github.event.workflow_run.event }}
+          TITLE: ${{ github.event.workflow_run.display_title }}
+          URL: ${{ github.event.workflow_run.html_url }}
+          WEBHOOK: ${{ secrets.ALERT_WEBHOOK_URL }}
+        run: |
+          issue_title="CI failure: ${NAME} (${WORKFLOW_FILE##*/})"
+          existing=$(gh issue list --state open --label ci-failure --search "in:title \"${issue_title}\"" --json number,title \
+            --jq ".[] | select(.title == \"${issue_title}\") | .number" | head -n1)
+
+          case "$CONCLUSION" in
+            success)
+              if [ -n "$existing" ]; then
+                gh issue close "$existing" --comment "Green again: ${URL}"
+              fi
+              exit 0 ;;
+            failure|timed_out) ;;
+            *) exit 0 ;;
+          esac
+
+          line="${NAME} failed (${EVENT}): ${TITLE}"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Failed again: ${URL}"
+          else
+            gh label create ci-failure --color B60205 --description "A watched workflow is failing" 2>/dev/null || true
+            gh issue create --label ci-failure --title "$issue_title" \
+              --body "${line}
+
+          ${URL}
+
+          This issue closes itself on the next successful run of \`${NAME}\`."
+          fi
+
+          if [ -n "$WEBHOOK" ]; then
+            text="🔴 ${line}
+          ${URL}"
+            jq -n --arg t "${text:0:1800}" '{text: $t, content: $t, allowed_mentions: {parse: []}}' |
+              curl -fsS -m 20 --retry 3 -H 'Content-Type: application/json' -d @- "$WEBHOOK" >/dev/null
+          fi

@@ -309,6 +309,10 @@ services:
       # production keeps the strict default.
       RATE_LIMIT_MAX: ${API_DEV_RATE_LIMIT_MAX:-10000}
       AUTH_RATE_LIMIT_MAX: ${API_DEV_AUTH_RATE_LIMIT_MAX:-10000}
+      # Opens the verification robot's routes on the dev stack, so CI walks
+      # the production robot's journeys against every PR. Dev stack only:
+      # production reads its own secret (docs/operations/production-verification.md).
+      SYNTHETIC_CHECK_SECRET: ${API_DEV_SYNTHETIC_CHECK_SECRET:-dev-stack-only-verification-robot-0000}
       # Tempo trace export: empty when WITH_OBSERVABILITY=0 (the OTel
       # SDK then no-ops). Resolves to the observability overlay's
       # `tempo` service over the shared `backend` network.

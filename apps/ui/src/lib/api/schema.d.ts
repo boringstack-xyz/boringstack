@@ -164,6 +164,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/synthetic/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verification robot only: verify a robot sign-up without the emailed link. 404 without SYNTHETIC_CHECK_SECRET in the x-synthetic-secret header, and for any address outside the robot domain. */
+        post: operations["postApiV1AuthSyntheticVerify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/synthetic/upgrade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verification robot only: put a robot's own account on Pro, without payment. 404 without SYNTHETIC_CHECK_SECRET in the x-synthetic-secret header, and for any address outside the robot domain. */
+        post: operations["postApiV1AuthSyntheticUpgrade"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/synthetic/cleanup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verification robot only: remove a robot user and the accounts it owns. 404 without SYNTHETIC_CHECK_SECRET in the x-synthetic-secret header, and for any address outside the robot domain. */
+        post: operations["postApiV1AuthSyntheticCleanup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/__test/force-verify": {
         parameters: {
             query?: never;
@@ -1485,6 +1536,186 @@ export interface operations {
                         success: boolean;
                         data: {
                             message: string;
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    postApiV1AuthSyntheticVerify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                };
+                "multipart/form-data": {
+                    /** Format: email */
+                    email: string;
+                };
+                "text/plain": {
+                    /** Format: email */
+                    email: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            user: {
+                                id: string;
+                                email: string;
+                                firstName: string;
+                                lastName: string;
+                                emailVerified: boolean;
+                            };
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    postApiV1AuthSyntheticUpgrade: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                };
+                "multipart/form-data": {
+                    /** Format: email */
+                    email: string;
+                };
+                "text/plain": {
+                    /** Format: email */
+                    email: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            upgraded: boolean;
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            upgraded: boolean;
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            upgraded: boolean;
+                        };
+                        timestamp: string;
+                    };
+                };
+            };
+        };
+    };
+    postApiV1AuthSyntheticCleanup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Format: email */
+                    email: string;
+                };
+                "multipart/form-data": {
+                    /** Format: email */
+                    email: string;
+                };
+                "text/plain": {
+                    /** Format: email */
+                    email: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        success: boolean;
+                        data: {
+                            removed: number;
+                        };
+                        timestamp: string;
+                    };
+                    "multipart/form-data": {
+                        success: boolean;
+                        data: {
+                            removed: number;
+                        };
+                        timestamp: string;
+                    };
+                    "text/plain": {
+                        success: boolean;
+                        data: {
+                            removed: number;
                         };
                         timestamp: string;
                     };

@@ -42,6 +42,27 @@ describe("collectBootInvariantViolations", () => {
     expect(violations[0]).toMatch(/__test/);
   });
 
+  it("refuses a verification robot secret too short to resist guessing", () => {
+    const env = baseEnv();
+
+    env.SYNTHETIC_CHECK_SECRET = "short";
+
+    const violations = collectBootInvariantViolations(env);
+
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toMatch(/SYNTHETIC_CHECK_SECRET is 5 characters/);
+  });
+
+  it("accepts an unset or long verification robot secret", () => {
+    const env = baseEnv();
+
+    env.SYNTHETIC_CHECK_SECRET = "";
+    expect(collectBootInvariantViolations(env)).toEqual([]);
+
+    env.SYNTHETIC_CHECK_SECRET = "f".repeat(64);
+    expect(collectBootInvariantViolations(env)).toEqual([]);
+  });
+
   it("allows E2E_TEST_ENDPOINTS_ENABLED=true outside production", () => {
     const env = baseEnv();
 

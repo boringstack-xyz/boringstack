@@ -217,6 +217,14 @@
       "label": "Valkey password",
       "prodOnly": true,
       "generate": "base64:32"
+    },
+    {
+      "key": "SYNTHETIC_CHECK_SECRET",
+      "kind": "secret",
+      "group": "identity",
+      "label": "Verification robot secret (opens /auth/synthetic/* for robot addresses only; empty keeps them shut)",
+      "prodOnly": true,
+      "generate": "base64:32"
     }
   ],
   "crossRules": [

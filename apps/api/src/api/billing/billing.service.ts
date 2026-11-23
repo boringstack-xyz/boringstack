@@ -199,6 +199,13 @@ const ensureConfiguredPlans = async (
   });
 };
 
+/*
+ * Seeds the built-in plans from the current env. For callers outside billing
+ * (the verification robot) that need the plan rows before any price list read.
+ */
+export const ensureBuiltInPlans = async (): Promise<void> =>
+  ensureConfiguredPlans(currentBillingSettings());
+
 const purchasableIntervalsFor = (
   settings: IBillingSettings,
   planName: string,

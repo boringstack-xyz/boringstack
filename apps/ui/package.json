@@ -47,6 +47,7 @@
     "e2e:install": "playwright install --with-deps",
     "e2e:install:chromium": "playwright install --with-deps chromium",
     "e2e:visual": "playwright test e2e/visual.spec.ts --project=chromium",
+    "robot": "playwright test -c playwright.robot.config.ts",
     "e2e:visual:update": "playwright test e2e/visual.spec.ts --project=chromium --update-snapshots",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",

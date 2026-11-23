@@ -1,0 +1,110 @@
+name: Production verification
+
+# The verification robot: one new user walking the whole product in
+# production. It signs up through the real form, uses every page a member
+# reaches, turns on two-factor sign-in, moves its own account to Pro, opens
+# every page of the public site, and removes its own account. See
+# docs/operations/production-verification.md.
+#
+# Every app route and every API operation names the robot journey that covers
+# it (apps/ui/e2e/robot/coverage.ts and api-coverage.ts), and the run fails
+# when a journey stops calling what it claims to.
+#
+# It runs after every production release and every six hours. A failure opens
+# an issue (notify-failures.yml). A run is about fifteen billed minutes on a
+# hosted runner, most of it the robot waiting its turn under the request
+# limits, so the clock stays slow.
+#
+# Off until the repository variable ROBOT_APP_URL names the deployed app.
+on:
+  workflow_run:
+    workflows:
+      - Coordinated production release
+    types: [completed]
+  schedule:
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+
+# One robot at a time: two would share the per-address request limits.
+concurrency:
+  group: production-verification
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  robot:
+    name: robot
+    # Only once configured; after a release, only when the release went out.
+    if: >-
+      vars.ROBOT_APP_URL != '' && (
+        github.event_name != 'workflow_run' ||
+        github.event.workflow_run.conclusion == 'success'
+      )
+    defaults:
+      run:
+        working-directory: apps/ui
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # After a release, the robot that shipped with it: main may already
+          # hold journeys for an API that is still rolling out.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+
+      - name: Cache bun install
+        if: ${{ !vars.CI_RUNNER }}
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('apps/ui/bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Install the browser
+        run: bun run e2e:install:chromium
+
+      # Without the secret the robot cannot verify its own sign-up, so every
+      # signed-in journey is skipped. That is a gap, not a pass: say so loudly.
+      - name: Is the robot armed?
+        env:
+          SYNTHETIC_CHECK_SECRET: ${{ secrets.SYNTHETIC_CHECK_SECRET }}
+        run: |
+          if [ -z "$SYNTHETIC_CHECK_SECRET" ]; then
+            echo "::warning title=Robot not armed::SYNTHETIC_CHECK_SECRET is not set. Only the visitor and public-site journeys run; sign-up, settings, two-factor and billing are NOT being checked. See docs/operations/production-verification.md."
+            echo "### Robot not armed" >> "$GITHUB_STEP_SUMMARY"
+            echo "The member journeys (sign-up to removal) were skipped: \`SYNTHETIC_CHECK_SECRET\` is not set." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Walk the product
+        env:
+          SYNTHETIC_CHECK_SECRET: ${{ secrets.SYNTHETIC_CHECK_SECRET }}
+          ROBOT_APP_URL: ${{ vars.ROBOT_APP_URL }}
+          ROBOT_SITE_URL: ${{ vars.ROBOT_SITE_URL }}
+          ROBOT_SITE_MIN_PAGES: ${{ vars.ROBOT_SITE_MIN_PAGES }}
+          ROBOT_LIVE_SERVICES: ${{ vars.ROBOT_LIVE_SERVICES }}
+          CI: "true"
+        run: bun run robot
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: robot-report-${{ github.run_id }}
+          path: |
+            apps/ui/robot-report
+            apps/ui/robot-results
+          if-no-files-found: ignore
+          retention-days: 14

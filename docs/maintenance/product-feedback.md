@@ -154,3 +154,14 @@ it was fixed; Report 2 items are not repeated.
 | 117 | Code in `packages/*` could not reach the images or the dev containers. | Implemented: a BuildKit `packages` build context and read-only dev mounts; `packages/README.md` keeps the directory present. |
 | 118 | CI ran the API suite twice, and the UI lacked small conveniences the product added (retry on list errors, a home action on the error page, opt-in devtools, return-to after login, jsdom stubs). | Implemented: one coverage run; the UI items as listed. |
 | 119 | The product made pre-push fast by default, skipped main runs for trees a merged PR verified, and removed the per-app release workflows. | Fast pre-push adopted after review: secrets, each changed app's `check`, changed-file UI tests, packages and static Compose checks, with `FULL_PREPUSH=1` for the whole gate. Not adopted: skipping main runs weakens the gate by policy, and Compose still publishes through the per-app workflows. |
+
+## Report 4: Tinkercaster additions, 2026-11-22 to 2026-11-23
+
+Source: Tinkercaster commits #311, #312, #314, #315, #316 and b3f4ae7f (the
+production verification robot), read against template `main` at `2e46fe8`.
+
+| Report | Observation | Status / evidence |
+| ------ | ----------- | ----------------- |
+| 120 | Nothing checked a real sign-up in production; browser tests only ran against CI stacks. | Implemented: the verification robot (`docs/operations/production-verification.md`). Three secret-gated routes `/api/v1/auth/synthetic/{verify,upgrade,cleanup}` answer 404 without `SYNTHETIC_CHECK_SECRET` and for any address outside `robot.boringstack.invalid`; a short secret stops the API at boot. Robot accounts get no email, no audit rows, their own sign-up log event, no domain claiming, and a 24-hour sweep in account maintenance. `synthetic.service.test.ts`, `synthetic.utils.test.ts`, `invariants.test.ts`. |
+| 121 | The product's robot covered every route by convention only for pages. | Implemented and extended: every app route (`e2e/robot/coverage.ts`) and every API operation in the generated client (`e2e/robot/api-coverage.ts`) must name a robot journey or a `notChecked` reason, enforced by `routes.test.tsx`; each run records what every journey called and `check-api-coverage.ts` fails the run when a claim is not met. The robot runs on every PR against the PR's stack (`infra-compose-playwright-e2e.yml`) and after each release and every six hours in production (`production-verification.yml`, off until `ROBOT_APP_URL` is set). |
+| 122 | Failures nobody watched (release, main, schedules) only pinged a Discord webhook in the product. | Implemented generically: `notify-failures.yml` keeps one `ci-failure` issue per failing workflow file, comments on repeats, closes it on the next green run, and also posts to `ALERT_WEBHOOK_URL` (Slack or Discord) when set. |

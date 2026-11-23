@@ -177,6 +177,7 @@ const readAuth = (source: EnvSource) => ({
     source.E2E_TEST_ENDPOINTS_ENABLED,
     "E2E_TEST_ENDPOINTS_ENABLED"
   ),
+  SYNTHETIC_CHECK_SECRET: source.SYNTHETIC_CHECK_SECRET ?? "",
 });
 
 const readUrls = (source: EnvSource) => ({

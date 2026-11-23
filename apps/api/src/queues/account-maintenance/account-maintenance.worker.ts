@@ -1,5 +1,6 @@
 import { Worker, type Job, type WorkerOptions } from "bullmq";
 import { BULL_PREFIX, getValkeyConnectionOptions } from "../../clients/valkey";
+import { syntheticService } from "../../api/auth/services";
 import { logger } from "../../config/logger";
 import { withQueueSpan } from "../../lib/tracing";
 import {
@@ -29,6 +30,7 @@ const runAccountMaintenanceSweep =
     const hardDeletedAccounts = await hardDeleteSoftDeletedAccountsJob();
     const cleanedPendingUsers = await cleanStalePendingUsersJob();
     const cleanedInvitations = await cleanExpiredInvitationsJob();
+    const sweptRobotUsers = await syntheticService.sweepLeftovers();
 
     return {
       expiredFeatureOverrides: expiredFeatureOverrides.swept,
@@ -37,6 +39,7 @@ const runAccountMaintenanceSweep =
       hardDeletedAccounts: hardDeletedAccounts.swept,
       cleanedPendingUsers: cleanedPendingUsers.swept,
       cleanedInvitations: cleanedInvitations.swept,
+      sweptRobotUsers: sweptRobotUsers.swept,
     };
   };
 

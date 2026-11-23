@@ -82,6 +82,7 @@ export default tseslint.config(
       "vite.config.ts",
       "vitest.config.ts",
       "playwright.config.ts",
+      "playwright.robot.config.ts",
       // .github/workflows/*.yml: format-rules (permissions block + pinned SHAs)
       // are enforced by `bun run lint:meta`, which runs in `bun run check`. ESLint
       // doesn't natively lint YAML structure.
@@ -914,7 +915,7 @@ export default tseslint.config(
   // the only correct path. Scoped narrowly to e2e/fixtures/ so accidental
   // empty patterns elsewhere still get caught.
   {
-    files: ["e2e/fixtures/**/*.ts"],
+    files: ["e2e/fixtures/**/*.ts", "e2e/robot/fixtures/**/*.ts"],
     rules: {
       "no-empty-pattern": "off"
     }

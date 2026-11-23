@@ -22,3 +22,5 @@ e2e/**/*-snapshots/
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+robot-results
+robot-report

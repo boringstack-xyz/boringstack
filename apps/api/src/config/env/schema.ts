@@ -65,6 +65,13 @@ export const envSchema = t.Object({
   SUPERUSER_EMAIL: t.String({ default: "" }),
   SUPERUSER_PASSWORD: t.String({ default: "" }),
   E2E_TEST_ENDPOINTS_ENABLED: t.Boolean({ default: false }),
+  /*
+   * Shared secret for the verification robot's routes
+   * (/api/v1/auth/synthetic/*), which verify, upgrade and remove robot
+   * accounts only. Empty = the routes answer 404. Unlike the /__test helpers
+   * this is meant for production: see docs/operations/production-verification.md.
+   */
+  SYNTHETIC_CHECK_SECRET: t.String({ default: "" }),
 
   RATE_LIMIT_MAX: t.Integer({ minimum: 1, default: 100 }),
   RATE_LIMIT_WINDOW_MS: t.Integer({ minimum: 1000, default: 60_000 }),

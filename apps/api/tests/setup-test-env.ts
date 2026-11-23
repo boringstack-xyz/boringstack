@@ -142,6 +142,9 @@ process.env.CACHE_PROVIDER =
  * configured in .env.
  */
 process.env.QUEUES_ENABLED = "false";
+/* Opens the verification robot routes for synthetic.service.test.ts. */
+process.env.SYNTHETIC_CHECK_SECRET =
+  "test-only-synthetic-check-secret-0123456789";
 
 /*
  * SSE stays off by default, but F14 is a finding about stream lifetime and

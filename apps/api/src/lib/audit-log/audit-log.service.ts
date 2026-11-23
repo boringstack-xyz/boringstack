@@ -4,6 +4,7 @@ import { db } from "../../clients/postgres";
 import { auditLog, users } from "../../clients/postgres/schema";
 import { logger } from "../../config/logger";
 import { getErrorMessage } from "../errors";
+import { isSyntheticEmail } from "../synthetic";
 import type {
   IAuditEventInput,
   IAuditWriteResult,
@@ -24,6 +25,15 @@ import type {
 export class AuditLogService {
   async record(event: IAuditEventInput): Promise<IAuditWriteResult> {
     try {
+      /*
+       * The verification robot signs up and logs in on every release and
+       * every few hours. Its events are left out of the table, so the
+       * sign-up counts and alerts built on them stay people.
+       */
+      if (await this.isRobot(event.userId)) {
+        return { success: true };
+      }
+
       await db.insert(auditLog).values({
         userId: event.userId,
         action: event.action,
@@ -45,6 +55,20 @@ export class AuditLogService {
 
       return { success: false };
     }
+  }
+
+  private async isRobot(userId: string | null | undefined): Promise<boolean> {
+    if (userId === null || userId === undefined) {
+      return false;
+    }
+
+    const [row] = await db
+      .select({ email: users.email })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    return row !== undefined && isSyntheticEmail(row.email);
   }
 
   /**

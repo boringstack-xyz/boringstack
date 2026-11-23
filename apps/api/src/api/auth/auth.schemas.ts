@@ -1,3 +1,4 @@
+import { Type } from "@sinclair/typebox";
 import { t } from "elysia";
 
 const PasswordSchema = t.String({
@@ -61,6 +62,23 @@ export const LoginSchema = t.Object({
 
 export const VerifyEmailSchema = t.Object({
   token: t.String({ minLength: 16, maxLength: 255 }),
+});
+
+/* One of the verification robot's own addresses; the service refuses any other. */
+export const SyntheticAccountSchema = t.Object({
+  email: t.String({ format: "email", maxLength: 255 }),
+});
+
+export const SyntheticCleanupResponse = t.Object({
+  success: t.Boolean(),
+  data: t.Object({ removed: Type.Integer() }),
+  timestamp: t.String(),
+});
+
+export const SyntheticUpgradeResponse = t.Object({
+  success: t.Boolean(),
+  data: t.Object({ upgraded: t.Boolean() }),
+  timestamp: t.String(),
 });
 
 export const ResendVerificationSchema = t.Object({
