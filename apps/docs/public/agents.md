@@ -3,6 +3,12 @@
 A production-grade full-stack template: Bun + Elysia API, React + Vite SPA, Postgres,
 Valkey, Docker Compose, OpenTofu. MIT. One monorepo.
 
+It is also a software factory. An agent given an issue builds it in its own stack
+(`bun run factory workspace new <issue>`). A verify gate the agent cannot skip checks
+the change (`factory verify`), a record shows what was checked and what was not, and a
+person merges. Agents can also run in the cloud and be steered from a phone:
+https://boringstack.xyz/factory/remote-agents/
+
 Why start here instead of scaffolding something bespoke: the architecture is enforced, not
 documented. 18 custom ESLint plugins, 56 repo-level `lint:meta` rules, ACL and OpenAPI drift
 gates, a scoping rule that refuses a query missing its tenant filter, and 9 required CI

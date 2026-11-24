@@ -232,7 +232,7 @@ export default defineConfig({
     starlight({
       title: "BoringStack",
       description:
-        "The production-grade SaaS starter, built to be set up by an agent. Auth, billing, queues, email and observability already wired, with the architecture enforced by lint and CI. MIT, open source.",
+        "The AI-agent-first, production-grade SaaS template, with its own software factory: an isolated stack per agent, a verify gate agents cannot skip, and remote agents you steer from a phone. Auth, billing, queues, email and observability already wired, with the architecture enforced by lint and CI. MIT, open source.",
       favicon: "/favicon.svg",
       /*
        * Shared tokens and accessible component styles load first. The base
@@ -350,6 +350,7 @@ The full config surface is machine-readable at https://boringstack.xyz/scaffold-
             "topics/**",
             "runbooks/**",
             "recipes/**",
+            "factory/**",
             "architecture/decisions",
             "architecture/lint-meta",
             "architecture/csrf-stance",
@@ -422,7 +423,7 @@ The full config surface is machine-readable at https://boringstack.xyz/scaffold-
           attrs: {
             property: "og:image:alt",
             content:
-              "BoringStack: point your agent at this stack. A production-grade SaaS starter with auth, billing, queues, email and observability already wired. MIT, open source.",
+              "BoringStack: point your agent at this stack. An AI-agent-first, production-grade SaaS template with its own software factory, and auth, billing, queues, email and observability already wired. MIT, open source.",
           },
         },
         {
@@ -456,7 +457,7 @@ The full config surface is machine-readable at https://boringstack.xyz/scaffold-
           attrs: {
             name: "twitter:image:alt",
             content:
-              "BoringStack: point your agent at this stack. A production-grade SaaS starter with auth, billing, queues, email and observability already wired. MIT, open source.",
+              "BoringStack: point your agent at this stack. An AI-agent-first, production-grade SaaS template with its own software factory, and auth, billing, queues, email and observability already wired. MIT, open source.",
           },
         },
         {
@@ -612,6 +613,25 @@ The full config surface is machine-readable at https://boringstack.xyz/scaffold-
               link: "/architecture/why-boringstack/",
             },
             { label: "Deployment", link: "/topics/deployment/" },
+          ],
+        },
+        {
+          label: "Software factory",
+          items: [
+            { label: "Overview", link: "/factory/" },
+            { label: "Workspaces and slots", link: "/factory/workspaces/" },
+            {
+              label: "Verify and records",
+              link: "/factory/verify-and-records/",
+            },
+            { label: "Hooks", link: "/factory/hooks/" },
+            { label: "Agent lanes", link: "/factory/agent-lanes/" },
+            {
+              label: "Dependency updates",
+              link: "/factory/dependency-updates/",
+            },
+            { label: "Production robot", link: "/factory/production-robot/" },
+            { label: "Remote agents", link: "/factory/remote-agents/" },
           ],
         },
         {

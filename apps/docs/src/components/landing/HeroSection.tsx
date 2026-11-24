@@ -110,7 +110,7 @@ export function HeroSection() {
         <div className="mb-7 flex items-center gap-3">
           <span className="h-px w-8 bg-[var(--bs-accent)]" />
           <span className="mono-caps !text-[color:var(--bs-accent)]">
-            Agent-first &middot; Open source &middot; MIT
+            Agent-first &middot; Software factory &middot; Open source &middot; MIT
           </span>
         </div>
         <h1
@@ -125,7 +125,9 @@ export function HeroSection() {
         </h1>
         <p className="mt-[1.25rem] max-w-[34rem] text-pretty text-base leading-[1.55] text-[var(--bs-muted-strong)] min-[641px]:mt-[1.15rem] min-[641px]:text-[1.05rem]">
           Auth, billing, queues, and deploys are already wired. Your agent
-          builds the feature; lint and CI check that it fits the architecture.
+          builds the feature in its own stack, a verify gate it cannot skip
+          checks the change, and remote agents you steer from your phone run
+          the work.
         </p>
 
         {/*

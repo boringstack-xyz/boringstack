@@ -110,6 +110,21 @@ export const UNITS: readonly IUnit[] = [
     },
   },
   {
+    path: "infra/agent-host",
+    recipe: {
+      id: "agent-host",
+      summary:
+        "OpenTofu fmt and validate, and shell syntax of the host scripts",
+      kind: "command",
+      argv: [
+        "sh",
+        "-c",
+        "tofu fmt -check -recursive && tofu init -backend=false -input=false >/dev/null && tofu validate && bash -n templates/agent-host.sh && bash -n templates/add-person.sh",
+      ],
+      cwd: "infra/agent-host",
+    },
+  },
+  {
     path: ".",
     recipe: {
       id: "repo",

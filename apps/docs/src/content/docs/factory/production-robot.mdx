@@ -1,0 +1,43 @@
+---
+title: "Production robot"
+description: "A scripted new user that walks the deployed product after each release and every six hours, and the rule that every route and API operation must name the journey that covers it."
+---
+
+The production robot is one new user walking the whole product in production. It
+signs up through the real form, uses every page a member reaches, turns on
+two-factor sign-in, moves its own account to Pro, opens every page of the public
+site, and removes its own account. If something a person could hit is broken, the
+run fails and an issue opens.
+
+- Workflow: `.github/workflows/production-verification.yml`
+- Journeys: `apps/ui/e2e/robot/*.spec.ts`
+- Run by hand: `cd apps/ui && bun run robot`
+- Full reference: [docs/operations/production-verification.md](https://github.com/boringstack-xyz/boringstack/blob/main/docs/operations/production-verification.md)
+
+## When it runs
+
+- After every production release, once the release workflow completes on `main`.
+- Every six hours.
+- By hand, with `workflow_dispatch`.
+
+It is **off until the repository variable `ROBOT_APP_URL` names the deployed app.**
+Until then, the job does not run.
+
+## Nothing ships outside the robot
+
+The robot is held to all of the product, not to a sample of it:
+
+- Every app route is listed in `apps/ui/e2e/robot/coverage.ts`, and a test fails when
+  a route has no journey or no written reason.
+- Every API operation in the generated client is listed in
+  `apps/ui/e2e/robot/api-coverage.ts`, with the same rule.
+- Each run records what every journey called. `check-api-coverage.ts` fails the run
+  when a journey did not call what it claims.
+
+A new route or API operation therefore needs a journey, or a written reason, before
+`validate` passes.
+
+## Limits
+
+The robot signs up as a real user, so it shares the per-address request limits. Runs
+are slow on purpose, and only one robot runs at a time.
