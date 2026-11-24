@@ -13,6 +13,9 @@ Dependabot PR by hand; merge-gate decides, as it does for every PR.
 4. `deps-steward.yml` runs every 15 minutes and after every push to main
    (`scripts/deps/steward.mjs`):
    - it turns on auto-merge for any Dependabot or `deps/*` PR that lacks it;
+- it arms auto-merge again with the autofix token when the workflow token
+  armed it, because a merge made with the workflow token starts no workflow on
+  main (no steward run, no release);
    - it updates a PR that fell behind main, so the up-to-date rule never
      strands it;
    - it hands a Dependabot PR whose merge-gate failed to the dependency agent,
