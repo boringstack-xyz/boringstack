@@ -1,0 +1,66 @@
+name: Agent digest
+
+# The weekly report on the agent lanes: agent PRs merged, closed without merging
+# and still open this week (with revert hints), and agent workflow runs that
+# failed. Built by `bun tools/factory/cli.ts lanes digest` from GitHub alone; the
+# findings ledger lives on the machine that runs the stacks, so it is not in it.
+# Posted as an issue labelled agent-digest; last week's is closed.
+# GitHub cron is UTC: 17:00 UTC on Sunday.
+# Kill switch: repository variable AGENTS_ENABLED must be 1.
+
+on:
+  schedule:
+    - cron: "0 17 * * 0"
+  workflow_dispatch:
+
+concurrency:
+  group: agent-digest
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  digest:
+    name: digest
+    if: vars.AGENTS_ENABLED == '1'
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Agent setup (kill switch, bun, git identity)
+        uses: ./.github/actions/agent-setup
+        with:
+          agents_enabled: ${{ vars.AGENTS_ENABLED }}
+
+      - name: Build the digest
+        run: |
+          set -euo pipefail
+          mkdir -p agent-digest-out
+          bun tools/factory/cli.ts lanes digest agent-digest-out/digest.md --now="$(date -u +%FT%TZ)"
+
+      - name: Post the digest issue and close last week's
+        run: |
+          set -euo pipefail
+          gh label create agent-digest --repo "$GITHUB_REPOSITORY" --force --color 1d76db --description "Weekly agent digest" > /dev/null
+          title="Agent digest: week ending $(date -u +%F)"
+          url="$(gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" \
+            --body-file agent-digest-out/digest.md --label agent-digest)"
+          new="${url##*/}"
+          for old in $(gh issue list --repo "$GITHUB_REPOSITORY" --label agent-digest --state open --limit 20 --json number --jq '.[].number'); do
+            if [ "$old" != "$new" ]; then
+              gh issue close "$old" --repo "$GITHUB_REPOSITORY" --comment "Superseded by $url."
+            fi
+          done
+          echo "Posted $url"

@@ -1,0 +1,37 @@
+name: Agent setup
+description: >-
+  Shared start for every agent job. Enforces the AGENTS_ENABLED kill switch,
+  pins Bun, and sets the git identity agent commits are made as. Holds no
+  secrets: each workflow passes its own token and Claude credential to the
+  steps that need them.
+
+inputs:
+  agents_enabled:
+    description: Pass vars.AGENTS_ENABLED.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Kill switch
+      shell: bash
+      env:
+        AGENTS_ENABLED: ${{ inputs.agents_enabled }}
+      run: |
+        if [ "$AGENTS_ENABLED" != "1" ]; then
+          echo "::error::Agents are off. Set the AGENTS_ENABLED repository variable to 1 to run them."
+          exit 1
+        fi
+
+    - name: Bun
+      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      with:
+        bun-version: 1.4.4
+
+    - name: Git identity
+      shell: bash
+      run: |
+        set -euo pipefail
+        git config --global user.name "factory-agent[bot]"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"

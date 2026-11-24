@@ -195,6 +195,15 @@
       "prodDefault": "false"
     },
     {
+      "key": "AGENTS_ENABLED",
+      "kind": "toggle",
+      "group": "features",
+      "label": "Agent lanes (a GitHub Actions repository variable, not an env var)",
+      "help": "Turns on the agent workflows: triage, review, revise and the weekly digest. Set the repository variable AGENTS_ENABLED to 1. Read by .github/workflows, never by the app's .env files. Off by default.",
+      "devDefault": "false",
+      "prodDefault": "false"
+    },
+    {
       "key": "AI_ENABLED",
       "kind": "toggle",
       "group": "features",
