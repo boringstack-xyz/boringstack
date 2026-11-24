@@ -1,0 +1,136 @@
+name: Agent revise
+
+# Starts the revision of an agent PR the moment its reviewer rejects it. After
+# every failed agent-review run on an agent/<lane>/<slug> PR:
+#   - the first rejection: the agent fixes what the review names on the same
+#     branch, proves the fix again and pushes; agent-review then reviews the push;
+#   - a second rejection: the PR is closed with a comment, and a person decides.
+# A PR that already has the agent-revised label has been revised once.
+# Kill switch: repository variable AGENTS_ENABLED must be 1.
+
+on:
+  workflow_run:
+    workflows: ["Agent review"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  revise:
+    name: revise or close
+    if: >-
+      vars.AGENTS_ENABLED == '1' &&
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      startsWith(github.event.workflow_run.head_branch, 'agent/') &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      toJSON(github.event.workflow_run.pull_requests) != '[]'
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      # Dispatches the review of the revision (a GITHUB_TOKEN push does not trigger pull_request).
+      actions: write
+    env:
+      PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+      GH_TOKEN: ${{ github.token }}
+    concurrency:
+      group: agent-pr-${{ github.event.workflow_run.pull_requests[0].number }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout the trusted base (lanes and helpers)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: trusted
+          sparse-checkout: |
+            .github/actions/agent-setup
+            tools/factory
+          persist-credentials: false
+
+      - name: Checkout the PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Check out the PR head
+        run: gh pr checkout "$PR_NUMBER"
+
+      - name: Agent setup (kill switch, bun, git identity)
+        uses: ./trusted/.github/actions/agent-setup
+        with:
+          agents_enabled: ${{ vars.AGENTS_ENABLED }}
+
+      - name: Revise once, or close after a second rejection
+        id: decide
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/revise"
+          mkdir -p "$work"
+          echo "WORK=$work" >> "$GITHUB_ENV"
+          if gh pr view "$PR_NUMBER" --json labels --jq '.labels[].name' | grep -qx 'agent-revised'; then
+            echo "action=close" >> "$GITHUB_OUTPUT"
+          else
+            gh label create agent-revised --force --color c5def5 --description "Revised once by the agent" > /dev/null
+            gh pr edit "$PR_NUMBER" --add-label agent-revised > /dev/null
+            gh pr view "$PR_NUMBER" --json body --jq .body > "$work/body.md"
+            echo "action=revise" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Close the PR after a second rejection
+        if: steps.decide.outputs.action == 'close'
+        run: |
+          set -euo pipefail
+          gh pr comment "$PR_NUMBER" --body "Rejected by the independent review after a revision. Closed without merging; a person decides what happens next."
+          gh pr close "$PR_NUMBER" --delete-branch=false
+
+      - name: Revision agent
+        id: agent
+        if: steps.decide.outputs.action == 'revise'
+        uses: anthropics/claude-code-action@db77d4d3c98f3f6380e7cd45ffba2342a3dbde3c # v1.0.254
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            Pull request #${{ env.PR_NUMBER }} on this branch was rejected by the independent
+            reviewer. Its findings are in the Review section of the PR body (read it with
+            gh pr view ${{ env.PR_NUMBER }} --json body). Fix each finding the review names,
+            and only those. Keep the regression test; if the test is what the review
+            rejected, make it exercise the failing path. Leave all changes UNCOMMITTED on this
+            checkout; do not create a branch, commit or push.
+          claude_args: >-
+            --max-turns 30
+            --allowedTools "Read,Grep,Glob,Edit,Write,Bash(bun test:*),Bash(bunx vitest:*),Bash(gh pr view:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"
+
+      - name: Prove the revision and check its lane
+        id: prove
+        if: steps.decide.outputs.action == 'revise'
+        run: |
+          set -euo pipefail
+          lane="$(cut -d/ -f2 <<<"$HEAD_BRANCH_NAME")"
+          git status --porcelain --untracked-files=all | awk '{print $2}' \
+            | bun trusted/tools/factory/cli.ts lanes prove --report="$WORK/prove.json"
+          git status --porcelain --untracked-files=all | awk '{print $2}' \
+            | bun trusted/tools/factory/cli.ts lanes scope "$lane"
+        env:
+          HEAD_BRANCH_NAME: ${{ github.event.workflow_run.head_branch }}
+
+      - name: Commit, push and review again
+        if: steps.decide.outputs.action == 'revise'
+        run: |
+          set -euo pipefail
+          git add -A
+          git commit -m "fix(agent): address the review of #$PR_NUMBER"
+          git push origin "HEAD:$HEAD_BRANCH_NAME"
+          gh workflow run agent-review.yml -f pr="$PR_NUMBER"
+        env:
+          HEAD_BRANCH_NAME: ${{ github.event.workflow_run.head_branch }}
+
+      - name: Run summary
+        if: always() && steps.decide.outputs.action == 'revise' && steps.agent.outputs.execution_file != ''
+        run: |
+          set -euo pipefail
+          bun trusted/tools/factory/cli.ts lanes report "${{ steps.agent.outputs.execution_file }}" "$WORK/run.md" --title "Revision run"
+          cat "$WORK/run.md" >> "$GITHUB_STEP_SUMMARY"
