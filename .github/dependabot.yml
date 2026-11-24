@@ -91,6 +91,12 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "zod"
         update-types: ["version-update:semver-major"]
+      # @sentry/react 11.13.0 grows the initial-route bundle by ~230 B gzip,
+      # which pushes it past the 270 kB budget in .size-limit.json (270.05 kB
+      # vs 270 kB). The budget must not be raised, so stay on 11.10.0.
+      # Try again on 2027-01-15 (or sooner if a release shrinks the bundle).
+      - dependency-name: "@sentry/react"
+        versions: [">= 11.13.0, < 12"]
 
   - package-ecosystem: bun
     directory: /apps/docs

@@ -1,5 +1,6 @@
 import type { FC } from "react";
 
+import type { TFunction } from "i18next";
 import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -56,7 +57,7 @@ SettingsSectionCard.displayName = "SettingsSectionCard";
 const AccountSection: FC<{
   readonly section: ISettingsSectionView;
   readonly view: ReturnType<typeof useSettingsPage>;
-  readonly t: (key: string, options?: Record<string, unknown>) => string;
+  readonly t: TFunction;
 }> = ({ section, view, t }) => (
   <SettingsSectionCard section={section}>
     <SettingsDetailRows rows={view.accountRows} />
@@ -97,7 +98,7 @@ const AccountSection: FC<{
 const SecuritySection: FC<{
   readonly section: ISettingsSectionView;
   readonly view: ReturnType<typeof useSettingsPage>;
-  readonly t: (key: string, options?: Record<string, unknown>) => string;
+  readonly t: TFunction;
 }> = ({ section, view, t }) => (
   <SettingsSectionCard section={section}>
     <SettingsDetailRows rows={view.securityRows} />
@@ -186,7 +187,7 @@ const SecuritySection: FC<{
 const OAuthSection: FC<{
   readonly section: ISettingsSectionView;
   readonly view: ReturnType<typeof useSettingsPage>;
-  readonly t: (key: string, options?: Record<string, unknown>) => string;
+  readonly t: TFunction;
 }> = ({ section, view, t }) => {
   const oauthRows = view.oauthProviders.map((provider) => ({
     ...provider,
@@ -247,7 +248,7 @@ const OAuthSection: FC<{
 
 const DeleteAccountControls: FC<{
   readonly view: ReturnType<typeof useSettingsPage>;
-  readonly t: (key: string, options?: Record<string, unknown>) => string;
+  readonly t: TFunction;
 }> = ({ view, t }) => (
   <div className='flex flex-col gap-4'>
     <div className='flex flex-col gap-2'>
@@ -287,7 +288,7 @@ const DeleteAccountControls: FC<{
 
 const LeaveAccountControls: FC<{
   readonly view: ReturnType<typeof useSettingsPage>;
-  readonly t: (key: string, options?: Record<string, unknown>) => string;
+  readonly t: TFunction;
 }> = ({ view, t }) => (
   <div className='flex flex-col gap-3'>
     <p className='text-muted-foreground text-sm'>
@@ -314,7 +315,7 @@ const LeaveAccountControls: FC<{
 
 const DangerBody: FC<{
   readonly view: ReturnType<typeof useSettingsPage>;
-  readonly t: (key: string, options?: Record<string, unknown>) => string;
+  readonly t: TFunction;
 }> = ({ view, t }) => {
   if (view.canDeleteAccount) {
     return <DeleteAccountControls view={view} t={t} />;
@@ -334,7 +335,7 @@ const DangerBody: FC<{
 const DangerSection: FC<{
   readonly section: ISettingsSectionView;
   readonly view: ReturnType<typeof useSettingsPage>;
-  readonly t: (key: string, options?: Record<string, unknown>) => string;
+  readonly t: TFunction;
 }> = ({ section, view, t }) => (
   <SettingsSectionCard section={section}>
     <DangerBody view={view} t={t} />
