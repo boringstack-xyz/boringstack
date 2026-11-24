@@ -88,12 +88,28 @@ components, lint-exempt.
 | `*.routes.tsx`      | `react-router-dom`, lazy-imported pages                                                       | direct query/store imports                                                                           |
 | `src/lib/env/**`    | `zod`, `import.meta.env`                                                                      | (only this folder reads env)                                                                         |
 
-## ESLint plugin map
+## Lint: Oxlint, then the ESLint remainder
 
-Standard: `@eslint/js`, `typescript-eslint`, `eslint-plugin-react`,
-`eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`,
-`eslint-plugin-jsx-a11y`, `eslint-plugin-import`, `eslint-plugin-promise`,
-`eslint-plugin-sonarjs`, `eslint-plugin-unicorn`, `eslint-config-prettier`.
+`bun run lint` runs two linters in order. **Oxlint** (`oxlint --type-aware`,
+rules in [.oxlintrc.json](.oxlintrc.json), pinned exactly in `package.json`) runs
+the typescript-eslint, react, react-hooks, jsx-a11y, promise, import and core
+rules it supports. **ESLint** ([eslint.remainder.config.mjs](eslint.remainder.config.mjs))
+runs only the remainder: the custom plugins below, JSON linting, and the rules
+Oxlint does not run or reports differently here. [eslint.config.mjs](eslint.config.mjs)
+keeps the full policy; `lint:meta` and the tooling read it, so change a rule in
+both files. `tests/lint-meta/lint-parity.test.ts` lints a fixture of known
+violations with both linters and fails if a rule the full policy enables is
+covered by neither.
+
+The remainder also carries the standard plugins whose rules Oxlint does not run:
+`eslint-plugin-react-refresh`, `eslint-plugin-sonarjs`, `eslint-plugin-import`
+(one rule), `@eslint/json`, `@eslint-community/eslint-plugin-eslint-comments`.
+
+Standard plugins behind Oxlint's rules: `typescript-eslint`, `eslint-plugin-react`
+(with its react-hooks rules), `eslint-plugin-jsx-a11y`, `eslint-plugin-import`,
+`eslint-plugin-promise`, `eslint-plugin-unicorn`. Oxlint runs their rules
+natively; the packages stay installed because the full policy in `eslint.config.mjs`
+still imports them.
 
 Custom — published from
 [`boringstack-xyz/eslint-plugins`](https://github.com/boringstack-xyz/eslint-plugins)

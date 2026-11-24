@@ -4,7 +4,7 @@ Read this first. Long-form patterns are in [AGENTS.md](AGENTS.md).
 
 ## Merge bar
 
-1. **`bun run validate`** must pass (typecheck + ESLint + tests).
+1. **`bun run validate`** must pass (typecheck + Oxlint + ESLint + tests).
 2. Push/CI additionally enforce **`bun run test:coverage`** (coverage
    ratchet — needs the local stack up so integration tests run, or the
    function floor fails) and the dist build. `validate` alone is the
@@ -44,11 +44,25 @@ After schema changes: `bun run db:generate && bun run db:migrate`, commit the SQ
 2. Mount via `.group(...)` in `src/config/app.ts`.
 3. Add Swagger tag in `src/config/swagger.ts`.
 
-## ESLint plugins
+## Lint: Oxlint, then the ESLint remainder
 
-`bun run check` runs 16 custom plugins on top of typescript-eslint
-strict-type-checked. Each one catches a specific class of mistake the
-template doesn't tolerate.
+`bun run lint` runs two linters in order:
+
+1. **Oxlint** (`oxlint --type-aware`, rules in [.oxlintrc.json](.oxlintrc.json),
+   pinned exactly in `package.json`) runs the typescript-eslint, core, unicorn and
+   import rules it supports, with the same file scoping and options as before.
+2. **ESLint** ([eslint.remainder.config.mjs](eslint.remainder.config.mjs)) runs only
+   what Oxlint does not: the custom plugins below, sonarjs, prettier, and the few
+   rules Oxlint covers differently on this codebase.
+
+[eslint.config.js](eslint.config.js) keeps the full policy. `tools/` and
+`lint:meta` read it, so it must stay complete; change a rule in both files. The
+parity tests in `tests/lint-meta/lint-parity.test.ts` lint a fixture of known
+violations with both linters, and fail if a rule the full policy enables is
+covered by neither.
+
+The custom plugins each catch a specific class of mistake the template doesn't
+tolerate.
 
 | Plugin                                                        | What it enforces                                                                                                                       |
 | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
