@@ -148,18 +148,38 @@ function execute(action) {
   }
 }
 
-if (import.meta.main) {
-  const listed = gh([
-    "pr", "list", "--state", "open", "--limit", "100", "--json",
-    "number,author,headRefName,isDraft,labels,autoMergeRequest,mergeStateStatus,statusCheckRollup",
-  ]);
+const LIST = [
+  "pr", "list", "--state", "open", "--limit", "100", "--json",
+  "number,author,headRefName,isDraft,labels,autoMergeRequest,mergeStateStatus,statusCheckRollup",
+];
 
-  if (!listed.ok) {
-    console.error(listed.err);
-    process.exit(1);
+/*
+ * Right after a merge, which is when a push run starts, GitHub reports every
+ * other PR's merge state as UNKNOWN until it recomputes it. Ask again a few
+ * times so a PR that fell behind is still brought up to date.
+ */
+function listPrs() {
+  for (let attempt = 0; ; attempt += 1) {
+    const listed = gh(LIST);
+
+    if (!listed.ok) {
+      console.error(listed.err);
+      process.exit(1);
+    }
+
+    const prs = JSON.parse(listed.out).map(normalize);
+    const unknown = prs.some((pr) => isDependencyPr(pr) && pr.mergeState === "UNKNOWN");
+
+    if (!unknown || attempt >= 5) {
+      return prs;
+    }
+
+    Bun.sleepSync(10_000);
   }
+}
 
-  const prs = JSON.parse(listed.out).map(normalize);
+if (import.meta.main) {
+  const prs = listPrs();
   const result = plan(prs, { agentsEnabled: process.env.AGENTS_ENABLED === "1" });
 
   console.log(JSON.stringify(result, null, 2));
