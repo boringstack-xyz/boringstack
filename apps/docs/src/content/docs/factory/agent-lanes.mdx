@@ -17,7 +17,7 @@ workflow checks it first. Setting it to anything else turns them off again.
 | Review | `agent-review.yml`            | An independent reviewer reads the diff and the issue, not the author's reasoning. It writes `Verdict: approve` or `Verdict: reject` into the record's Review section. A rejection fails the job.                                          |
 | Revise | `agent-revise.yml`            | After a rejection, one revision on the same branch, proved again, then reviewed again. After a second rejection the pull request is closed.                                                                                               |
 | Digest | `agent-digest.yml`            | Weekly: agent pull requests merged, closed and open, and failed agent runs, as one issue labelled `agent-digest`.                                                                                                                         |
-| Setup  | `.github/actions/agent-setup` | The kill switch, Bun 1.4.4 and the git identity. It holds no secrets.                                                                                                                                                                     |
+| Setup  | `.github/actions/agent-setup` | The kill switch, Bun 1.4.5 and the git identity. It holds no secrets.                                                                                                                                                                     |
 
 ## Turning them on
 

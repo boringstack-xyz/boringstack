@@ -141,7 +141,7 @@ applies it.
 - A firewall that allows SSH only, from addresses you list. Key-only SSH.
   `ufw` allows SSH only on the host.
 - Docker from Docker's own apt repository, with the key fingerprint pinned.
-- Bun, pinned to the repository's version (1.4.4), checked against Bun's published
+- Bun, pinned to the repository's version (1.4.5), checked against Bun's published
   SHA256 list.
 - GitHub CLI, Claude Code (native installer), tmux, and unattended security upgrades.
 - A non-root `agent` user that owns the checkout at `~/boringstack`.

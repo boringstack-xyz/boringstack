@@ -3,7 +3,7 @@
 # directory. Build from apps/api with:
 #   docker build --build-context packages=../../packages -f Dockerfile.prod .
 # Compose, the release workflows and the infra gate pass the same context.
-FROM oven/bun:1.4.4-alpine@sha256:4cf82f5686b196504fe119db3fcd9185b191f82ece82c40680e597228ec6070a AS builder
+FROM oven/bun:1.4.5-alpine@sha256:da816670775f4c2b4e990b6b1847cf5540dcdc721a42033dd331ce7a88ba6a3b AS builder
 
 WORKDIR /app
 
@@ -35,7 +35,7 @@ RUN bun run build
 # is installed here and kept out of the lean runtime image. The Kubernetes
 # migration Job runs it. This stage must stay before `production`: a plain
 # `docker build` builds the last stage, and that must be the API.
-FROM oven/bun:1.4.4-alpine@sha256:4cf82f5686b196504fe119db3fcd9185b191f82ece82c40680e597228ec6070a AS migrations
+FROM oven/bun:1.4.5-alpine@sha256:da816670775f4c2b4e990b6b1847cf5540dcdc721a42033dd331ce7a88ba6a3b AS migrations
 
 RUN apk add --no-cache dumb-init
 
@@ -81,11 +81,11 @@ ENTRYPOINT ["dumb-init", "--"]
 CMD ["bun", "run", "db:migrate"]
 
 # Production stage
-FROM oven/bun:1.4.4-alpine@sha256:4cf82f5686b196504fe119db3fcd9185b191f82ece82c40680e597228ec6070a AS production
+FROM oven/bun:1.4.5-alpine@sha256:da816670775f4c2b4e990b6b1847cf5540dcdc721a42033dd331ce7a88ba6a3b AS production
 
 RUN apk add --no-cache dumb-init
 
-# Non-root user (k8s-friendly fixed UID/GID). `oven/bun:1.4.4-alpine` ships
+# Non-root user (k8s-friendly fixed UID/GID). `oven/bun:1.4.5-alpine` ships
 # with a `bun` user/UID 1000 already; we add our own at 1001 to avoid
 # collisions and so prod images run as a deliberate, named user.
 RUN addgroup -g 1001 -S nodejs && \

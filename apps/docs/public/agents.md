@@ -67,12 +67,12 @@ Do not look for a "Use this template" button. That is a browser action. The repo
 | ~4 GB free RAM                 | first boot builds api + ui images and runs migrations                                   |
 | `git`                          | required                                                                                |
 | `gh`, authenticated            | optional; gets you a GitHub-hosted repo instead of a local-only one                     |
-| `bun` 1.4.4                    | not needed to boot; needed to develop (`bun run check`, `regen`, `rename:project`)     |
+| `bun` 1.4.5                    | not needed to boot; needed to develop (`bun run check`, `regen`, `rename:project`)     |
 
 Install the pinned development runtime (not the latest release):
 
 ```sh
-curl -fsSL https://bun.sh/install | bash -s "bun-v1.4.4"
+curl -fsSL https://bun.sh/install | bash -s "bun-v1.4.5"
 ```
 
 
