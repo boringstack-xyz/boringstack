@@ -26,7 +26,8 @@ Dependabot PR by hand; merge-gate decides, as it does for every PR.
    checks and makes the update land: it adapts code, types, tests and
    lockfiles. It never weakens a check. If one package cannot land, it puts that
    package back, keeps the rest, and adds an `ignore` entry with the reason to
-   `.github/dependabot.yml`. Its commit goes through merge-gate like any other.
+   `.github/dependabot.yml`. Its commit is created through the GitHub API, so it
+   is signed as main requires, and goes through merge-gate like any other.
 6. A PR that still fails gets the `deps-needs-person` label and one comment.
    That is the only case that reaches a person.
 
