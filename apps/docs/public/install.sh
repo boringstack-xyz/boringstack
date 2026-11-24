@@ -439,7 +439,7 @@ else
   warn "bun is not installed"
   warn "  not needed to boot: Compose runs every runtime"
   warn "  needed to develop: 'bun run check', 'bun run regen', 'bun run rename:project'"
-  warn '  install: curl -fsSL https://bun.sh/install | bash -s "bun-v1.4.4"'
+  warn '  install: curl -fsSL https://bun.sh/install | bash -s "bun-v1.4.5"'
 fi
 
 if [ -e "$target_dir" ]; then

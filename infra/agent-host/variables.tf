@@ -57,7 +57,7 @@ variable "repo_url" {
 
 variable "bun_version" {
   type        = string
-  default     = "1.4.4"
+  default     = "1.4.5"
   description = "Bun version the host installs. Matches the repository's pinned Bun."
 }
 

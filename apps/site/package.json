@@ -6,9 +6,9 @@
   "description": "Public, static marketing site for BoringStack. Astro, output static, served by nginx.",
   "engines": {
     "node": ">=24.0.0",
-    "bun": "1.4.4"
+    "bun": "1.4.5"
   },
-  "packageManager": "bun@1.4.4",
+  "packageManager": "bun@1.4.5",
   "scripts": {
     "dev": "env SITE_URL=http://localhost:7333 APP_URL=http://localhost:7331 astro dev",
     "build": "astro build",
