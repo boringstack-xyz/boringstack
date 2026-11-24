@@ -193,6 +193,7 @@ export default [
     },
     rules: {
       "@typescript-eslint/no-meaningless-void-operator": "error",
+      "@typescript-eslint/no-unsafe-class-instance-assignment": "error",
       "@typescript-eslint/no-unused-expressions": "error"
     }
   },
