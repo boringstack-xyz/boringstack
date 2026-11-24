@@ -13,6 +13,7 @@ const pr = (overrides: Record<string, unknown> = {}) => ({
   headRefName: "dependabot/bun/apps/ui/x",
   isDraft: false,
   autoMerge: true,
+  autoMergeBy: "someone",
   mergeState: "CLEAN",
   labels: [] as string[],
   gate: "pass",
@@ -48,6 +49,7 @@ describe("normalize", () => {
       headRefName: "dependabot/x",
       isDraft: false,
       autoMerge: false,
+      autoMergeBy: "",
       mergeState: "BEHIND",
       labels: [AGENT_LABEL],
       gate: "none",
@@ -70,6 +72,12 @@ describe("plan", () => {
       { kind: "auto-merge", pr: 1 },
       { kind: "auto-merge", pr: 2 },
     ]);
+  });
+
+  test("arms auto-merge again when the workflow token armed it", () => {
+    expect(
+      plan([pr({ number: 5, autoMergeBy: "app/github-actions" })], { agentsEnabled: false }).actions
+    ).toEqual([{ kind: "rearm", pr: 5 }]);
   });
 
   test("brings a PR that fell behind up to date, unless it is failing", () => {

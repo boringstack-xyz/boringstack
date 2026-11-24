@@ -1,0 +1,40 @@
+---
+title: "Factory hooks"
+description: "The three hooks that enforce the factory: a guard that refuses unsafe commands, a baseline at session start, and a Stop gate that keeps a session working until its change is verified."
+---
+
+The hooks live in `.claude/settings.json`. Codex reads the generated
+`.codex/hooks.json`. They are tripwires, not a sandbox: they stop the common unsafe
+moves and make the gate hard to skip. They do not contain a determined agent.
+
+## PreToolUse: the guard
+
+`factory hook guard` refuses:
+
+- force pushes;
+- pushes to a protected branch (`main`, `master`);
+- reading or printing secret files such as `.env` files and private keys;
+- branch switches in the main checkout;
+- commands that reach real infrastructure: `kubectl`, `helm`, `argocd`, `vault`, and
+  the apply, destroy and import subcommands of OpenTofu and Terraform.
+
+A person does those things. An agent that needs one writes the reason to the
+`BLOCKED` marker and stops. See [For the owner](https://github.com/boringstack-xyz/boringstack/blob/main/docs/FOR_OWNER.md).
+
+## SessionStart: the baseline
+
+`factory hook baseline` records the commit the session started from, so the Stop gate
+knows what this session changed.
+
+## Stop: the gate
+
+`factory hook stop` will not let a session finish while:
+
+- a changed app has no passing `factory verify` at the current commit, or
+- a pushed branch has no complete verification record.
+
+If only a person can unblock the session, write the reason to
+`.agent-state/factory/BLOCKED`. The hook challenges that once. Three identical blocks
+in a row release the session, so a broken gate cannot trap it forever.
+
+The factory's own planning gate, from `tools/spec-loop`, runs alongside these.

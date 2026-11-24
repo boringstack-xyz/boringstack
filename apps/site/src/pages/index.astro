@@ -5,16 +5,16 @@ import { siteName, siteTagline } from "../lib/site";
 
 const features = [
   {
-    title: "Placeholder feature one",
-    body: "Describe the first thing your product does for people.",
+    title: "An isolated stack per agent",
+    body: "Each change gets its own worktree, branch and database stack, so agents never share a port or a database.",
   },
   {
-    title: "Placeholder feature two",
-    body: "Describe the second benefit in one or two plain sentences.",
+    title: "A gate agents cannot skip",
+    body: "The verify gate checks what changed, a hook keeps the session working until it passes, and each change ships with a record of what was not verified.",
   },
   {
-    title: "Placeholder feature three",
-    body: "Describe the third benefit, or remove this card.",
+    title: "Agents you steer from your phone",
+    body: "Run agents in the cloud or on your own always-on host, and follow them from the Claude app. Nothing merges until a person decides.",
   },
 ];
 
@@ -42,9 +42,13 @@ const structuredData = [
   structuredData={structuredData}
 >
   <section class="hero hero-top">
-    <h1>{siteName}: a placeholder headline for your product</h1>
+    <h1>
+      {siteName}: a production-grade template with its own software factory
+    </h1>
     <p>
-      {siteTagline} Replace this paragraph with the promise your product keeps.
+      {siteTagline} Auth, billing, queues, email and observability are already
+      wired. Agents build each change in an isolated stack, and a person decides
+      every merge.
     </p>
     <a class="button" href={appHref("/signup")}>
       Create an account
@@ -65,8 +69,11 @@ const structuredData = [
 
   <section aria-labelledby="cta-heading">
     <h2 id="cta-heading">Ready to start?</h2>
-    <p class="placeholder">
-      Placeholder call to action: one sentence that explains the next step.
+    <p>
+      Set up a project with one command, then point your agent at it:
+      <code>
+        curl -fsSL https://boringstack.xyz/install.sh | sh -s -- --project acme
+      </code>
     </p>
     <a class="button" href={appHref("/signup")}>
       Sign up
