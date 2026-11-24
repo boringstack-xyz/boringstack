@@ -70,6 +70,11 @@ has a complete record. Start `bun run factory gate` in the background when it
 asks. Only a person can unblock? Write the reason to
 `.agent-state/factory/BLOCKED`.
 
+Dependency updates merge themselves: Dependabot runs daily, every dependency
+PR auto-merges when merge-gate passes, and a failing one goes to the
+dependency agent ([docs/operations/dependency-updates.md](docs/operations/dependency-updates.md)).
+Do not batch or hand-merge Dependabot PRs.
+
 Every new route and API operation also needs a production robot journey
 (`docs/operations/production-verification.md`); `validate` fails until it has
 one or a written reason.

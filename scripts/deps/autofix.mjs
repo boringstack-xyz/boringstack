@@ -22,8 +22,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-export const APPS = ["api", "ui", "docs", "site"];
-export const ALLOWED_PATH = /^apps\/(?:api|ui|docs|site)\/(?:package\.json|bun\.lock)$/;
+export const APPS = ["api", "ui", "admin", "docs", "site"];
+export const ALLOWED_PATH = /^apps\/(?:api|ui|admin|docs|site)\/(?:package\.json|bun\.lock)$/;
 export const ISSUE_LABEL = "deps-advisory";
 export const ISSUE_TITLE = "Dependency advisories without an automatic fix";
 export const BRANCH = "deps/autofix";
@@ -37,6 +37,7 @@ export const CHECKS = {
     ["bun", "run", "check"],
     ["bunx", "vitest", "run", "--changed", "origin/main", "--passWithNoTests"],
   ],
+  admin: [["bun", "run", "check"]],
   docs: [
     ["bun", "run", "check:docs-data"],
     ["bun", "run", "check:fragments"],
