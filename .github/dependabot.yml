@@ -146,6 +146,13 @@ updates:
       development-dependencies:
         dependency-type: "development"
         patterns: ["*"]
+    ignore:
+      # typescript-eslint (8.73.0) throws "does not support TS 7.0" at load, so
+      # eslint cannot run on typescript 7.x. TS 7 is already checked through the
+      # typescript-native alias. Try again on 2027-01-15, or once typescript-eslint
+      # supports TS >=7.1 (typescript-eslint#10940).
+      - dependency-name: "typescript"
+        versions: [">=7.0.0 <8.0.0"]
 
   - package-ecosystem: bun
     directory: /apps/site
