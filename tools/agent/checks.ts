@@ -23,7 +23,14 @@ export const CHECK_GROUPS = [
     id: "api.check",
     app: "api",
     script: "check",
-    parts: ["typecheck", "lint", "lint:meta", "check:lint-meta-docs", "knip"],
+    parts: [
+      "typecheck",
+      "typecheck:native",
+      "lint",
+      "lint:meta",
+      "check:lint-meta-docs",
+      "knip",
+    ],
   },
   {
     id: "ui.check",
@@ -35,6 +42,7 @@ export const CHECK_GROUPS = [
       "check:lint-meta-docs",
       "format:check",
       "typecheck",
+      "typecheck:native",
       "knip",
     ],
   },

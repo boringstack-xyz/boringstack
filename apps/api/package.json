@@ -32,13 +32,14 @@
     "lint:fix": "oxlint --type-aware --fix src tests security-spec scripts && eslint --cache -c eslint.remainder.config.mjs \"src/**/*.ts\" \"tests/**/*.ts\" \"security-spec/**/*.ts\" \"scripts/**/*.ts\" --fix",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "typecheck": "tsc --noEmit",
+    "typecheck:native": "bun node_modules/typescript-native/bin/tsc --noEmit",
     "knip": "knip",
     "lint:meta": "bun run scripts/lint-meta/cli.ts",
     "lint:meta:verify": "bun run scripts/lint-meta/cli.ts --verify",
     "generate:lint-meta-docs": "bun run scripts/lint-meta/generate-rules-md.ts",
     "check:lint-meta-docs": "bun run scripts/lint-meta/generate-rules-md.ts --check",
     "check:scripts-docs": "bun run scripts/check-scripts-docs.ts",
-    "check": "bun run typecheck && bun run lint && bun run lint:meta && bun run check:lint-meta-docs && bun run knip",
+    "check": "bun run typecheck && bun run typecheck:native && bun run lint && bun run lint:meta && bun run check:lint-meta-docs && bun run knip",
     "validate": "bun run check && bun run test",
     "new:resource": "bun run scripts/codegen/new-resource.ts",
     "vapid:generate": "bun run scripts/codegen/vapid-generate.ts",
@@ -128,7 +129,8 @@
     "oxlint-tsgolint": "7.0.2007",
     "prettier": "3.9.10",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.72.1"
+    "typescript-eslint": "8.72.1",
+    "typescript-native": "npm:typescript@7.0.2"
   },
   "//overrides": {
     "_": "Why these transitive deps are pinned. Keep each entry in sync with the matching `overrides` key — enforced by the package-override-parity lint-meta rule.",
