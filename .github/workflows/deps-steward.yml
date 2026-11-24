@@ -105,6 +105,8 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
+          # Claude's own output, including why a run was refused, only in a debug re-run.
+          show_full_output: ${{ runner.debug == '1' }}
           prompt: |
             Dependabot pull request #${{ env.PR_NUMBER }} is checked out here, and its
             merge-gate failed. Read AGENTS.md first. Find out why with
@@ -129,6 +131,12 @@ jobs:
           claude_args: >-
             --max-turns 80
             --allowedTools "Read,Grep,Glob,Edit,Write,Bash(bun:*),Bash(bunx:*),Bash(cd:*),Bash(gh pr view:*),Bash(gh pr checks:*),Bash(gh pr diff:*),Bash(gh run view:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"
+
+      # The agent never ran (usage limit, credential, outage): that is not its
+      # attempt, so the steward hands this PR over again on a later run.
+      - name: Give the attempt back when the agent could not run
+        if: failure() && steps.agent.outcome == 'failure'
+        run: gh pr edit "$PR_NUMBER" --remove-label deps-agent-tried
 
       - name: Commit and push what the agent changed
         run: |
