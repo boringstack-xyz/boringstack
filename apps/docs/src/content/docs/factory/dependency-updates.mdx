@@ -1,46 +1,50 @@
 ---
 title: "Dependency updates"
-description: "How dependency updates reach this repository: weekly grouped Dependabot pull requests, the security-fix job that can merge itself once it is switched on, and the checks every update must pass."
+description: "Dependency updates merge themselves: daily Dependabot, auto-merge on merge-gate, a steward that keeps them current, and an agent that fixes the ones that fail."
 ---
 
-Dependency updates come from three places. Only one of them can merge without a
-person, and only after an owner switches it on.
+Nobody reviews or merges a dependency update by hand. merge-gate decides, as it
+does for every pull request. The full runbook is
+`docs/operations/dependency-updates.md`.
 
-## 1. Dependabot, weekly
+## How a bump lands
 
-`.github/dependabot.yml` opens update pull requests for each app and for the
-GitHub Actions and Docker images, every week. Runtime dependencies and development
-dependencies are grouped, so a normal week makes a few pull requests per app, not
-one per package. A seven-day cooldown applies by default.
+1. **Dependabot, daily.** `.github/dependabot.yml` checks every app, the GitHub
+   Actions and the Docker images each day. Runtime and development dependencies
+   are grouped per app. A version is offered only once it is seven days old.
+2. **Auto-merge on open.** `deps-automerge.yml` turns on auto-merge (squash) the
+   moment Dependabot opens a pull request. It never checks out the pull
+   request's code.
+3. **merge-gate.** Every check the diff touches runs. Green means merged.
+4. **The steward.** `deps-steward.yml` runs every 15 minutes and after each push
+   to `main` (`scripts/deps/steward.mjs`). It turns on auto-merge for any
+   dependency pull request that lacks it, updates one that fell behind `main`,
+   and hands a Dependabot pull request whose merge-gate failed to the dependency
+   agent, once.
+5. **The dependency agent.** Claude Code reads the failing checks and makes the
+   update land: code, types, tests, lockfiles. It never weakens a check and may
+   not touch workflows. If one package cannot land, it puts that package back,
+   keeps the rest, and records an `ignore` with the reason in
+   `.github/dependabot.yml`. Its commit goes through merge-gate again.
+6. **A person, last.** A pull request still failing after that gets the
+   `deps-needs-person` label and one comment.
 
-These pull requests **wait for a person**. They are not set to merge.
+## Security fixes
 
-## 2. Security fixes, `deps-autofix`
+`deps-autofix.yml` runs daily and after a security workflow fails on `main`. It
+applies the smallest fixed version of each advisory `osv-scanner` reports, in one
+auto-merge pull request on `deps/autofix`. Only `package.json` and `bun.lock` may
+change; advisories with no fix go on the advisory tracking issue, and no
+`osv-scanner.toml` ignore list is ever edited.
 
-`.github/workflows/deps-autofix.yml` runs daily, on demand, and after a security
-workflow fails on `main`. It applies the smallest fixed version of each npm advisory
-that `osv-scanner` reports on an app lockfile, in one pull request on `deps/autofix`.
+## Switching it on
 
-- Only `package.json` and `bun.lock` may change.
-- Each app's fast checks and an `osv-scanner` rescan must pass before the change is kept.
-- Advisories with no fix are listed on the advisory tracking issue.
-- It never edits an `osv-scanner.toml` ignore list.
-- It enables auto-merge (squash) on its pull request. The merge happens once
-  merge-gate passes.
+| Setting | Kind | Enables |
+| ------- | ---- | ------- |
+| `DEPS_AUTOFIX_ENABLED=true` | variable | the steward and the security autofix |
+| `DEPS_AUTOFIX_TOKEN` | secret | a token that may push branches and open pull requests, so their checks start |
+| `AGENTS_ENABLED=1` | variable | the dependency agent and the other agent lanes |
+| `CLAUDE_CODE_OAUTH_TOKEN` | secret | the agent's Claude credential (`claude setup-token`) |
 
-**It is off until an owner opts in.** Set the repository variable
-`DEPS_AUTOFIX_ENABLED` to `true`, and the secret `DEPS_AUTOFIX_TOKEN` to a token that
-may push branches, open pull requests and comment on issues. The job needs its own
-token: a pull request opened with the default `GITHUB_TOKEN` does not start its
-checks, so auto-merge would wait forever.
-
-## 3. Security scanners per app
-
-Each app has a `security-deps` workflow that runs `osv-scanner` on its lockfile. A
-failure here opens or updates the advisory and triggers `deps-autofix`.
-
-## What every update must pass
-
-Whatever opened it, a dependency change goes through the same gate: the app's
-`check`, the tests for the changed files, the secret scan, and merge-gate as the
-only required check. An update that breaks a build is a failed check, not a merge.
+Without the agent settings, updates still merge when green, and a failing one
+waits with its checks for a person.

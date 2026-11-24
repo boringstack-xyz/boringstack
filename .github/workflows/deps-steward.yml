@@ -1,0 +1,147 @@
+name: deps-steward
+
+# Keeps every dependency PR moving until it merges, with no person in the loop
+# (scripts/deps/steward.mjs):
+#   - auto-merge on every Dependabot and deps/* PR;
+#   - a PR that fell behind main is updated, so the up-to-date rule never
+#     strands it (pushed with the autofix token, so its checks run again);
+#   - a Dependabot PR whose merge-gate failed goes to the dependency agent once.
+#     The agent makes the update land, or holds back the one version that
+#     cannot, with its reason in .github/dependabot.yml. Either way the PR goes
+#     through merge-gate again.
+#   - a PR still failing after that is labelled deps-needs-person.
+#
+# Needs DEPS_AUTOFIX_ENABLED=true and the DEPS_AUTOFIX_TOKEN secret (see
+# deps-autofix.yml). The agent step also needs AGENTS_ENABLED=1 and the
+# CLAUDE_CODE_OAUTH_TOKEN secret; without them the steward still auto-merges
+# and updates, and failures wait for a person.
+#
+# It runs on a schedule rather than on PR events: runs started by Dependabot
+# get no secrets.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deps-steward
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  steward:
+    name: steward
+    if: vars.DEPS_AUTOFIX_ENABLED == 'true'
+    # Schedule and push events never come from a fork; the guard keeps the lint-meta rule satisfied.
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && (vars.CI_LIGHT_RUNNER || vars.CI_RUNNER) || 'ubuntu-24.04' }}
+    timeout-minutes: 10
+    outputs:
+      fix: ${{ steps.plan.outputs.fix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: scripts/deps
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+
+      - name: Auto-merge, update and route failures
+        id: plan
+        env:
+          GH_TOKEN: ${{ secrets.DEPS_AUTOFIX_TOKEN }}
+          AGENTS_ENABLED: ${{ vars.AGENTS_ENABLED }}
+        run: bun scripts/deps/steward.mjs
+
+  fix:
+    name: dependency agent
+    needs: steward
+    if: needs.steward.outputs.fix != '' && vars.AGENTS_ENABLED == '1'
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 90
+    concurrency:
+      group: deps-agent
+      cancel-in-progress: false
+    env:
+      PR_NUMBER: ${{ needs.steward.outputs.fix }}
+      GH_TOKEN: ${{ secrets.DEPS_AUTOFIX_TOKEN }}
+    steps:
+      # Pushed with the autofix token so merge-gate runs on the agent's commit.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.DEPS_AUTOFIX_TOKEN }}
+          persist-credentials: true
+
+      - name: Check out the PR and mark the attempt
+        run: |
+          set -euo pipefail
+          gh pr checkout "$PR_NUMBER"
+          gh label create deps-agent-tried --force --color c5def5 --description "The dependency agent has had its one attempt" > /dev/null
+          gh pr edit "$PR_NUMBER" --add-label deps-agent-tried > /dev/null
+          echo "HEAD_REF=$(gh pr view "$PR_NUMBER" --json headRefName --jq .headRefName)" >> "$GITHUB_ENV"
+
+      - name: Agent setup (kill switch, bun, git identity)
+        uses: ./.github/actions/agent-setup
+        with:
+          agents_enabled: ${{ vars.AGENTS_ENABLED }}
+
+      - name: Bun cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('apps/*/bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+
+      - name: Dependency agent
+        id: agent
+        uses: anthropics/claude-code-action@db77d4d3c98f3f6380e7cd45ffba2342a3dbde3c # v1.0.254
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            Dependabot pull request #${{ env.PR_NUMBER }} is checked out here, and its
+            merge-gate failed. Read AGENTS.md first. Find out why with
+            `gh pr checks ${{ env.PR_NUMBER }}` and `gh run view <run-id> --log-failed`.
+
+            Make the update land: adapt code, types, tests, config or lockfiles to the new
+            versions, the way the changelog of each bumped package says. Keep every check as
+            strict as it is: never skip or delete a test, never disable a lint rule, never
+            lower a threshold, never raise a size budget. Use Bun 1.4.4 for lockfiles. Run
+            `bun install --frozen-lockfile` and `bun run validate` in each app the PR touches
+            until they pass.
+
+            If one package cannot land without weakening a check, or its new version is
+            broken: put that package back to the version on main (package.json and bun.lock),
+            keep the rest of the update, and add an ignore entry for that package and the
+            version range that failed to that app's entry in .github/dependabot.yml, with a
+            comment giving the reason and a date to try again. Never touch
+            .github/workflows or .github/actions.
+
+            Leave all changes UNCOMMITTED on this checkout; do not create a branch, commit,
+            push or comment.
+          claude_args: >-
+            --max-turns 80
+            --allowedTools "Read,Grep,Glob,Edit,Write,Bash(bun:*),Bash(bunx:*),Bash(cd:*),Bash(gh pr view:*),Bash(gh pr checks:*),Bash(gh pr diff:*),Bash(gh run view:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"
+
+      - name: Commit and push what the agent changed
+        run: |
+          set -euo pipefail
+          changed="$(git status --porcelain --untracked-files=all | awk '{print $2}')"
+          if [ -z "$changed" ]; then
+            gh pr comment "$PR_NUMBER" --body "The dependency agent found nothing it could change to make this update pass. A person needs to look."
+            exit 0
+          fi
+          if grep -E '^\.github/(workflows|actions)/' <<<"$changed"; then
+            echo "::error::The agent changed workflow files; nothing was pushed."
+            exit 1
+          fi
+          git add -A
+          git commit -m "fix(deps): make #$PR_NUMBER pass its checks"
+          git push origin "HEAD:$HEAD_REF"

@@ -1,0 +1,33 @@
+name: deps-automerge
+
+# Turns on auto-merge (squash) the moment Dependabot opens or updates a PR, so
+# merge-gate alone decides whether it lands. Nobody merges dependency PRs by
+# hand. deps-steward.yml does the rest: keeps them up to date, sends failures
+# to the dependency agent, and catches any PR this run missed.
+#
+# pull_request_target runs this repository's own copy of this file with a
+# write token. It never checks out or runs the PR's code: the only step is a
+# gh call naming the PR.
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  automerge:
+    name: auto-merge
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    # Dependabot PRs come from this repository, never a fork; the guard keeps the lint-meta rule satisfied.
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && (vars.CI_LIGHT_RUNNER || vars.CI_RUNNER) || 'ubuntu-24.04' }}
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Auto-merge when merge-gate passes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge "$PR_URL" --auto --squash

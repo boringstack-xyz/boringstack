@@ -26,8 +26,9 @@ missing prerequisite must act). Blocked is never a pass.
 - **A production robot.** A scripted new user walks the deployed product after each
   release and every six hours. Every route and API operation must name the journey
   that covers it. See [Production robot](/factory/production-robot/).
-- **Dependency updates.** Dependabot opens grouped update pull requests weekly. An
-  opt-in job merges security fixes once merge-gate passes. See
+- **Dependency updates.** Dependabot opens grouped update pull requests daily, and
+  each one merges itself once merge-gate passes. A failing one goes to the
+  dependency agent, which fixes it or holds back the one version with a reason. See
   [Dependency updates](/factory/dependency-updates/).
 - **Agent lanes.** Triage, review, revise and digest run as GitHub workflows behind
   one switch. A reviewer agent reads the diff and the issue, not the author's
