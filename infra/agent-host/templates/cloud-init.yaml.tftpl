@@ -1,0 +1,137 @@
+#cloud-config
+#
+# BoringStack agent host, first boot. Off by default (see ../main.tf).
+#
+# Installs the minimum here, then runs agent-host.sh, which does the rest
+# (Bun, gh, Claude Code, the agent user, the checkout, systemd timers). The
+# script is idempotent: `sudo bash /opt/agent-host/agent-host.sh` re-runs it.
+# No secret is in this file. Logins (gh, claude) are done by a person on the
+# host afterwards; see docs/operations/remote-agents.md.
+
+package_update: true
+package_upgrade: false
+
+packages:
+  - ca-certificates
+  - curl
+  - git
+  - gnupg
+  - jq
+  - tmux
+  - unzip
+  - ufw
+  - unattended-upgrades
+
+write_files:
+  - path: /opt/agent-host/agent-host.sh
+    permissions: "0755"
+    owner: root:root
+    content: |
+      ${indent(6, host_script)}
+
+  - path: /opt/agent-host/add-person.sh
+    permissions: "0755"
+    owner: root:root
+    content: |
+      ${indent(6, add_person_script)}
+
+  - path: /etc/agent-host.env
+    permissions: "0644"
+    owner: root:root
+    content: |
+      AGENT_USER=${agent_user}
+      REPO_URL=${repo_url}
+      BUN_VERSION=${bun_version}
+
+  - path: /etc/systemd/system/agent-factory-sweep.service
+    permissions: "0644"
+    owner: root:root
+    content: |
+      [Unit]
+      Description=BoringStack factory sweep (removes stacks whose checkout is gone)
+      After=network-online.target docker.service
+      Wants=network-online.target
+
+      [Service]
+      Type=oneshot
+      User=${agent_user}
+      WorkingDirectory=/home/${agent_user}/boringstack
+      Environment=FACTORY_SHARED_CHECKOUT=true
+      ExecStart=/usr/local/bin/bun run factory sweep
+
+  - path: /etc/systemd/system/agent-factory-sweep.timer
+    permissions: "0644"
+    owner: root:root
+    content: |
+      [Unit]
+      Description=Run the factory sweep hourly
+
+      [Timer]
+      OnCalendar=hourly
+      Persistent=true
+
+      [Install]
+      WantedBy=timers.target
+
+  - path: /etc/systemd/system/agent-fleet.service
+    permissions: "0644"
+    owner: root:root
+    content: |
+      [Unit]
+      Description=BoringStack fleet page (127.0.0.1 only; read through an SSH tunnel)
+      After=network-online.target docker.service
+      Wants=network-online.target
+
+      [Service]
+      Type=simple
+      User=${agent_user}
+      WorkingDirectory=/home/${agent_user}/boringstack
+      Environment=FACTORY_SHARED_CHECKOUT=true
+      ExecStart=/usr/local/bin/bun run factory fleet serve
+      Restart=on-failure
+      RestartSec=10
+
+      [Install]
+      WantedBy=multi-user.target
+
+  - path: /etc/ssh/sshd_config.d/10-agent-host.conf
+    permissions: "0644"
+    owner: root:root
+    content: |
+      # Key-only SSH. Passwords and keyboard-interactive logins are refused.
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitRootLogin prohibit-password
+      AllowUsers root ${agent_user}
+
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    permissions: "0644"
+    owner: root:root
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+
+runcmd:
+  # Docker from Docker's apt repository, with the key fingerprint pinned, the
+  # same way infra/bootstrap installs it.
+  - [install, -m, "0755", -d, /etc/apt/keyrings]
+  - [bash, -o, pipefail, -c, "curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc"]
+  - [chmod, a+r, /etc/apt/keyrings/docker.asc]
+  - [bash, -o, pipefail, -c, "gpg --show-keys --with-fingerprint --with-colons /etc/apt/keyrings/docker.asc | grep -q '^fpr:::::::::9DC858229FC7DD38854AE2D88D81803C0EBFCD88:' || { echo 'Docker GPG key fingerprint mismatch' >&2; exit 1; }"]
+  - [bash, -o, pipefail, -c, "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable\" > /etc/apt/sources.list.d/docker.list"]
+  - [apt-get, update]
+  - [apt-get, install, -y, docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin]
+  - [systemctl, enable, --now, docker]
+  # Host firewall: SSH only. The Hetzner firewall in front of it allows the same.
+  - [ufw, default, deny, incoming]
+  - [ufw, default, allow, outgoing]
+  - [ufw, allow, 22/tcp]
+  - [bash, -o, pipefail, -c, "ufw --force enable"]
+  - [systemctl, reload, ssh]
+  - [systemctl, enable, --now, unattended-upgrades]
+  # Everything else: Bun, gh, Claude Code, the agent user, the checkout, timers.
+  - [bash, -o, pipefail, -c, "/opt/agent-host/agent-host.sh 2>&1 | tee /var/log/agent-host-bootstrap.log"]
+
+final_message: |
+  Agent host bootstrap finished. Log: /var/log/agent-host-bootstrap.log
+  Next, as the operator, on the host: see docs/operations/remote-agents.md (tier c).
