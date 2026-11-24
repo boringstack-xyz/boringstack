@@ -47,7 +47,7 @@ describe("disallowedPaths", () => {
 
   test("scans and checks every app that has a lockfile", () => {
     for (const app of APPS) expect(CHECKS[app]?.length).toBeGreaterThan(0);
-    expect(APPS).toEqual(["api", "ui", "docs", "site"]);
+    expect(APPS).toEqual(["api", "ui", "admin", "docs", "site"]);
   });
 
   test("refuses other files, fixtures, the ignore lists and workflows", () => {
