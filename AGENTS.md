@@ -1,6 +1,11 @@
 # BoringStack monorepo
 
-Single repository: `apps/api`, `apps/ui`, `apps/docs`, `apps/site`, `apps/admin` (opt-in, `WITH_ADMIN`), `infra/compose`, `infra/bootstrap`.
+Single repository: `apps/api`, `apps/ui`, `apps/docs`, `apps/site`, `apps/admin` (opt-in, `WITH_ADMIN`), `infra/compose`, `infra/bootstrap`, `infra/agent-host` (off by default).
+
+BoringStack is an AI-agent-first, production-grade template with its own software
+factory (`tools/factory`): isolated stacks per agent, a verify gate agents cannot skip,
+verification records, a production robot, dependency updates, agent lanes, and remote
+agents you steer from a phone (`docs/operations/remote-agents.md`, `bun run factory remote`).
 
 <!-- template-onboarding:start -->
 ## Starting a new project from this template
@@ -78,6 +83,11 @@ Do not batch or hand-merge Dependabot PRs.
 Every new route and API operation also needs a production robot journey
 (`docs/operations/production-verification.md`); `validate` fails until it has
 one or a written reason.
+
+Remote agents (cloud sessions, the GitHub Actions lanes, a self-hosted host) are in
+`docs/operations/remote-agents.md`. `bun run factory remote` shows which of them this
+checkout is set up for. Cloud sessions read this repository's `.claude/settings.json`, so the hooks
+come with the checkout. Whether the gate passes inside a cloud VM is not verified yet.
 
 ## Layout
 

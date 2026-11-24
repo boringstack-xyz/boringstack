@@ -1,0 +1,35 @@
+---
+title: "Agent lanes"
+description: "The GitHub workflows that let agents triage findings, open fix pull requests, review them independently, revise once and report weekly. Off until AGENTS_ENABLED is 1. Agents never merge."
+---
+
+A **lane** is an agent working on a change after a person has asked for it. Each
+lane opens pull requests on its own branch, `agent/<lane>/<slug>`, and a person
+decides every one. **Agents never merge.**
+
+The lanes are off until the repository variable `AGENTS_ENABLED` is `1`. Every agent
+workflow checks it first. Setting it to anything else turns them off again.
+
+| Piece  | Workflow                      | What it does                                                                                                                                                                                                                              |
+| ------ | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Triage | `agent-triage.yml`            | Takes the next findings from the findings ledger (`factory findings`). A person sends them with `bun tools/factory/cli.ts lanes triage --dispatch`. A code fix becomes a pull request; an operations cause becomes an issue for a person. |
+| Proof  | `lanes prove`                 | Runs the fix's tests on the head with the fix set aside, then with it. The fix is proven only when the tests fail without it and pass with it, and no test is skipped. An unproven fix is a result, not an error.                         |
+| Review | `agent-review.yml`            | An independent reviewer reads the diff and the issue, not the author's reasoning. It writes `Verdict: approve` or `Verdict: reject` into the record's Review section. A rejection fails the job.                                          |
+| Revise | `agent-revise.yml`            | After a rejection, one revision on the same branch, proved again, then reviewed again. After a second rejection the pull request is closed.                                                                                               |
+| Digest | `agent-digest.yml`            | Weekly: agent pull requests merged, closed and open, and failed agent runs, as one issue labelled `agent-digest`.                                                                                                                         |
+| Setup  | `.github/actions/agent-setup` | The kill switch, Bun 1.4.4 and the git identity. It holds no secrets.                                                                                                                                                                     |
+
+## Turning them on
+
+1. Create a subscription token on your laptop with `claude setup-token`, and store it
+   as the repository secret `CLAUDE_CODE_OAUTH_TOKEN`. An API key works too, with a
+   different input in the workflow.
+2. Set `AGENTS_ENABLED` to `1`.
+3. Run `bun run factory remote` to see what is still missing.
+
+## What is not verified
+
+The workflows have not run against GitHub in this template. The Claude Code Action
+has not been called against a real pull request. Try them on a fork or a test
+repository before relying on them. See [Remote agents](/factory/remote-agents/) for
+the other routes that start an agent.

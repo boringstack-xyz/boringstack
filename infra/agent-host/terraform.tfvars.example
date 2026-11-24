@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (gitignored) and fill in. Never commit real values.
+# The API token belongs in the environment: TF_VAR_hetzner_api_token.
+enabled         = true
+ssh_public_key  = "ssh-ed25519 AAAA... operator@laptop"
+ssh_allowed_ips = ["203.0.113.10/32"] # your office or home address
+repo_url        = "https://github.com/boringstack-xyz/boringstack.git"

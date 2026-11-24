@@ -1,0 +1,50 @@
+---
+title: "Dependency updates"
+description: "Dependency updates merge themselves: daily Dependabot, auto-merge on merge-gate, a steward that keeps them current, and an agent that fixes the ones that fail."
+---
+
+Nobody reviews or merges a dependency update by hand. merge-gate decides, as it
+does for every pull request. The full runbook is
+`docs/operations/dependency-updates.md`.
+
+## How a bump lands
+
+1. **Dependabot, daily.** `.github/dependabot.yml` checks every app, the GitHub
+   Actions and the Docker images each day. Runtime and development dependencies
+   are grouped per app. A version is offered only once it is seven days old.
+2. **Auto-merge on open.** `deps-automerge.yml` turns on auto-merge (squash) the
+   moment Dependabot opens a pull request. It never checks out the pull
+   request's code.
+3. **merge-gate.** Every check the diff touches runs. Green means merged.
+4. **The steward.** `deps-steward.yml` runs every 15 minutes and after each push
+   to `main` (`scripts/deps/steward.mjs`). It turns on auto-merge for any
+   dependency pull request that lacks it, updates one that fell behind `main`,
+   and hands a Dependabot pull request whose merge-gate failed to the dependency
+   agent, once.
+5. **The dependency agent.** Claude Code reads the failing checks and makes the
+   update land: code, types, tests, lockfiles. It never weakens a check and may
+   not touch workflows. If one package cannot land, it puts that package back,
+   keeps the rest, and records an `ignore` with the reason in
+   `.github/dependabot.yml`. Its commit goes through merge-gate again.
+6. **A person, last.** A pull request still failing after that gets the
+   `deps-needs-person` label and one comment.
+
+## Security fixes
+
+`deps-autofix.yml` runs daily and after a security workflow fails on `main`. It
+applies the smallest fixed version of each advisory `osv-scanner` reports, in one
+auto-merge pull request on `deps/autofix`. Only `package.json` and `bun.lock` may
+change; advisories with no fix go on the advisory tracking issue, and no
+`osv-scanner.toml` ignore list is ever edited.
+
+## Switching it on
+
+| Setting | Kind | Enables |
+| ------- | ---- | ------- |
+| `DEPS_AUTOFIX_ENABLED=true` | variable | the steward and the security autofix |
+| `DEPS_AUTOFIX_TOKEN` | secret | a token that may push branches and open pull requests, so their checks start |
+| `AGENTS_ENABLED=1` | variable | the dependency agent and the other agent lanes |
+| `CLAUDE_CODE_OAUTH_TOKEN` | secret | the agent's Claude credential (`claude setup-token`) |
+
+Without the agent settings, updates still merge when green, and a failing one
+waits with its checks for a person.

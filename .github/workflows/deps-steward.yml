@@ -58,10 +58,18 @@ jobs:
           AGENTS_ENABLED: ${{ vars.AGENTS_ENABLED }}
         run: bun scripts/deps/steward.mjs
 
+      # The agent action refuses push events, so a run started by a merge hands
+      # the agent's work to a dispatched run of this workflow.
+      - name: Hand the agent's work to a dispatched run
+        if: github.event_name == 'push' && steps.plan.outputs.fix != '' && vars.AGENTS_ENABLED == '1'
+        env:
+          GH_TOKEN: ${{ secrets.DEPS_AUTOFIX_TOKEN }}
+        run: gh workflow run deps-steward.yml --repo "$GITHUB_REPOSITORY" --ref main
+
   fix:
     name: dependency agent
     needs: steward
-    if: needs.steward.outputs.fix != '' && vars.AGENTS_ENABLED == '1'
+    if: needs.steward.outputs.fix != '' && vars.AGENTS_ENABLED == '1' && github.event_name != 'push'
     runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 90
     concurrency:
@@ -101,10 +109,12 @@ jobs:
 
       - name: Dependency agent
         id: agent
-        uses: anthropics/claude-code-action@db77d4d3c98f3f6380e7cd45ffba2342a3dbde3c # v1.0.254
+        uses: anthropics/claude-code-action@acfe7992852970efb4fee683d63d628e3e52df67 # v1.0.286
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ github.token }}
+          # Claude's own output, including why a run was refused, only in a debug re-run.
+          show_full_output: ${{ runner.debug == '1' }}
           prompt: |
             Dependabot pull request #${{ env.PR_NUMBER }} is checked out here, and its
             merge-gate failed. Read AGENTS.md first. Find out why with
@@ -129,6 +139,12 @@ jobs:
           claude_args: >-
             --max-turns 80
             --allowedTools "Read,Grep,Glob,Edit,Write,Bash(bun:*),Bash(bunx:*),Bash(cd:*),Bash(gh pr view:*),Bash(gh pr checks:*),Bash(gh pr diff:*),Bash(gh run view:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"
+
+      # The agent never ran (usage limit, credential, outage): that is not its
+      # attempt, so the steward hands this PR over again on a later run.
+      - name: Give the attempt back when the agent could not run
+        if: failure() && steps.agent.outcome == 'failure'
+        run: gh pr edit "$PR_NUMBER" --remove-label deps-agent-tried
 
       - name: Commit and push what the agent changed
         run: |

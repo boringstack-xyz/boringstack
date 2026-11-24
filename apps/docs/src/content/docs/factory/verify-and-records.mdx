@@ -1,0 +1,52 @@
+---
+title: "Verify and records"
+description: "What factory verify runs, how it compares failures with the base commit, and the verification record a reviewer reads before a pull request is opened."
+---
+
+## Verify
+
+`bun run factory verify` looks at what the branch changed and runs the checks for
+each changed unit:
+
+- `apps/api`, `apps/ui`, `tools` and `packages` run `agent:verify` in an owned
+  sandbox, the same profile the agents use.
+- `apps/docs` and `apps/site` run their own build and validate commands.
+- `infra/bootstrap` and `infra/agent-host` run OpenTofu format and validate, and
+  `infra/agent-host` also checks its shell scripts.
+- The repository's own files run `bun run check`.
+
+A unit with no recipe cannot be verified, so it fails. Narrow the run with
+`--units=apps/api,apps/ui` when you know what changed.
+
+A failure that also fails on the base commit is reported as a warning, not as a
+regression of this branch. Pass `--no-base` to see every failure as a failure.
+
+Verify results are written to `.agent-state/factory/verify/`, and the latest one to
+`latest.json` in the same folder.
+
+## The record
+
+`bun run factory verification new <branch>` writes the skeleton. The agent fills it.
+Every section is required:
+
+| Section              | What goes in it                                                        |
+| -------------------- | ---------------------------------------------------------------------- |
+| Risk                 | `ui`, `logic`, `data` or `auth-billing`. It sets how deep review goes. |
+| Checks run           | Copied from `factory verify`.                                          |
+| Walked in browser    | What was seen working in the running product.                          |
+| Review               | The reviewer's verdict and what was changed after it.                  |
+| Not verified         | An honest list. Write "none" only when none is true.                   |
+| For the next session | What the next person or agent needs.                                   |
+| Build note           | Where the note in `docs/build-notes/` lives.                           |
+
+`bun run factory verification check <branch>` fails when a section is missing, or
+when HEAD has moved since the record was written. A record of old code never counts.
+
+`bun run factory verification gaps` lists recent "Not verified" items across records,
+for the weekly review.
+
+## The gate
+
+`bun run factory gate` runs the same checks a session must pass before it may stop.
+It takes a while, so run it in the background. The Stop hook is what enforces it;
+see [Hooks](/factory/hooks/).
