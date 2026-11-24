@@ -3,7 +3,9 @@ name: deps-automerge
 # Turns on auto-merge (squash) the moment Dependabot opens or updates a PR, so
 # merge-gate alone decides whether it lands. Nobody merges dependency PRs by
 # hand. deps-steward.yml does the rest: keeps them up to date, sends failures
-# to the dependency agent, and catches any PR this run missed.
+# to the dependency agent, and catches any PR this run missed. It also arms
+# auto-merge again with its own token: a merge made with this run's token would
+# start no workflow on main.
 #
 # pull_request_target runs this repository's own copy of this file with a
 # write token. It never checks out or runs the PR's code: the only step is a

@@ -5,6 +5,9 @@
 //
 // Keeps every dependency PR moving without a person:
 //   - Dependabot PRs and deps/* PRs get auto-merge (squash); merge-gate decides.
+//   - Auto-merge armed by the workflow token is armed again with the autofix
+//     token: a merge made with the workflow token starts no workflow on main,
+//     so neither this steward nor the release would run after it.
 //   - A PR that fell behind main is brought up to date, so the required
 //     up-to-date rule never strands it. The update is pushed with the autofix
 //     token, so its checks start again.
@@ -21,6 +24,8 @@ export const PERSON_LABEL = "deps-needs-person";
 export const GATE = "merge-gate";
 
 const DEPENDABOT = new Set(["dependabot[bot]", "app/dependabot", "dependabot"]);
+
+const WORKFLOW_TOKEN = new Set(["github-actions", "app/github-actions", "github-actions[bot]"]);
 
 export const isDependabot = (pr) => DEPENDABOT.has(pr.author);
 
@@ -60,6 +65,7 @@ export function normalize(row) {
     headRefName: row.headRefName,
     isDraft: row.isDraft === true,
     autoMerge: row.autoMergeRequest !== null && row.autoMergeRequest !== undefined,
+    autoMergeBy: row.autoMergeRequest?.enabledBy?.login ?? "",
     mergeState: row.mergeStateStatus ?? "UNKNOWN",
     labels: (row.labels ?? []).map((label) => label.name),
     gate: gateState(row.statusCheckRollup ?? []),
@@ -81,6 +87,8 @@ export function plan(prs, { agentsEnabled }) {
 
     if (!pr.autoMerge) {
       actions.push({ kind: "auto-merge", pr: pr.number });
+    } else if (WORKFLOW_TOKEN.has(pr.autoMergeBy ?? "")) {
+      actions.push({ kind: "rearm", pr: pr.number });
     }
 
     if (pr.mergeState === "BEHIND" && pr.gate !== "fail") {
@@ -122,6 +130,11 @@ function execute(action) {
   switch (action.kind) {
     case "auto-merge":
       return gh(["pr", "merge", pr, "--auto", "--squash"]);
+    case "rearm": {
+      const disabled = gh(["pr", "merge", pr, "--disable-auto"]);
+
+      return disabled.ok ? gh(["pr", "merge", pr, "--auto", "--squash"]) : disabled;
+    }
     case "update-branch":
       return gh(["pr", "update-branch", pr]);
     case "needs-person": {
