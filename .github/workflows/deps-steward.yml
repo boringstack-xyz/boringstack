@@ -58,10 +58,18 @@ jobs:
           AGENTS_ENABLED: ${{ vars.AGENTS_ENABLED }}
         run: bun scripts/deps/steward.mjs
 
+      # The agent action refuses push events, so a run started by a merge hands
+      # the agent's work to a dispatched run of this workflow.
+      - name: Hand the agent's work to a dispatched run
+        if: github.event_name == 'push' && steps.plan.outputs.fix != '' && vars.AGENTS_ENABLED == '1'
+        env:
+          GH_TOKEN: ${{ secrets.DEPS_AUTOFIX_TOKEN }}
+        run: gh workflow run deps-steward.yml --repo "$GITHUB_REPOSITORY" --ref main
+
   fix:
     name: dependency agent
     needs: steward
-    if: needs.steward.outputs.fix != '' && vars.AGENTS_ENABLED == '1'
+    if: needs.steward.outputs.fix != '' && vars.AGENTS_ENABLED == '1' && github.event_name != 'push'
     runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 90
     concurrency:
