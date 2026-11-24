@@ -214,6 +214,13 @@ updates:
     ignore:
       - dependency-name: "oven/bun"
         update-types: ["version-update:semver-major"]
+      # oven/bun 1.4.5 cannot land from here: the lint-meta rule
+      # engine-pin-parity requires this image to match the Bun pinned in
+      # package.json engines.bun and every workflow (1.4.4), and moving all of
+      # those is a coordinated change that includes .github/workflows. Try
+      # again on 2026-12-08 once the pin is bumped everywhere in one PR.
+      - dependency-name: "oven/bun"
+        versions: ["1.4.5"]
 
   - package-ecosystem: docker
     directory: /apps/ui
