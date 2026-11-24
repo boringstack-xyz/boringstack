@@ -1,0 +1,46 @@
+---
+title: "Dependency updates"
+description: "How dependency updates reach this repository: weekly grouped Dependabot pull requests, the security-fix job that can merge itself once it is switched on, and the checks every update must pass."
+---
+
+Dependency updates come from three places. Only one of them can merge without a
+person, and only after an owner switches it on.
+
+## 1. Dependabot, weekly
+
+`.github/dependabot.yml` opens update pull requests for each app and for the
+GitHub Actions and Docker images, every week. Runtime dependencies and development
+dependencies are grouped, so a normal week makes a few pull requests per app, not
+one per package. A seven-day cooldown applies by default.
+
+These pull requests **wait for a person**. They are not set to merge.
+
+## 2. Security fixes, `deps-autofix`
+
+`.github/workflows/deps-autofix.yml` runs daily, on demand, and after a security
+workflow fails on `main`. It applies the smallest fixed version of each npm advisory
+that `osv-scanner` reports on an app lockfile, in one pull request on `deps/autofix`.
+
+- Only `package.json` and `bun.lock` may change.
+- Each app's fast checks and an `osv-scanner` rescan must pass before the change is kept.
+- Advisories with no fix are listed on the advisory tracking issue.
+- It never edits an `osv-scanner.toml` ignore list.
+- It enables auto-merge (squash) on its pull request. The merge happens once
+  merge-gate passes.
+
+**It is off until an owner opts in.** Set the repository variable
+`DEPS_AUTOFIX_ENABLED` to `true`, and the secret `DEPS_AUTOFIX_TOKEN` to a token that
+may push branches, open pull requests and comment on issues. The job needs its own
+token: a pull request opened with the default `GITHUB_TOKEN` does not start its
+checks, so auto-merge would wait forever.
+
+## 3. Security scanners per app
+
+Each app has a `security-deps` workflow that runs `osv-scanner` on its lockfile. A
+failure here opens or updates the advisory and triggers `deps-autofix`.
+
+## What every update must pass
+
+Whatever opened it, a dependency change goes through the same gate: the app's
+`check`, the tests for the changed files, the secret scan, and merge-gate as the
+only required check. An update that breaks a build is a failed check, not a merge.

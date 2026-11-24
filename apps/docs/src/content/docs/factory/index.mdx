@@ -1,0 +1,57 @@
+---
+title: "Software factory"
+description: "BoringStack's own factory: one issue becomes one verified pull request, built by an agent in its own stack, checked by a gate the agent cannot skip, and handed to a person. Agents never merge."
+---
+
+BoringStack is an AI-agent-first template, built to be production-grade. It also
+ships its own software factory: the set of commands, hooks and workflows that let
+an agent build a change end to end and leave a record a person can review.
+
+`bun run factory <command>` is the entry point. Every command ends in one of three
+states: **0 done**, **1 failed** (a check said no), or **2 blocked** (a person or a
+missing prerequisite must act). Blocked is never a pass.
+
+## What the factory gives you
+
+- **Isolated stacks per agent.** Each change gets its own git worktree, branch and
+  database stack on its own ports. Two agents do not share a database or a port.
+  See [Workspaces](/factory/workspaces/).
+- **A verify gate agents cannot skip.** `factory verify` runs the checks for the apps
+  a branch changed and compares failures with the base commit. The Stop hook will
+  not let a session finish until the gate passes at the current commit. See
+  [Hooks](/factory/hooks/).
+- **Verification records.** A record says what was checked, what was walked in a
+  browser, what a reviewer found and what was not verified. `check` fails when the
+  record describes older code. See [Verify and records](/factory/verify-and-records/).
+- **A production robot.** A scripted new user walks the deployed product after each
+  release and every six hours. Every route and API operation must name the journey
+  that covers it. See [Production robot](/factory/production-robot/).
+- **Dependency updates.** Dependabot opens grouped update pull requests weekly. An
+  opt-in job merges security fixes once merge-gate passes. See
+  [Dependency updates](/factory/dependency-updates/).
+- **Agent lanes.** Triage, review, revise and digest run as GitHub workflows behind
+  one switch. A reviewer agent reads the diff and the issue, not the author's
+  reasoning. See [Agent lanes](/factory/agent-lanes/).
+- **Remote agents.** Cloud sessions, GitHub Actions lanes and an always-on host
+  you can steer from a phone. See [Remote agents](/factory/remote-agents/).
+
+## The loop
+
+1. A person writes an issue with acceptance criteria.
+2. The agent plans the checks it will write for each criterion.
+3. `factory workspace new <issue>` gives the agent a worktree and a stack.
+4. The checks are written first, then the code.
+5. `factory verify` proves the change; `factory verification new|check` writes and
+   checks the record.
+6. `factory handover` posts a card on the issue. `factory pr` opens the pull request.
+7. A person reviews and merges. Agents never merge.
+
+The full contract is in
+[tools/factory/README.md](https://github.com/boringstack-xyz/boringstack/blob/main/tools/factory/README.md).
+
+## What is not done
+
+The factory is one monorepo's tooling. It is not a hosted service. Preview routing
+to a live slot, Codex hooks under Codex, and the Linear tracker against a real
+Linear workspace are not verified end to end. Each page says what it has and has
+not run.

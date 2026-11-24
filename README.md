@@ -33,6 +33,14 @@
   <a href="https://github.com/boringstack-xyz/eslint-plugins"><img src="https://img.shields.io/badge/eslint--plugins-4ade80?style=for-the-badge&labelColor=090909" alt="eslint-plugins"></a>
 </p>
 
+BoringStack is an AI-agent-first, production-grade template, and it now comes with
+its own software factory. An agent builds an issue in its own isolated stack. A
+verify gate the agent cannot skip checks the change, a verification record shows what
+was checked and what was not, and a person merges. Dependency security fixes can merge
+themselves once an owner switches that on. Agents can also run in the cloud and be
+steered from a phone. See [the software factory](https://boringstack.xyz/factory/) and
+[remote agents](docs/operations/remote-agents.md).
+
 ## Set it up
 
 ```sh

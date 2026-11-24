@@ -1,6 +1,7 @@
 // Brand and navigation. Replace the placeholder copy before launch.
 export const siteName = "BoringStack";
-export const siteTagline = "Replace this with one sentence about your product.";
+export const siteTagline =
+  "An AI-agent-first, production-grade template, with its own software factory.";
 
 export const navigation = [
   { label: "Pricing", href: "/pricing" },

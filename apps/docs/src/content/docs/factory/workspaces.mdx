@@ -1,0 +1,42 @@
+---
+title: "Factory workspaces and slots"
+description: "How the factory gives each change its own git worktree and its own stack, how slots are claimed, and how a finished workspace is torn down without losing work."
+---
+
+A **workspace** is one issue's worktree, on its own branch, with its own stack.
+
+```bash
+bun run factory workspace new 123     # worktree on factory/123, claims a slot
+bun run factory up                    # starts that slot's stack
+bun run factory preview               # prints the slot's URL
+bun run factory status                # what this workspace is doing, in plain words
+```
+
+## Slots
+
+Slot 0 is your own `./setup.sh --up` stack on the default ports. Slots 1 to 8 are
+factory stacks. Each one has:
+
+- its own compose project, `boringstack-s<N>`, with its own volumes;
+- host ports at a fixed offset from the defaults (the offset is the slot number);
+- a bind to `127.0.0.1` only.
+
+A slot is claimed by creating its claim file exclusively, so two agents cannot take
+the same slot. A claim whose workspace folder no longer exists is stale, and
+`factory sweep` frees it. Sweep runs hourly on a shared machine.
+
+Workspaces live next to the main checkout, in a folder named
+`<project>-workspaces`. Machine-wide state (claims, preview maps, status lines) lives
+in a shared folder that every checkout on the machine reads.
+
+## Fleet
+
+`factory fleet` prints every stack on the machine as a table: health, branch and what
+it is doing. `factory fleet serve` serves the same as a self-refreshing page on
+`127.0.0.1:8500`. Nothing listens on another interface.
+
+## Tearing down
+
+`factory down -v` and `factory workspace remove` refuse while the workspace has
+uncommitted or unpushed work. Remove the work first, or push it. A refusal is a
+safety check, not an error to bypass.
