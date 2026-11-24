@@ -15,8 +15,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "validate": "bun run check && bun run test && bun run build",
-    "check": "bun run lint && bun run format:check && bun run typecheck",
+    "check": "bun run lint && bun run format:check && bun run typecheck && bun run typecheck:native",
     "typecheck": "tsc --noEmit",
+    "typecheck:native": "bun node_modules/typescript-native/bin/tsc --noEmit",
     "lint": "eslint --cache .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -44,6 +45,7 @@
     "prettier": "3.9.10",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.1",
+    "typescript-native": "npm:typescript@7.0.2",
     "vite": "8.3.6",
     "vitest": "5.1.0"
   },
