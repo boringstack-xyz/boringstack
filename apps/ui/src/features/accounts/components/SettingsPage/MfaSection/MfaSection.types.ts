@@ -1,5 +1,7 @@
 import type { BaseSyntheticEvent, ChangeEvent } from "react";
 
+import type { TFunction } from "i18next";
+
 import type { IMfaSetupResponse } from "@/features/auth/Auth.types";
 
 export interface IMfaSectionProps {
@@ -19,7 +21,7 @@ export type IMfaUiState =
 
 export interface IMfaSectionView {
   readonly state: IMfaUiState;
-  readonly t: (key: string, options?: Record<string, unknown>) => string;
+  readonly t: TFunction;
   readonly enrollPassword: string;
   readonly verifyCode: string;
   readonly disablePassword: string;
