@@ -72,6 +72,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run deps-steward.yml --repo "$GITHUB_REPOSITORY" --ref main
 
+      # Nothing else starts a run when a PR's checks finish (the schedule does
+      # not fire reliably, and runs started by Dependabot get no secrets), so
+      # a run that leaves PRs mid-check comes back for them a few minutes later.
+      - name: Come back when the checks have run
+        if: steps.plan.outputs.fix == '' && steps.plan.outputs.waiting != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sleep 300
+          gh workflow run deps-steward.yml --repo "$GITHUB_REPOSITORY" --ref main
+
   fix:
     name: dependency agent
     needs: steward
