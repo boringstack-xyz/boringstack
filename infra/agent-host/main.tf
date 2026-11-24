@@ -16,7 +16,8 @@
 # ============================================================================
 
 terraform {
-  required_version = ">= 1.12.0"
+  # The module uses no 1.12-only feature (no prevent_destroy), so it accepts 1.11.
+  required_version = ">= 1.11.0"
 
   required_providers {
     hcloud = {
