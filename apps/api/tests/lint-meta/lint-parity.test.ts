@@ -141,7 +141,7 @@ describe("lint parity: Oxlint + ESLint remainder still report every required rul
     );
     oxlintFindings = runOxlint(PARITY_CONFIG, FIXTURE);
     eslintFindings = runEslint(FIXTURE);
-  });
+  }, 120_000); /* Oxlint and ESLint over the fixture: seconds locally, longer on a busy runner. */
 
   afterAll(() => {
     rmSync(join(APP_ROOT, PARITY_CONFIG), { force: true });

@@ -90,7 +90,7 @@ describe("lint parity: Oxlint + ESLint remainder still report every required rul
     config.ignorePatterns = [];
     writeFileSync(join(APP_ROOT, PARITY_CONFIG), JSON.stringify(config));
     findings = lintFindings();
-  });
+  }, 120_000); /* Oxlint and ESLint over the fixture: seconds locally, longer on a busy runner. */
 
   afterAll(() => {
     rmSync(join(APP_ROOT, PARITY_CONFIG), { force: true });
