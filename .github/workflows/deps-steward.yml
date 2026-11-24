@@ -104,6 +104,20 @@ jobs:
           gh pr edit "$PR_NUMBER" --add-label deps-agent-tried > /dev/null
           echo "HEAD_REF=$(gh pr view "$PR_NUMBER" --json headRefName --jq .headRefName)" >> "$GITHUB_ENV"
 
+      # The signed-push tool comes from main and is kept out of the checkout,
+      # so neither the PR nor the agent can change what pushes with the token.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          path: .deps-tools
+          sparse-checkout: scripts/deps
+          persist-credentials: false
+
+      - name: Move the push tool out of the agent's reach
+        run: |
+          mv .deps-tools/scripts/deps/push-signed.mjs "$RUNNER_TEMP/push-signed.mjs"
+          rm -rf .deps-tools
+
       - name: Agent setup (kill switch, bun, git identity)
         uses: ./.github/actions/agent-setup
         with:
@@ -172,14 +186,18 @@ jobs:
             echo "::error::The agent changed workflow files; nothing was pushed."
             exit 1
           fi
-          git add -A
-          git commit -m "fix(deps): make #$PR_NUMBER pass its checks"
-          # Dependabot may rebase the PR while the agent works. Then the fix is
-          # for a head that no longer exists: give the attempt back, and the
-          # next run starts again from the new head.
-          if ! git push origin "HEAD:$HEAD_REF"; then
-            gh pr edit "$PR_NUMBER" --remove-label deps-agent-tried
-            echo "::warning::#$PR_NUMBER changed while the agent worked; it goes back in the queue."
+          # main accepts only signed commits; GitHub signs the commit it
+          # creates through the API. Dependabot may rebase the PR while the
+          # agent works. Then the fix is for a head that no longer exists: give
+          # the attempt back, and the next run starts again from the new head.
+          if ! bun "$RUNNER_TEMP/push-signed.mjs" "$HEAD_REF" "fix(deps): make #$PR_NUMBER pass its checks"; then
+            if [ "$(git ls-remote origin "refs/heads/$HEAD_REF" | cut -f1)" != "$(git rev-parse HEAD)" ]; then
+              gh pr edit "$PR_NUMBER" --remove-label deps-agent-tried
+              echo "::warning::#$PR_NUMBER changed while the agent worked; it goes back in the queue."
+            else
+              echo "::error::The agent's change could not be pushed."
+              exit 1
+            fi
           fi
 
       # Scheduled runs are unreliable on GitHub, so a finished agent run starts
