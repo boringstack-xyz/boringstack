@@ -79,6 +79,8 @@ export function normalize(row) {
 export function plan(prs, { agentsEnabled }) {
   const actions = [];
   const fixable = [];
+  /* PRs whose merge-gate has not finished yet: the queue comes back for them. */
+  let waiting = 0;
 
   for (const pr of prs.filter(isDependencyPr)) {
     if (pr.isDraft) {
@@ -95,6 +97,10 @@ export function plan(prs, { agentsEnabled }) {
       actions.push({ kind: "update-branch", pr: pr.number });
     }
 
+    if (pr.gate === "pending" || pr.gate === "none" || (pr.mergeState === "BEHIND" && pr.gate !== "fail")) {
+      waiting += 1;
+    }
+
     if (pr.gate !== "fail" || !isDependabot(pr)) {
       continue;
     }
@@ -108,7 +114,7 @@ export function plan(prs, { agentsEnabled }) {
     }
   }
 
-  return { actions, fix: fixable.length > 0 ? Math.min(...fixable) : null };
+  return { actions, fix: fixable.length > 0 ? Math.min(...fixable) : null, waiting };
 }
 
 const gh = (args) => {
@@ -198,7 +204,7 @@ if (import.meta.main) {
   }
 
   if (process.env.GITHUB_OUTPUT) {
-    appendFileSync(process.env.GITHUB_OUTPUT, `fix=${result.fix ?? ""}\n`);
+    appendFileSync(process.env.GITHUB_OUTPUT, `fix=${result.fix ?? ""}\nwaiting=${String(result.waiting)}\n`);
   }
 
   /* One PR that cannot be updated must not stop the others; it is retried next run. */

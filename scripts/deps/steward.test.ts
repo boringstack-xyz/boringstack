@@ -108,10 +108,27 @@ describe("plan", () => {
     expect(plan([tried], { agentsEnabled: true })).toEqual({
       actions: [{ kind: "needs-person", pr: 1 }],
       fix: null,
+      waiting: 0,
     });
     expect(
       plan([pr({ gate: "fail", labels: [AGENT_LABEL, PERSON_LABEL] })], { agentsEnabled: true }).actions
     ).toEqual([]);
+  });
+
+  test("counts PRs whose merge-gate has not finished, so the queue comes back for them", () => {
+    const result = plan(
+      [
+        pr({ number: 1, gate: "pending" }),
+        pr({ number: 2, gate: "none" }),
+        pr({ number: 3, mergeState: "BEHIND" }),
+        pr({ number: 4, gate: "pass" }),
+        pr({ number: 5, gate: "fail", labels: [AGENT_LABEL, PERSON_LABEL] }),
+      ],
+      { agentsEnabled: true }
+    );
+
+    expect(result.waiting).toBe(3);
+    expect(plan([pr({ gate: "pass" })], { agentsEnabled: true }).waiting).toBe(0);
   });
 
   test("skips drafts", () => {
