@@ -39,6 +39,10 @@ jobs:
     # Schedule and push events never come from a fork; the guard keeps the lint-meta rule satisfied.
     runs-on: ${{ !github.event.pull_request.head.repo.fork && (vars.CI_LIGHT_RUNNER || vars.CI_RUNNER) || 'ubuntu-24.04' }}
     timeout-minutes: 10
+    permissions:
+      contents: read
+      # Only for dispatching this workflow when a push run has agent work.
+      actions: write
     outputs:
       fix: ${{ steps.plan.outputs.fix }}
     steps:
@@ -63,7 +67,9 @@ jobs:
       - name: Hand the agent's work to a dispatched run
         if: github.event_name == 'push' && steps.plan.outputs.fix != '' && vars.AGENTS_ENABLED == '1'
         env:
-          GH_TOKEN: ${{ secrets.DEPS_AUTOFIX_TOKEN }}
+          # The workflow token may start workflow_dispatch runs; the autofix
+          # token has no Actions permission.
+          GH_TOKEN: ${{ github.token }}
         run: gh workflow run deps-steward.yml --repo "$GITHUB_REPOSITORY" --ref main
 
   fix:
