@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Dashboard bundle (index + react)",
+    "path": "dist/assets/index-*.js",
+    "limit": "104 KB",
+    "gzip": true
+  },
+  {
+    "name": "CSS",
+    "path": "dist/assets/*.css",
+    "limit": "2 KB",
+    "gzip": true
+  }
+]

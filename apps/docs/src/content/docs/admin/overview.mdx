@@ -1,0 +1,71 @@
+---
+title: Operator dashboard
+description: apps/admin, the LAN-only operator dashboard. What it shows, what it can change, how it is kept off the public internet, and how it is released.
+---
+
+`apps/admin` is a small operator dashboard for the BoringStack API. It is opt-in
+(`WITH_ADMIN=1`), it has no login, and it is meant to be reached only from a
+private network. It talks to a separate admin process (`apps/api/src/admin.ts`),
+which acts as the platform admin resolved when the process boots.
+
+## What it does
+
+- **Queues**: job counts for every BullMQ queue, read through plain queue handles.
+  The admin process never starts a worker or a scheduler.
+- **Activity**: the recent audit log, newest first, with user and account ids only.
+- **Feed**: the action feed. An item needs a look; today that is a queue with failed
+  jobs. Resolve hides an item until its count rises. Snooze hides it for a day.
+  Both are persisted and audited.
+- **Campaigns**: compose a marketing email, preview the segment size and text, then
+  send it once to the people who opted in. Sends go through the notification queue,
+  so they use the same email delivery as every other message. Every send is audited.
+
+The dashboard shows ids, never emails or free-form metadata.
+
+## Why it has no login
+
+The admin process is not reachable from the public app. The public app returns 404
+for `/api/v1/admin/*`, and the admin process mounts only `/health` and the admin
+routes. Access is controlled by where the process runs:
+
+- Compose binds it to the LAN side of the host and it is never routed by Traefik.
+- On k3s the admin overlay is separate from the production release. Its network
+  policies let only the dashboard pod reach the API, and the dashboard accepts
+  private address ranges only.
+
+Two guards still apply on every request. Reads need the `x-boringstack-admin: 1`
+header, which a cross-site page cannot add. Writes also need a JSON body and no
+cross-site `sec-fetch-site`, so a plain form on another site cannot change data.
+
+## Campaigns and consent
+
+A campaign reaches people whose `marketing_consent_at` is set, who have verified
+their email, and who are not robot accounts. Each email carries the lifecycle
+unsubscribe link and the List-Unsubscribe headers, and unsubscribing clears consent.
+
+The template does not yet set consent. Your sign-up or settings flow must set
+`users.marketing_consent_at` when someone opts in. Until it does, the segment is
+empty and a campaign reaches nobody. A campaign sends once and is capped at 1,000
+people per send; a larger segment is reported as truncated.
+
+## Releasing
+
+`apps/admin` publishes its serving image to GitHub Container Registry on every push
+to `main` that touches the app, the same way the public site does. The image is
+tagged `latest` and `sha-<7>`, and Compose's WUD watcher redeploys it. The k3s
+production release does not include the admin image: it builds the public four
+images, and the admin overlay is rendered in CI but never promoted with them.
+
+The bundle has a size budget like `apps/ui`. `.size-limit.json` sets the limits,
+and every raised limit or new entry needs a reason in `apps/admin/budgets.md`.
+
+## Where the code is
+
+| Path | What |
+| ---- | ---- |
+| `apps/admin` | The dashboard (Vite and React) |
+| `apps/api/src/admin.ts` | The admin process |
+| `apps/api/src/api/admin/` | The admin routes and services |
+| `infra/k3s/overlays/admin` | The k3s overlay, rendered in CI |
+
+The dashboard's own rules are in `apps/admin/AGENTS.md`.
