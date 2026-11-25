@@ -29,6 +29,27 @@ Workspaces live next to the main checkout, in a folder named
 `<project>-workspaces`. Machine-wide state (claims, preview maps, status lines) lives
 in a shared folder that every checkout on the machine reads.
 
+## Previews
+
+`factory preview` prints the slot's direct URL and, with the preview proxy running,
+`http://s<N>.preview.localhost:8600`. The proxy is optional; its compose file and the
+full variable list are in [tools/factory/README.md](https://github.com/boringstack-xyz/boringstack/blob/main/tools/factory/README.md#previews).
+
+The login gate is off by default. To put every slot behind a sign-in, set
+`PREVIEW_AUTH_PROVIDER` to `google` (with `PREVIEW_AUTH_EMAIL_DOMAIN`) or `github`
+(with `PREVIEW_AUTH_GITHUB_ORG`), plus the OAuth app's client id and secret and a
+16, 24 or 32 byte cookie secret. One sign-in covers every slot. A signed-out visitor is
+sent to sign-in and never reaches the app.
+
+### Cloudflare Access instead of a login service
+
+If you would rather not run the login service, put the proxy behind Cloudflare
+Access. Leave `PREVIEW_AUTH_PROVIDER` off, publish the proxy port through a Cloudflare
+Tunnel, and add a self-hosted Access application for `s*.<your domain>` with a policy
+that allows your team. Access signs people in before a request reaches the proxy, so
+the factory needs no secrets and no code change. The trade-off is that the zone and
+the policy live in Cloudflare, outside this repository.
+
 ## Fleet
 
 `factory fleet` prints every stack on the machine as a table: health, branch and what
