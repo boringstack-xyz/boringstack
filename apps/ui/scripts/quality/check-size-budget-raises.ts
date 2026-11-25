@@ -129,7 +129,14 @@ export function findBudgetRaiseViolations(
   return violations;
 }
 
-const UI_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+/*
+ * The app whose `.size-limit.json` and `budgets.md` are checked. Defaults to
+ * apps/ui; apps/admin runs this same gate with SIZE_BUDGET_APP_ROOT set to its
+ * own absolute path.
+ */
+const UI_ROOT =
+  process.env.SIZE_BUDGET_APP_ROOT ??
+  resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 function git(args: readonly string[]): string | null {
   try {
