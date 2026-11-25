@@ -1,8 +1,11 @@
 #!/usr/bin/env bun
-// Pushes the working tree's changes as one signed commit, run by
-// .github/workflows/deps-steward.yml after the dependency agent.
+// Pushes the working tree's changes as one signed commit, run by the agent
+// lanes and .github/workflows/deps-steward.yml after their agent has worked.
 //
-//   bun push-signed.mjs <branch> <message>
+//   bun push-signed.mjs [--new] <branch> <message>
+//
+// --new first creates <branch> on GitHub at the checked-out HEAD (an agent
+// lane's fix branch); without it the branch must already exist.
 //
 // main requires signed commits, and a commit made on the runner is not signed.
 // GitHub signs commits it creates through createCommitOnBranch, so the change
@@ -42,10 +45,12 @@ const run = (argv, input) => {
 };
 
 if (import.meta.main) {
-  const [branch, message] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const createBranch = args.includes("--new");
+  const [branch, message] = args.filter((arg) => arg !== "--new");
 
   if (!branch || !message) {
-    console.error("usage: push-signed.mjs <branch> <message>");
+    console.error("usage: push-signed.mjs [--new] <branch> <message>");
     process.exit(2);
   }
 
@@ -57,6 +62,18 @@ if (import.meta.main) {
   if (changes.additions.length + changes.deletions.length === 0) {
     console.log("nothing to commit");
     process.exit(0);
+  }
+
+  if (createBranch) {
+    const created = run([
+      "gh", "api", `repos/${process.env.GITHUB_REPOSITORY}/git/refs`,
+      "-f", `ref=refs/heads/${branch}`, "-f", `sha=${head}`,
+    ]);
+
+    if (!created.ok) {
+      console.error(`could not create ${branch}: ${created.err.trim()}`);
+      process.exit(3);
+    }
   }
 
   const body = JSON.stringify({
