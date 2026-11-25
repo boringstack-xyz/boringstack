@@ -186,4 +186,5 @@ export const LOG_EVENTS = [
   "valkey.connection.lost",
   "valkey.connection.restored",
   "valkey.connection.retry",
+  "admin.campaign.enqueue_failed",
 ] as const;

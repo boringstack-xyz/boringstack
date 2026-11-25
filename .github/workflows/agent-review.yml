@@ -51,6 +51,21 @@ jobs:
       PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
       GH_TOKEN: ${{ github.token }}
     steps:
+      - name: Checkout the PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Check out the PR head
+        run: |
+          set -euo pipefail
+          gh pr checkout "$PR_NUMBER"
+          # The trusted copy goes inside this checkout; it is never part of the change.
+          echo "trusted/" >> .git/info/exclude
+
+      # After the PR checkout: checking out into the workspace root clears it,
+      # so a trusted copy made first would be gone.
       - name: Checkout the trusted base (reviewer helpers)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -59,15 +74,6 @@ jobs:
             .github/actions/agent-setup
             tools/factory
           persist-credentials: false
-
-      - name: Checkout the PR
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: true
-
-      - name: Check out the PR head
-        run: gh pr checkout "$PR_NUMBER"
 
       - name: Agent setup (kill switch, bun, git identity)
         uses: ./trusted/.github/actions/agent-setup

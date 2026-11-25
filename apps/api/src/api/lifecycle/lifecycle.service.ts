@@ -31,7 +31,7 @@ import { isValidEmail } from "../../lib/email/email.utils";
 import { getErrorMessage } from "../../lib/errors";
 import { notifications } from "../../lib/notifications/dispatch/notifications.dispatcher";
 import { notificationPreferencesService } from "../../lib/notifications/preferences/preferences.service";
-import { nowMs } from "../../lib/time/now";
+import { now, nowMs } from "../../lib/time/now";
 import { SYNTHETIC_EMAIL_DOMAIN } from "../../lib/synthetic";
 import { PLAN_NAME } from "../billing/billing.constants";
 import { LIFECYCLE_EVENTS } from "../notifications/events";
@@ -159,6 +159,16 @@ export class LifecycleService {
         }))
       ),
     });
+
+    /*
+     * The same link is the List-Unsubscribe target of operator campaigns, so
+     * it also withdraws marketing consent. Clearing it is what keeps a
+     * campaign from reaching this person again.
+     */
+    await db
+      .update(users)
+      .set({ marketingConsentAt: null, updatedAt: now() })
+      .where(eq(users.id, userId));
 
     void auditLogService.record({
       userId,

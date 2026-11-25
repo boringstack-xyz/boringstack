@@ -10,6 +10,7 @@ import type { INotificationEventDefinition } from "../../../lib/notifications/no
 import { accountInvitationAcceptedEvent } from "./account-invitation-accepted.event";
 import { accountOwnershipTransferredEvent } from "./account-ownership-transferred.event";
 import { authWelcomeEvent } from "./auth-welcome.event";
+import { campaignMessageEvent } from "./campaign-message.event";
 import { lifecycleWelcomeFollowUpEvent } from "./lifecycle.event";
 import { passwordResetCompletedEvent } from "./password-reset-completed.event";
 
@@ -19,6 +20,7 @@ export {
   accountInvitationAcceptedEvent,
   accountOwnershipTransferredEvent,
   authWelcomeEvent,
+  campaignMessageEvent,
   lifecycleWelcomeFollowUpEvent,
   passwordResetCompletedEvent,
 };
@@ -39,4 +41,5 @@ export const allEvents: readonly INotificationEventDefinition<unknown>[] = [
   accountOwnershipTransferredEvent,
   passwordResetCompletedEvent,
   lifecycleWelcomeFollowUpEvent,
+  campaignMessageEvent,
 ];

@@ -90,4 +90,11 @@ export const AUDIT_ACTIONS = {
   NOTIFICATION_PUSH_SUBSCRIBED: "notification.push_subscribed",
   NOTIFICATION_PUSH_UNSUBSCRIBED: "notification.push_unsubscribed",
   FEEDBACK_ANSWERED: "feedback.answered",
+
+  /* Operator dashboard (LAN-only admin process). Ids only, never addresses. */
+  ADMIN_CAMPAIGN_CREATED: "admin.campaign_created",
+  ADMIN_CAMPAIGN_SENT: "admin.campaign_sent",
+  ADMIN_CAMPAIGN_EMAIL_SENT: "admin.campaign_email_sent",
+  ADMIN_FEED_ITEM_RESOLVED: "admin.feed_item_resolved",
+  ADMIN_FEED_ITEM_SNOOZED: "admin.feed_item_snoozed",
 } as const;

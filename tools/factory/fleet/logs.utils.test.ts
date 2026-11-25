@@ -51,6 +51,16 @@ describe("reading log lines", () => {
     );
   });
 
+  test("a quoted name is not a level: SQL printed by a migration", () => {
+    expect(
+      parseLogLine('2026-11-23T10:00:00Z \t"error" text,', "api-migrate")?.level
+    ).toBe("info");
+    expect(
+      parseLogLine('2026-11-23T10:00:00Z insert into "jobs" failed', "api")
+        ?.level
+    ).toBe("error");
+  });
+
   test("a line without Docker's timestamp is not a record", () => {
     expect(parseLogLine("  at handler (file.ts:1)", "api")).toBeNull();
   });

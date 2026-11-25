@@ -121,6 +121,9 @@ export const CLEANUP_TARGETS = [
   "notifications.email_suppression",
   "app.feedback_answers",
   "app.product_events",
+  "app.email_campaign_recipients",
+  "app.email_campaigns",
+  "app.admin_feed_item_states",
   "app.accounts",
   "auth.users",
 ] as const;

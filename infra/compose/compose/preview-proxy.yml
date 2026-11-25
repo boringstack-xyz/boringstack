@@ -10,6 +10,12 @@
 #
 # Bound to 127.0.0.1 only. Routes for slots that no longer exist are removed
 # by `bun run factory sweep`.
+#
+# Optional login gate (PREVIEW_AUTH_PROVIDER=google|github, see
+# tools/factory/README.md and docs/operations/remote-agents.md): oauth2-proxy
+# runs in the `auth` profile, which `proxy.vars` switches on through
+# COMPOSE_PROFILES. nginx then asks it before serving any slot, and a person
+# who is not signed in is sent to the login. Off by default.
 
 name: boringstack-preview
 
@@ -36,6 +42,48 @@ services:
       - "127.0.0.1:${PREVIEW_PORT:?}:80"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 2s
+      retries: 2
+      start_period: 5s
+      start_interval: 2s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "64M"
+        reservations:
+          cpus: "0.05"
+          memory: "16M"
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.6-alpine@sha256:398b6e2ee5b8c9d61ae8f099236568b9eae9cdc28f5645542bb1e03d57d477ed
+    profiles: ["auth"]
+    restart: unless-stopped
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      # Set by proxy.vars (written by `bun run factory preview`), never here.
+      OAUTH2_PROXY_PROVIDER: ${OAUTH2_PROXY_PROVIDER:-google}
+      OAUTH2_PROXY_CLIENT_ID: ${OAUTH2_PROXY_CLIENT_ID:-}
+      OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH2_PROXY_CLIENT_SECRET:-}
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET:-}
+      OAUTH2_PROXY_COOKIE_DOMAINS: ${OAUTH2_PROXY_COOKIE_DOMAINS:-}
+      OAUTH2_PROXY_COOKIE_SECURE: ${OAUTH2_PROXY_COOKIE_SECURE:-true}
+      OAUTH2_PROXY_REDIRECT_URL: ${OAUTH2_PROXY_REDIRECT_URL:-}
+      OAUTH2_PROXY_WHITELIST_DOMAINS: ${OAUTH2_PROXY_WHITELIST_DOMAINS:-}
+      OAUTH2_PROXY_EMAIL_DOMAINS: ${OAUTH2_PROXY_EMAIL_DOMAINS:-}
+      OAUTH2_PROXY_GITHUB_ORG: ${OAUTH2_PROXY_GITHUB_ORG:-}
+      OAUTH2_PROXY_GITHUB_TEAM: ${OAUTH2_PROXY_GITHUB_TEAM:-}
+      # Fixed: auth-request mode (nginx asks /oauth2/auth), behind nginx.
+      OAUTH2_PROXY_HTTP_ADDRESS: "0.0.0.0:4180"
+      OAUTH2_PROXY_UPSTREAMS: "static://202"
+      OAUTH2_PROXY_REVERSE_PROXY: "true"
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4180/ping"]
       interval: 30s
       timeout: 2s
       retries: 2
