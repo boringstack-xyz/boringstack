@@ -1,0 +1,9 @@
+{
+  "subject": "A message from {{appName}}",
+  "preHeader": "",
+  "appName": "{{appName}}",
+  "firstName": "there",
+  "body": "Hello from the team.",
+  "unsubscribeUrl": "https://example.com/unsubscribe",
+  "canReply": true
+}

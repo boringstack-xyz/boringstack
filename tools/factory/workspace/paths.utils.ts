@@ -43,9 +43,9 @@ export const isSafeIssueId = (issue: string): boolean =>
 /** Branch a workspace is built on: `factory/<issue>`. */
 export const branchFor = (issue: string): string => `factory/${issue}`;
 
-/** Host a slot's preview answers on: `s<N>.<previewHost>`. */
-export const previewHostOf = (slot: number): string =>
-  `s${String(slot)}.${FACTORY_CONFIG.previewHost}`;
+/** Host a slot's preview answers on: `s<N>.<domain>` (the domain is PREVIEW_DOMAIN or the default). */
+export const previewHostOf = (slot: number, domain: string): string =>
+  `s${String(slot)}.${domain}`;
 
 /** `s<N>.json` file name to slot number; undefined for anything else. */
 export const slotOfFileName = (fileName: string): number | undefined => {

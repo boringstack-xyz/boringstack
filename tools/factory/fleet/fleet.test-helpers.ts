@@ -28,6 +28,18 @@ export const contextAt = (
     path: undefined,
     sharedCheckout: false,
     ci: false,
+    preview: {
+      domain: undefined,
+      publicScheme: undefined,
+      publicPort: undefined,
+      authProvider: undefined,
+      authClientId: undefined,
+      authClientSecret: undefined,
+      authCookieSecret: undefined,
+      authEmailDomain: undefined,
+      authGithubOrg: undefined,
+      authGithubTeam: undefined,
+    },
   },
   json: false,
 });

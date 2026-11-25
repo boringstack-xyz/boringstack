@@ -4,7 +4,8 @@ name: Agent triage
 # machine that runs the stacks, so a person starts this workflow from there:
 # `bun tools/factory/cli.ts lanes triage --dispatch` sends the next few findings in. For
 # each one the agent writes a plan. A code fix goes to a PR on agent/triage/<slug>
-# with a regression test that tools/factory/lanes/prove-fix proves; an operations
+# with a regression test that tools/factory/lanes/prove-fix proves (one signed
+# commit, opened with the automation token so merge-gate and agent-review run); an operations
 # cause is written up for a person in an issue. Agents never merge.
 # Kill switch: repository variable AGENTS_ENABLED must be 1.
 
@@ -30,11 +31,10 @@ jobs:
     runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 60
     permissions:
-      contents: write
+      # The fix branch and PR go up with the automation token.
+      contents: read
       pull-requests: write
       issues: write
-      # Starts the review of the PR it opens (a GITHUB_TOKEN push does not trigger pull_request).
-      actions: write
     env:
       FINDINGS: ${{ inputs.findings }}
       GH_TOKEN: ${{ github.token }}
@@ -42,7 +42,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Agent setup (kill switch, bun, git identity)
         uses: ./.github/actions/agent-setup
@@ -60,6 +60,8 @@ jobs:
       - name: Install
         run: |
           set -euo pipefail
+          # Main's copy, out of the agent's reach.
+          cp scripts/deps/push-signed.mjs "$RUNNER_TEMP/push-signed.mjs"
           work="$RUNNER_TEMP/triage"
           mkdir -p "$work"
           echo "WORK=$work" >> "$GITHUB_ENV"
@@ -142,28 +144,33 @@ jobs:
       - name: Open the fix PR for review
         id: pr
         if: steps.cap.outputs.run == 'true' && steps.prove.outputs.slug != ''
+        env:
+          # A PR opened with the workflow token starts no workflows (no
+          # merge-gate, no review); the automation token's does.
+          PUSH_TOKEN: ${{ secrets.DEPS_AUTOFIX_TOKEN }}
         run: |
           set -euo pipefail
           slug="${{ steps.prove.outputs.slug }}"
           title="$(jq -r '.fix.title' "$WORK/plan.json")"
           branch="agent/triage/$slug"
-          git checkout -b "$branch"
-          git add -A
-          git commit -m "$title"
-          git push -u origin "$branch"
+          # One signed commit through the API (main requires signed commits),
+          # with the automation token so the PR's checks and review start.
+          GH_TOKEN="$PUSH_TOKEN" bun "$RUNNER_TEMP/push-signed.mjs" --new "$branch" "$title"
           printf 'Pending the independent review.\n' > "$WORK/body.md"
-          url="$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
+          url="$(GH_TOKEN="$PUSH_TOKEN" gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
             --title "$title" --body-file "$WORK/body.md")"
           number="${url##*/}"
+          # --proven is a switch: present only when the fix was proven.
+          proven_flag=()
+          if [ "${{ steps.prove.outputs.proven }}" = "true" ]; then proven_flag=(--proven); fi
           bun tools/factory/cli.ts lanes triage-plan "$WORK/plan.json" "$WORK/findings.json" \
-            --pr="$url" --proven="${{ steps.prove.outputs.proven }}" --out="$WORK/comment.md"
+            --pr="$url" "${proven_flag[@]}" --out="$WORK/comment.md"
           {
             cat "$WORK/comment.md"
             printf '\n\n## Review\n\nPending the independent review.\n\n## Proof\n\n'
             jq -r '.reason' "$WORK/prove.json"
           } > "$WORK/body.md"
           gh pr edit "$number" --repo "$GITHUB_REPOSITORY" --body-file "$WORK/body.md"
-          gh workflow run agent-review.yml --repo "$GITHUB_REPOSITORY" -f pr="$number"
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       - name: Report the batch
@@ -172,7 +179,8 @@ jobs:
           set -euo pipefail
           plan="$WORK/plan.json"
           if [ ! -s "$plan" ]; then exit 0; fi
-          args=(--proven="${{ steps.prove.outputs.proven || 'false' }}" --out="$WORK/report.md")
+          args=(--out="$WORK/report.md")
+          if [ "${{ steps.prove.outputs.proven }}" = "true" ]; then args+=(--proven); fi
           if [ -n "${{ steps.pr.outputs.url }}" ]; then args+=(--pr="${{ steps.pr.outputs.url }}"); fi
           bun tools/factory/cli.ts lanes triage-plan "$plan" "$WORK/findings.json" "${args[@]}"
           if jq -e '[.items[] | select(.outcome != "fix")] | length > 0' "$plan" > /dev/null; then

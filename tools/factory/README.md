@@ -74,6 +74,49 @@ creating its claim file exclusively; the claim names the workspace path. A
 claim whose workspace path no longer exists is stale and `sweep` frees it.
 Slot stacks bind to `127.0.0.1` only.
 
+## Previews
+
+`factory preview` prints the slot's direct URL (`http://127.0.0.1:<ui port>`) and,
+when the preview proxy runs, its proxy URL (`http://s<N>.<domain>:8600`). The proxy
+is optional and not started by the factory:
+
+```bash
+docker compose -p boringstack-preview -f infra/compose/compose/preview-proxy.yml \
+  --env-file <shared>/preview/proxy.vars up -d --wait
+```
+
+The app sends redirects to its own loopback origin (its `FRONTEND_URL`, for example
+after an OAuth return). The proxy rewrites those to the preview origin, so a person
+stays on the preview host.
+
+**Login gate** (off by default; the proxy is bound to 127.0.0.1). Set these in the
+shell, then run `bun run factory preview`. The factory writes them to `proxy.vars`
+(0600) and switches on the `auth` profile, which runs oauth2-proxy in front of every
+slot. Run the `docker compose` command above again to start it.
+
+| Variable                                               | Meaning                                                         |
+| ------------------------------------------------------ | --------------------------------------------------------------- |
+| `PREVIEW_AUTH_PROVIDER`                                | `off` (default), `google` or `github`                           |
+| `PREVIEW_AUTH_CLIENT_ID`, `PREVIEW_AUTH_CLIENT_SECRET` | OAuth app credentials                                           |
+| `PREVIEW_AUTH_COOKIE_SECRET`                           | 16, 24 or 32 bytes (`openssl rand -hex 16` gives 32 characters) |
+| `PREVIEW_AUTH_EMAIL_DOMAIN`                            | google: the only email domain allowed in                        |
+| `PREVIEW_AUTH_GITHUB_ORG`, `PREVIEW_AUTH_GITHUB_TEAM`  | github: the organisation allowed in, optionally one team        |
+| `PREVIEW_DOMAIN`                                       | parent domain of the hosts (default `preview.localhost`)        |
+| `PREVIEW_PUBLIC_SCHEME`, `PREVIEW_PUBLIC_PORT`         | what a browser uses: `https` and `443` behind a TLS tunnel      |
+
+The redirect URL to register with the OAuth app is `<scheme>://auth.<domain>/oauth2/callback`.
+The login cookie is scoped to `.<domain>`, so one sign-in covers every slot. A
+signed-out request is redirected to sign-in and never reaches the app. A settings
+problem (missing credentials, an unknown provider, a missing email domain or
+organisation) refuses to write anything, so the gate cannot quietly open. The
+secrets live only in `proxy.vars`. A process that does not set `PREVIEW_AUTH_PROVIDER`
+(a sweep, a `down`, a `preview`) never turns a gate off: `preview` refuses and
+`sweep`, `down` and `remove` leave the routes as they are. To turn the gate off on
+purpose, set `PREVIEW_AUTH_PROVIDER=off` and run `bun run factory preview`.
+
+The scaffold manifest lists every `PREVIEW_*` variable (`.tsforge/scaffold-manifest.json`);
+`bun test tools/factory` fails when the factory reads one that the manifest does not.
+
 ## The record
 
 `factory verification new <branch>` writes the skeleton; the agent fills it.

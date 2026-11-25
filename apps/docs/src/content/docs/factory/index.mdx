@@ -52,7 +52,8 @@ The full contract is in
 
 ## What is not done
 
-The factory is one monorepo's tooling. It is not a hosted service. Preview routing
-to a live slot, Codex hooks under Codex, and the Linear tracker against a real
-Linear workspace are not verified end to end. Each page says what it has and has
+The factory is one monorepo's tooling. It is not a hosted service. Codex hooks under
+Codex and the Linear tracker against a real Linear workspace are not verified end to
+end. Preview routing to a live slot is verified on one macOS host; the login gate is
+verified up to the provider redirect, with dummy credentials. Each page says what it has and has
 not run.
