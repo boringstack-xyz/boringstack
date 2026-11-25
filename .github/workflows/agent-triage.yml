@@ -155,8 +155,11 @@ jobs:
           url="$(gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" \
             --title "$title" --body-file "$WORK/body.md")"
           number="${url##*/}"
+          # --proven is a switch: present only when the fix was proven.
+          proven_flag=()
+          if [ "${{ steps.prove.outputs.proven }}" = "true" ]; then proven_flag=(--proven); fi
           bun tools/factory/cli.ts lanes triage-plan "$WORK/plan.json" "$WORK/findings.json" \
-            --pr="$url" --proven="${{ steps.prove.outputs.proven }}" --out="$WORK/comment.md"
+            --pr="$url" "${proven_flag[@]}" --out="$WORK/comment.md"
           {
             cat "$WORK/comment.md"
             printf '\n\n## Review\n\nPending the independent review.\n\n## Proof\n\n'
@@ -172,7 +175,8 @@ jobs:
           set -euo pipefail
           plan="$WORK/plan.json"
           if [ ! -s "$plan" ]; then exit 0; fi
-          args=(--proven="${{ steps.prove.outputs.proven || 'false' }}" --out="$WORK/report.md")
+          args=(--out="$WORK/report.md")
+          if [ "${{ steps.prove.outputs.proven }}" = "true" ]; then args+=(--proven); fi
           if [ -n "${{ steps.pr.outputs.url }}" ]; then args+=(--pr="${{ steps.pr.outputs.url }}"); fi
           bun tools/factory/cli.ts lanes triage-plan "$plan" "$WORK/findings.json" "${args[@]}"
           if jq -e '[.items[] | select(.outcome != "fix")] | length > 0' "$plan" > /dev/null; then
