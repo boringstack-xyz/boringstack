@@ -59,6 +59,7 @@ jobs:
           path: trusted
           sparse-checkout: |
             .github/actions/agent-setup
+            apps/ui/e2e/robot
             scripts/deps
             tools/factory
           persist-credentials: false
