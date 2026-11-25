@@ -585,6 +585,83 @@
   }
 }
 
+/* The factory table: a real table on wide screens, stacked rows on phones. */
+.bs-factory-table-wrap {
+  border: 1px solid var(--bs-line);
+  background: var(--bs-panel);
+}
+.bs-landing .bs-factory-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 11px/1.7 var(--font-mono);
+}
+.bs-landing .bs-factory-table thead th {
+  padding: 14px 18px;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bs-muted);
+  background: var(--bs-bg);
+  border-bottom: 1px solid var(--bs-line);
+}
+.bs-landing .bs-factory-table th,
+.bs-landing .bs-factory-table td {
+  padding: 16px 18px;
+  text-align: left;
+  vertical-align: top;
+  color: var(--bs-muted);
+  border-top: 1px solid var(--bs-line);
+}
+.bs-landing .bs-factory-table tbody th {
+  width: 22%;
+  color: var(--bs-text);
+  font-weight: 500;
+}
+.bs-landing .bs-factory-table tbody td:nth-child(3) {
+  color: var(--bs-muted-strong);
+}
+.bs-factory-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 32px;
+  margin-top: 24px;
+}
+@media (max-width: 640px) {
+  .bs-landing .bs-factory-table thead {
+    display: none;
+  }
+  .bs-landing .bs-factory-table,
+  .bs-landing .bs-factory-table tbody,
+  .bs-landing .bs-factory-table tr,
+  .bs-landing .bs-factory-table th,
+  .bs-landing .bs-factory-table td {
+    display: block;
+    width: 100%;
+  }
+  .bs-landing .bs-factory-table tr {
+    padding: 20px 18px 8px;
+    border-top: 1px solid var(--bs-line);
+  }
+  .bs-landing .bs-factory-table tbody tr:first-child {
+    border-top: 0;
+  }
+  .bs-landing .bs-factory-table th,
+  .bs-landing .bs-factory-table td {
+    padding: 0 0 12px;
+    border: 0;
+  }
+  .bs-landing .bs-factory-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--bs-accent-strong);
+  }
+}
+
 /* The homepage has its own closing section; retain the machine-readable links. */
 .sl-container:has(.bs-landing) footer > div:first-child {
   display: none;

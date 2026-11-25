@@ -6,7 +6,7 @@ export function GuardrailsSection() {
     <section className="bs-section" aria-labelledby="bs-guardrails-title">
       <SectionHeading
         id="bs-guardrails-title"
-        eyebrow="01 / THE GUARDRAILS"
+        eyebrow="02 / THE GUARDRAILS"
         title="Move fast. Keep the boundaries."
         body="Your agent writes the code. Lint and CI check the contracts it has to preserve. Remove a boundary below and see what catches the change."
       />

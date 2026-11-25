@@ -6,61 +6,110 @@ const board = {
   halfWidth: 112,
   halfHeight: 56,
   depth: 8,
-  pitch: 136,
-  firstY: 80,
+  pitch: 124,
+  firstY: 72,
 };
 const railX = board.cx - board.halfWidth - 20;
 const labelX = 444;
+const height = 680;
+// Layers run top to bottom: the factory that builds a change, then the stack it ships.
 const layers = [
   {
+    name: "Factory",
+    short: "Factory",
+    path: "tools/factory",
+    detail:
+      "One worktree and slot per issue · verify gate · hooks · agent lanes",
+    wire: "verify gate",
+    note: "Hooks · slots · gate",
+  },
+  {
     name: "Web",
+    short: "Web",
     path: "apps/site + apps/ui",
     detail: "Astro site on domain · React app on app.domain",
     wire: "typed client",
+    note: "Astro + React",
   },
   {
     name: "Application",
+    short: "API",
     path: "apps/api",
     detail: "Bun + Elysia · auth, billing, tenant boundaries",
     wire: "tenant scope",
+    note: "Bun + Elysia + Drizzle",
   },
   {
     name: "Services",
+    short: "Services",
     path: "infra/compose",
     detail: "Postgres + Valkey · data, queues, observability",
     wire: "data + jobs",
+    note: "Postgres + Valkey",
   },
   {
     name: "Infrastructure",
+    short: "Infra",
     path: "infra/bootstrap",
     detail: "OpenTofu · optional VPS provisioning and first boot",
     wire: "",
+    note: "OpenTofu + cloud-init",
   },
 ].map((layer, index) => ({ ...layer, y: board.firstY + index * board.pitch }));
+
+// One issue, followed through the factory and out to production.
 const stages = [
   {
-    short: "Change",
-    label: "accountId filter removed",
-    detail: "Example: SELECT against accountPlans without tenant scope.",
+    short: "Workspace",
+    layer: 0,
+    gate: "CLAIM",
+    label: "Issue 123 gets slot 2",
+    detail:
+      "factory workspace new 123: its own worktree, stack, database and ports.",
   },
   {
-    short: "Blocked",
-    label: "ESLint: missing account scope",
-    detail: "account-scoped-tables-require-where reports the query.",
+    short: "Build",
+    layer: 2,
+    gate: "TEST",
+    label: "Checks first, then the route",
+    detail:
+      "The checks fail before the code exists. Each new route gets a robot journey.",
   },
   {
-    short: "Fixed",
-    label: "accountId predicate restored",
-    detail: "WHERE accountPlans.accountId = accountId",
+    short: "Verify",
+    layer: 0,
+    gate: "VERIFY",
+    label: "Gate passes at this commit",
+    detail:
+      "factory verify runs each changed app. The Stop hook holds the session until it passes.",
   },
   {
-    short: "Checked",
-    label: "Tenant-scope check passes",
-    detail: "The corrected query satisfies the account-scope rule.",
+    short: "Review",
+    layer: 0,
+    gate: "REVIEW",
+    label: "Independent review",
+    detail:
+      "On agent PRs, a fresh reviewer reads the diff against the issue text.",
+  },
+  {
+    short: "Merge",
+    layer: 0,
+    gate: "MERGE",
+    label: "A person merges",
+    detail: "Agents never merge. merge-gate is the one required check.",
+  },
+  {
+    short: "Production",
+    layer: 1,
+    gate: "ROBOT",
+    label: "Robot walks production",
+    detail:
+      "After each release and every six hours, a new user walks the product, then is removed.",
   },
 ];
 
 const contentCenters = [
+  [49, 46],
   [49, 46],
   [49, 47],
   [49, 46],
@@ -72,14 +121,24 @@ function BoardContents({ index }: { index: number }) {
   if (index === 0)
     return (
       <g className="bs-board-ink">
-        <rect
-          x="8"
-          y="7"
-          width="82"
-          height="78"
-          rx="3"
-          className="bs-board-device"
-        />
+        <rect x="10" y="12" width="78" height="69" rx="3" className="bs-board-device" />
+        {[22, 40, 58].map((y, slot) => (
+          <g key={y}>
+            <rect x="17" y={y} width="64" height="13" className="bs-board-soft" />
+            <text x="21" y={y + 9} className="bs-board-tiny">
+              {`s${slot + 1}`}
+            </text>
+            <path d={`M34 ${y + 6.5}H${62 + slot * 3}`} className="bs-board-accent" />
+            <circle cx="76" cy={y + 6.5} r="2" className="bs-board-led" />
+          </g>
+        ))}
+        <path d="M17 81H81" className="bs-board-trace" />
+      </g>
+    );
+  if (index === 1)
+    return (
+      <g className="bs-board-ink">
+        <rect x="8" y="7" width="82" height="78" rx="3" className="bs-board-device" />
         <path d="M8 20H90M29 20V85" />
         <circle cx="15" cy="13" r="1.6" />
         <circle cx="21" cy="13" r="1.6" />
@@ -91,20 +150,14 @@ function BoardContents({ index }: { index: number }) {
         <rect x="64" y="75" width="16" height="4" className="bs-board-fill" />
       </g>
     );
-  if (index === 1)
+  if (index === 2)
     return (
       <g className="bs-board-ink">
         <path
           d="M10 16H32V33M88 16H65V33M10 75H32V60M88 75H65V60M8 45H27M70 45H90"
           className="bs-board-trace"
         />
-        <rect
-          x="27"
-          y="25"
-          width="44"
-          height="43"
-          className="bs-board-device"
-        />
+        <rect x="27" y="25" width="44" height="43" className="bs-board-device" />
         <rect x="32" y="30" width="34" height="33" className="bs-board-soft" />
         <path d="M38 20V25M48 20V25M58 20V25M38 68V74M48 68V74M58 68V74" />
         <text x="49" y="44" textAnchor="middle" className="bs-board-text">
@@ -120,31 +173,18 @@ function BoardContents({ index }: { index: number }) {
         <path d="M14 82H83" className="bs-board-accent" />
       </g>
     );
-  if (index === 2)
+  if (index === 3)
     return (
       <g className="bs-board-ink">
+        <rect x="10" y="14" width="34" height="50" rx="2" className="bs-board-device" />
         <path d="M27 62V78H71V62" className="bs-board-trace" />
-        <rect
-          x="10"
-          y="14"
-          width="34"
-          height="50"
-          rx="2"
-          className="bs-board-device"
-        />
         <path d="M10 27H44M10 51H44M16 20H20M16 57H20" />
         <text x="27" y="42" textAnchor="middle" className="bs-board-text">
           SQL
         </text>
         {[14, 34, 54].map((y) => (
           <g key={y}>
-            <rect
-              x="56"
-              y={y}
-              width="32"
-              height="12"
-              className="bs-board-device"
-            />
+            <rect x="56" y={y} width="32" height="12" className="bs-board-device" />
             <path d={`M62 ${y + 6}H81`} className="bs-board-accent" />
           </g>
         ))}
@@ -152,14 +192,7 @@ function BoardContents({ index }: { index: number }) {
     );
   return (
     <g className="bs-board-ink">
-      <rect
-        x="10"
-        y="12"
-        width="78"
-        height="69"
-        rx="3"
-        className="bs-board-device"
-      />
+      <rect x="10" y="12" width="78" height="69" rx="3" className="bs-board-device" />
       {[22, 40, 58].map((y) => (
         <g key={y}>
           <rect x="17" y={y} width="64" height="13" className="bs-board-soft" />
@@ -180,7 +213,8 @@ export function StackMachine() {
   const [visible, setVisible] = useState(false);
   const [stage, setStage] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [selected, setSelected] = useState(1);
+  const [selected, setSelected] = useState(0);
+  const active = stages[stage].layer;
 
   useEffect(() => {
     if (!container.current) return;
@@ -211,6 +245,8 @@ export function StackMachine() {
     return () => window.clearTimeout(timer);
   }, [playing, stage, visible]);
 
+  const activeY = layers[active].y;
+
   return (
     <div className="bs-machine-wrap" ref={container}>
       <div className="bs-machine-toolbar">
@@ -230,9 +266,9 @@ export function StackMachine() {
         </div>
         <svg
           className="bs-machine-diagram"
-          viewBox="0 0 680 576"
+          viewBox={`0 0 680 ${height}`}
           role="img"
-          aria-label="An illustrated stack: a browser interface, an API chip with tenant scope, a database and job queue, and a server. A missing tenant filter is blocked at the API boundary."
+          aria-label="An illustrated stack, top to bottom: the software factory, a web layer, an API with tenant scope, a database and job queue, and a server. The animation follows one issue from workspace through build, verify, review and merge to a production robot check."
         >
           <defs>
             <pattern
@@ -248,18 +284,18 @@ export function StackMachine() {
               <stop offset="1" stopColor="black" />
             </radialGradient>
             <mask id="bs-machine-mask">
-              <rect width="680" height="576" fill="url(#bs-machine-fade)" />
+              <rect width="680" height={height} fill="url(#bs-machine-fade)" />
             </mask>
           </defs>
           <rect
             width="680"
-            height="576"
+            height={height}
             fill="url(#bs-machine-dots)"
             mask="url(#bs-machine-mask)"
             className="bs-machine-grid"
           />
           <path
-            d={`M${railX} ${layers[0].y}V${layers[3].y}`}
+            d={`M${railX} ${layers[0].y}V${layers[layers.length - 1].y}`}
             className="bs-machine-rail"
           />
           {layers.map((layer, index) => (
@@ -267,6 +303,7 @@ export function StackMachine() {
               key={layer.path}
               className="bs-machine-layer"
               data-selected={selected === index}
+              data-active={active === index}
               data-layer={index}
             >
               <path
@@ -321,16 +358,8 @@ export function StackMachine() {
                 y={layer.y + 20}
                 dominantBaseline="middle"
                 className="bs-machine-annotation"
-                data-fault={index === 1 && stage === 1}
               >
-                {index === 1 && stage === 1
-                  ? "missing accountId"
-                  : [
-                      "Astro + React",
-                      "Bun + Elysia + Drizzle",
-                      "Postgres + Valkey",
-                      "OpenTofu + cloud-init",
-                    ][index]}
+                {layer.note}
               </text>
               {layer.wire && (
                 <text
@@ -346,32 +375,21 @@ export function StackMachine() {
             </g>
           ))}
           <path
-            d={`M${railX} ${stage === 0 ? layers[0].y : layers[1].y}V${stage === 0 ? layers[1].y : stage === 1 ? layers[1].y + board.pitch / 2 - 12 : layers[3].y}`}
+            d={`M${railX} ${layers[0].y}V${activeY}`}
             className="bs-machine-signal"
           />
           <g className="bs-machine-gate">
-            <rect
-              x={railX - 26}
-              y={layers[1].y + board.pitch / 2 - 12}
-              width="52"
-              height="24"
-              rx="3"
-            />
-            <text
-              x={railX}
-              y={layers[1].y + board.pitch / 2}
-              textAnchor="middle"
-              dominantBaseline="middle"
-            >
-              {stage === 1 ? "BLOCK" : stage === 0 ? "CHECK" : "SCOPED"}
+            <rect x={railX - 26} y={activeY - 12} width="52" height="24" rx="3" />
+            <text x={railX} y={activeY} textAnchor="middle" dominantBaseline="middle">
+              {stages[stage].gate}
             </text>
           </g>
-          <text x="24" y="568" className="bs-machine-footnote">
-            EXAMPLE: ACCOUNT-SCOPED QUERY VALIDATION
+          <text x="24" y={height - 12} className="bs-machine-footnote">
+            EXAMPLE: ONE ISSUE, FROM WORKSPACE TO PRODUCTION
           </text>
           <text
             x="656"
-            y="568"
+            y={height - 12}
             textAnchor="end"
             className="bs-machine-footnote"
           >
@@ -388,7 +406,7 @@ export function StackMachine() {
               onMouseEnter={() => setSelected(index)}
               onFocus={() => setSelected(index)}
             >
-              {String(index + 1).padStart(2, "0")} {layer.name}
+              {String(index + 1).padStart(2, "0")} {layer.short}
             </button>
           ))}
         </div>
@@ -401,18 +419,18 @@ export function StackMachine() {
           <button
             type="button"
             onClick={() => {
-              if (!playing && stage === 3) setStage(0);
+              if (!playing && stage === stages.length - 1) setStage(0);
               setPlaying(!playing);
             }}
             aria-label={
               playing
                 ? "Pause animation"
-                : stage === 3
+                : stage === stages.length - 1
                   ? "Replay animation"
                   : "Play animation"
             }
           >
-            {playing ? "Ⅱ Pause" : stage === 3 ? "↻ Replay" : "▷ Play"}
+            {playing ? "Ⅱ Pause" : stage === stages.length - 1 ? "↻ Replay" : "▷ Play"}
           </button>
         </div>
         <div

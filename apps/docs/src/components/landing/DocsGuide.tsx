@@ -22,12 +22,12 @@ const steps = [
   },
   {
     number: "03",
-    file: "your first feature",
-    title: "Build something that matters.",
+    file: "bun run factory workspace new <issue>",
+    title: "Build an issue through the factory.",
     detail:
-      "Add a feature with the contracts in place. Open the relevant recipe or runbook when you need it.",
-    href: "/skills/first-feature-tutorial/",
-    link: "Build your first feature",
+      "Your own worktree and stack. The verify gate decides when it is done, and a person merges.",
+    href: "/factory/",
+    link: "Read the factory guide",
   },
 ];
 
@@ -36,7 +36,7 @@ export function DocsGuide() {
     <section className="bs-section" aria-labelledby="bs-docs-title">
       <SectionHeading
         id="bs-docs-title"
-        eyebrow="03 / FIRST CONTACT"
+        eyebrow="04 / FIRST CONTACT"
         title="One instruction. Then your first feature."
         body="The setup is documented for your agent and readable by you. Start with the map; pull in the details as you build."
       />

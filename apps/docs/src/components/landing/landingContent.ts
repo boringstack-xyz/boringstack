@@ -10,6 +10,48 @@ export const githubOrg = {
   url: "https://github.com/boringstack-xyz/boringstack",
 } as const;
 
+/* What runs in the factory and the automation around it, where, its state in a
+   fresh clone, and what stays with a person. Each state is set in the repo's
+   workflows or the factory README; keep this in step with them. */
+export const factoryRows = [
+  {
+    what: "Issue workspaces",
+    where: "Your machine. One worktree and one stack per issue, with its own ports and database.",
+    state: "On. Commands: factory workspace, up, verify, handover, pr.",
+    person: "Which issues to build, and whether to ship each one.",
+  },
+  {
+    what: "Verify gate and Stop hook",
+    where: "Claude Code and Codex hooks, in .claude/settings.json and .codex/hooks.json.",
+    state: "On in this checkout. A session cannot finish until its changes pass.",
+    person: "Whatever only a person can provide. The session records it in BLOCKED.",
+  },
+  {
+    what: "Agent lanes: triage, review, revise, digest",
+    where: "GitHub Actions. An agent PR gets an independent review of its diff and its issue.",
+    state: "Off until AGENTS_ENABLED=1 and CLAUDE_CODE_OAUTH_TOKEN are set.",
+    person: "Which findings go to triage, and whether an agent PR merges. Agents never merge.",
+  },
+  {
+    what: "Dependency autopilot",
+    where: "Dependabot, daily. Auto-merge and a steward run on GitHub.",
+    state: "Auto-merge is on. The dependency agent waits for DEPS_AUTOFIX_ENABLED.",
+    person: "Only the updates the agent could not fix, labelled deps-needs-person.",
+  },
+  {
+    what: "Production robot",
+    where: "GitHub Actions. A new user signs up, walks the product and is removed.",
+    state: "Off until ROBOT_APP_URL names the deployed app. Runs after each release and every six hours.",
+    person: "The failure issue that opens when the robot fails.",
+  },
+  {
+    what: "Remote agents",
+    where: "Cloud sessions at claude.ai/code, steered from a phone. A self-hosted host blueprint in infra/agent-host.",
+    state: "Cloud sessions need a Claude plan login. The host blueprint is validated and not applied.",
+    person: "Starting and steering the session, and applying any infrastructure.",
+  },
+] as const;
+
 export const stackLayers = [
   {
     name: "Public site",
