@@ -1,3 +1,4 @@
+export * from "./admin.schema";
 export * from "./app.schema";
 export * from "./audit.schema";
 export * from "./auth.schema";
