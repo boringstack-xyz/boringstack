@@ -76,12 +76,18 @@ export const millisOf = (time: string): number => {
     : Date.parse(`${match[1]}.${(match[2] ?? "").padEnd(3, "0").slice(0, 3)}Z`);
 };
 
+/*
+ * A double-quoted word is a name, not a level: the migration prints its SQL,
+ * and a column called "error" is not a failure.
+ */
 const levelFromWords = (text: string): Level => {
-  if (/\b(error|exception|traceback|panic|fatal|failed)\b/iu.test(text)) {
+  const words = text.replace(/"[^"]*"/gu, '""');
+
+  if (/\b(error|exception|traceback|panic|fatal|failed)\b/iu.test(words)) {
     return "error";
   }
 
-  return /\bwarn(ing)?\b/iu.test(text) ? "warn" : "info";
+  return /\bwarn(ing)?\b/iu.test(words) ? "warn" : "info";
 };
 
 const stringField = (
