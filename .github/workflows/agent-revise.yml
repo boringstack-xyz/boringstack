@@ -3,7 +3,7 @@ name: Agent revise
 # Starts the revision of an agent PR the moment its reviewer rejects it. After
 # every failed agent-review run on an agent/<lane>/<slug> PR:
 #   - the first rejection: the agent fixes what the review names on the same
-#     branch, proves the fix again and pushes; agent-review then reviews the push;
+#     branch, proves the fix again and pushes; the signed push starts merge-gate and agent-review again;
 #   - a second rejection: the PR is closed with a comment, and a person decides.
 # A PR that already has the agent-revised label has been revised once.
 # Kill switch: repository variable AGENTS_ENABLED must be 1.
@@ -29,10 +29,8 @@ jobs:
     runs-on: ${{ !github.event.pull_request.head.repo.fork && vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 60
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
-      # Dispatches the review of the revision (a GITHUB_TOKEN push does not trigger pull_request).
-      actions: write
     env:
       PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
       GH_TOKEN: ${{ github.token }}
@@ -46,6 +44,7 @@ jobs:
           path: trusted
           sparse-checkout: |
             .github/actions/agent-setup
+            scripts/deps
             tools/factory
           persist-credentials: false
 
@@ -56,7 +55,11 @@ jobs:
           persist-credentials: true
 
       - name: Check out the PR head
-        run: gh pr checkout "$PR_NUMBER"
+        run: |
+          set -euo pipefail
+          gh pr checkout "$PR_NUMBER"
+          # The trusted copy sits inside this checkout; it is never part of the change.
+          echo "trusted/" >> .git/info/exclude
 
       - name: Agent setup (kill switch, bun, git identity)
         uses: ./trusted/.github/actions/agent-setup
@@ -121,12 +124,14 @@ jobs:
         if: steps.decide.outputs.action == 'revise'
         run: |
           set -euo pipefail
-          git add -A
-          git commit -m "fix(agent): address the review of #$PR_NUMBER"
-          git push origin "HEAD:$HEAD_BRANCH_NAME"
-          gh workflow run agent-review.yml -f pr="$PR_NUMBER"
+          # Signed through the API with the automation token: the push starts
+          # merge-gate and the review again (synchronize), and a second
+          # rejection comes back here.
+          GH_TOKEN="$PUSH_TOKEN" bun trusted/scripts/deps/push-signed.mjs \
+            "$HEAD_BRANCH_NAME" "fix(agent): address the review of #$PR_NUMBER"
         env:
           HEAD_BRANCH_NAME: ${{ github.event.workflow_run.head_branch }}
+          PUSH_TOKEN: ${{ secrets.DEPS_AUTOFIX_TOKEN }}
 
       - name: Run summary
         if: always() && steps.decide.outputs.action == 'revise' && steps.agent.outputs.execution_file != ''
