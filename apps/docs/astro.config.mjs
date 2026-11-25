@@ -735,6 +735,10 @@ The full config surface is machine-readable at https://boringstack.xyz/scaffold-
           ],
         },
         {
+          label: "Operator dashboard",
+          items: [{ label: "Overview", link: "/admin/overview/" }],
+        },
+        {
           label: "Topics",
           items: [
             { label: "Email in development", link: "/topics/email-in-dev/" },
