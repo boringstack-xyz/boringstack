@@ -102,13 +102,13 @@ export const unsubscribePage = (input: {
 }): string => {
   const appName = escapeHtml(env.APP_NAME);
   const body = {
-    confirm: `<h1>Stop the follow-up emails?</h1>
-<p>You'll stop getting follow-up emails from ${appName}. Account emails such as password resets still come through.</p>
+    confirm: `<h1>Stop these emails?</h1>
+<p>You'll stop getting follow-up and marketing emails from ${appName}. Account emails such as password resets still come through.</p>
 <form method="post" action="${escapeHtml(input.actionUrl)}"><button type="submit">Unsubscribe</button></form>`,
     done: `<h1>You're unsubscribed</h1>
-<p>No more follow-up emails. You can switch them back on in your notification settings.</p>`,
+<p>No more follow-up or marketing emails. You can switch follow-up emails back on in your notification settings.</p>`,
     invalid: `<h1>That link didn't work</h1>
-<p>It may be incomplete. You can turn follow-up emails off in your notification settings instead.</p>`,
+<p>It may be incomplete. You can turn these emails off in your notification settings instead.</p>`,
   }[input.state];
 
   return `<!doctype html>
