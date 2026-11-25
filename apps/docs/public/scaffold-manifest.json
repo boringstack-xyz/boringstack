@@ -255,6 +255,88 @@
       "label": "Verification robot secret (opens /auth/synthetic/* for robot addresses only; empty keeps them shut)",
       "prodOnly": true,
       "generate": "base64:32"
+    },
+    {
+      "key": "PREVIEW_AUTH_PROVIDER",
+      "kind": "one-of",
+      "group": "preview",
+      "label": "Login gate in front of factory previews (off: localhost only, no login)",
+      "options": ["off", "google", "github"],
+      "devDefault": "off",
+      "prodDefault": "off",
+      "consumedBy": "tools/factory (bun run factory preview) reads it from the operator shell; the stack never does",
+      "requiresSecrets": {
+        "google": ["PREVIEW_AUTH_CLIENT_ID", "PREVIEW_AUTH_CLIENT_SECRET", "PREVIEW_AUTH_COOKIE_SECRET"],
+        "github": ["PREVIEW_AUTH_CLIENT_ID", "PREVIEW_AUTH_CLIENT_SECRET", "PREVIEW_AUTH_COOKIE_SECRET"]
+      }
+    },
+    {
+      "key": "PREVIEW_AUTH_CLIENT_ID",
+      "kind": "secret",
+      "group": "preview",
+      "label": "OAuth client id for the preview login (Google or GitHub app)",
+      "consumedBy": "tools/factory (bun run factory preview) reads it from the operator shell; the stack never does"
+    },
+    {
+      "key": "PREVIEW_AUTH_CLIENT_SECRET",
+      "kind": "secret",
+      "group": "preview",
+      "label": "OAuth client secret for the preview login",
+      "consumedBy": "tools/factory (bun run factory preview) reads it from the operator shell; the stack never does"
+    },
+    {
+      "key": "PREVIEW_AUTH_COOKIE_SECRET",
+      "kind": "secret",
+      "group": "preview",
+      "label": "Preview login cookie secret (16, 24 or 32 bytes)",
+      "generate": "base64:24",
+      "consumedBy": "tools/factory (bun run factory preview) reads it from the operator shell; the stack never does"
+    },
+    {
+      "key": "PREVIEW_AUTH_EMAIL_DOMAIN",
+      "kind": "text",
+      "group": "preview",
+      "label": "Google login: the only email domain allowed in (for example example.com)",
+      "consumedBy": "tools/factory (bun run factory preview) reads it from the operator shell; the stack never does"
+    },
+    {
+      "key": "PREVIEW_AUTH_GITHUB_ORG",
+      "kind": "text",
+      "group": "preview",
+      "label": "GitHub login: the only organisation whose members are allowed in",
+      "consumedBy": "tools/factory (bun run factory preview) reads it from the operator shell; the stack never does"
+    },
+    {
+      "key": "PREVIEW_AUTH_GITHUB_TEAM",
+      "kind": "text",
+      "group": "preview",
+      "label": "GitHub login: optionally one team of that organisation",
+      "consumedBy": "tools/factory (bun run factory preview) reads it from the operator shell; the stack never does"
+    },
+    {
+      "key": "PREVIEW_DOMAIN",
+      "kind": "text",
+      "group": "preview",
+      "label": "Parent domain of preview hosts (s<N>.<domain>, login at auth.<domain>); default preview.localhost",
+      "devDefault": "preview.localhost",
+      "consumedBy": "tools/factory (bun run factory preview) reads it from the operator shell; the stack never does"
+    },
+    {
+      "key": "PREVIEW_PUBLIC_SCHEME",
+      "kind": "one-of",
+      "group": "preview",
+      "label": "Scheme a browser uses for previews (https when a TLS tunnel fronts the proxy)",
+      "options": ["http", "https"],
+      "devDefault": "http",
+      "consumedBy": "tools/factory (bun run factory preview) reads it from the operator shell; the stack never does"
+    },
+    {
+      "key": "PREVIEW_PUBLIC_PORT",
+      "kind": "text",
+      "group": "preview",
+      "label": "Port a browser uses for previews; default 8600 (443 behind a TLS tunnel)",
+      "devDefault": "8600",
+      "consumedBy": "tools/factory (bun run factory preview) reads it from the operator shell; the stack never does"
     }
   ],
   "crossRules": [

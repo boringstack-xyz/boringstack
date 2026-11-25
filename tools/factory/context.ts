@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { type IFactoryEnvironment, readEnvironment } from "./environment";
@@ -19,8 +19,12 @@ export interface IFactoryContext {
   readonly json: boolean;
 }
 
+/*
+ * resolve() drops the URL's trailing slash, so the root compares equal to the
+ * workspace path a slot claim records.
+ */
 export const repoRoot = (): string =>
-  fileURLToPath(new URL("../../", import.meta.url));
+  resolve(fileURLToPath(new URL("../../", import.meta.url)));
 
 export const createContext = (
   json: boolean,
