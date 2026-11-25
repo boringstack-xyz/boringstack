@@ -32,6 +32,20 @@ and the dashboard in step.
   scheduler.
 - `GET /api/v1/admin/audit?limit=&before=`: the recent audit log, newest first,
   with user and account ids only. No emails and no metadata.
+- `GET|POST /api/v1/admin/campaigns`, `GET .../campaigns/:id/preview`,
+  `POST .../campaigns/:id/send`: marketing email campaigns
+  (`admin-campaign.service.ts`). The segment is people with
+  `users.marketing_consent_at` set, verified and not robot accounts. A send
+  enqueues `campaign.message` on the notification-dispatch queue with a
+  `jobId` per person, records every recipient, and audits each send. A
+  campaign sends once. Unsubscribe (the lifecycle link, which every campaign
+  email carries) clears consent. Nothing in the template sets consent yet:
+  the product's sign-up or settings flow has to set `marketing_consent_at`.
+- `GET /api/v1/admin/feed`, `POST .../feed/:key/resolve`,
+  `POST .../feed/:key/snooze`: the operator action feed
+  (`admin-feed.service.ts`). Today an item is a queue with failed jobs. A
+  resolved item stays hidden until its count rises. A snooze hides it for 1 to
+  168 hours. State lives in `app.admin_feed_item_states`; each change is audited.
 
 Admin routes are not in the public OpenAPI document. Keep them that way: if a
 route ever moves into the public app, it needs a robot coverage entry in

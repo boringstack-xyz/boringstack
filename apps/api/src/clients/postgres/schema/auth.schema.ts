@@ -33,6 +33,15 @@ export const users = auth.table(
       .notNull(),
     isPlatformAdmin: boolean("is_platform_admin").default(false).notNull(),
     /*
+     * Set when the person opted in to marketing email (campaigns) and
+     * cleared by their unsubscribe link. Null means never opted in or
+     * unsubscribed: a campaign never reaches them.
+     */
+    marketingConsentAt: timestamp("marketing_consent_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+    /*
      * Three-column MFA state. All three are non-null together (enabled)
      * or all three null (disabled): there is no in-between persisted on
      * the row. Mid-enrollment state lives in Valkey, not here.

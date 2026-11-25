@@ -10,6 +10,7 @@ const makeUser = (overrides: Partial<IUser> = {}): IUser => ({
   lastName: "Doe",
   emailVerifiedAt: "2026-05-17T00:00:00.000Z",
   isPlatformAdmin: false,
+  marketingConsentAt: null,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-05-01T00:00:00.000Z",
   mfaEnabledAt: null,
