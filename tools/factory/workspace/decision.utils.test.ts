@@ -12,6 +12,7 @@ import {
 } from "./doctor.utils";
 import { configProblems } from "./compose-policy.utils";
 import { routesConf } from "./preview.utils";
+import { previewSettingsOf } from "./preview.config";
 import { parseArgs, isParseError } from "./args.utils";
 import { slotEnvFileText, slotComposeArgs } from "./compose.utils";
 
@@ -151,9 +152,21 @@ describe("compose policy rules", () => {
 
 describe("preview routes", () => {
   test("each slot routes its host to its own UI port on the host", () => {
-    const conf = routesConf([
-      { slot: 2, host: "s2.preview.localhost", uiPort: 7402 },
-    ]);
+    const conf = routesConf(
+      [{ slot: 2, host: "s2.preview.localhost", uiPort: 7402 }],
+      previewSettingsOf({
+        domain: undefined,
+        publicScheme: undefined,
+        publicPort: undefined,
+        authProvider: undefined,
+        authClientId: undefined,
+        authClientSecret: undefined,
+        authCookieSecret: undefined,
+        authEmailDomain: undefined,
+        authGithubOrg: undefined,
+        authGithubTeam: undefined,
+      })
+    );
 
     expect(conf).toContain("server_name s2.preview.localhost;");
     expect(conf).toContain("proxy_pass http://host.docker.internal:7402;");
