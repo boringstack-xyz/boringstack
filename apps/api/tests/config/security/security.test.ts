@@ -48,3 +48,48 @@ describe("extractTrustedClientIp", () => {
     ).toBe("");
   });
 });
+
+describe("scoped rate limits on a sub-app", () => {
+  /*
+   * The credential and route-group limits are mounted on sub-apps, whose own
+   * `server` is null. Without the listening server injected, the plugin's key
+   * generator warns and keys every client as "" : one shared bucket, so a
+   * single client could lock everyone out of sign-in.
+   */
+  it("key each request by the client address of the listening server", async () => {
+    const { Elysia, t } = await import("elysia");
+    const { buildScopedRateLimit, setListeningServer } =
+      await import("../../../src/config/security/security");
+    const warnings: string[] = [];
+    const original = console.warn;
+
+    console.warn = (...args: unknown[]) => {
+      warnings.push(args.map(String).join(" "));
+    };
+
+    const routes = new Elysia()
+      .use(buildScopedRateLimit("test-sub-app", { max: 5, durationMs: 60_000 }))
+      .get("/limited", () => "ok", {
+        response: t.String(),
+        detail: { tags: ["test"] },
+      });
+    const app = new Elysia().use(routes).listen({ port: 0 });
+
+    try {
+      setListeningServer(app.server);
+
+      const response = await fetch(
+        `http://127.0.0.1:${String(app.server?.port)}/limited`
+      );
+
+      expect(response.status).toBe(200);
+      expect(
+        warnings.filter((line) => line.includes("elysia-rate-limit"))
+      ).toEqual([]);
+    } finally {
+      console.warn = original;
+      setListeningServer(null);
+      await app.stop();
+    }
+  });
+});

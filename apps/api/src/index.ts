@@ -13,6 +13,7 @@ import {
   initializeErrorHandlers,
 } from "./config/error-handlers";
 import { logStartup } from "./config/logger";
+import { setListeningServer } from "./config/security";
 import { initializeSentry } from "./config/sentry";
 import { setupNotifications, setupQueues } from "./config/setup";
 import { MAX_BODY_SIZE_BYTES } from "./middleware/body-limit";
@@ -75,5 +76,6 @@ const app = createApp().listen({
 });
 
 initializeErrorHandlers(app);
+setListeningServer(app.server);
 
 logStartup(app.server?.hostname ?? "localhost", app.server?.port ?? env.PORT);

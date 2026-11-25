@@ -1,4 +1,5 @@
 import { cors } from "@elysiajs/cors";
+import type { Elysia } from "elysia";
 import { rateLimit, type Generator } from "elysia-rate-limit";
 import { env } from "../env";
 import { ValkeyRateLimitContext } from "../../lib/rate-limit/valkey-context";
@@ -90,6 +91,20 @@ export const extractTrustedClientIp = (input: IIpExtractionInput): string => {
   return input.socketAddress ?? "";
 };
 
+/*
+ * The listening HTTP server. The credential and route-group limits sit on
+ * sub-apps, whose own `server` is null: without this the plugin cannot read
+ * the client address and keys every client as "", one shared bucket.
+ */
+let listeningServer: Elysia["server"] = null;
+
+/** Called once the app listens (src/index.ts), so every limit sees the real server. */
+export const setListeningServer = (server: Elysia["server"]): void => {
+  listeningServer = server;
+};
+
+const injectServer = () => listeningServer;
+
 const buildKeyGenerator = (): Generator | undefined => {
   if (!env.TRUST_PROXY) {
     return undefined;
@@ -116,6 +131,7 @@ export const buildRateLimit = () => {
   const generator = buildKeyGenerator();
 
   return rateLimit({
+    injectServer,
     max: env.RATE_LIMIT_MAX,
     duration: env.RATE_LIMIT_WINDOW_MS,
     ...(context !== undefined && { context }),
@@ -136,6 +152,7 @@ export const buildScopedRateLimit = (
   const generator = buildKeyGenerator();
 
   return rateLimit({
+    injectServer,
     max: window.max,
     duration: window.durationMs,
     scoping: "scoped",
@@ -149,6 +166,7 @@ export const buildAuthRateLimit = () => {
   const generator = buildKeyGenerator();
 
   return rateLimit({
+    injectServer,
     max: env.AUTH_RATE_LIMIT_MAX,
     duration: env.AUTH_RATE_LIMIT_WINDOW_MS,
     scoping: "scoped",
