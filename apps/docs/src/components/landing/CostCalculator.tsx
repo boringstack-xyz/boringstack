@@ -35,18 +35,14 @@ export default function CostCalculator() {
           Monthly infra cost by tier
         </h3>
         <p className="m-0 max-w-[52rem] text-[0.95rem] leading-[1.55] text-[color-mix(in_srgb,var(--sl-color-text)_82%,var(--sl-color-gray-3))]">
-          Select a traffic tier. The three columns are solution categories (not
-          named vendors), using public rate cards as of {pricingAsOf}. See the
-          methodology page for assumptions and math.
+          Select a traffic tier. The three columns are solution categories (not named vendors),
+          using public rate cards as of {pricingAsOf}. See the methodology page for assumptions and
+          math.
         </p>
       </header>
 
       <div className="grid gap-5 px-5 py-5 min-[640px]:px-6 min-[640px]:py-6">
-        <div
-          role="tablist"
-          aria-label="Pick a usage tier"
-          className="flex flex-wrap gap-2"
-        >
+        <div role="tablist" aria-label="Pick a usage tier" className="flex flex-wrap gap-2">
           {tiers.map((t) => {
             const selected = t.id === activeId;
             return (
@@ -150,7 +146,8 @@ export default function CostCalculator() {
 
         <p className="m-0 text-[0.78rem] leading-[1.5] text-[color-mix(in_srgb,var(--sl-color-text)_60%,var(--sl-color-gray-3))]">
           Prices as of {pricingAsOf}. Every figure rounded; comparisons use
-          public list-price rate cards, not enterprise negotiations. See the{" "}
+          public list-price rate cards, not enterprise negotiations. See the
+          {" "}
           <a className="underline" href="/reference/cost-methodology/">
             cost methodology page
           </a>{" "}
