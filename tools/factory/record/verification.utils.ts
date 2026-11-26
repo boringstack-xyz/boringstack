@@ -5,27 +5,19 @@
  * change is not handed over while it is incomplete. Ported from the
  * Dreamdata factory (verify/src/verification.utils.ts).
  */
+import { namedRisk, type Risk, RISK_MEANING } from "../risk/risk";
+
 export const TODO = "TODO";
 
-/** Risk levels, lowest first, with the review each one asks for. */
-export const RISK_LEVELS = {
-  ui: "Copy, layout or styling only; no logic, data or permissions. One reviewer reads this record and the preview.",
-  logic:
-    "Behaviour in the app or the API. One reviewer reads this record first, then the code.",
-  data: "A migration, a queue, or anything that writes stored data. Full code review.",
-  "auth-billing":
-    "Sign-in, permissions, plans, billing, secrets, or anything customer-facing outside the app (emails). Full code review and a second reviewer.",
-} as const;
+/** Risk levels, lowest first, with who merges each one (see ../risk/risk.ts). */
+export const RISK_LEVELS = RISK_MEANING;
 
-export type RiskLevel = keyof typeof RISK_LEVELS;
-
-const isRiskLevel = (value: string): value is RiskLevel =>
-  Object.hasOwn(RISK_LEVELS, value);
+export type RiskLevel = Risk;
 
 export const AGENT_SECTIONS = [
   {
     title: "Risk",
-    ask: `One of ${Object.keys(RISK_LEVELS).join(", ")}, a colon, and why (the highest level any part of the change reaches), e.g. "ui: button copy on the billing page".`,
+    ask: `One of ${Object.keys(RISK_LEVELS).join(", ")}, a colon, and why (the highest level any part of the change reaches), e.g. "low: button copy on the billing page". The changed paths can raise it, never lower it.`,
   },
   {
     title: "Walked in browser",
@@ -99,11 +91,11 @@ export const section = (text: string, title: string): string | undefined => {
 export const commitOf = (text: string): string | undefined =>
   COMMIT_LINE.exec(text)?.[1];
 
-/** The risk level a record names, if it names a valid one. */
+/** The risk level a record names, if it names a valid one (older kinds read as levels). */
 export const riskOf = (text: string): RiskLevel | undefined => {
-  const level = (section(text, "Risk") ?? "").split(":")[0]?.trim() ?? "";
+  const body = section(text, "Risk");
 
-  return isRiskLevel(level) ? level : undefined;
+  return body === undefined ? undefined : namedRisk(`## Risk\n\n${body}`);
 };
 
 /**

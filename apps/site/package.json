@@ -23,9 +23,9 @@
     "validate": "bun run format:check && bun run check && bun run test && bun run build:ci && bun run test:output"
   },
   "dependencies": {
-    "@astrojs/sitemap": "3.7.5",
+    "@astrojs/sitemap": "3.7.6",
     "@fontsource/manrope": "5.3.0",
-    "astro": "7.4.12",
+    "astro": "7.4.13",
     "satori": "0.63.2",
     "sharp": "0.35.5"
   },

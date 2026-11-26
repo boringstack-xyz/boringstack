@@ -1,4 +1,5 @@
 import { DocsGuide } from "./DocsGuide";
+import { FactorySection } from "./FactorySection";
 import { GuardrailsSection } from "./GuardrailsSection";
 import { HeroSection } from "./HeroSection";
 import { OpenSourceSection } from "./OpenSourceSection";
@@ -22,6 +23,7 @@ export default function LandingPage() {
     <div className="bs-landing not-content overflow-hidden text-[var(--bs-text)]">
       <HeroSection />
       <StackRibbon />
+      <FactorySection />
       <GuardrailsSection />
       <StackFlowSection />
       <DocsGuide />
