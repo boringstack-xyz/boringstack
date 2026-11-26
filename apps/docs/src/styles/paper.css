@@ -87,6 +87,10 @@ html[data-theme="light"]:not([data-has-hero]) .main-pane {
   --layer-ink: #52704a;
 }
 
+[data-theme="light"] .bs-machine-layer[data-layer="4"] {
+  --layer-ink: #4a5d78;
+}
+
 [data-theme="light"] .bs-machine-layer .bs-machine-plane {
   fill: color-mix(in srgb, var(--layer-ink) 13%, var(--card));
   stroke: var(--layer-ink);
@@ -100,13 +104,6 @@ html[data-theme="light"]:not([data-has-hero]) .main-pane {
 [data-theme="light"] .bs-machine-layer[data-selected="true"] .bs-machine-plane {
   fill: color-mix(in srgb, var(--layer-ink) 22%, var(--card));
   stroke-width: 1.5;
-}
-
-[data-theme="light"]
-  .bs-machine[data-stage="1"]
-  [data-layer="1"]
-  .bs-machine-plane {
-  stroke: var(--warning);
 }
 
 [data-theme="light"] .bs-machine-grid {
