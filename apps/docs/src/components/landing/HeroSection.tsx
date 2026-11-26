@@ -110,7 +110,8 @@ export function HeroSection() {
         <div className="mb-7 flex items-center gap-3">
           <span className="h-px w-8 bg-[var(--bs-accent)]" />
           <span className="mono-caps !text-[color:var(--bs-accent)]">
-            Agent-first &middot; Software factory &middot; Open source &middot; MIT
+            Agent-first &middot; Software factory &middot; Open source &middot;
+            MIT
           </span>
         </div>
         <h1
@@ -127,8 +128,8 @@ export function HeroSection() {
           Auth, billing, queues, and deploys are already wired. Give your agent
           an issue. It builds in its own stack, a verify gate it cannot skip
           checks the change, and low-risk work merges itself while a person
-          merges the rest. A production robot can walk
-          the live app after each release.
+          merges the rest. A production robot can walk the live app after each
+          release.
         </p>
 
         {/*

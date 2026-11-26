@@ -1,5 +1,5 @@
 import { factoryRows } from "./landingContent";
-import { SectionHeading } from "./LandingPrimitives";
+import { Inline, SectionHeading } from "./LandingPrimitives";
 
 export function FactorySection() {
   return (
@@ -8,7 +8,7 @@ export function FactorySection() {
         id="bs-factory-title"
         eyebrow="01 / THE FACTORY"
         title="An agent builds the issue. Its risk decides who merges."
-        body="bun run factory works one issue at a time, in its own stack. Nothing counts as done until the verify gate passes at the current commit. Every pull request is labelled low, medium or high risk: agents merge low and medium after an independent review, a person merges high. The table shows what runs where, what is switched on in a fresh clone, and what stays with a person."
+        body="`bun run factory` works one issue at a time, in its own stack. Nothing counts as done until the verify gate passes at the current commit. Every pull request is labelled low, medium or high risk: agents merge low and medium after an independent review, a person merges high. The table shows what runs where, what is switched on in a fresh clone, and what stays with a person."
       />
       <div className="bs-factory-table-wrap">
         <table className="bs-factory-table">
@@ -29,9 +29,15 @@ export function FactorySection() {
                 <th scope="row" data-label="What runs">
                   {row.what}
                 </th>
-                <td data-label="Where">{row.where}</td>
-                <td data-label="In a fresh clone">{row.state}</td>
-                <td data-label="A person still decides">{row.person}</td>
+                <td data-label="Where">
+                  <Inline text={row.where} />
+                </td>
+                <td data-label="In a fresh clone">
+                  <Inline text={row.state} />
+                </td>
+                <td data-label="A person still decides">
+                  <Inline text={row.person} />
+                </td>
               </tr>
             ))}
           </tbody>

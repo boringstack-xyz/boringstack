@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+import { Inline } from "./LandingPrimitives";
+
 // A 2:1 axonometric projection shared by the boards and their contents.
 const board = {
   cx: 272,
@@ -96,7 +98,8 @@ const stages = [
     layer: 0,
     gate: "MERGE",
     label: "Merge by risk",
-    detail: "Low and medium: an agent merges after review. High: a person merges. merge-gate is the one required check.",
+    detail:
+      "Low and medium: an agent merges after review. High: a person merges. `merge-gate` is the one required check.",
   },
   {
     short: "Production",
@@ -121,14 +124,30 @@ function BoardContents({ index }: { index: number }) {
   if (index === 0)
     return (
       <g className="bs-board-ink">
-        <rect x="10" y="12" width="78" height="69" rx="3" className="bs-board-device" />
+        <rect
+          x="10"
+          y="12"
+          width="78"
+          height="69"
+          rx="3"
+          className="bs-board-device"
+        />
         {[22, 40, 58].map((y, slot) => (
           <g key={y}>
-            <rect x="17" y={y} width="64" height="13" className="bs-board-soft" />
+            <rect
+              x="17"
+              y={y}
+              width="64"
+              height="13"
+              className="bs-board-soft"
+            />
             <text x="21" y={y + 9} className="bs-board-tiny">
               {`s${slot + 1}`}
             </text>
-            <path d={`M34 ${y + 6.5}H${62 + slot * 3}`} className="bs-board-accent" />
+            <path
+              d={`M34 ${y + 6.5}H${62 + slot * 3}`}
+              className="bs-board-accent"
+            />
             <circle cx="76" cy={y + 6.5} r="2" className="bs-board-led" />
           </g>
         ))}
@@ -138,7 +157,14 @@ function BoardContents({ index }: { index: number }) {
   if (index === 1)
     return (
       <g className="bs-board-ink">
-        <rect x="8" y="7" width="82" height="78" rx="3" className="bs-board-device" />
+        <rect
+          x="8"
+          y="7"
+          width="82"
+          height="78"
+          rx="3"
+          className="bs-board-device"
+        />
         <path d="M8 20H90M29 20V85" />
         <circle cx="15" cy="13" r="1.6" />
         <circle cx="21" cy="13" r="1.6" />
@@ -157,7 +183,13 @@ function BoardContents({ index }: { index: number }) {
           d="M10 16H32V33M88 16H65V33M10 75H32V60M88 75H65V60M8 45H27M70 45H90"
           className="bs-board-trace"
         />
-        <rect x="27" y="25" width="44" height="43" className="bs-board-device" />
+        <rect
+          x="27"
+          y="25"
+          width="44"
+          height="43"
+          className="bs-board-device"
+        />
         <rect x="32" y="30" width="34" height="33" className="bs-board-soft" />
         <path d="M38 20V25M48 20V25M58 20V25M38 68V74M48 68V74M58 68V74" />
         <text x="49" y="44" textAnchor="middle" className="bs-board-text">
@@ -176,7 +208,14 @@ function BoardContents({ index }: { index: number }) {
   if (index === 3)
     return (
       <g className="bs-board-ink">
-        <rect x="10" y="14" width="34" height="50" rx="2" className="bs-board-device" />
+        <rect
+          x="10"
+          y="14"
+          width="34"
+          height="50"
+          rx="2"
+          className="bs-board-device"
+        />
         <path d="M27 62V78H71V62" className="bs-board-trace" />
         <path d="M10 27H44M10 51H44M16 20H20M16 57H20" />
         <text x="27" y="42" textAnchor="middle" className="bs-board-text">
@@ -184,7 +223,13 @@ function BoardContents({ index }: { index: number }) {
         </text>
         {[14, 34, 54].map((y) => (
           <g key={y}>
-            <rect x="56" y={y} width="32" height="12" className="bs-board-device" />
+            <rect
+              x="56"
+              y={y}
+              width="32"
+              height="12"
+              className="bs-board-device"
+            />
             <path d={`M62 ${y + 6}H81`} className="bs-board-accent" />
           </g>
         ))}
@@ -192,7 +237,14 @@ function BoardContents({ index }: { index: number }) {
     );
   return (
     <g className="bs-board-ink">
-      <rect x="10" y="12" width="78" height="69" rx="3" className="bs-board-device" />
+      <rect
+        x="10"
+        y="12"
+        width="78"
+        height="69"
+        rx="3"
+        className="bs-board-device"
+      />
       {[22, 40, 58].map((y) => (
         <g key={y}>
           <rect x="17" y={y} width="64" height="13" className="bs-board-soft" />
@@ -379,8 +431,19 @@ export function StackMachine() {
             className="bs-machine-signal"
           />
           <g className="bs-machine-gate">
-            <rect x={railX - 26} y={activeY - 12} width="52" height="24" rx="3" />
-            <text x={railX} y={activeY} textAnchor="middle" dominantBaseline="middle">
+            <rect
+              x={railX - 26}
+              y={activeY - 12}
+              width="52"
+              height="24"
+              rx="3"
+            />
+            <text
+              x={railX}
+              y={activeY}
+              textAnchor="middle"
+              dominantBaseline="middle"
+            >
               {stages[stage].gate}
             </text>
           </g>
@@ -414,7 +477,9 @@ export function StackMachine() {
         <div className="bs-machine-status">
           <div>
             <strong>{stages[stage].label}</strong>
-            <p>{stages[stage].detail}</p>
+            <p>
+              <Inline text={stages[stage].detail} />
+            </p>
           </div>
           <button
             type="button"
@@ -430,7 +495,11 @@ export function StackMachine() {
                   : "Play animation"
             }
           >
-            {playing ? "Ⅱ Pause" : stage === stages.length - 1 ? "↻ Replay" : "▷ Play"}
+            {playing
+              ? "Ⅱ Pause"
+              : stage === stages.length - 1
+                ? "↻ Replay"
+                : "▷ Play"}
           </button>
         </div>
         <div
