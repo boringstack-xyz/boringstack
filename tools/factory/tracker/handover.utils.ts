@@ -21,12 +21,14 @@ export interface ICardInput {
   readonly record: string;
 }
 
-/** "ui: copy on the billing page" → the reason part, or "" when none is written. */
+/** "low: copy on the billing page" → the reason part, or "" when none is written. */
 export const riskReason = (record: string): string => {
   const level = riskOf(record);
   const text = section(record, "Risk") ?? "";
 
-  return level === undefined ? "" : text.slice(level.length + 1).trim();
+  const colon = text.indexOf(":");
+
+  return level === undefined || colon < 0 ? "" : text.slice(colon + 1).trim();
 };
 
 /** What the record says the author walked in the browser, when it says anything real. */

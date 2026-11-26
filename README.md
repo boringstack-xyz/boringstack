@@ -36,7 +36,9 @@
 BoringStack is an AI-agent-first, production-grade template, and it now comes with
 its own software factory. An agent builds an issue in its own isolated stack. A
 verify gate the agent cannot skip checks the change, a verification record shows what
-was checked and what was not, and a person merges. Dependency updates merge themselves
+was checked and what was not, and every pull request is labelled low, medium or high
+risk. An agent merges low and medium ones after an independent review; a person merges
+high ones. Dependency updates merge themselves
 when merge-gate passes, and an agent fixes the ones that fail. Agents can also run in
 the cloud and be steered from a phone. See [the software factory](https://boringstack.xyz/factory/) and
 [remote agents](docs/operations/remote-agents.md).

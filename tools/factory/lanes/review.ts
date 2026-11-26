@@ -25,3 +25,21 @@ export const replaceReviewSection = (body: string, review: string): string => {
 
   return [...lines.slice(0, start + 1), "", text, "", ...after].join("\n");
 };
+
+/** The text under the body's "Review" heading, or undefined when there is none. */
+export const reviewSectionOf = (body: string): string | undefined => {
+  const lines = body.split("\n");
+  const start = lines.findIndex(
+    (line) =>
+      HEADING.test(line) && line.replace(HEADING, "").trim() === "Review"
+  );
+
+  if (start < 0) {
+    return undefined;
+  }
+
+  const rest = lines.slice(start + 1);
+  const next = rest.findIndex((line) => HEADING.test(line));
+
+  return (next < 0 ? rest : rest.slice(0, next)).join("\n").trim();
+};

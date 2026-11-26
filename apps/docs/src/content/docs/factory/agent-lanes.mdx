@@ -1,11 +1,12 @@
 ---
 title: "Agent lanes"
-description: "The GitHub workflows that let agents triage findings, open fix pull requests, review them independently, revise once and report weekly. Off until AGENTS_ENABLED is 1. Agents never merge."
+description: "The GitHub workflows that let agents triage findings, open fix pull requests, review them independently, revise once, merge by risk and report weekly. Off until AGENTS_ENABLED is 1."
 ---
 
 A **lane** is an agent working on a change after a person has asked for it. Each
-lane opens pull requests on its own branch, `agent/<lane>/<slug>`, and a person
-decides every one. **Agents never merge.**
+lane opens pull requests on its own branch, `agent/<lane>/<slug>`. Every pull
+request is labelled **low**, **medium** or **high** risk, and the label decides who
+merges it: agents merge low and medium, a person merges high.
 
 The lanes are off until the repository variable `AGENTS_ENABLED` is `1`. Every agent
 workflow checks it first. Setting it to anything else turns them off again.
@@ -14,22 +15,56 @@ workflow checks it first. Setting it to anything else turns them off again.
 | ------ | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Triage | `agent-triage.yml`            | Takes the next findings from the findings ledger (`factory findings`). A person sends them with `bun tools/factory/cli.ts lanes triage --dispatch`. A code fix becomes a pull request; an operations cause becomes an issue for a person. |
 | Proof  | `lanes prove`                 | Runs the fix's tests on the head with the fix set aside, then with it. The fix is proven only when the tests fail without it and pass with it, and no test is skipped. An unproven fix is a result, not an error.                         |
-| Review | `agent-review.yml`            | An independent reviewer reads the diff and the issue, not the author's reasoning. It writes `Verdict: approve` or `Verdict: reject` into the record's Review section. A rejection fails the job.                                          |
+| Review | `agent-review.yml`            | An independent reviewer reads the diff and the issue, not the author's reasoning. It writes `Verdict: approve` or `Verdict: reject`, and `Risk: low`, `medium` or `high`, into the record's Review section. A rejection fails the job. It also reviews factory PRs (`factory/<id>`). |
 | Revise | `agent-revise.yml`            | After a rejection, one revision on the same branch, proved again, then reviewed again. After a second rejection the pull request is closed.                                                                                               |
+| Merge  | `agent-merge.yml`             | After an approval, reads the pull request's risk and either turns on auto-merge (merge-gate still decides) or leaves it to a person with a comment saying why. |
+| Label  | `pr-risk.yml`                 | Labels every pull request, agent or not, `risk:low`, `risk:medium` or `risk:high` when it opens or changes. |
 | Digest | `agent-digest.yml`            | Weekly: agent pull requests merged, closed and open, and failed agent runs, as one issue labelled `agent-digest`.                                                                                                                         |
 | Setup  | `.github/actions/agent-setup` | The kill switch, Bun 1.4.5 and the git identity. It holds no secrets.                                                                                                                                                                     |
+
+## Who merges
+
+A pull request's risk is the **highest** of three readings, so nobody can talk a
+change down:
+
+1. **Its paths.** Docs and tests are low. App and API code is medium. Workflows,
+   infrastructure, release scripts, migrations, sign-in, permissions, billing,
+   security config, customer emails, the admin app and the factory itself are high,
+   whatever anyone writes. The rules are in `tools/factory/risk/risk.ts`.
+2. **The author's record.** The Risk section names `low`, `medium` or `high`.
+3. **The independent reviewer.** Its second line is `Risk: low`, `medium` or `high`.
+
+| Risk   | What it covers                                                            | Who merges (default)                                      |
+| ------ | ------------------------------------------------------------------------- | --------------------------------------------------------- |
+| low    | Docs, copy, styling, tests, a refactor that changes no behaviour          | An agent, after the review approves and merge-gate passes |
+| medium | Behaviour in the app or the API that writes no stored data or permissions | An agent, after the review approves and merge-gate passes |
+| high   | Stored data, sign-in, permissions, billing, secrets, infrastructure, CI   | A person                                                  |
+
+Agents never merge without an independent review that names a risk, and the
+review only counts for the commit it read: a new push is reviewed again. The
+merge itself is GitHub's auto-merge, so merge-gate still has the last word.
+
+Choose the ceiling with the repository variable `AGENT_MERGE_MAX_RISK`: `low`,
+`medium` (the default), `high`, or `none` to have a person merge everything.
+`bun run factory lanes risk --body=<file> < paths` shows the reading for any
+change set.
 
 ## Turning them on
 
 1. Create a subscription token on your laptop with `claude setup-token`, and store it
    as the repository secret `CLAUDE_CODE_OAUTH_TOKEN`. An API key works too, with a
    different input in the workflow.
-2. Set `AGENTS_ENABLED` to `1`.
-3. Run `bun run factory remote` to see what is still missing.
+2. Store a fine-grained token with contents and pull-request write access as
+   `DEPS_AUTOFIX_TOKEN`. Pull requests, pushes and merges made with it start
+   merge-gate, the review and the release; the workflow token's start nothing.
+3. Set `AGENTS_ENABLED` to `1`, and `AGENT_MERGE_MAX_RISK` if medium is not
+   what you want.
+4. Run `bun run factory remote` to see what is still missing.
 
 ## What is not verified
 
-The workflows have not run against GitHub in this template. The Claude Code Action
-has not been called against a real pull request. Try them on a fork or a test
-repository before relying on them. See [Remote agents](/factory/remote-agents/) for
+Triage, review and digest have run against GitHub in this repository: triage
+opened fix pull requests, and the review approved one that then merged. Two
+paths have not run yet: a revision after a rejection, and a merge decided by
+risk. Try them on a fork or a test repository before relying on them. See [Remote agents](/factory/remote-agents/) for
 the other routes that start an agent.

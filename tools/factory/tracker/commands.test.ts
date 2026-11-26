@@ -279,7 +279,7 @@ describe("factory pr", () => {
       fake.calls.find((call) => call.args[1] === "ready")?.args
     ).not.toContain("--undo");
     expect(fake.calls.find((call) => call.args[1] === "edit")?.input).toContain(
-      "**Risk: ui** (button copy on the billing page)"
+      "**Risk: low** (button copy on the billing page)"
     );
   });
 

@@ -201,9 +201,10 @@ unless they are trusted with root.
 - Secrets are not in cloud-init. Logins (`gh`, `claude`) are stored on the host's
   disk, so the host holds the operator's account. Protect it as you would your
   laptop.
-- Agents never merge, never push to a protected branch and never run an apply.
-  The factory guard refuses those commands, and the merge gate is a required
-  check on every pull request.
+- Agents never push to a protected branch and never run an apply. The factory
+  guard refuses those commands, and the merge gate is a required check on every
+  pull request. Agents merge only by risk: low and medium after the independent
+  review approves, never high.
 
 ## Other agents
 
