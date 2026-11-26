@@ -97,6 +97,13 @@ updates:
       # Try again on 2027-01-15 (or sooner if a release shrinks the bundle).
       - dependency-name: "@sentry/react"
         versions: [">= 11.13.0, < 12"]
+      # i18next 27.2.1 grows the initial-route bundle by ~50 B gzip, which
+      # pushes it past the 270 kB budget in .size-limit.json (270.01 kB vs
+      # 270 kB; 27.1.5 measures 269.96 kB). The budget must not be raised, so
+      # stay on 27.1.5. Try again on 2027-01-15 (or sooner if a release
+      # shrinks the bundle).
+      - dependency-name: "i18next"
+        versions: [">= 27.2.1, < 28"]
 
   - package-ecosystem: bun
     directory: /apps/docs
