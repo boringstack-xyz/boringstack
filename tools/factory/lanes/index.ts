@@ -19,7 +19,8 @@ import {
   lanesList,
   parsePrRows,
 } from "./lanes";
-import { replaceReviewSection } from "./review";
+import { ceilingOf, decideRisk } from "../risk/risk";
+import { replaceReviewSection, reviewSectionOf } from "./review";
 import { type IProofReport, proveFix } from "./prove-fix";
 import { reportOf } from "./run-report";
 import {
@@ -315,6 +316,57 @@ export const capRun = (
   );
 };
 
+/**
+ * `lanes risk --body=<file> [--reviewed] [--ceiling=<level>] [--out=<file>] < paths`:
+ * the PR's risk level and whether an agent may merge it. --reviewed reads the
+ * independent reviewer's level from the body's Review section (only after the
+ * review lane wrote it there). --out writes `level=` and `merge=` lines for
+ * $GITHUB_OUTPUT.
+ */
+export const riskRun = (
+  args: readonly string[],
+  deps: ILanesDeps
+): ICommandOutcome => {
+  const parsed = parse(args, {
+    body: { type: "string" },
+    reviewed: { type: "boolean" },
+    ceiling: { type: "string" },
+    out: { type: "string" },
+  });
+
+  if (typeof parsed === "string") {
+    return failed(parsed);
+  }
+
+  const { body: bodyFile, reviewed, ceiling, out } = parsed.values;
+  const body = typeof bodyFile === "string" ? readText(bodyFile) : undefined;
+
+  if (body === undefined) {
+    return failed(
+      "Usage: lanes risk --body=<file> [--reviewed] [--ceiling=<level>] [--out=<file>] < paths"
+    );
+  }
+
+  const decision = decideRisk({
+    paths: splitLines(deps.stdin()),
+    body,
+    review: reviewed === true ? reviewSectionOf(body) : undefined,
+    ceiling: ceilingOf(typeof ceiling === "string" ? ceiling : undefined),
+  });
+
+  if (typeof out === "string") {
+    writeText(
+      out,
+      `level=${decision.level}\nmerge=${String(decision.merge)}\n`
+    );
+  }
+
+  return ok(
+    [`Risk: ${decision.level}.`, ...decision.reasons].join("\n"),
+    decision
+  );
+};
+
 /** `lanes review-body <body.md> <review.md> <out.md>`: the record with its Review section replaced. */
 export const reviewBodyRun = (args: readonly string[]): ICommandOutcome => {
   const [bodyFile = "", reviewFile = "", out = ""] = args;
@@ -450,6 +502,14 @@ export const lanesCommands: readonly IFactoryCommand[] = [
     summary: "Summarise an agent run's transcript as Markdown",
     usage: "<transcript> <out.md> [--title=...]",
     run: (args) => Promise.resolve(reportRun(args)),
+  },
+  {
+    name: "lanes risk",
+    summary:
+      "A PR's risk (low, medium, high) from its paths, record and review, and whether an agent may merge it",
+    usage:
+      "--body=<file> [--reviewed] [--ceiling=<level>] [--out=<file>] < paths",
+    run: (args) => Promise.resolve(riskRun(args, depsOf())),
   },
   {
     name: "lanes triage",

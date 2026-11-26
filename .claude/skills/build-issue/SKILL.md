@@ -72,8 +72,9 @@ The loop follows `tools/factory/README.md`, in order.
       dismiss it with a reason. Never ignore one silently.
    5. `bun run factory verification new <branch>`, fill every section (no
       `TODO`), then `bun run factory verification check <branch>` must pass.
-      Risk sets how deep people review: pick the highest level any part of the
-      change reaches (`ui`, `logic`, `data`, `auth-billing`).
+      Risk sets who merges: pick the highest level any part of the change
+      reaches (`low`, `medium`, `high`). The changed paths can raise it, never
+      lower it (`tools/factory/risk/risk.ts`).
    6. `bun run factory gate`: the same checks the Stop hook runs.
 5. **Commit and push.** Commit on `factory/<id>`, then
    `git push -u origin factory/<id>`. Pushing is not a pull request.
@@ -83,7 +84,9 @@ The loop follows `tools/factory/README.md`, in order.
    incomplete: fix what it names, then run it again.
 7. **Pull request.** Only when a person says to ship it: `bun run factory pr
    factory/<id>`. It opens a draft until the record is complete, with Risk on
-   the first line. Agents never merge.
+   the first line. Once it is ready, the independent review runs; an agent
+   merges low and medium after it approves and merge-gate passes, and a person
+   merges high. Never merge it yourself.
 8. **Tear down** when the person is done: `bun run factory down -v`, then
    `bun run factory workspace remove <name>`. Both refuse uncommitted or
    unpushed work.

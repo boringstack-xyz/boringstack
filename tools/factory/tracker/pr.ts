@@ -20,7 +20,8 @@ const USAGE = "usage: bun run factory pr <branch> [--dry-run]";
 
 /*
  * `factory pr <branch>`: opens the branch's pull request, or updates the one
- * that exists. Draft until its verification record is complete. Never merges.
+ * that exists. Draft until its verification record is complete. Never merges: agent-merge.yml
+ * decides by risk after the independent review.
  */
 export const prWith =
   (deps: ITrackerDeps) =>

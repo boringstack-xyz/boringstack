@@ -1,0 +1,67 @@
+name: pr-risk
+
+# Labels every pull request risk:low, risk:medium or risk:high the moment it is
+# opened or changed, from its changed paths and the risk its body names
+# (tools/factory/risk/risk.ts). A person sees at a glance how deep to read.
+# The label says nothing about who merges: for an agent PR, agent-merge.yml
+# decides after the independent review, and may raise the label.
+#
+# pull_request_target runs this repository's own copy of this file and of the
+# risk rules with a write token. It never checks out or runs the PR's code: it
+# reads the PR's file list and body through the API.
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-risk-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  label:
+    name: risk label
+    # Forks get the GitHub-hosted runner; the guard keeps the lint-meta rule satisfied.
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && (vars.CI_LIGHT_RUNNER || vars.CI_RUNNER) || 'ubuntu-24.04' }}
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - name: Checkout the base (risk rules only)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            apps/ui/e2e/robot
+            tools/factory
+          persist-credentials: false
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.5
+
+      - name: Read and label the risk
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/risk"
+          mkdir -p "$work"
+          gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json body --jq '.body // ""' > "$work/body.md"
+          gh pr diff "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --name-only \
+            | bun tools/factory/cli.ts lanes risk --body="$work/body.md" --reviewed --out="$work/risk.txt" \
+            | tee "$work/reasons.txt"
+          level="$(sed -n 's/^level=//p' "$work/risk.txt")"
+          gh label create risk:low --repo "$GITHUB_REPOSITORY" --force --color 0e8a16 --description "Agents may merge it" > /dev/null
+          gh label create risk:medium --repo "$GITHUB_REPOSITORY" --force --color fbca04 --description "Agents may merge it (default ceiling)" > /dev/null
+          gh label create risk:high --repo "$GITHUB_REPOSITORY" --force --color d93f0b --description "A person merges it" > /dev/null
+          others="$(printf 'risk:%s\n' low medium high | grep -vx "risk:$level" | paste -sd, -)"
+          gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label "$others" --add-label "risk:$level" > /dev/null
+          {
+            echo "### Risk: $level"
+            echo
+            sed 's/^/- /' "$work/reasons.txt"
+          } >> "$GITHUB_STEP_SUMMARY"

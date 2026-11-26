@@ -45,7 +45,9 @@ missing prerequisite must act). Blocked is never a pass.
 5. `factory verify` proves the change; `factory verification new|check` writes and
    checks the record.
 6. `factory handover` posts a card on the issue. `factory pr` opens the pull request.
-7. A person reviews and merges. Agents never merge.
+7. An independent agent reviews it and names its risk. Low and medium merge themselves
+   when merge-gate passes; a person reviews and merges high. See
+   [Agent lanes](/factory/agent-lanes/#who-merges).
 
 The full contract is in
 [tools/factory/README.md](https://github.com/boringstack-xyz/boringstack/blob/main/tools/factory/README.md).

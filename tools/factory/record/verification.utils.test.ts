@@ -21,7 +21,7 @@ const filled = (overrides: Record<string, string> = {}): string => {
   return AGENT_SECTIONS.reduce((text, item) => {
     const value =
       overrides[item.title] ??
-      (item.title === "Risk" ? "logic: the dashboard query" : "Nothing");
+      (item.title === "Risk" ? "medium: the dashboard query" : "Nothing");
 
     return text.replace(new RegExp(`TODO: [^\\n]*`, "u"), value);
   }, base);
@@ -42,16 +42,21 @@ describe("verification record", () => {
 
   test("a filled record of the head commit is complete", () => {
     expect(problems(filled(), HEAD)).toEqual([]);
-    expect(riskOf(filled())).toBe("logic");
+    expect(riskOf(filled())).toBe("medium");
   });
 
   test("a record of an older commit does not count", () => {
     expect(problems(filled(), "fedcba9876543210")).toHaveLength(1);
   });
 
+  test("an older record's kind of change reads as a level", () => {
+    expect(riskOf(filled({ Risk: "auth-billing: plans" }))).toBe("high");
+    expect(problems(filled({ Risk: "ui: copy" }), HEAD)).toEqual([]);
+  });
+
   test("risk must be a known level", () => {
     expect(problems(filled({ Risk: "huge: everything" }), HEAD)).toEqual([
-      "Risk must start with one of ui, logic, data, auth-billing",
+      "Risk must start with one of low, medium, high",
     ]);
   });
 

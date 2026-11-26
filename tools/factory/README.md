@@ -39,7 +39,8 @@ outcome object instead of the one-line summary.
    on the issue (edited in place, never duplicated) and moves it to review.
 8. **PR.** When a person says ship it, `factory pr <branch>` opens the pull
    request: draft until the record is complete, Risk on the first line, the
-   record as the body. **Agents never merge.**
+   record as the body. The independent review names its risk; an agent merges
+   low and medium once merge-gate passes, a person merges high.
 9. **Tear down.** `factory down -v` and `factory workspace remove` refuse while
    work is uncommitted or unpushed. `factory sweep` (hourly on a shared box)
    removes stacks whose checkout is gone.
@@ -120,8 +121,8 @@ The scaffold manifest lists every `PREVIEW_*` variable (`.tsforge/scaffold-manif
 ## The record
 
 `factory verification new <branch>` writes the skeleton; the agent fills it.
-Sections, all required: **Risk** (`ui`, `logic`, `data` or `auth-billing`,
-which sets how deep review goes), **Checks run** (from `factory verify`),
+Sections, all required: **Risk** (`low`, `medium` or `high`, which sets who
+merges; the changed paths can raise it, never lower it), **Checks run** (from `factory verify`),
 **Walked in browser**, **Review**, **Not verified** (an honest list; "none"
 must be written), **For the next session**, **Build note**. The record carries
 the commit it describes; `check` fails when HEAD has moved since, so a record
@@ -147,7 +148,7 @@ These coexist with `tools/spec-loop`'s planning gate.
 
 The lanes (`tools/factory/lanes/`) are the agents that work on a change after a
 person has asked for it: each one opens pull requests on its own branch,
-`agent/<lane>/<slug>`, and a person decides every one. **Agents never merge.**
+`agent/<lane>/<slug>`. Who merges goes by risk (below).
 They are off until the repository variable `AGENTS_ENABLED` is `1`; every
 agent workflow checks it first.
 
@@ -156,8 +157,10 @@ agent workflow checks it first.
 | Lane registry | `lanes/lanes.ts`                                                | What a lane may change (allow and deny paths), whether its fix needs a regression test, and how many PRs it may have open or merge in seven days. Only `triage` is ported.                                                                                                               |
 | Triage        | `agent-triage.yml`, `bun run factory lanes triage [--dispatch]` | Takes the next findings from the findings ledger (`factory findings`), not from a separate flow. A person sends them with `--dispatch`, which starts the workflow. For each finding the agent writes a plan: a code fix becomes a PR, an operations cause becomes an issue for a person. |
 | Proof         | `lanes prove`                                                   | Runs the fix's tests on HEAD with the fix set aside, then with it. Proven only when they fail on HEAD and pass with the fix, with no skipped tests. The report says `proven: true` or `false`; an unproven fix is a result, not an error.                                                |
-| Review        | `agent-review.yml`                                              | An independent reviewer reads the diff and the issue, not the author's reasoning, and writes `Verdict: approve` or `Verdict: reject` into the Review section of the PR's record. Rejection fails the job. The reviewer's helpers come from the base branch.                              |
+| Review        | `agent-review.yml`                                              | An independent reviewer reads the diff and the issue, not the author's reasoning, and writes `Verdict: approve` or `Verdict: reject` and `Risk: low`, `medium` or `high` into the Review section of the PR's record. Rejection fails the job. Also reviews `factory/<id>` PRs.           |
 | Revise        | `agent-revise.yml`                                              | After a rejection: one revision on the same branch, proved again, then the review runs again. After a second rejection the PR is closed.                                                                                                                                                 |
+| Merge         | `agent-merge.yml`, `lanes risk`                                 | After an approval: the PR's risk is the highest of its paths' floor, its author's level and its reviewer's level. At or below `AGENT_MERGE_MAX_RISK` (medium by default) auto-merge is turned on; above it a person merges.                                                              |
+| Label         | `pr-risk.yml`                                                   | Labels every PR `risk:low`, `risk:medium` or `risk:high` when it opens or changes.                                                                                                                                                                                                       |
 | Digest        | `agent-digest.yml`, `lanes digest`                              | Weekly: agent PRs merged, closed and open, and failed agent runs, as an issue labelled `agent-digest`.                                                                                                                                                                                   |
 | Setup         | `.github/actions/agent-setup`                                   | The kill switch, Bun 1.4.5 and the git identity. It holds no secrets.                                                                                                                                                                                                                    |
 
@@ -167,12 +170,13 @@ a file, so the workflows can call them directly with `bun tools/factory/cli.ts`.
 
 Secrets and variables: the workflows need the repository secret
 `CLAUDE_CODE_OAUTH_TOKEN`. Set `AGENTS_ENABLED` to `1` to turn the lanes on, and
-to anything else to turn them off. The triage workflow dispatches the review, so
-the workflow token needs `actions: write`, which the workflows request.
+to anything else to turn them off. PRs, signed pushes and agent merges use the
+automation token `DEPS_AUTOFIX_TOKEN`, so they start merge-gate, the review and
+the release. Set the variable `AGENT_MERGE_MAX_RISK` to `low`, `medium` (the
+default), `high` or `none` to choose what agents may merge.
 
-Not verified here: the workflows have not run on GitHub, and the Claude action
-has not been called against a real PR. Set `AGENTS_ENABLED` to `1` on a fork or a
-test repository before relying on them.
+Verified on GitHub: triage opened PRs, the review approved one, and the digest
+ran. Not yet: a revision after a rejection, and an agent merge by risk.
 
 ## Principles
 
@@ -184,7 +188,7 @@ test repository before relying on them.
 - Every fix lives in code, so `factory down -v && factory up` reproduces it.
 - Unattended: decide, write the decision on the issue, keep going. Blocked
   means only a person can provide it.
-- Agents never merge, never push to a protected branch, never touch
-  production.
+- Agents merge only by risk (low and medium, after an independent review),
+  never push to a protected branch, never touch production.
 - Plain language in status lines and hand-overs: they are read by people who
   do not read code.

@@ -11,6 +11,7 @@ import {
   capRun,
   digestRun,
   reviewBodyRun,
+  riskRun,
   scopeRun,
   triagePlanRun,
   triageRun,
@@ -25,6 +26,35 @@ const deps = (stdin: string, run = noRun): ILanesDeps => ({
 const tmp = (): string => mkdtempSync(join(tmpdir(), "lanes-cmd-"));
 
 describe("lanes commands", () => {
+  test("risk writes the level and the merge decision for the workflow", () => {
+    const dir = tmp();
+    const body = join(dir, "body.md");
+    const out = join(dir, "out.txt");
+
+    writeFileSync(
+      body,
+      "**Risk: low** (copy)\n\n## Review\n\nVerdict: approve\nRisk: low\n"
+    );
+
+    const outcome = riskRun(
+      [`--body=${body}`, "--reviewed", `--out=${out}`],
+      deps("apps/ui/src/pages/Home.tsx\n")
+    );
+
+    expect(outcome.code).toBe(EXIT.ok);
+    expect(readFileSync(out, "utf8")).toBe("level=medium\nmerge=true\n");
+    expect(riskRun([], deps("")).code).toBe(EXIT.failed);
+    expect(
+      riskRun(
+        [`--body=${body}`, "--reviewed", "--ceiling=none", `--out=${out}`],
+        deps("README.md\n")
+      ).code
+    ).toBe(EXIT.ok);
+    expect(readFileSync(out, "utf8")).toBe("level=low\nmerge=false\n");
+    riskRun([`--body=${body}`, `--out=${out}`], deps("README.md\n"));
+    expect(readFileSync(out, "utf8")).toBe("level=low\nmerge=false\n");
+  });
+
   test("scope passes a change inside the lane and fails one outside it", () => {
     expect(
       scopeRun(

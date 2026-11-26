@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { replaceReviewSection } from "./review";
+import { replaceReviewSection, reviewSectionOf } from "./review";
 
 const body = [
   "# Verification: agent/triage/fix",
@@ -48,5 +48,19 @@ describe("the Review section of a record", () => {
     const next = replaceReviewSection("## Review\n\nold", "new");
 
     expect(next).toBe("## Review\n\nnew\n");
+  });
+});
+
+describe("reading the Review section", () => {
+  test("the text under Review, at either heading level, up to the next heading", () => {
+    expect(
+      reviewSectionOf(
+        "x\n\n## Review\n\nVerdict: approve\nRisk: low\n\n## Proof\n\nok"
+      )
+    ).toBe("Verdict: approve\nRisk: low");
+    expect(reviewSectionOf("### Review\n\nnothing to fix")).toBe(
+      "nothing to fix"
+    );
+    expect(reviewSectionOf("no review here")).toBeUndefined();
   });
 });

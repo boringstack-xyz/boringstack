@@ -84,7 +84,7 @@ export const completeRecord = (input: {
     "",
     "## Risk",
     "",
-    input.risk ?? "ui: button copy on the billing page",
+    input.risk ?? "low: button copy on the billing page",
     "",
     "## Walked in browser",
     "",

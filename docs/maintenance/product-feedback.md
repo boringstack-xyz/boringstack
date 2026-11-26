@@ -200,3 +200,12 @@ admin app's rows are in this report; the earlier reports are unchanged.
 | Report | Observation | Status / evidence |
 | ------ | ----------- | ----------------- |
 | 138 | `apps/admin` had no email campaigns, no resolve or snooze state for its action feed, no release workflow, no size budget, no docs prose, and its k3s overlay had never been rendered. | Implemented: marketing campaigns (`apps/api/src/api/admin/admin-campaign.service.ts`) send through the notification-dispatch queue with a per-person `jobId`, record every recipient, audit every send, and send once per campaign; unsubscribe uses the lifecycle link and List-Unsubscribe and clears consent (`migration 0004`, `campaign.message` event). The feed (`admin-feed.service.ts`) persists resolve and snooze per item and audits both. `apps/admin` gets `apps-admin-release.yml` (GHCR `latest` and `sha-<7>`, `wud.watch`, same shape as the site release), a `.size-limit.json` budget gated by the shared `check-size-budget-raises.ts` (now accepts `SIZE_BUDGET_APP_ROOT`), a docs page under "Operator dashboard" and an index in `apps/admin/AGENTS.md`. The k3s admin overlay renders with `kustomize build` and is asserted in `infra/k3s/tests/admin.test.ts` and built in `infra-k3s-validate.yml`. Open: no product flow sets `users.marketing_consent_at` (a public route would change the OpenAPI document, so it was not added here); the feed has one item source (failed queue jobs); the k3s render test runs `kubectl kustomize` like its siblings and was verified locally with `kustomize build` only. |
+
+## Report 7: merge by risk, 2026-11-26
+
+Source: the owner's direction that agents merge non-critical changes themselves,
+after the pattern of labelling every pull request low, medium or high risk.
+
+| Report | Observation | Status / evidence |
+| ------ | ----------- | ----------------- |
+| 140 | Every agent PR waited for a person to merge it, whatever it changed, and records named a kind of change (`ui`, `logic`, `data`, `auth-billing`) rather than a risk. | Implemented: `tools/factory/risk/risk.ts` reads a PR's risk as the highest of its paths' floor, its author's record and its independent reviewer; `pr-risk.yml` labels every PR `risk:low`, `risk:medium` or `risk:high`; `agent-merge.yml` turns on auto-merge after an approved review at or below `AGENT_MERGE_MAX_RISK` (medium by default) and leaves high to a person. The review lane also reviews `factory/<id>` PRs. Not yet run on GitHub. |
