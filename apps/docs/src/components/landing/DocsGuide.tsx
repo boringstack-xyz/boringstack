@@ -25,7 +25,7 @@ const steps = [
     file: "bun run factory workspace new <issue>",
     title: "Build an issue through the factory.",
     detail:
-      "Your own worktree and stack. The verify gate decides when it is done, and a person merges.",
+      "Your own worktree and stack. The verify gate decides when it is done; its risk decides who merges.",
     href: "/factory/",
     link: "Read the factory guide",
   },

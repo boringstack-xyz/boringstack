@@ -7,8 +7,8 @@ export function FactorySection() {
       <SectionHeading
         id="bs-factory-title"
         eyebrow="01 / THE FACTORY"
-        title="An agent builds the issue. A person still merges."
-        body="bun run factory works one issue at a time, in its own stack. Nothing counts as done until the verify gate passes at the current commit. The table shows what runs where, what is switched on in a fresh clone, and what stays with a person."
+        title="An agent builds the issue. Its risk decides who merges."
+        body="bun run factory works one issue at a time, in its own stack. Nothing counts as done until the verify gate passes at the current commit. Every pull request is labelled low, medium or high risk: agents merge low and medium after an independent review, a person merges high. The table shows what runs where, what is switched on in a fresh clone, and what stays with a person."
       />
       <div className="bs-factory-table-wrap">
         <table className="bs-factory-table">

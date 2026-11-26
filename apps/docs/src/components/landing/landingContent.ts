@@ -27,10 +27,10 @@ export const factoryRows = [
     person: "Whatever only a person can provide. The session records it in BLOCKED.",
   },
   {
-    what: "Agent lanes: triage, review, revise, digest",
-    where: "GitHub Actions. An agent PR gets an independent review of its diff and its issue.",
+    what: "Agent lanes: triage, review, revise, merge, digest",
+    where: "GitHub Actions. An agent PR gets an independent review that names its risk: low, medium or high.",
     state: "Off until AGENTS_ENABLED=1 and CLAUDE_CODE_OAUTH_TOKEN are set.",
-    person: "Which findings go to triage, and whether an agent PR merges. Agents never merge.",
+    person: "Which findings go to triage, and every high-risk PR. Agents merge low and medium.",
   },
   {
     what: "Dependency autopilot",

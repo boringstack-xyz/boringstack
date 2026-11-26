@@ -126,7 +126,8 @@ export function HeroSection() {
         <p className="mt-[1.25rem] max-w-[34rem] text-pretty text-base leading-[1.55] text-[var(--bs-muted-strong)] min-[641px]:mt-[1.15rem] min-[641px]:text-[1.05rem]">
           Auth, billing, queues, and deploys are already wired. Give your agent
           an issue. It builds in its own stack, a verify gate it cannot skip
-          checks the change, and a person merges. A production robot can walk
+          checks the change, and low-risk work merges itself while a person
+          merges the rest. A production robot can walk
           the live app after each release.
         </p>
 

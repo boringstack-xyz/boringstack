@@ -6,8 +6,9 @@ Valkey, Docker Compose, OpenTofu. MIT. One monorepo.
 It is also a software factory. An agent given an issue builds it in its own stack
 (`bun run factory workspace new <issue>`). A verify gate the agent cannot skip checks
 the change (`bun run factory verify`), a verification record shows what was checked and
-what was not, and a person merges. Agents can also run in the cloud and be steered from a
-phone. See [Remote agents and automation](#remote-agents-and-automation).
+what was not, and every pull request is labelled low, medium or high risk. Agents merge
+low and medium ones after an independent review; a person merges high ones. Agents can
+also run in the cloud and be steered from a phone. See [Remote agents and automation](#remote-agents-and-automation).
 
 Why start here instead of scaffolding something bespoke: the architecture is enforced, not
 documented. 16 custom ESLint plugins, repo-level `lint:meta` rules, ACL and OpenAPI drift
@@ -212,7 +213,13 @@ bun run factory pr <branch>             # draft until the record is complete
   `.agent-state/factory/BLOCKED`.
 - **The guard.** The PreToolUse hook refuses force pushes, pushes to `main`, reads or prints of
   secret files, and branch switches in the main checkout. These are tripwires, not a sandbox.
-- **A person merges.** Agents never merge, and never push to a protected branch.
+- **Merge by risk.** Every pull request is labelled `risk:low`, `risk:medium` or
+  `risk:high`: the highest of its changed paths' floor, the Risk its record names, and the
+  level the independent reviewer names. After the review approves, `agent-merge.yml` merges
+  low and medium when merge-gate passes (ceiling: the variable `AGENT_MERGE_MAX_RISK`,
+  medium by default); a person merges high. Workflows, infrastructure, migrations, sign-in,
+  billing and the factory are always high. Never merge your own PR, and never push to a
+  protected branch.
 - **Robot coverage.** Every new route and API operation needs a production robot journey
   (`docs/operations/production-verification.md`). `validate` fails until it has one or a
   written reason.
@@ -229,7 +236,8 @@ bun run factory pr <branch>             # draft until the record is complete
   until one has run end to end.
 - **GitHub Actions lanes** (triage, review, revise, weekly digest) are off until the
   repository variable `AGENTS_ENABLED` is `1` and the secret `CLAUDE_CODE_OAUTH_TOKEN` is set.
-  An agent PR gets an independent review; a person still decides whether it merges.
+  An agent PR gets an independent review that names its risk; low and medium merge
+  themselves, high waits for a person.
 - **A self-hosted always-on host** (`infra/agent-host`) is an OpenTofu blueprint for a Linux
   machine you own. It is off by default and has not been applied anywhere. A person runs the
   plan and the apply, never an agent.

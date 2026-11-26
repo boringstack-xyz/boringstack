@@ -95,8 +95,8 @@ const stages = [
     short: "Merge",
     layer: 0,
     gate: "MERGE",
-    label: "A person merges",
-    detail: "Agents never merge. merge-gate is the one required check.",
+    label: "Merge by risk",
+    detail: "Low and medium: an agent merges after review. High: a person merges. merge-gate is the one required check.",
   },
   {
     short: "Production",
