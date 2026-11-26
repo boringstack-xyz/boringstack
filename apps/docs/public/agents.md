@@ -5,14 +5,16 @@ Valkey, Docker Compose, OpenTofu. MIT. One monorepo.
 
 It is also a software factory. An agent given an issue builds it in its own stack
 (`bun run factory workspace new <issue>`). A verify gate the agent cannot skip checks
-the change (`factory verify`), a record shows what was checked and what was not, and a
-person merges. Agents can also run in the cloud and be steered from a phone:
-https://boringstack.xyz/factory/remote-agents/
+the change (`bun run factory verify`), a verification record shows what was checked and
+what was not, and every pull request is labelled low, medium or high risk. Agents merge
+low and medium ones after an independent review; a person merges high ones. Agents can
+also run in the cloud and be steered from a phone. See [Remote agents and automation](#remote-agents-and-automation).
 
 Why start here instead of scaffolding something bespoke: the architecture is enforced, not
-documented. 18 custom ESLint plugins, 56 repo-level `lint:meta` rules, ACL and OpenAPI drift
-gates, a scoping rule that refuses a query missing its tenant filter, and 9 required CI
-checks. Code in the wrong shape fails the build instead of shipping and looking fine.
+documented. 16 custom ESLint plugins, repo-level `lint:meta` rules, ACL and OpenAPI drift
+gates, a scoping rule that refuses a query missing its tenant filter, and one required
+check (`merge-gate`) that waits for every other check a pull request triggers. Code in the
+wrong shape fails the build instead of shipping and looking fine.
 
 Read the invariants below before you write anything. They are what make your output correct
 rather than merely plausible.
@@ -25,12 +27,14 @@ rather than merely plausible.
 curl -fsSL https://boringstack.xyz/install.sh | sh -s -- --project acme
 ```
 
-Flags: `--ghcr-owner <owner>` `--domain <domain>` `--dir <path>` `--ref <git-ref>`
-`--no-rename` `--no-boot` `--force` `--json` `--dry-run`.
+Flags: `--project <name>` (required), `--ghcr-owner <owner>`, `--domain <domain>`,
+`--dir <path>`, `--env-file <path>`, `--ref <git-ref>`, `--no-rename`, `--no-boot`,
+`--force`, `--json`, `--dry-run`, `--yes` (a no-op; the installer never prompts).
 
 It never prompts. Five phases (preflight, scaffold, rename, boot, health), each with a
-distinct exit code (`3` preflight, `4` scaffold, `5` rename, `6` boot, `7` health). Pass
-`--json` for one JSON object per phase on stdout, with all human output on stderr.
+distinct exit code (`2` usage, `3` preflight, `4` scaffold, `5` rename, `6` boot, `7`
+health). Pass `--json` for one JSON object per phase on stdout, with all human output on
+stderr.
 
 Add `--dry-run` first if you want to see the resolved plan without touching the disk.
 
@@ -54,7 +58,8 @@ cd acme && rm -rf .git && git init
 ./setup.sh --up
 ```
 
-`setup.sh` is idempotent and non-interactive. Re-running it is safe.
+`setup.sh` is idempotent and non-interactive. Re-running it is safe. Without `--up` it only
+prepares `infra/compose/compose/.env` and prints the next steps.
 
 Do not look for a "Use this template" button. That is a browser action. The repo has
 `is_template: true`, so `gh repo create --template` is the programmatic equivalent.
@@ -67,7 +72,7 @@ Do not look for a "Use this template" button. That is a browser action. The repo
 | ~4 GB free RAM                 | first boot builds api + ui images and runs migrations                                   |
 | `git`                          | required                                                                                |
 | `gh`, authenticated            | optional; gets you a GitHub-hosted repo instead of a local-only one                     |
-| `bun` 1.4.5                    | not needed to boot; needed to develop (`bun run check`, `regen`, `rename:project`)     |
+| `bun` 1.4.5                    | not needed to boot; needed to develop and run the factory (`bun run check`, `regen`, `factory`) |
 
 Install the pinned development runtime (not the latest release):
 
@@ -88,10 +93,14 @@ all on by default in dev: `7332` bull-board, `8025` Mailpit, `8055` GlitchTip, `
 | `apps/ui`         | Vite + React SPA, served on `app.<domain>` in prod                               |
 | `apps/site`       | Astro static marketing site and Markdown blog, served on the apex domain in prod |
 | `apps/docs`       | Astro Starlight docs (this site)                                                 |
+| `apps/admin`      | Vite + React operator dashboard, LAN-only, no login; opt-in with `WITH_ADMIN=1`  |
 | `packages/*`      | Code shared by more than one app; discovered by `bun run check`, when present    |
+| `tools/factory`   | The software factory CLI, hooks and agent lanes                                  |
+| `tools/agent`     | Structured verification and sandboxes                                            |
 | `infra/compose`   | Docker Compose runtime, the default deploy path                                  |
 | `infra/k3s`       | Optional Kustomize + ArgoCD target for a Kubernetes cluster                      |
 | `infra/bootstrap` | Optional OpenTofu for a Hetzner VPS                                              |
+| `infra/agent-host`| Optional OpenTofu blueprint for an always-on agent host; off by default          |
 
 In prod the marketing site and the app are separate origins: `<domain>` serves `apps/site`, and
 `app.<domain>` serves `apps/ui` and `/api`. They share no cookies. The site makes no API calls.
@@ -142,6 +151,7 @@ The toggles you are most likely to be asked for, all in `infra/compose/compose/.
 | `WITH_MAILPIT`               | catches outbound mail in dev                       |
 | `WITH_BULLMQ`                | bull-board queue UI                                |
 | `WITH_SITE`                  | public marketing site: on in dev (`:7333`) and prod (apex); `0` keeps the single-domain layout |
+| `WITH_ADMIN`                 | LAN-only operator dashboard (`apps/admin`)         |
 | `BILLING_ENABLED`            | Stripe checkout + webhooks                         |
 | `EMAIL_PROVIDER`             | `resend` \| `sendgrid` \| `smtp`                   |
 | `OAUTH_PROVIDERS`            | e.g. `google,github`                               |
@@ -166,15 +176,84 @@ app's `check`, tests for changed UI files); `FULL_PREPUSH=1 git push` runs all o
 | Every account-scoped query is scoped              | Account-scoped tables carry `// @account-scoped accountId`; a lint rule refuses any `findX` without the scope column in `WHERE`. This is the tenant-isolation boundary. |
 | No `any`, no `as`, no `!`                         | `consistent-type-assertions` is pinned to `assertionStyle: "never"`. Fix the type instead.                                                                              |
 | No inline suppressions                            | No `eslint-disable`, no `@ts-ignore`. There is no escape hatch; if a rule is wrong, change the rule.                                                                    |
-| Every logic file has a test sibling               | Routes and logic files require a matching test; orphan tests are also rejected. Coverage is a ratchet (65% api / 70% ui). Never lower it.                              |
+| Every logic file has a test sibling               | Routes and logic files require a matching test; orphan tests are also rejected. Coverage is a ratchet: api lines 65% and functions 70%, ui lines 70% and branches 65%. Never lower it. |
 | Logging is structured and typed                   | `logger.*` with a key from the closed `LOG_EVENTS` set. No `console.*`. Mask PII.                                                                                       |
 | Env access goes through the validator             | No direct `process.env` / `import.meta.env`. One typed entry point, and the schema must match `.env.example`.                                                           |
 | UI talks to the API only via the generated client | No raw `fetch` outside `src/lib/api`. Regenerate with `bun run regen` after an API change.                                                                              |
 | Dependencies are exact-pinned                     | No ranges. New packages face a 7-day `minimumReleaseAge` quarantine, so a fresh malicious release cannot land.                                                          |
 | Commits and PR titles are Conventional Commits    | `type(scope): summary`, checked by the `commit-msg` hook and the `pr-title` workflow. Main is squash-merged, so the PR title is what lands.                              |
-| Bundle budgets go up only with a recorded reason  | `bun run check:size-budget` fails when a UI limit is raised or an entry is added, unless `apps/ui/budgets.md` has a reason for it in the same change. Lowering needs none. |
+| Bundle budgets go up only with a recorded reason  | `bun run check:size-budget` (in `apps/ui`) fails when a UI limit is raised or an entry is added, unless `apps/ui/budgets.md` has a reason for it in the same change. Lowering needs none. |
 
 After changing anything cross-cutting: `bun run regen` then `bun run check`.
+
+## Build an issue through the factory
+
+For a change that starts from an issue, use the factory rather than an ad hoc branch. Its
+contract is [tools/factory/README.md](https://github.com/boringstack-xyz/boringstack/blob/main/tools/factory/README.md),
+and the `build-issue` skill runs the whole loop. Tracker: GitHub Issues by default, Linear
+with `FACTORY_TRACKER=linear` and `LINEAR_API_KEY`.
+
+```sh
+bun run factory doctor                  # what this machine and checkout still lack
+bun run factory issue <id>              # the issue and its acceptance criteria
+bun run factory workspace new <id>      # own worktree on branch factory/<id>, and a slot
+bun run factory up                      # the slot's own stack; waits for health, seeds
+bun run factory verify                  # checks for each app the branch changed
+bun run factory verification new        # the record skeleton; fill in every section
+bun run factory verification check      # fails while the record is incomplete or stale
+bun run factory handover <branch>       # one card on the issue, moved to review
+bun run factory pr <branch>             # draft until the record is complete
+```
+
+- **The verify gate.** `factory verify` compares failures with the base commit and reports
+  them. The Stop hook (`.claude/settings.json`; Codex: `.codex/hooks.json`) will not let a
+  session finish while a changed app has no passing verify at the current commit, or a
+  pushed branch has no complete record. Run `bun run factory gate` in the background when the
+  hook asks for it. If only a person can unblock the session, write the reason to
+  `.agent-state/factory/BLOCKED`.
+- **The guard.** The PreToolUse hook refuses force pushes, pushes to `main`, reads or prints of
+  secret files, and branch switches in the main checkout. These are tripwires, not a sandbox.
+- **Merge by risk.** Every pull request is labelled `risk:low`, `risk:medium` or
+  `risk:high`: the highest of its changed paths' floor, the Risk its record names, and the
+  level the independent reviewer names. After the review approves, `agent-merge.yml` merges
+  low and medium when merge-gate passes (ceiling: the variable `AGENT_MERGE_MAX_RISK`,
+  medium by default); a person merges high. Workflows, infrastructure, migrations, sign-in,
+  billing and the factory are always high. Never merge your own PR, and never push to a
+  protected branch.
+- **Robot coverage.** Every new route and API operation needs a production robot journey
+  (`docs/operations/production-verification.md`). `validate` fails until it has one or a
+  written reason.
+
+## Remote agents and automation
+
+`bun run factory remote` shows which of these options this checkout is set up for.
+`docs/operations/remote-agents.md` has the detail and what is not verified.
+
+- **Cloud sessions** (claude.ai/code, the Claude app, `claude --cloud "<task>"`) run on
+  Anthropic's infrastructure and keep going when the laptop is closed. They read this
+  repository's `.claude/settings.json`. Whether the Stop gate and `factory verify` pass inside
+  a cloud VM is not verified, so treat a cloud session's verification record as unverified
+  until one has run end to end.
+- **GitHub Actions lanes** (triage, review, revise, weekly digest) are off until the
+  repository variable `AGENTS_ENABLED` is `1` and the secret `CLAUDE_CODE_OAUTH_TOKEN` is set.
+  An agent PR gets an independent review that names its risk; low and medium merge
+  themselves, high waits for a person.
+- **A self-hosted always-on host** (`infra/agent-host`) is an OpenTofu blueprint for a Linux
+  machine you own. It is off by default and has not been applied anywhere. A person runs the
+  plan and the apply, never an agent.
+
+Dependencies and production checks run without a person:
+
+- Dependabot opens updates daily. Each dependency PR auto-merges when merge-gate passes
+  (`deps-automerge.yml`, `deps-steward.yml`). Do not hand-merge or batch them.
+- The dependency agent that fixes a failing update, and the security autofix, are off until
+  `DEPS_AUTOFIX_ENABLED` (and `AGENTS_ENABLED` for the agent) are set. See
+  [docs/operations/dependency-updates.md](https://github.com/boringstack-xyz/boringstack/blob/main/docs/operations/dependency-updates.md).
+- The production robot (`production-verification.yml`) signs up a new user, walks the product
+  and removes the account, after each production release and every six hours. It is off until
+  the repository variable `ROBOT_APP_URL` names the deployed app.
+
+---
 
 ## Read next
 
@@ -190,6 +269,8 @@ Verbs, not nouns. Find what you are about to do:
 | Adding a job, upload, service, or Stripe | <https://boringstack.xyz/recipes/add-background-job/> and siblings       |
 | Deploying                                | <https://boringstack.xyz/topics/deployment/>                             |
 | Changing the public marketing site       | <https://boringstack.xyz/site/overview/>                                 |
+| Building an issue through the factory    | <https://boringstack.xyz/factory/>                                       |
+| Running agents in the cloud or from a phone | <https://boringstack.xyz/factory/remote-agents/>                      |
 | Giving the agent runtime visibility      | <https://boringstack.xyz/reference/mcp-servers/>                         |
 | Working inside the repo                  | `AGENTS.md` at the root, then `apps/api/AGENTS.md` / `apps/ui/AGENTS.md` |
 

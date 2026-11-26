@@ -10,7 +10,7 @@ export function StackFlowSection() {
     <section className="bs-section" aria-labelledby="bs-compose-title">
       <SectionHeading
         id="bs-compose-title"
-        eyebrow="02 / INSIDE THE STACK"
+        eyebrow="03 / INSIDE THE STACK"
         title="One repo. All the moving parts."
         body="Explore the layers. Auth, billing, queues, and deploys are already connected, with explicit contracts between them."
       />
