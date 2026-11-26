@@ -20,7 +20,7 @@ describe("handoverCard", () => {
     expect(card).toContain("### Ready to review: Billing button copy");
     expect(card).toContain("**Preview:** http://127.0.0.1:7412");
     expect(card).toContain(
-      "**How much review:** ui (button copy on the billing page). Copy, layout or styling only"
+      "**How much review:** low (button copy on the billing page). Docs, copy, styling, tests"
     );
     expect(card).toContain("- the Safari layout (no Safari in the stack)");
     expect(card).toContain("- /billing: the new copy shows");

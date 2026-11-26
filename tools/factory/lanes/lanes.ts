@@ -4,7 +4,8 @@
  * with a regression test, and how many agent PRs may be open or merged at
  * once. Adapted from earlier agent factories, where the lanes
  * are wider (articles, diagrams, catalogues). Only the generic triage lane is
- * here. Agents never merge: a person decides on every agent PR.
+ * here. Who merges goes by risk: agent-merge.yml merges low and medium after
+ * the independent review approves; a person merges high (../risk/risk.ts).
  */
 import type { ICommandOutcome } from "../result";
 import { isRecord } from "../state";
