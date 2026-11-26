@@ -1,0 +1,128 @@
+name: Agent merge
+
+# Decides who merges an agent PR once the independent review approves it. The
+# PR's risk is the highest of three readings: the floor its changed paths set,
+# the level its author's record names, and the level the reviewer names
+# (tools/factory/risk/risk.ts). At or below the repository's ceiling, the
+# variable AGENT_MERGE_MAX_RISK (low, medium, high or none; medium when unset),
+# auto-merge is turned on and merge-gate alone decides whether it lands. Above
+# it, the PR is labelled and a person merges.
+#
+# workflow_run runs this repository's own copy of this file and of the risk
+# rules, never the PR's: a PR cannot change what judges it.
+# Kill switch: repository variable AGENTS_ENABLED must be 1.
+
+on:
+  workflow_run:
+    workflows: ["Agent review"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  merge:
+    name: merge by risk
+    if: >-
+      vars.AGENTS_ENABLED == '1' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      (startsWith(github.event.workflow_run.head_branch, 'agent/') ||
+        startsWith(github.event.workflow_run.head_branch, 'factory/')) &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      toJSON(github.event.workflow_run.pull_requests) != '[]'
+    runs-on: ${{ !github.event.pull_request.head.repo.fork && (vars.CI_LIGHT_RUNNER || vars.CI_RUNNER) || 'ubuntu-24.04' }}
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+      REVIEWED_SHA: ${{ github.event.workflow_run.head_sha }}
+      GH_TOKEN: ${{ github.token }}
+    concurrency:
+      group: agent-pr-${{ github.event.workflow_run.pull_requests[0].number }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout the trusted base (risk rules)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            .github/actions/agent-setup
+            apps/ui/e2e/robot
+            tools/factory
+          persist-credentials: false
+
+      - name: Agent setup (kill switch, bun, git identity)
+        uses: ./.github/actions/agent-setup
+        with:
+          agents_enabled: ${{ vars.AGENTS_ENABLED }}
+
+      - name: Read the risk
+        id: risk
+        env:
+          CEILING: ${{ vars.AGENT_MERGE_MAX_RISK }}
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/merge"
+          mkdir -p "$work"
+          echo "WORK=$work" >> "$GITHUB_ENV"
+          gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json headRefOid,state,isDraft > "$work/pr.json"
+          if [ "$(jq -r .state "$work/pr.json")" != "OPEN" ] || [ "$(jq -r .isDraft "$work/pr.json")" = "true" ]; then
+            echo "The PR is not open and ready; nothing to merge."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # The approval covers the commit that was reviewed. A newer push is
+          # reviewed again, and that review's run decides.
+          if [ "$(jq -r .headRefOid "$work/pr.json")" != "$REVIEWED_SHA" ]; then
+            echo "The PR moved past the reviewed commit; its next review decides."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json body --jq .body > "$work/body.md"
+          gh pr diff "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --name-only \
+            | bun tools/factory/cli.ts lanes risk --body="$work/body.md" --reviewed \
+              --ceiling="${CEILING:-medium}" --out="$work/risk.txt" | tee "$work/reasons.txt"
+          cat "$work/risk.txt" >> "$GITHUB_OUTPUT"
+
+      - name: Label the risk
+        if: steps.risk.outputs.skip != 'true'
+        env:
+          LEVEL: ${{ steps.risk.outputs.level }}
+        run: |
+          set -euo pipefail
+          gh label create risk:low --repo "$GITHUB_REPOSITORY" --force --color 0e8a16 --description "Agents may merge it" > /dev/null
+          gh label create risk:medium --repo "$GITHUB_REPOSITORY" --force --color fbca04 --description "Agents may merge it (default ceiling)" > /dev/null
+          gh label create risk:high --repo "$GITHUB_REPOSITORY" --force --color d93f0b --description "A person merges it" > /dev/null
+          others="$(printf 'risk:%s\n' low medium high | grep -vx "risk:$LEVEL" | paste -sd, -)"
+          gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --remove-label "$others" --add-label "risk:$LEVEL" > /dev/null
+          echo "Labelled risk:$LEVEL."
+
+      - name: Merge when merge-gate passes
+        if: steps.risk.outputs.skip != 'true' && steps.risk.outputs.merge == 'true'
+        env:
+          # A merge made with the workflow token starts no workflow on main
+          # (no release); the automation token's does.
+          PUSH_TOKEN: ${{ secrets.DEPS_AUTOFIX_TOKEN }}
+        run: |
+          set -euo pipefail
+          GH_TOKEN="$PUSH_TOKEN" gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --auto --squash --match-head-commit "$REVIEWED_SHA"
+          {
+            echo "### Merged by an agent once merge-gate passes"
+            echo
+            sed 's/^/- /' "$WORK/reasons.txt"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Leave it to a person
+        if: steps.risk.outputs.skip != 'true' && steps.risk.outputs.merge != 'true'
+        run: |
+          set -euo pipefail
+          {
+            echo "**Risk: ${{ steps.risk.outputs.level }}.** The independent review approved it; a person merges it."
+            echo
+            sed 's/^/- /' "$WORK/reasons.txt"
+          } > "$WORK/comment.md"
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$WORK/comment.md"
+          cat "$WORK/comment.md" >> "$GITHUB_STEP_SUMMARY"

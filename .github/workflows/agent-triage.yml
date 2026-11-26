@@ -6,7 +6,7 @@ name: Agent triage
 # each one the agent writes a plan. A code fix goes to a PR on agent/triage/<slug>
 # with a regression test that tools/factory/lanes/prove-fix proves (one signed
 # commit, opened with the automation token so merge-gate and agent-review run); an operations
-# cause is written up for a person in an issue. Agents never merge.
+# cause is written up for a person in an issue. Who merges goes by risk (agent-merge.yml).
 # Kill switch: repository variable AGENTS_ENABLED must be 1.
 
 on:

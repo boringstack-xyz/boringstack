@@ -65,7 +65,8 @@ Building an issue end to end follows `tools/factory/README.md` (skill:
 `build-issue`): `bun run factory workspace new <issue>` gives you your own
 worktree and stack, `factory verify` proves what you changed, `factory
 verification new|check` writes the record, `factory handover` and `factory pr`
-hand it to a person. Agents never merge.
+hand it to a person. Agents merge by risk: low and medium once the independent
+review approves and merge-gate passes; a person merges high.
 
 Hooks in `.claude/settings.json` (Codex: `.codex/hooks.json`) enforce it: the
 guard refuses force pushes, pushes to `main`, printing secret files and
