@@ -1,3 +1,18 @@
+import { Fragment, type ReactNode } from "react";
+
+/** Copy with `backticked` spans rendered as inline code. */
+export function Inline({ text }: { text: string }): ReactNode {
+  return text
+    .split(/(`[^`]+`)/u)
+    .map((part, index) =>
+      part.startsWith("`") && part.endsWith("`") && part.length > 2 ? (
+        <code key={index}>{part.slice(1, -1)}</code>
+      ) : (
+        <Fragment key={index}>{part}</Fragment>
+      ),
+    );
+}
+
 export function GitHubIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -29,7 +44,9 @@ export function SectionHeading({
         <span className="bs-section-eyebrow">{eyebrow}</span>
         <h2 id={id}>{title}</h2>
       </div>
-      <p>{body}</p>
+      <p>
+        <Inline text={body} />
+      </p>
     </div>
   );
 }
