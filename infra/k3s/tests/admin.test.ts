@@ -20,7 +20,9 @@ const adminDocs = readdirSync(adminBase)
 describe("operator dashboard is LAN-only", () => {
   test("no Ingress, IngressRoute or LoadBalancer in the admin base", () => {
     for (const { name, doc } of adminDocs) {
-      expect(["Ingress", "IngressRoute", "Middleware"], name).not.toContain(doc.kind);
+      expect(["Ingress", "IngressRoute", "Middleware"], name).not.toContain(
+        doc.kind,
+      );
       if (doc.kind === "Service") {
         expect(doc.spec.type, name).toBe("ClusterIP");
       }
@@ -28,33 +30,53 @@ describe("operator dashboard is LAN-only", () => {
   });
 
   test("the public release and the prod overlay never include the admin base", () => {
-    for (const path of [`${k3sRoot}base/kustomization.yaml`, `${k3sRoot}overlays/prod/kustomization.yaml`]) {
+    for (const path of [
+      `${k3sRoot}base/kustomization.yaml`,
+      `${k3sRoot}overlays/prod/kustomization.yaml`,
+    ]) {
       expect(readText(path), path).not.toContain("admin");
     }
   });
 
   test("admin-api accepts connections only from the admin dashboard pod", () => {
-    const policy = adminDocs.find(({ name }) => name === "admin-api-networkpolicy.yaml")?.doc;
+    const policy = adminDocs.find(
+      ({ name }) => name === "admin-api-networkpolicy.yaml",
+    )?.doc;
     expect(policy).toBeDefined();
-    const sources = (policy?.spec.ingress ?? []).flatMap((rule: Doc) => rule.from ?? []);
-    expect(sources).toEqual([{ podSelector: { matchLabels: { app: "admin" } } }]);
+    const sources = (policy?.spec.ingress ?? []).flatMap(
+      (rule: Doc) => rule.from ?? [],
+    );
+    expect(sources).toEqual([
+      { podSelector: { matchLabels: { app: "admin" } } },
+    ]);
   });
 
   test("the dashboard accepts private address ranges only", () => {
-    const policy = adminDocs.find(({ name }) => name === "admin-networkpolicy.yaml")?.doc;
+    const policy = adminDocs.find(
+      ({ name }) => name === "admin-networkpolicy.yaml",
+    )?.doc;
     const cidrs = (policy?.spec.ingress ?? []).flatMap((rule: Doc) =>
       (rule.from ?? []).map((source: Doc) => source.ipBlock.cidr),
     );
-    expect(cidrs.sort()).toEqual(["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]);
+    expect(cidrs.sort()).toEqual([
+      "10.0.0.0/8",
+      "172.16.0.0/12",
+      "192.168.0.0/16",
+    ]);
   });
 
   test("both admin workloads run non-root with a read-only root filesystem", () => {
     for (const name of ["admin-api-deployment.yaml", "admin-deployment.yaml"]) {
       const deployment = adminDocs.find((entry) => entry.name === name)?.doc;
-      expect(deployment?.spec.template.spec.securityContext.runAsNonRoot, name).toBe(true);
+      expect(
+        deployment?.spec.template.spec.securityContext.runAsNonRoot,
+        name,
+      ).toBe(true);
       const container = deployment?.spec.template.spec.containers[0];
       expect(container.securityContext.readOnlyRootFilesystem, name).toBe(true);
-      expect(container.securityContext.allowPrivilegeEscalation, name).toBe(false);
+      expect(container.securityContext.allowPrivilegeEscalation, name).toBe(
+        false,
+      );
     }
   });
 
@@ -66,5 +88,45 @@ describe("operator dashboard is LAN-only", () => {
       "ghcr.io/boringstack-xyz/boringstack-admin-api",
       "ghcr.io/boringstack-xyz/boringstack-admin",
     ]);
+  });
+});
+
+// The overlay is rendered in CI with `kubectl kustomize`, the same as the prod
+// overlay. These assert what that render contains, namespace included.
+describe("operator dashboard: rendered overlay", () => {
+  const rendered = Bun.spawnSync([
+    "kubectl",
+    "kustomize",
+    `${k3sRoot}overlays/admin`,
+  ]);
+  if (rendered.exitCode !== 0) {
+    throw new Error(rendered.stderr.toString());
+  }
+  const documents = rendered.stdout
+    .toString()
+    .split(/^---$/m)
+    .filter((doc) => doc.trim() !== "")
+    .map((doc) => YAML.parse(doc) as Doc);
+  const names = (kind: string) =>
+    documents
+      .filter((doc) => doc.kind === kind)
+      .map((doc) => doc.metadata?.name)
+      .sort();
+
+  test("renders both dashboard workloads and their services", () => {
+    expect(names("Deployment")).toEqual(["admin", "admin-api"]);
+    expect(names("Service")).toEqual(["admin", "admin-api"]);
+  });
+
+  test("renders both network policies into the prod namespace", () => {
+    expect(names("NetworkPolicy")).toEqual([
+      "admin-api-network-policy",
+      "admin-network-policy",
+    ]);
+    for (const doc of documents) {
+      expect(doc.metadata?.namespace, doc.metadata?.name).toBe(
+        "boringstack-prod",
+      );
+    }
   });
 });
