@@ -80,8 +80,8 @@ async function evaluateCache(
     );
     const run = await runProcess(
       [
-        process.execPath,
-        NO_ENV_FILE,
+        // vitest 5.1.1+ needs Node's child_process (`channel.unref`), which Bun lacks.
+        "node",
         "node_modules/vitest/vitest.mjs",
         "run",
         "src/features/projects",
